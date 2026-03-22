@@ -1,15 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-
-//Primeng
-import { PrimeImportsModule } from './prime-imports';
+import { ThemeService } from './core/services/theme';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet,PrimeImportsModule],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [RouterOutlet],
+  template: `<router-outlet />`,
 })
 export class App {
-  protected readonly title = signal('frontend');
+  constructor() {
+    inject(ThemeService);
+  }
 }
