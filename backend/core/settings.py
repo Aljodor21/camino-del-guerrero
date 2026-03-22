@@ -118,3 +118,6 @@ AI_PROVIDER = config('AI_PROVIDER', default='ollama')
 AI_BASE_URL = config('AI_BASE_URL', default='http://localhost:11434')
 AI_MODEL = config('AI_MODEL', default='llama3')
 AI_API_KEY = config('AI_API_KEY', default='')
+
+
+AUTH_USER_MODEL = 'users.Usuario'
