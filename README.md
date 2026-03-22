@@ -232,13 +232,23 @@ docker exec -it postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE c
 
 ## Roadmap
 
+### Backend
 - [x] Diseño de arquitectura y stack
 - [x] Modelo de datos normalizado (v3)
-- [ ] Módulo Auth (usuarios y roles)
-- [ ] Módulo Onboarding (peso + objetivo + implementos)
-- [ ] Módulo Rutinas (CRUD admin + generación por IA)
-- [ ] Módulo Progreso (log + peso)
-- [ ] Módulo Nutrición (plan semanal por IA)
-- [ ] PWA (funcionalidad offline para el timer)
+- [x] Módulo Auth — usuarios, roles y JWT
+- [x] Módulo Onboarding — peso, objetivo e implementos
+- [x] Módulo Rutinas — generación por IA, una por usuario
+- [x] Módulo Progreso — log de entrenamiento y registro de peso
+- [x] Módulo Nutrición — plan semanal por IA, uno por usuario
+- [x] Integración IA flexible — AIService con provider configurable (Ollama, OpenAI, Gemini)
+
+### Frontend
+- [ ] Auth — login y registro
+- [ ] Onboarding — flujo de primer ingreso
+- [ ] Rutinas — vista semanal y detalle por día
+- [ ] Progreso — historial de peso y log de entrenamientos
+- [ ] Nutrición — plan alimentario semanal
+- [ ] PWA — funcionalidad offline para el timer
+
+### Infraestructura
 - [ ] Docker Compose para deploy en CasaOS
-- [ ] Integración IA flexible (AIService con provider configurable)
