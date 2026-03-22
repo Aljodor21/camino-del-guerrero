@@ -29,6 +29,7 @@ LOCAL_APPS = [
     'routines',
     'progress',
     'timer',
+    'nutricion',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
