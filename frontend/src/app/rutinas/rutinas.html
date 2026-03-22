@@ -1,1 +1,120 @@
-<p>rutinas works!</p>
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <!-- Cargando -->
+  @if (loading()) {
+    <div class="flex justify-center items-center h-64">
+      <p-progressspinner styleClass="w-12 h-12" />
+    </div>
+  }
+
+  <!-- Sin rutina -->
+  @if (!loading() && !rutina()) {
+    <div class="text-center space-y-4 py-16">
+      <i class="pi pi-calendar-times text-5xl text-gray-300 dark:text-gray-600"></i>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Sin rutina generada</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Completa el onboarding para que la IA cree tu rutina personalizada.
+      </p>
+      <p-button label="Ir al onboarding" icon="pi pi-arrow-right" iconPos="right"
+                (onClick)="irOnboarding()" />
+    </div>
+  }
+
+  <!-- Con rutina -->
+  @if (!loading() && rutina(); as r) {
+
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ r.nombre }}</h1>
+        <p class="text-xs text-gray-400 mt-0.5">
+          Generada el {{ r.fecha_generacion | date:'dd/MM/yyyy' }}
+        </p>
+      </div>
+      <p-button
+        icon="pi pi-refresh"
+        [loading]="loadingRegenerar()"
+        [rounded]="true"
+        variant="outlined"
+        severity="secondary"
+        pTooltip="Regenerar con IA"
+        tooltipPosition="left"
+        (onClick)="regenerar()"
+      />
+    </div>
+
+    <!-- Selector de días -->
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      @for (dia of r.dias; track dia.id; let i = $index) {
+        <button
+          (click)="seleccionarDia(i)"
+          class="shrink-0 flex flex-col items-center px-3 py-2 rounded-xl border-2 transition-all min-w-14"
+          [class]="diaSeleccionado() === i
+            ? 'border-guerrero-red bg-guerrero-red/10 text-guerrero-red'
+            : 'border-gray-200 dark:border-dark-700 text-gray-500 dark:text-gray-400'"
+        >
+          <span class="text-xs font-semibold">{{ dia.dia_nombre }}</span>
+          @if (esHoy(dia.dia_semana)) {
+            <span class="w-1.5 h-1.5 rounded-full bg-guerrero-red mt-1"></span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Ejercicios -->
+    @if (diaActual(); as dia) {
+      @if (dia.ejercicios.length === 0) {
+        <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+          <i class="pi pi-moon text-4xl"></i>
+          <p class="mt-2 text-sm font-medium">Día de descanso</p>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (ed of dia.ejercicios; track ed.id) {
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-2">
+
+              <div class="flex items-start justify-between gap-2">
+                <h3 class="font-semibold text-gray-900 dark:text-white text-sm leading-snug">
+                  {{ ed.ejercicio.nombre }}
+                </h3>
+                @if (ed.ejercicio.url_youtube) {
+                  <a [href]="ed.ejercicio.url_youtube" target="_blank" rel="noopener"
+                     class="text-guerrero-red hover:opacity-70 shrink-0 transition-opacity">
+                    <i class="pi pi-youtube text-xl"></i>
+                  </a>
+                }
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                @if (ed.series) {
+                  <span class="bg-guerrero-red/10 text-guerrero-red text-xs px-2 py-0.5 rounded-full font-medium">
+                    {{ ed.series }} series
+                  </span>
+                }
+                @if (ed.repeticiones) {
+                  <span class="bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full">
+                    {{ ed.repeticiones }} reps
+                  </span>
+                }
+                @if (ed.duracion_segundos) {
+                  <span class="bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full">
+                    {{ formatDuracion(ed.duracion_segundos) }}
+                  </span>
+                }
+              </div>
+
+              @if (ed.ejercicio.descripcion) {
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {{ ed.ejercicio.descripcion }}
+                </p>
+              }
+
+            </div>
+          }
+        </div>
+      }
+    }
+
+  }
+
+</div>

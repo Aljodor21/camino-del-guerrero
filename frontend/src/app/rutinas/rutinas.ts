@@ -1,11 +1,81 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { Rutina } from '../core/models/rutina.model';
+
+const API = 'http://localhost:8000/api';
 
 @Component({
   selector: 'app-rutinas',
-  imports: [],
   templateUrl: './rutinas.html',
-  styleUrl: './rutinas.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule],
 })
-export class Rutinas {
+export class Rutinas implements OnInit {
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
+  protected loading = signal(true);
+  protected loadingRegenerar = signal(false);
+  protected rutina = signal<Rutina | null>(null);
+  protected diaSeleccionado = signal(0);
+
+  protected diaActual = computed(() => {
+    const r = this.rutina();
+    if (!r?.dias.length) return null;
+    return r.dias[this.diaSeleccionado()] ?? null;
+  });
+
+  ngOnInit(): void {
+    this.cargarRutina();
+  }
+
+  private cargarRutina(): void {
+    this.loading.set(true);
+    this.http.get<Rutina>(`${API}/rutinas/mi-rutina/`).subscribe({
+      next: rutina => {
+        this.rutina.set(rutina);
+        const hoy = new Date().getDay();
+        const hoyDjango = hoy === 0 ? 7 : hoy;
+        const idx = rutina.dias.findIndex(d => d.dia_semana === hoyDjango);
+        this.diaSeleccionado.set(idx >= 0 ? idx : 0);
+        this.loading.set(false);
+        this.loadingRegenerar.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadingRegenerar.set(false);
+      },
+    });
+  }
+
+  protected regenerar(): void {
+    this.loadingRegenerar.set(true);
+    this.http.post(`${API}/nutricion/generar-rutina/`, {}).subscribe({
+      next: () => this.cargarRutina(),
+      error: () => this.loadingRegenerar.set(false),
+    });
+  }
+
+  protected seleccionarDia(index: number): void {
+    this.diaSeleccionado.set(index);
+  }
+
+  protected esHoy(diaSemana: number): boolean {
+    const hoy = new Date().getDay();
+    return (hoy === 0 ? 7 : hoy) === diaSemana;
+  }
+
+  protected formatDuracion(segundos: number): string {
+    return segundos >= 60 ? `${Math.floor(segundos / 60)} min` : `${segundos} seg`;
+  }
+
+  protected irOnboarding(): void {
+    this.router.navigate(['/onboarding']);
+  }
 }

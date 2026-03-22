@@ -27,9 +27,10 @@ export interface EjercicioDia {
 export interface DiaRutina {
   id: number;
   dia_semana: number;
-  nombre_dia: string;
+  dia_nombre: string;
   ejercicios: EjercicioDia[];
 }
+
 
 export interface Rutina {
   id: number;
