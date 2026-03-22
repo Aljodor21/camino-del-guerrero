@@ -1,6 +1,6 @@
 # 🥊 Camino del Guerrero
 
-Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de progreso físico y seguimiento de peso. Diseñada mobile-first con soporte multi-usuario.
+Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de progreso físico, seguimiento de peso y plan nutricional generado por IA. Diseñada mobile-first con soporte multi-usuario.
 
 ---
 
@@ -12,6 +12,7 @@ Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de pr
 | Backend | Django 5 + Django REST Framework |
 | Autenticación | JWT (djangorestframework-simplejwt) |
 | Base de datos | PostgreSQL |
+| IA local | Ollama (CasaOS) |
 | Infraestructura | Docker + CasaOS (Ubuntu home server) |
 
 ---
@@ -22,19 +23,17 @@ Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de pr
 camino-del-guerrero/
 ├── backend/
 │   ├── core/              # Configuración global (settings, urls, wsgi)
-│   ├── users/             # Autenticación, roles y gestión de usuarios
-│   ├── routines/          # Rutinas y ejercicios con video YouTube
-│   ├── timer/             # Lógica de rounds y descanso
-│   ├── progress/          # Log diario y registro de peso
-│   └── manage.py
+│   ├── usuarios/          # Autenticación, roles y gestión de usuarios
+│   ├── rutinas/           # Rutinas, ejercicios e implementos
+│   ├── progreso/          # Log de entrenamiento y registro de peso
+│   └── nutricion/         # Plan nutricional generado por IA
 ├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── auth/
-│   │   │   ├── routines/
-│   │   │   ├── timer/
-│   │   │   └── progress/
-│   └── angular.json
+│   └── src/
+│       └── app/
+│           ├── auth/
+│           ├── rutinas/
+│           ├── progreso/
+│           └── nutricion/
 └── README.md
 ```
 
@@ -44,51 +43,93 @@ camino-del-guerrero/
 
 ### Auth
 - Registro e inicio de sesión con JWT
-- Roles: `admin` y `user`
-- El admin gestiona rutinas y ejercicios
-- El usuario registra su progreso personal
+- Roles definidos en tabla `ROL` (admin / usuario)
+- El admin gestiona implementos, ejercicios y rutinas
+
+### Onboarding (primer ingreso)
+- La app solicita el peso inicial del usuario
+- El usuario elige su objetivo (bajar peso, ganar músculo, etc.)
+- El usuario selecciona los implementos que tiene en casa
+- Si no tiene nada, selecciona "Sin implemento" y la app sugiere ejercicios de peso corporal
+- Se configura la frecuencia de seguimiento de peso (15 días o 1 mes)
 
 ### Rutinas
-- El admin crea rutinas (ej: Boxeo, Cardio, Fuerza)
-- Cada rutina tiene días de la semana asignados
-- Cada día tiene ejercicios con sets, reps y duración
-- Cada ejercicio tiene un video de YouTube embebido
-
-### Timer
-- Rounds configurables (duración y descanso)
-- Alarma entre rounds
-- Contador de rounds completados
+- Una rutina principal "Camino del Guerrero" administrada por el admin
+- El admin ingresa los implementos del catálogo y la IA genera la rutina semanal
+- Cada ejercicio tiene video de YouTube embebido
+- La rutina generada respeta los implementos disponibles del usuario
 
 ### Progreso
 - Log diario de entrenamiento (rounds, duración, notas)
-- Registro de peso quincenal/mensual
-- Historial personal por usuario
+- Registro de peso según frecuencia elegida (15 días o 1 mes)
+- Historial personal individual por usuario
+
+### Nutrición (IA)
+- Plan alimentario semanal generado automáticamente por IA
+- Se basa en el objetivo y peso actual del usuario
+- Incluye desayuno, almuerzo, cena, snacks y calorías aproximadas por día
 
 ---
 
-## Modelo de datos principal
+## Modelo de datos (v3 — normalizado)
+
+### Diagrama de relaciones
 
 ```
-User ──< TrainingLog
-User ──< WeightRecord
-Routine ──< RoutineDay ──< RoutineDayExercise >── Exercise
+ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DIA_NUTRICIONAL
+                 ──< REGISTRO_PESO
+                 ──< USUARIO_IMPLEMENTO >── IMPLEMENTO ──< EJERCICIO_IMPLEMENTO >── EJERCICIO
+                 ──< REGISTRO_ENTRENAMIENTO >── RUTINA ──< DIA_RUTINA ──< EJERCICIO_DIA >── EJERCICIO
 ```
 
-### Entidades clave
+### Tablas
 
-**User:** `id, nombre, email, password, role, fecha_registro`
+#### Autenticación y usuarios
+| Tabla | Descripción |
+|---|---|
+| `ROL` | Catálogo de roles (admin, usuario). Normalizado para agregar roles sin tocar código |
+| `USUARIO` | Datos del usuario. `frecuencia_peso` guarda si eligió 15 o 30 días |
+| `OBJETIVO_USUARIO` | Objetivo, peso inicial y peso meta. Historial por usuario |
 
-**Exercise:** `id, nombre, descripcion, youtube_url, tipo`
+#### Implementos y ejercicios
+| Tabla | Descripción |
+|---|---|
+| `IMPLEMENTO` | Catálogo definido por el admin. `es_sin_implemento=true` para usuarios sin equipamiento |
+| `USUARIO_IMPLEMENTO` | Junction: qué implementos tiene cada usuario |
+| `EJERCICIO` | Ejercicio con video YouTube. `requiere_implemento=false` = disponible para todos |
+| `EJERCICIO_IMPLEMENTO` | Junction: un ejercicio puede requerir varios implementos |
 
-**Routine:** `id, nombre, tipo, descripcion, creado_por`
+#### Rutinas
+| Tabla | Descripción |
+|---|---|
+| `RUTINA` | Rutina principal creada por el admin |
+| `DIA_RUTINA` | Días de la semana asignados a la rutina |
+| `EJERCICIO_DIA` | Ejercicios por día con series, repeticiones y duración |
 
-**RoutineDay:** `id, routine_id, dia_semana, orden`
+#### Progreso
+| Tabla | Descripción |
+|---|---|
+| `REGISTRO_PESO` | Historial de peso por usuario con fecha y nota opcional |
+| `REGISTRO_ENTRENAMIENTO` | Log diario: qué rutina hizo, cuántos rounds, duración y notas |
 
-**RoutineDayExercise:** `routineday_id, exercise_id, sets, reps, duracion_seg`
+#### Nutrición
+| Tabla | Descripción |
+|---|---|
+| `PLAN_NUTRICIONAL` | Plan generado por IA vinculado al objetivo del usuario |
+| `DIA_NUTRICIONAL` | Detalle diario: comidas y calorías aproximadas |
 
-**TrainingLog:** `id, user_id, fecha, routine_id, rounds_completados, notas, duracion_min`
+---
 
-**WeightRecord:** `id, user_id, fecha, peso_kg`
+## Flujo de un usuario nuevo
+
+```
+1. Registro → se asigna ROL de usuario
+2. Onboarding → peso inicial + objetivo → OBJETIVO_USUARIO + REGISTRO_PESO
+3. Selección de implementos → USUARIO_IMPLEMENTO
+4. IA genera rutina semanal según implementos disponibles
+5. IA genera plan nutricional según objetivo y peso
+6. Cada 15 días o 1 mes → app solicita nuevo peso → REGISTRO_PESO
+```
 
 ---
 
@@ -96,17 +137,31 @@ Routine ──< RoutineDay ──< RoutineDayExercise >── Exercise
 
 | Acción | Admin | Usuario |
 |---|---|---|
-| Crear/editar rutinas | ✅ | ❌ |
+| Gestionar catálogo de implementos | ✅ | ❌ |
+| Gestionar catálogo de ejercicios | ✅ | ❌ |
+| Crear / modificar rutinas | ✅ | ❌ |
 | Ver rutinas | ✅ | ✅ |
-| Registrar log diario | ✅ | ✅ |
+| Registrar log de entrenamiento | ✅ | ✅ |
 | Ver su propio progreso | ✅ | ✅ |
-| Ver progreso de otros | ✅ | ❌ |
+| Ver progreso de otros usuarios | ✅ | ❌ |
+| Gestionar usuarios | ✅ | ❌ |
+
+---
+
+## IA local (Ollama en CasaOS)
+
+La IA corre localmente en el servidor CasaOS usando Ollama. Se comunica con el backend Django vía API interna.
+
+Responsabilidades de la IA:
+- Generar rutina semanal según implementos del usuario
+- Generar plan nutricional semanal según objetivo y peso actual
+- A futuro: sugerir ajustes según historial de progreso
 
 ---
 
 ## Variables de entorno (backend)
 
-Crear un archivo `.env` en `/backend`:
+Crear archivo `.env` en `/backend`:
 
 ```env
 SECRET_KEY=tu_secret_key
@@ -116,6 +171,7 @@ DB_USER=camino_user
 DB_PASSWORD=tu_password
 DB_HOST=localhost
 DB_PORT=5432
+OLLAMA_URL=http://localhost:11434
 ```
 
 ---
@@ -143,11 +199,13 @@ ng serve
 
 ## Roadmap
 
-- [x] Diseño de arquitectura y modelo de datos
+- [x] Diseño de arquitectura y stack
+- [x] Modelo de datos normalizado (v3)
 - [ ] Módulo Auth (usuarios y roles)
-- [ ] Módulo Rutinas (CRUD admin + visualización)
-- [ ] Módulo Timer (rounds + descanso)
+- [ ] Módulo Onboarding (peso + objetivo + implementos)
+- [ ] Módulo Rutinas (CRUD admin + generación por IA)
 - [ ] Módulo Progreso (log + peso)
-- [ ] PWA (funcionalidad offline)
+- [ ] Módulo Nutrición (plan semanal por IA)
+- [ ] PWA (funcionalidad offline para el timer)
 - [ ] Docker Compose para deploy en CasaOS
-- [ ] IA para sugerencias personalizadas (fase futura)
+- [ ] Integración Ollama para IA local
