@@ -1,13 +1,11 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
-/**Primeng importaciones */
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
-import Lara from '@primeuix/themes/lara';
+import { provideHttpClient } from '@angular/common/http';
 
 import { routes } from './app.routes';
+import { GuerreroPreset } from './core/theme/guerrero-preset';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,15 +13,16 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     provideAnimationsAsync(),
+    provideHttpClient(),
     providePrimeNG({
-        theme: {
-          preset: Lara,
-          options: {
-            prefix: 'p',
-            darkModeSelector: 'system',
-            cssLayer: false
-          }
-        }
-    })
-  ]
+      theme: {
+        preset: GuerreroPreset,
+        options: {
+          prefix: 'p',
+          darkModeSelector: '.dark',
+          cssLayer: false,
+        },
+      },
+    }),
+  ],
 };

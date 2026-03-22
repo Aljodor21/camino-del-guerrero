@@ -1,3 +1,23 @@
 @import "tailwindcss";
 @import "tailwindcss-primeui";
 @import 'primeicons/primeicons.css';
+
+@theme {
+  --color-guerrero-red:      #C0392B;
+  --color-guerrero-red-dark: #a83224;
+  --color-guerrero-gold:     #D4AF37;
+  --color-guerrero-gold-dark:#b8960f;
+  --color-dark-900:          #121212;
+  --color-dark-800:          #1e1e1e;
+  --color-dark-700:          #2d2d2d;
+  --color-success:           #27AE60;
+  --color-warning:           #F39C12;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C0392B; border-radius: 3px; }
+
+/* Transición suave entre temas */
+* { transition: background-color 0.2s ease, border-color 0.2s ease; }
