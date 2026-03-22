@@ -16,7 +16,12 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./shared/layout/layout').then(m => m.Layout),
     canActivate: [authGuard],
-    children: [],
+    children: [
+      { path: 'rutinas',   loadComponent: () => import('./rutinas/rutinas').then(m => m.Rutinas) },
+      { path: 'progreso',  loadComponent: () => import('./progreso/progreso').then(m => m.Progreso) },
+      { path: 'nutricion', loadComponent: () => import('./nutricion/nutricion').then(m => m.Nutricion) },
+      { path: '', redirectTo: 'rutinas', pathMatch: 'full' },
+    ],
   },
   { path: '**', redirectTo: 'auth/login' },
 ];
