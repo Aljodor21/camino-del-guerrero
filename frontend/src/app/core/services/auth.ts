@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
@@ -13,12 +13,13 @@ const REFRESH_KEY = 'cdg_refresh';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private _usuario = signal<Usuario | null>(this._cargarUsuario());
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
   readonly usuario = this._usuario.asReadonly();
   readonly isLoggedIn = computed(() => this._usuario() !== null);
   readonly isAdmin = computed(() => this._usuario()?.rol?.nombre === 'admin');
 
-  constructor(private http: HttpClient, private router: Router) {}
 
   registro(payload: RegistroPayload): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${API}/registro/`, payload).pipe(
