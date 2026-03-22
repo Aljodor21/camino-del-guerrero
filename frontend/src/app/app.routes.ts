@@ -8,6 +8,11 @@ export const routes: Routes = [
     loadChildren: () => import('./auth/auth.routes').then(m => m.AUTH_ROUTES),
   },
   {
+    path: 'onboarding',
+    loadComponent: () => import('./onboarding/onboarding').then(m => m.Onboarding),
+    canActivate: [authGuard],
+  },
+  {
     path: '',
     loadComponent: () => import('./shared/layout/layout').then(m => m.Layout),
     canActivate: [authGuard],

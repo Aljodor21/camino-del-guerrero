@@ -1,10 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink,Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+
 
 import { AuthService } from '../../core/services/auth';
 import { ThemeService } from '../../core/services/theme';
@@ -19,6 +20,7 @@ export class Login {
   private auth = inject(AuthService);
   protected theme = inject(ThemeService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   protected loading = signal(false);
   protected error = signal('');
@@ -34,7 +36,7 @@ export class Login {
     this.error.set('');
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => {},
+      next: () => this.router.navigate(['/rutinas']),
       error: () => {
         this.error.set('Correo o contraseña incorrectos.');
         this.loading.set(false);

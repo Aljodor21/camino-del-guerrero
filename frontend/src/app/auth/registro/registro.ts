@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink,Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
@@ -19,6 +19,7 @@ export class Registro {
   private auth = inject(AuthService);
   protected theme = inject(ThemeService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   protected loading = signal(false);
   protected error = signal('');
@@ -36,7 +37,7 @@ export class Registro {
     this.error.set('');
 
     this.auth.registro(this.form.getRawValue()).subscribe({
-      next: () => {},
+      next: () => this.router.navigate(['/onboarding']),
       error: (err) => {
         const msg = err?.error?.email?.[0] ?? err?.error?.username?.[0] ?? 'Error al crear la cuenta.';
         this.error.set(msg);
