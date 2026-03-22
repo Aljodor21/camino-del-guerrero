@@ -1,0 +1,165 @@
+<style>
+#erd3 { padding: 1rem 0; }
+#erd3 svg { width: 100%; }
+</style>
+<div id="erd3"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#3C3489' : '#EEEDFE',
+    primaryTextColor: dark ? '#CECBF6' : '#3C3489',
+    primaryBorderColor: dark ? '#7F77DD' : '#534AB7',
+  },
+});
+const { svg } = await mermaid.render('erd3-svg', `erDiagram
+  ROL {
+    int id PK
+    string nombre
+    string descripcion
+  }
+  USUARIO {
+    int id PK
+    int rol_id FK
+    string nombre
+    string email
+    string contrasena
+    int frecuencia_peso
+    date fecha_registro
+  }
+  OBJETIVO_USUARIO {
+    int id PK
+    int usuario_id FK
+    string objetivo
+    float peso_inicial
+    float peso_objetivo
+    date fecha_inicio
+  }
+  REGISTRO_PESO {
+    int id PK
+    int usuario_id FK
+    float peso_kg
+    date fecha
+    string nota
+  }
+  IMPLEMENTO {
+    int id PK
+    string nombre
+    string descripcion
+    string categoria
+    bool es_sin_implemento
+  }
+  USUARIO_IMPLEMENTO {
+    int usuario_id FK
+    int implemento_id FK
+  }
+  EJERCICIO {
+    int id PK
+    string nombre
+    string descripcion
+    string url_youtube
+    bool requiere_implemento
+  }
+  EJERCICIO_IMPLEMENTO {
+    int ejercicio_id FK
+    int implemento_id FK
+  }
+  RUTINA {
+    int id PK
+    string nombre
+    string descripcion
+    int creado_por FK
+    date fecha_actualizacion
+  }
+  DIA_RUTINA {
+    int id PK
+    int rutina_id FK
+    string dia_semana
+    int orden
+  }
+  EJERCICIO_DIA {
+    int id PK
+    int dia_rutina_id FK
+    int ejercicio_id FK
+    int series
+    int repeticiones
+    int duracion_seg
+  }
+  REGISTRO_ENTRENAMIENTO {
+    int id PK
+    int usuario_id FK
+    int rutina_id FK
+    date fecha
+    int rounds_completados
+    int duracion_min
+    string notas
+  }
+  PLAN_NUTRICIONAL {
+    int id PK
+    int usuario_id FK
+    int objetivo_id FK
+    string proposito
+    date fecha_inicio
+    date fecha_fin
+  }
+  DIA_NUTRICIONAL {
+    int id PK
+    int plan_id FK
+    string dia_semana
+    string desayuno
+    string almuerzo
+    string cena
+    string snacks
+    int calorias_aprox
+  }
+
+  ROL ||--o{ USUARIO : "asigna"
+  USUARIO ||--o{ OBJETIVO_USUARIO : "define"
+  USUARIO ||--o{ REGISTRO_PESO : "registra"
+  USUARIO ||--o{ USUARIO_IMPLEMENTO : "selecciona"
+  USUARIO ||--o{ REGISTRO_ENTRENAMIENTO : "genera"
+  USUARIO ||--o{ PLAN_NUTRICIONAL : "recibe"
+  OBJETIVO_USUARIO ||--o{ PLAN_NUTRICIONAL : "orienta"
+  IMPLEMENTO ||--o{ USUARIO_IMPLEMENTO : "elegido por"
+  IMPLEMENTO ||--o{ EJERCICIO_IMPLEMENTO : "usado en"
+  EJERCICIO ||--o{ EJERCICIO_IMPLEMENTO : "requiere"
+  EJERCICIO ||--o{ EJERCICIO_DIA : "aparece en"
+  RUTINA ||--o{ DIA_RUTINA : "tiene"
+  RUTINA ||--o{ REGISTRO_ENTRENAMIENTO : "referenciada en"
+  DIA_RUTINA ||--o{ EJERCICIO_DIA : "contiene"
+  PLAN_NUTRICIONAL ||--o{ DIA_NUTRICIONAL : "compone"
+`);
+document.getElementById('erd3').innerHTML = svg;
+document.querySelectorAll('#erd3 svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+document.querySelectorAll('#erd3 svg .row-rect-odd path, #erd3 svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
