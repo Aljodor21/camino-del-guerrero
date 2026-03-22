@@ -11,9 +11,29 @@ Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de pr
 | Frontend | Angular 21 + PrimeNG + Tailwind CSS |
 | Backend | Django 5 + Django REST Framework |
 | Autenticación | JWT (djangorestframework-simplejwt) |
-| Base de datos | PostgreSQL |
-| IA local | Ollama (CasaOS) |
+| Base de datos | PostgreSQL (Docker) |
+| IA | Conectable a cualquier modelo (Ollama, OpenAI, Gemini, etc.) |
 | Infraestructura | Docker + CasaOS (Ubuntu home server) |
+
+---
+
+## Integración con IA
+
+La app se comunica con un modelo de IA a través de una interfaz genérica configurable por variables de entorno. El proveedor puede cambiarse sin modificar el código de negocio.
+
+```env
+AI_PROVIDER=ollama          # ollama | openai | gemini | cualquier otro
+AI_BASE_URL=http://localhost:11434
+AI_MODEL=llama3
+AI_API_KEY=opcional
+```
+
+El backend de Django tiene un servicio `AIService` que abstrae la conexión. Cambiar de modelo es solo cambiar las variables de entorno.
+
+Responsabilidades de la IA:
+- Generar rutina semanal según implementos disponibles del usuario
+- Generar plan nutricional semanal según objetivo y peso actual
+- A futuro: sugerir ajustes según historial de progreso
 
 ---
 
@@ -34,6 +54,7 @@ camino-del-guerrero/
 │           ├── rutinas/
 │           ├── progreso/
 │           └── nutricion/
+├── CLAUDE.md              # Contexto para Claude Code
 └── README.md
 ```
 
@@ -148,17 +169,6 @@ ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DI
 
 ---
 
-## IA local (Ollama en CasaOS)
-
-La IA corre localmente en el servidor CasaOS usando Ollama. Se comunica con el backend Django vía API interna.
-
-Responsabilidades de la IA:
-- Generar rutina semanal según implementos del usuario
-- Generar plan nutricional semanal según objetivo y peso actual
-- A futuro: sugerir ajustes según historial de progreso
-
----
-
 ## Variables de entorno (backend)
 
 Crear archivo `.env` en `/backend`:
@@ -171,7 +181,11 @@ DB_USER=camino_user
 DB_PASSWORD=tu_password
 DB_HOST=localhost
 DB_PORT=5432
-OLLAMA_URL=http://localhost:11434
+
+AI_PROVIDER=ollama
+AI_BASE_URL=http://localhost:11434
+AI_MODEL=llama3
+AI_API_KEY=
 ```
 
 ---
@@ -195,6 +209,20 @@ npm install
 ng serve
 ```
 
+### PostgreSQL (Docker — servidor CasaOS)
+```bash
+docker run -d \
+  --name postgres \
+  -e POSTGRES_PASSWORD=tu_password \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  postgres:18
+
+docker exec -it postgres psql -U postgres -c "CREATE DATABASE camino_db;"
+docker exec -it postgres psql -U postgres -c "CREATE USER camino_user WITH PASSWORD 'tu_password';"
+docker exec -it postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE camino_db TO camino_user;"
+```
+
 ---
 
 ## Roadmap
@@ -208,4 +236,4 @@ ng serve
 - [ ] Módulo Nutrición (plan semanal por IA)
 - [ ] PWA (funcionalidad offline para el timer)
 - [ ] Docker Compose para deploy en CasaOS
-- [ ] Integración Ollama para IA local
+- [ ] Integración IA flexible (AIService con provider configurable)
