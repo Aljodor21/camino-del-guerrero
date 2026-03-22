@@ -65,20 +65,22 @@ camino-del-guerrero/
 ### Auth
 - Registro e inicio de sesión con JWT
 - Roles definidos en tabla `ROL` (admin / usuario)
-- El admin gestiona implementos, ejercicios y rutinas
+- El admin solo gestiona el catálogo de implementos y agrega videos a los ejercicios
 
 ### Onboarding (primer ingreso)
 - La app solicita el peso inicial del usuario
 - El usuario elige su objetivo (bajar peso, ganar músculo, etc.)
 - El usuario selecciona los implementos que tiene en casa
-- Si no tiene nada, selecciona "Sin implemento" y la app sugiere ejercicios de peso corporal
+- Si no tiene nada, selecciona "Sin implemento" y la IA sugiere ejercicios de peso corporal
 - Se configura la frecuencia de seguimiento de peso (15 días o 1 mes)
+- Al finalizar el onboarding, la IA genera automáticamente la rutina y el plan nutricional del usuario
 
 ### Rutinas
-- Una rutina principal "Camino del Guerrero" administrada por el admin
-- El admin ingresa los implementos del catálogo y la IA genera la rutina semanal
-- Cada ejercicio tiene video de YouTube embebido
-- La rutina generada respeta los implementos disponibles del usuario
+- Cada usuario tiene su propia rutina semanal generada por IA
+- La IA crea la rutina y sus ejercicios según los implementos disponibles del usuario
+- La rutina se guarda en la BD y el usuario la consulta diariamente
+- El admin puede agregar o editar el video de YouTube de cada ejercicio sugerido por la IA
+- El usuario puede solicitar que la IA regenere su rutina cuando lo desee
 
 ### Progreso
 - Log diario de entrenamiento (rounds, duración, notas)
@@ -86,9 +88,11 @@ camino-del-guerrero/
 - Historial personal individual por usuario
 
 ### Nutrición (IA)
-- Plan alimentario semanal generado automáticamente por IA
+- Plan alimentario semanal generado por IA, individual por usuario
 - Se basa en el objetivo y peso actual del usuario
 - Incluye desayuno, almuerzo, cena, snacks y calorías aproximadas por día
+- Se guarda en la BD y el usuario lo consulta diariamente
+- El usuario puede solicitar que la IA regenere su plan cuando lo desee
 
 ---
 
@@ -117,14 +121,14 @@ ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DI
 |---|---|
 | `IMPLEMENTO` | Catálogo definido por el admin. `es_sin_implemento=true` para usuarios sin equipamiento |
 | `USUARIO_IMPLEMENTO` | Junction: qué implementos tiene cada usuario |
-| `EJERCICIO` | Ejercicio con video YouTube. `requiere_implemento=false` = disponible para todos |
+| `EJERCICIO` | Ejercicio sugerido por la IA. El admin agrega el `url_youtube`. `requiere_implemento=false` = peso corporal |
 | `EJERCICIO_IMPLEMENTO` | Junction: un ejercicio puede requerir varios implementos |
 
 #### Rutinas
 | Tabla | Descripción |
 |---|---|
-| `RUTINA` | Rutina principal creada por el admin |
-| `DIA_RUTINA` | Días de la semana asignados a la rutina |
+| `RUTINA` | Rutina semanal generada por IA, una por usuario. Se regenera cuando el usuario lo solicita |
+| `DIA_RUTINA` | Días de la semana asignados a la rutina del usuario |
 | `EJERCICIO_DIA` | Ejercicios por día con series, repeticiones y duración |
 
 #### Progreso
@@ -159,13 +163,14 @@ ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DI
 | Acción | Admin | Usuario |
 |---|---|---|
 | Gestionar catálogo de implementos | ✅ | ❌ |
-| Gestionar catálogo de ejercicios | ✅ | ❌ |
-| Crear / modificar rutinas | ✅ | ❌ |
-| Ver rutinas | ✅ | ✅ |
+| Agregar / editar video YouTube de ejercicios | ✅ | ❌ |
+| Ver todos los usuarios y su progreso | ✅ | ❌ |
+| Gestionar usuarios | ✅ | ❌ |
+| Generar / regenerar su rutina (IA) | ❌ | ✅ |
+| Ver su rutina diaria | ✅ | ✅ |
 | Registrar log de entrenamiento | ✅ | ✅ |
 | Ver su propio progreso | ✅ | ✅ |
-| Ver progreso de otros usuarios | ✅ | ❌ |
-| Gestionar usuarios | ✅ | ❌ |
+| Generar / regenerar su plan nutricional (IA) | ❌ | ✅ |
 
 ---
 
