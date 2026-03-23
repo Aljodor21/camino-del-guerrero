@@ -1,0 +1,386 @@
+<div class="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-white transition-colors">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md border-b border-gray-100 dark:border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+
+      <!-- Logo -->
+      <a [routerLink]="['/']" class="shrink-0">
+        <img
+          [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+          alt="Camino del Guerrero"
+          class="h-9 w-auto"
+        />
+      </a>
+
+      <!-- Acciones -->
+      <div class="flex items-center gap-2">
+        <!-- Toggle tema -->
+        <button
+          (click)="theme.toggle()"
+          class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+          [title]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'"
+        >
+          <i [class]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+
+        @if (auth.isLoggedIn()) {
+          <!-- Ya tiene sesión -->
+          <a [routerLink]="['/rutinas']"
+             class="text-sm font-semibold bg-guerrero-red hover:bg-guerrero-red-dark text-white px-4 py-2 rounded-lg transition-colors">
+            Ir al dashboard
+          </a>
+          <button
+            (click)="auth.logout()"
+            class="text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 px-3 py-2 transition-colors"
+            title="Cerrar sesión"
+          >
+            <i class="pi pi-sign-out"></i>
+          </button>
+        } @else {
+          <!-- Sin sesión -->
+          <a [routerLink]="['/auth/login']"
+             class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-3 py-2">
+            Iniciar sesión
+          </a>
+          <a [routerLink]="['/auth/registro']"
+             class="text-sm font-semibold bg-guerrero-red hover:bg-guerrero-red-dark text-white px-4 py-2 rounded-lg transition-colors">
+            Comenzar gratis
+          </a>
+        }
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-175 h-125 bg-guerrero-red/8 dark:bg-guerrero-red/10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 right-0 w-87.5 h-87.5 bg-guerrero-gold/5 rounded-full blur-3xl"></div>
+      <div class="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+           style="background-image: linear-gradient(#C0392B 1px, transparent 1px), linear-gradient(90deg, #C0392B 1px, transparent 1px); background-size: 60px 60px;"></div>
+    </div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center space-y-8 py-20">
+
+      <div class="inline-flex items-center gap-2 bg-guerrero-red/10 border border-guerrero-red/20 text-guerrero-red text-xs font-semibold px-4 py-1.5 rounded-full">
+        <span class="w-1.5 h-1.5 bg-guerrero-red rounded-full animate-pulse"></span>
+        Entrenamiento + Nutrición con IA
+      </div>
+
+      <h1 class="text-5xl sm:text-6xl md:text-7xl font-black leading-[1.05] tracking-tight">
+        Entrena como<br>
+        <span class="text-guerrero-red">un guerrero.</span><br>
+        <span class="text-gray-500 dark:text-gray-300">Vive como uno.</span>
+      </h1>
+
+      <p class="text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+        Tu rutina de boxeo y plan nutricional, generados por inteligencia artificial
+        y adaptados a tu nivel, tus objetivos y la comida de tu región.
+      </p>
+
+      @if (auth.isLoggedIn()) {
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a [routerLink]="['/rutinas']"
+             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-base px-8 py-4 rounded-xl transition-all shadow-lg shadow-guerrero-red/20 hover:shadow-guerrero-red/40">
+            <i class="pi pi-bolt"></i>
+            Ir a mi dashboard
+          </a>
+        </div>
+        <p class="text-sm text-gray-400 dark:text-gray-500">
+          Hola, <span class="font-semibold text-gray-600 dark:text-gray-300">{{ auth.usuario()?.nombre }}</span>. Tu plan ya está listo.
+        </p>
+      } @else {
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a [routerLink]="['/auth/registro']"
+             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-base px-8 py-4 rounded-xl transition-all shadow-lg shadow-guerrero-red/20 hover:shadow-guerrero-red/40">
+            <i class="pi pi-bolt"></i>
+            Crear mi plan gratis
+          </a>
+          <a [routerLink]="['/auth/login']"
+             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-base px-8 py-4 rounded-xl transition-all">
+            Ya tengo cuenta
+            <i class="pi pi-arrow-right text-sm"></i>
+          </a>
+        </div>
+      }
+
+      <div class="pt-4 flex flex-wrap items-center justify-center gap-8 border-t border-gray-200 dark:border-white/5">
+        <div class="text-center">
+          <p class="text-2xl font-black">100%</p>
+          <p class="text-xs text-gray-400 mt-0.5">Personalizado</p>
+        </div>
+        <div class="w-px h-8 bg-gray-200 dark:bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="text-2xl font-black">7</p>
+          <p class="text-xs text-gray-400 mt-0.5">Días de plan</p>
+        </div>
+        <div class="w-px h-8 bg-gray-200 dark:bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="text-2xl font-black">&lt; 2 min</p>
+          <p class="text-xs text-gray-400 mt-0.5">Para empezar</p>
+        </div>
+        <div class="w-px h-8 bg-gray-200 dark:bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="text-2xl font-black">Gratis</p>
+          <p class="text-xs text-gray-400 mt-0.5">Sin tarjeta</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-400 dark:text-gray-600 animate-bounce">
+      <i class="pi pi-chevron-down text-xl"></i>
+    </div>
+  </section>
+
+  <!-- QUÉ INCLUYE -->
+  <section class="py-24 bg-white dark:bg-dark-800">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="text-center space-y-3 mb-16">
+        <p class="text-guerrero-red text-sm font-semibold uppercase tracking-widest">Todo en un solo lugar</p>
+        <h2 class="text-3xl sm:text-4xl font-black">Cuatro herramientas,<br>un solo objetivo</h2>
+        <p class="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+          No es otra app de fitness genérica. Cada plan se construye desde cero para ti,
+          con la información que nos das.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div class="group bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-white/5 hover:border-guerrero-red/40 rounded-2xl p-6 space-y-4 transition-all">
+          <div class="w-12 h-12 bg-guerrero-red/10 rounded-xl flex items-center justify-center group-hover:bg-guerrero-red/20 transition-colors">
+            <i class="pi pi-bolt text-guerrero-red text-xl"></i>
+          </div>
+          <h3 class="font-bold text-lg">Rutina de boxeo</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            Generada por IA según tu nivel, días disponibles y duración de sesión. Ejercicios reales de boxeo, no genéricos.
+          </p>
+          <ul class="space-y-1.5">
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-red shrink-0"></i> Jab, cross, combinaciones
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-red shrink-0"></i> Calentamiento y vuelta a la calma
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-red shrink-0"></i> Videos de referencia
+            </li>
+          </ul>
+        </div>
+
+        <div class="group bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-white/5 hover:border-guerrero-gold/40 rounded-2xl p-6 space-y-4 transition-all">
+          <div class="w-12 h-12 bg-guerrero-gold/10 rounded-xl flex items-center justify-center group-hover:bg-guerrero-gold/20 transition-colors">
+            <i class="pi pi-heart text-guerrero-gold text-xl"></i>
+          </div>
+          <h3 class="font-bold text-lg">Nutrición real</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            Un plan semanal con comidas de tu región y cultura. Nada de ingredientes raros ni recetas de restaurante.
+          </p>
+          <ul class="space-y-1.5">
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-gold shrink-0"></i> Adaptado a tu país y región
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-gold shrink-0"></i> Desayuno, almuerzo, cena y snacks
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-guerrero-gold shrink-0"></i> Calorías según tu objetivo
+            </li>
+          </ul>
+        </div>
+
+        <div class="group bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-white/5 hover:border-blue-400/40 rounded-2xl p-6 space-y-4 transition-all">
+          <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+            <i class="pi pi-chart-line text-blue-500 dark:text-blue-400 text-xl"></i>
+          </div>
+          <h3 class="font-bold text-lg">Seguimiento</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            Registra cada sesión con timer en tiempo real y lleva el control de tu peso semana a semana.
+          </p>
+          <ul class="space-y-1.5">
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-blue-500 dark:text-blue-400 shrink-0"></i> Timer por serie y descanso
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-blue-500 dark:text-blue-400 shrink-0"></i> Historial de sesiones
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-blue-500 dark:text-blue-400 shrink-0"></i> Evolución del peso
+            </li>
+          </ul>
+        </div>
+
+        <div class="group bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-white/5 hover:border-green-400/40 rounded-2xl p-6 space-y-4 transition-all">
+          <div class="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+            <i class="pi pi-shopping-cart text-green-600 dark:text-green-400 text-xl"></i>
+          </div>
+          <h3 class="font-bold text-lg">Lista de mercado</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            La IA extrae todos los ingredientes del plan semanal y los organiza por categorías para llevar al mercado.
+          </p>
+          <ul class="space-y-1.5">
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-green-600 dark:text-green-400 shrink-0"></i> Generada desde tu plan
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-green-600 dark:text-green-400 shrink-0"></i> Organizada por categorías
+            </li>
+            <li class="flex items-center gap-2 text-xs text-gray-400">
+              <i class="pi pi-check text-green-600 dark:text-green-400 shrink-0"></i> Marca lo que ya compraste
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section class="py-24 bg-gray-50 dark:bg-dark-900">
+    <div class="max-w-4xl mx-auto px-6">
+
+      <div class="text-center space-y-3 mb-16">
+        <p class="text-guerrero-red text-sm font-semibold uppercase tracking-widest">Simple y rápido</p>
+        <h2 class="text-3xl sm:text-4xl font-black">De cero a tu plan<br>en tres pasos</h2>
+      </div>
+
+      <div class="space-y-6">
+
+        <div class="flex gap-6 items-start">
+          <div class="shrink-0 w-12 h-12 bg-guerrero-red rounded-full flex items-center justify-center font-black text-lg text-white shadow-lg shadow-guerrero-red/30">1</div>
+          <div class="bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/5 rounded-2xl p-6 flex-1">
+            <h3 class="font-bold text-lg mb-1">Cuéntanos sobre ti</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+              Tu peso, estatura, nivel de actividad, cuántos días quieres entrenar y cuánto tiempo tienes por sesión. También tu país y región para que el plan nutricional tenga sentido con lo que comes a diario.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-6 items-start">
+          <div class="shrink-0 w-12 h-12 bg-guerrero-red rounded-full flex items-center justify-center font-black text-lg text-white shadow-lg shadow-guerrero-red/30">2</div>
+          <div class="bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/5 rounded-2xl p-6 flex-1">
+            <h3 class="font-bold text-lg mb-1">La IA construye tu plan</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+              En segundos tendrás una rutina de boxeo completa y un plan de alimentación para 7 días. Ambos diseñados específicamente para tus objetivos, no sacados de una plantilla.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-6 items-start">
+          <div class="shrink-0 w-12 h-12 bg-guerrero-red rounded-full flex items-center justify-center font-black text-lg text-white shadow-lg shadow-guerrero-red/30">3</div>
+          <div class="bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/5 rounded-2xl p-6 flex-1">
+            <h3 class="font-bold text-lg mb-1">Entrena, come bien y mejora</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+              Sigue tu rutina con el temporizador integrado, lleva tu lista de mercado al supermercado y registra tu progreso semana a semana. Si sientes que el plan ya no encaja, lo regeneras en un clic.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SIEMPRE MEJORANDO -->
+  <section class="py-24 bg-white dark:bg-dark-800">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="bg-linear-to-br from-guerrero-red/8 to-guerrero-gold/5 dark:from-guerrero-red/10 dark:to-guerrero-gold/5 border border-guerrero-red/15 rounded-3xl p-10 sm:p-14">
+        <div class="max-w-2xl">
+          <div class="inline-flex items-center gap-2 bg-guerrero-gold/10 border border-guerrero-gold/20 text-guerrero-gold text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
+            <i class="pi pi-sync text-xs"></i>
+            Siempre mejorando
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-black mb-4">La app crece contigo</h2>
+          <p class="text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
+            Camino del Guerrero está en desarrollo activo. Cada semana se agregan nuevas funcionalidades,
+            se refinan los algoritmos y se mejora la experiencia. Los usuarios actuales son parte del proceso desde el principio.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="flex items-start gap-3">
+              <i class="pi pi-check-circle text-guerrero-gold mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-600 dark:text-gray-300">Rutinas y nutrición personalizadas por IA</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="pi pi-check-circle text-guerrero-gold mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-600 dark:text-gray-300">Timers y seguimiento de sesiones</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="pi pi-check-circle text-guerrero-gold mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-600 dark:text-gray-300">Lista de mercado inteligente</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="pi pi-clock text-gray-300 dark:text-gray-600 mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-400 dark:text-gray-500">Estadísticas avanzadas de rendimiento</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="pi pi-clock text-gray-300 dark:text-gray-600 mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-400 dark:text-gray-500">Comparación de períodos y gráficas</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="pi pi-clock text-gray-300 dark:text-gray-600 mt-0.5 shrink-0"></i>
+              <p class="text-sm text-gray-400 dark:text-gray-500">Comunidad y retos entre usuarios</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="py-28 bg-gray-50 dark:bg-dark-900 relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-100 bg-guerrero-red/6 dark:bg-guerrero-red/8 rounded-full blur-3xl"></div>
+    </div>
+    <div class="relative z-10 max-w-2xl mx-auto px-6 text-center space-y-8">
+      <h2 class="text-4xl sm:text-5xl font-black leading-tight">
+        El primer paso<br>es el más difícil.<br>
+        <span class="text-guerrero-red">Este no lo es.</span>
+      </h2>
+      <p class="text-gray-500 dark:text-gray-400 text-lg">
+        Regístrate en dos minutos. Sin tarjeta. Sin compromisos.
+      </p>
+      @if (auth.isLoggedIn()) {
+        <a [routerLink]="['/rutinas']"
+           class="inline-flex items-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-lg px-10 py-5 rounded-xl transition-all shadow-xl shadow-guerrero-red/25 hover:shadow-guerrero-red/45">
+          <i class="pi pi-bolt"></i>
+          Ir a mi dashboard
+        </a>
+      } @else {
+        <a [routerLink]="['/auth/registro']"
+           class="inline-flex items-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-lg px-10 py-5 rounded-xl transition-all shadow-xl shadow-guerrero-red/25 hover:shadow-guerrero-red/45">
+          <i class="pi pi-bolt"></i>
+          Empezar ahora
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-white dark:bg-dark-900 border-t border-gray-100 dark:border-white/5 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <a [routerLink]="['/']" class="shrink-0">
+        <img
+          [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+          alt="Camino del Guerrero"
+          class="h-7 w-auto opacity-60 hover:opacity-100 transition-opacity"
+        />
+      </a>
+      <p class="text-xs text-gray-400 dark:text-gray-600 text-center">
+        Hecho con dedicación para quienes se toman en serio su entrenamiento.
+      </p>
+      <div class="flex items-center gap-4">
+        @if (auth.isLoggedIn()) {
+          <a [routerLink]="['/rutinas']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Dashboard</a>
+          <button (click)="auth.logout()" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Cerrar sesión</button>
+        } @else {
+          <a [routerLink]="['/auth/login']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Iniciar sesión</a>
+          <a [routerLink]="['/auth/registro']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Registrarse</a>
+        }
+      </div>
+    </div>
+  </footer>
+
+</div>

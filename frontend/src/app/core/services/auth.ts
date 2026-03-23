@@ -39,7 +39,7 @@ export class AuthService {
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem('cdg_usuario');
     this._usuario.set(null);
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/']);
   }
 
   refreshToken(): Observable<{ access: string }> {

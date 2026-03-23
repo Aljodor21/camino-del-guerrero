@@ -3,11 +3,13 @@
   <!-- Navbar superior -->
   <header class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4
                  bg-white dark:bg-dark-800 border-b border-gray-100 dark:border-dark-700 shadow-sm">
-    <img
-      [src]="themeService.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
-      alt="Camino del Guerrero"
-      class="h-8 w-auto"
-    />
+    <a [routerLink]="['/']">
+      <img
+        [src]="themeService.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+        alt="Camino del Guerrero"
+        class="h-8 w-auto"
+      />
+    </a>
     <div class="flex items-center gap-1">
       <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-1">
         {{ authService.usuario()?.nombre }}
