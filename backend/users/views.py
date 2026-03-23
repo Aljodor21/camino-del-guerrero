@@ -5,9 +5,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
-from .models import ObjetivoUsuario, Sexo
+from .models import ObjetivoUsuario, Sexo, Usuario
 from .serializers import (CustomTokenSerializer, ObjetivoUsuarioSerializer,
                            RegistroSerializer, SexoSerializer, UsuarioSerializer)
+
+
+class EsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and
+                    request.user.rol and request.user.rol.nombre == 'admin')
 
 
 class RegistroView(generics.CreateAPIView):
@@ -83,3 +89,18 @@ class SexoListView(generics.ListAPIView):
     queryset           = Sexo.objects.all()
     serializer_class   = SexoSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class AdminUsuariosView(generics.ListAPIView):
+    serializer_class   = UsuarioSerializer
+    permission_classes = [EsAdmin]
+
+    def get_queryset(self):
+        return Usuario.objects.exclude(rol__nombre='admin').select_related('rol', 'sexo').order_by('-date_joined')
+
+
+class AdminUsuarioDeleteView(generics.DestroyAPIView):
+    permission_classes = [EsAdmin]
+
+    def get_queryset(self):
+        return Usuario.objects.exclude(rol__nombre='admin')

@@ -10,4 +10,8 @@ export const ADMIN_ROUTES: Routes = [
     path: 'ejercicios',
     loadComponent: () => import('./ejercicios/ejercicios').then(m => m.Ejercicios),
   },
+  {
+    path: 'usuarios',
+    loadComponent: () => import('./usuarios/usuarios').then(m => m.Usuarios),
+  },
 ];

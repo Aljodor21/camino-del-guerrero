@@ -27,6 +27,7 @@ export class Layout implements OnInit {
       return [
         { path: '/admin/implementos', icon: 'pi pi-box',   label: 'Implementos' },
         { path: '/admin/ejercicios',  icon: 'pi pi-video', label: 'Ejercicios'  },
+        { path: '/admin/usuarios',    icon: 'pi pi-users', label: 'Usuarios'    },
       ];
     }
     return [

@@ -1,0 +1,32 @@
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <h1 class="text-xl font-bold text-gray-900 dark:text-white">Usuarios registrados</h1>
+
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else if (usuarios().length === 0) {
+    <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+      <i class="pi pi-users text-4xl"></i>
+      <p class="mt-2 text-sm">No hay usuarios registrados.</p>
+    </div>
+  } @else {
+    <div class="space-y-2">
+      @for (u of usuarios(); track u.id) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ u.nombre }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ u.email }}</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              Registrado {{ u.date_joined | date:'dd/MM/yyyy' }}
+            </p>
+          </div>
+          <p-button icon="pi pi-trash" variant="text" [rounded]="true"
+                    severity="danger" (onClick)="eliminar(u)" />
+        </div>
+      }
+    </div>
+  }
+
+</div>
