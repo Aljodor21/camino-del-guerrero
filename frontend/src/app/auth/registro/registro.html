@@ -1,12 +1,22 @@
 <div class="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50 dark:bg-dark-900">
   <div class="w-full max-w-sm">
 
+    <div class="flex justify-start mb-4">
+      <a [routerLink]="['/']"
+         class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-guerrero-red transition-colors">
+        <i class="pi pi-arrow-left text-xs"></i>
+        Volver al inicio
+      </a>
+    </div>
+
     <div class="flex justify-center mb-8">
-      <img
-        [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
-        alt="Camino del Guerrero"
-        class="h-24 w-auto"
-      />
+      <a [routerLink]="['/']">
+        <img
+          [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+          alt="Camino del Guerrero"
+          class="h-24 w-auto"
+        />
+      </a>
     </div>
 
     <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-8 space-y-5">
