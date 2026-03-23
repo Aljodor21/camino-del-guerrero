@@ -37,31 +37,29 @@
         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Cuéntanos sobre ti</h2>
 
         <form [formGroup]="form" class="space-y-5">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                >Peso actual (kg)</label
-              >
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso actual (kg)</label>
               <p-inputnumber
                 formControlName="peso_inicial"
                 [min]="20"
                 [max]="300"
                 [minFractionDigits]="1"
                 [maxFractionDigits]="1"
+                [showButtons]="false"
                 placeholder="70.0"
                 styleClass="w-full"
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                >Peso meta (kg)</label
-              >
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso meta (kg)</label>
               <p-inputnumber
                 formControlName="peso_objetivo"
                 [min]="20"
                 [max]="300"
                 [minFractionDigits]="1"
                 [maxFractionDigits]="1"
+                [showButtons]="false"
                 placeholder="Opcional"
                 styleClass="w-full"
               />
@@ -76,6 +74,7 @@
               formControlName="estatura"
               [min]="100"
               [max]="250"
+              [showButtons]="false"
               placeholder="175"
               styleClass="w-full"
             />
