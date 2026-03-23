@@ -1,6 +1,6 @@
-# 🥊 Camino del Guerrero
+# Camino del Guerrero
 
-Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de progreso físico, seguimiento de peso y plan nutricional generado por IA. Diseñada mobile-first con soporte multi-usuario.
+Aplicación web mobile-first para boxeadores y atletas de combate. Genera rutinas de entrenamiento y planes nutricionales personalizados mediante IA, adaptados al nivel, objetivos y cultura culinaria del usuario. Incluye seguimiento de progreso, timers de sesión y lista de mercado semanal.
 
 ---
 
@@ -8,32 +8,35 @@ Aplicación web para gestionar rutinas de entrenamiento de boxeo, registro de pr
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Angular 21 + PrimeNG + Tailwind CSS |
-| Backend | Django 5 + Django REST Framework |
+| Frontend | Angular 21 · PrimeNG · Tailwind CSS v4 |
+| Backend | Django 5 · Django REST Framework |
 | Autenticación | JWT (djangorestframework-simplejwt) |
-| Base de datos | PostgreSQL (Docker) |
-| IA | Conectable a cualquier modelo (Ollama, OpenAI, Gemini, etc.) |
+| Base de datos | PostgreSQL |
+| IA | Groq API — `llama-3.3-70b-versatile` (configurable) |
 | Infraestructura | Docker + CasaOS (Ubuntu home server) |
 
 ---
 
 ## Integración con IA
 
-La app se comunica con un modelo de IA a través de una interfaz genérica configurable por variables de entorno. El proveedor puede cambiarse sin modificar el código de negocio.
+El backend expone un `AIService` que abstrae el proveedor. Cambiar de modelo es solo cambiar variables de entorno.
 
 ```env
-AI_PROVIDER=ollama          # ollama | openai | gemini | cualquier otro
-AI_BASE_URL=http://localhost:11434
-AI_MODEL=llama3
-AI_API_KEY=opcional
+AI_PROVIDER=openai           # openai | ollama
+AI_BASE_URL=https://api.groq.com/openai
+AI_MODEL=llama-3.3-70b-versatile
+AI_API_KEY=tu_api_key
 ```
 
-El backend de Django tiene un servicio `AIService` que abstrae la conexión. Cambiar de modelo es solo cambiar las variables de entorno.
+### Funciones de IA implementadas
 
-Responsabilidades de la IA:
-- Generar rutina semanal según implementos disponibles del usuario
-- Generar plan nutricional semanal según objetivo y peso actual
-- A futuro: sugerir ajustes según historial de progreso
+| Función | Descripción |
+|---|---|
+| `generar_rutina()` | Rutina semanal de boxeo: ejercicios técnicos con descripciones detalladas de ejecución, nivel, series y duración |
+| `generar_plan_nutricional()` | Plan alimentario de 7 días basado en la región y cultura culinaria del usuario |
+| `generar_lista_mercado()` | Extrae y consolida ingredientes del plan nutricional en una lista organizada por categorías |
+
+Los prompts siguen principios de prompt engineering: rol experto bien definido, instrucciones numeradas, ejemplos concretos, restricciones explícitas y paso de verificación antes de responder.
 
 ---
 
@@ -42,119 +45,134 @@ Responsabilidades de la IA:
 ```
 camino-del-guerrero/
 ├── backend/
-│   ├── core/              # Configuración global (settings, urls, wsgi)
-│   ├── usuarios/          # Autenticación, roles y gestión de usuarios
-│   ├── rutinas/           # Rutinas, ejercicios e implementos
-│   ├── progreso/          # Log de entrenamiento y registro de peso
-│   └── nutricion/         # Plan nutricional generado por IA
+│   ├── core/              # Settings, urls base, AIService
+│   ├── users/             # Autenticación, roles, perfil, objetivo
+│   ├── routines/          # Rutinas, ejercicios, implementos
+│   ├── progress/          # Log de entrenamiento y registro de peso
+│   └── nutricion/         # Plan nutricional y lista de mercado
 ├── frontend/
-│   └── src/
-│       └── app/
-│           ├── auth/
-│           ├── rutinas/
-│           ├── progreso/
-│           └── nutricion/
-├── CLAUDE.md              # Contexto para Claude Code
+│   └── src/app/
+│       ├── home/          # Landing page pública
+│       ├── auth/          # Login y registro
+│       ├── onboarding/    # Flujo de configuración inicial
+│       ├── rutinas/       # Vista semanal + videos
+│       ├── progreso/      # Sesión activa + historial de peso
+│       ├── nutricion/     # Plan alimentario + lista de mercado
+│       ├── admin/         # Gestión de implementos y ejercicios
+│       ├── core/          # Guards, servicios, modelos
+│       └── shared/        # Layout, componentes reutilizables
 └── README.md
 ```
 
 ---
 
-## Módulos del MVP
+## Módulos del sistema
 
-### Auth
-- Registro e inicio de sesión con JWT
-- Roles definidos en tabla `ROL` (admin / usuario)
-- El admin solo gestiona el catálogo de implementos y agrega videos a los ejercicios
+### Landing page
+- Página pública en `/` con presentación de la app
+- Nav adaptativa: muestra login/registro o "Ir al dashboard" según estado de sesión
+- Soporte completo dark/light mode con logos reales de la marca
+- Toggle de tema accesible desde la nav
+
+### Autenticación
+- Registro con email, nombre, sexo y fecha de nacimiento
+- Login con JWT (access + refresh token)
+- `SafeTokenRefreshView`: devuelve 401 en vez de 500 si el usuario no existe
+- Logout redirige al home
+- Guards:
+  - `authGuard`: requiere sesión activa
+  - `userGuard`: requiere sesión y bloquea admin (redirige a `/admin/implementos`)
+  - `adminGuard`: requiere rol admin
 
 ### Onboarding (primer ingreso)
-- La app solicita el peso inicial del usuario
-- El usuario elige su objetivo (bajar peso, ganar músculo, etc.)
-- El usuario selecciona los implementos que tiene en casa
-- Si no tiene nada, selecciona "Sin implemento" y la IA sugiere ejercicios de peso corporal
-- Se configura la frecuencia de seguimiento de peso (15 días o 1 mes)
-- Al finalizar el onboarding, la IA genera automáticamente la rutina y el plan nutricional del usuario
+Flujo de 3 pasos que configura el perfil completo antes de generar los planes:
+
+**Paso 1 — Perfil:**
+- Peso inicial y peso meta
+- Estatura
+- Objetivo (bajar peso / ganar músculo / mantener / resistencia)
+- Nivel de actividad (principiante / intermedio / avanzado)
+- Días de entrenamiento por semana (3 / 4 / 5)
+- Duración de sesión (30 / 45 / 60 min)
+- Frecuencia de seguimiento de peso (15 días / 1 mes)
+- Nacionalidad (autocomplete con 195 países)
+- Región o zona (texto libre: paisa, costeño, bogotano, etc.)
+- Restricciones alimentarias (opcional)
+
+**Paso 2 — Implementos:** selección de equipamiento disponible
+
+**Paso 3 — Generación:** la IA crea rutina + plan nutricional en paralelo
 
 ### Rutinas
-- Cada usuario tiene su propia rutina semanal generada por IA
-- La IA crea la rutina y sus ejercicios según los implementos disponibles del usuario
-- La rutina se guarda en la BD y el usuario la consulta diariamente
-- El admin puede agregar o editar el video de YouTube de cada ejercicio sugerido por la IA
-- El usuario puede solicitar que la IA regenere su rutina cuando lo desee
+- Vista semanal con selector de días (punto rojo en el día actual)
+- Detalle de cada ejercicio: series, repeticiones, duración, descripción técnica
+- Videos de YouTube embebidos dentro de la app (iframe en dialog, sin salir)
+- Botón regenerar con IA en un clic
 
 ### Progreso
-- Log diario de entrenamiento (rounds, duración, notas)
-- Registro de peso según frecuencia elegida (15 días o 1 mes)
-- Historial personal individual por usuario
+**Seguimiento de peso:**
+- Registro de peso con nota opcional
+- Historial con fecha y cálculo de cambio total
 
-### Nutrición (IA)
-- Plan alimentario semanal generado por IA, individual por usuario
-- Se basa en el objetivo y peso actual del usuario
-- Incluye desayuno, almuerzo, cena, snacks y calorías aproximadas por día
-- Se guarda en la BD y el usuario lo consulta diariamente
-- El usuario puede solicitar que la IA regenere su plan cuando lo desee
+**Sesión de entrenamiento:**
+- Elige el día de la rutina y arranca la sesión
+- Timer por serie: cuenta regresiva para ejercicios con duración fija, cronómetro para el resto
+- Auto-finaliza la serie al llegar a cero
+- Timer de descanso de 60 segundos entre series con opción "Omitir"
+- Videos de ejercicios visibles durante la sesión (in-app)
+- Al finalizar guarda el log con todos los ejercicios y duración total
+
+### Nutrición
+**Plan alimentario:**
+- Plan semanal de 7 días generado por IA
+- Desayuno, almuerzo, cena, snacks y calorías aproximadas por día
+- Adaptado a la región y cultura culinaria del usuario
+- Regenerable en un clic
+
+**Lista de mercado:**
+- Generada por IA a partir del plan nutricional activo
+- Ingredientes organizados por categoría (proteínas, verduras, frutas, lácteos, granos, condimentos)
+- Cantidades consolidadas para 7 días / 1 persona
+- Ítems chequeables con tachado visual y barra de progreso
+
+### Panel de administración
+- **Implementos:** CRUD del catálogo de implementos disponibles
+- **Ejercicios:** edición inline de URL de YouTube por ejercicio
+  - Búsqueda por nombre
+  - Filtro "solo sin video"
+  - Estadísticas: cuántos tienen video / sin video
+  - Ordenamiento: sin video primero
 
 ---
 
-## Modelo de datos (v3 — normalizado)
-
-### Diagrama de relaciones
+## Modelo de datos
 
 ```
-ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DIA_NUTRICIONAL
+ROL ──< USUARIO >──< OBJETIVO_USUARIO
                  ──< REGISTRO_PESO
-                 ──< USUARIO_IMPLEMENTO >── IMPLEMENTO ──< EJERCICIO_IMPLEMENTO >── EJERCICIO
-                 ──< REGISTRO_ENTRENAMIENTO >── RUTINA ──< DIA_RUTINA ──< EJERCICIO_DIA >── EJERCICIO
+                 ──< USUARIO_IMPLEMENTO >── IMPLEMENTO
+                 ──< REGISTRO_ENTRENAMIENTO
+                 ──< RUTINA ──< DIA_RUTINA ──< EJERCICIO_DIA >── EJERCICIO
+                 ──< PLAN_NUTRICIONAL ──< DIA_NUTRICIONAL
+                 ──< LISTA_MERCADO ──< ITEM_MERCADO
 ```
 
-### Tablas
-
-#### Autenticación y usuarios
-| Tabla | Descripción |
+### Campos clave del modelo `Usuario`
+| Campo | Descripción |
 |---|---|
-| `ROL` | Catálogo de roles (admin, usuario). Normalizado para agregar roles sin tocar código |
-| `USUARIO` | Datos del usuario. `frecuencia_peso` guarda si eligió 15 o 30 días |
-| `OBJETIVO_USUARIO` | Objetivo, peso inicial y peso meta. Historial por usuario |
+| `nacionalidad` | País del usuario para personalizar el plan nutricional |
+| `region` | Región/zona cultural (paisa, costeño, etc.) para recetas más específicas |
+| `preferencias_alimentarias` | Restricciones dietarias (vegetariano, sin gluten, etc.) |
+| `estatura` | En cm, usado en el perfil enviado a la IA |
+| `frecuencia_peso` | Cada 15 o 30 días |
 
-#### Implementos y ejercicios
-| Tabla | Descripción |
+### Campos clave del modelo `ObjetivoUsuario`
+| Campo | Descripción |
 |---|---|
-| `IMPLEMENTO` | Catálogo definido por el admin. `es_sin_implemento=true` para usuarios sin equipamiento |
-| `USUARIO_IMPLEMENTO` | Junction: qué implementos tiene cada usuario |
-| `EJERCICIO` | Ejercicio sugerido por la IA. El admin agrega el `url_youtube`. `requiere_implemento=false` = peso corporal |
-| `EJERCICIO_IMPLEMENTO` | Junction: un ejercicio puede requerir varios implementos |
-
-#### Rutinas
-| Tabla | Descripción |
-|---|---|
-| `RUTINA` | Rutina semanal generada por IA, una por usuario. Se regenera cuando el usuario lo solicita |
-| `DIA_RUTINA` | Días de la semana asignados a la rutina del usuario |
-| `EJERCICIO_DIA` | Ejercicios por día con series, repeticiones y duración |
-
-#### Progreso
-| Tabla | Descripción |
-|---|---|
-| `REGISTRO_PESO` | Historial de peso por usuario con fecha y nota opcional |
-| `REGISTRO_ENTRENAMIENTO` | Log diario: qué rutina hizo, cuántos rounds, duración y notas |
-
-#### Nutrición
-| Tabla | Descripción |
-|---|---|
-| `PLAN_NUTRICIONAL` | Plan generado por IA vinculado al objetivo del usuario |
-| `DIA_NUTRICIONAL` | Detalle diario: comidas y calorías aproximadas |
-
----
-
-## Flujo de un usuario nuevo
-
-```
-1. Registro → se asigna ROL de usuario
-2. Onboarding → peso inicial + objetivo → OBJETIVO_USUARIO + REGISTRO_PESO
-3. Selección de implementos → USUARIO_IMPLEMENTO
-4. IA genera rutina semanal según implementos disponibles
-5. IA genera plan nutricional según objetivo y peso
-6. Cada 15 días o 1 mes → app solicita nuevo peso → REGISTRO_PESO
-```
+| `nivel_actividad` | principiante / intermedio / avanzado |
+| `dias_entrenamiento` | 3 / 4 / 5 días por semana |
+| `duracion_sesion` | 30 / 45 / 60 minutos |
+| `fecha_inicio` | Usa `timezone.localdate` para respetar la zona horaria configurada |
 
 ---
 
@@ -164,34 +182,12 @@ ROL ──< USUARIO ──< OBJETIVO_USUARIO ──< PLAN_NUTRICIONAL ──< DI
 |---|---|---|
 | Gestionar catálogo de implementos | ✅ | ❌ |
 | Agregar / editar video YouTube de ejercicios | ✅ | ❌ |
-| Ver todos los usuarios y su progreso | ✅ | ❌ |
-| Gestionar usuarios | ✅ | ❌ |
-| Generar / regenerar su rutina (IA) | ❌ | ✅ |
-| Ver su rutina diaria | ✅ | ✅ |
-| Registrar log de entrenamiento | ✅ | ✅ |
-| Ver su propio progreso | ✅ | ✅ |
-| Generar / regenerar su plan nutricional (IA) | ❌ | ✅ |
-
----
-
-## Variables de entorno (backend)
-
-Crear archivo `.env` en `/backend`:
-
-```env
-SECRET_KEY=tu_secret_key
-DEBUG=True
-DB_NAME=camino_db
-DB_USER=camino_user
-DB_PASSWORD=tu_password
-DB_HOST=localhost
-DB_PORT=5432
-
-AI_PROVIDER=ollama
-AI_BASE_URL=http://localhost:11434
-AI_MODEL=llama3
-AI_API_KEY=
-```
+| Acceder a onboarding y rutas de usuario | ❌ | ✅ |
+| Generar / regenerar rutina con IA | ❌ | ✅ |
+| Generar / regenerar plan nutricional con IA | ❌ | ✅ |
+| Registrar sesiones y peso | ❌ | ✅ |
+| Ver su propio progreso | ❌ | ✅ |
+| Ver lista de mercado | ❌ | ✅ |
 
 ---
 
@@ -201,9 +197,10 @@ AI_API_KEY=
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
@@ -214,41 +211,52 @@ npm install
 ng serve
 ```
 
-### PostgreSQL (Docker — servidor CasaOS)
-```bash
-docker run -d \
-  --name postgres \
-  -e POSTGRES_PASSWORD=tu_password \
-  -p 5432:5432 \
-  -v postgres_data:/var/lib/postgresql/data \
-  postgres:18
+### Variables de entorno (`backend/.env`)
+```env
+SECRET_KEY=tu_secret_key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-docker exec -it postgres psql -U postgres -c "CREATE DATABASE camino_db;"
-docker exec -it postgres psql -U postgres -c "CREATE USER camino_user WITH PASSWORD 'tu_password';"
-docker exec -it postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE camino_db TO camino_user;"
+DB_NAME=camino_db
+DB_USER=camino_user
+DB_PASSWORD=tu_password
+DB_HOST=localhost
+DB_PORT=5432
+
+AI_PROVIDER=openai
+AI_BASE_URL=https://api.groq.com/openai
+AI_MODEL=llama-3.3-70b-versatile
+AI_API_KEY=tu_groq_api_key
 ```
+
+### Zona horaria (`backend/core/settings.py`)
+```python
+TIME_ZONE = 'America/Bogota'
+```
+Los modelos con fecha usan `default=timezone.localdate` (no `auto_now_add`) para respetar esta zona.
 
 ---
 
 ## Roadmap
 
-### Backend
-- [x] Diseño de arquitectura y stack
-- [x] Modelo de datos normalizado (v3)
-- [x] Módulo Auth — usuarios, roles y JWT
-- [x] Módulo Onboarding — peso, objetivo e implementos
-- [x] Módulo Rutinas — generación por IA, una por usuario
-- [x] Módulo Progreso — log de entrenamiento y registro de peso
-- [x] Módulo Nutrición — plan semanal por IA, uno por usuario
-- [x] Integración IA flexible — AIService con provider configurable (Ollama, OpenAI, Gemini)
+### Completado
+- [x] Landing page con dark/light mode y nav adaptativa por sesión
+- [x] Auth completa: registro, login, JWT, guards por rol
+- [x] Onboarding extendido: perfil completo + implementos + generación de planes
+- [x] Rutinas: vista semanal, videos in-app, regeneración con IA
+- [x] Progreso: timer countdown/countup, descanso automático, log de sesión
+- [x] Nutrición: plan semanal + lista de mercado con checklist
+- [x] Admin: implementos CRUD + ejercicios con edición inline y filtros
+- [x] IA: prompts con prompt engineering para rutinas, nutrición y lista de mercado
+- [x] Deduplicación de ejercicios (`get_or_create` por nombre)
+- [x] Corrección de zona horaria en fechas
+- [x] Protección de rutas por rol (`userGuard` + `adminGuard`)
 
-### Frontend
-- [ ] Auth — login y registro
-- [ ] Onboarding — flujo de primer ingreso
-- [ ] Rutinas — vista semanal y detalle por día
-- [ ] Progreso — historial de peso y log de entrenamientos
-- [ ] Nutrición — plan alimentario semanal
-- [ ] PWA — funcionalidad offline para el timer
-
-### Infraestructura
+### Próximos pasos
+- [ ] Perfil editable: el usuario puede actualizar su región, peso, objetivo sin pasar por onboarding
+- [ ] Gráfica de evolución de peso (histórico visual)
+- [ ] Estadísticas de entrenamiento: sesiones por semana, tiempo total, ejercicios más frecuentes
+- [ ] Notificaciones / recordatorios de registro de peso
+- [ ] PWA: funcionalidad offline para el timer de sesión
 - [ ] Docker Compose para deploy en CasaOS
+- [ ] Compartir progreso (imagen o link público de resumen)
