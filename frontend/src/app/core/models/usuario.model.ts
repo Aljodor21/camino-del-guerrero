@@ -3,12 +3,20 @@ export interface Rol {
   nombre: string;
 }
 
+export interface Sexo {
+  id: number;
+  nombre: string;
+}
+
 export interface Usuario {
   id: number;
   email: string;
   nombre: string;
   username: string;
   rol: Rol | null;
+  sexo: Sexo | null;
+  fecha_nacimiento: string | null;
+  estatura: number | null;
   frecuencia_peso: 15 | 30;
 }
 
@@ -32,6 +40,8 @@ export interface RegistroPayload {
   nombre: string;
   username: string;
   password: string;
+  sexo: number | null;
+  fecha_nacimiento: string;
 }
 
 export interface LoginPayload {

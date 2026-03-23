@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 import requests
 from django.conf import settings
@@ -18,13 +19,12 @@ class AIService:
             headers = {}
         else:
             url = f'{self.base_url}/v1/chat/completions'
-            payload = {
-                'model': self.model,
-                'messages': [{'role': 'user', 'content': prompt}],
-            }
+            payload = {'model': self.model, 'messages': [
+                {'role': 'user', 'content': prompt}]}
             headers = {'Authorization': f'Bearer {self.api_key}'}
 
-        response = requests.post(url, json=payload, headers=headers, timeout=120)
+        response = requests.post(
+            url, json=payload, headers=headers, timeout=120)
         response.raise_for_status()
         data = response.json()
 
@@ -32,9 +32,27 @@ class AIService:
             return data.get('response', '')
         return data['choices'][0]['message']['content']
 
+    def _perfil(self, usuario):
+        edad = None
+        if usuario.fecha_nacimiento:
+            hoy = date.today()
+            edad = hoy.year - usuario.fecha_nacimiento.year - (
+                (hoy.month, hoy.day) < (
+                    usuario.fecha_nacimiento.month, usuario.fecha_nacimiento.day)
+            )
+        return {
+            'sexo':     usuario.sexo.nombre if usuario.sexo else 'No especificado',
+            'edad':     f'{edad} años' if edad else 'No especificada',
+            'estatura': f'{usuario.estatura} cm' if usuario.estatura else 'No especificada',
+        }
+
     def generar_plan_nutricional(self, usuario, objetivo):
+        p = self._perfil(usuario)
         prompt = f"""
-Genera un plan nutricional semanal en formato JSON para una persona con las siguientes características:
+Genera un plan nutricional semanal en formato JSON para una persona con estas características:
+- Sexo: {p['sexo']}
+- Edad: {p['edad']}
+- Estatura: {p['estatura']}
 - Objetivo: {objetivo.get_objetivo_display()}
 - Peso actual: {objetivo.peso_inicial} kg
 - Peso objetivo: {objetivo.peso_objetivo} kg
@@ -55,13 +73,18 @@ El JSON debe tener exactamente esta estructura, sin texto adicional:
 }}
 Incluye los 7 días (dia_semana del 1 al 7). Responde solo con el JSON, sin markdown.
 """
-        respuesta = self._chat(prompt)
-        return json.loads(respuesta.strip())
+        return json.loads(self._chat(prompt).strip())
 
     def generar_rutina(self, usuario, implementos):
-        nombres_implementos = [i.implemento.nombre for i in implementos] or ['Sin implemento']
+        p = self._perfil(usuario)
+        nombres = [i.implemento.nombre for i in implementos] or [
+            'Sin implemento']
         prompt = f"""
-Genera una rutina de entrenamiento de boxeo semanal en formato JSON para un usuario con estos implementos disponibles: {', '.join(nombres_implementos)}.
+Genera una rutina de entrenamiento de boxeo semanal en formato JSON para una persona con estas características:
+- Sexo: {p['sexo']}
+- Edad: {p['edad']}
+- Estatura: {p['estatura']}
+- Implementos disponibles: {', '.join(nombres)}
 
 El JSON debe tener exactamente esta estructura, sin texto adicional:
 {{
@@ -86,5 +109,4 @@ El JSON debe tener exactamente esta estructura, sin texto adicional:
 }}
 Incluye entre 3 y 5 días de entrenamiento. Responde solo con el JSON, sin markdown.
 """
-        respuesta = self._chat(prompt)
-        return json.loads(respuesta.strip())
+        return json.loads(self._chat(prompt).strip())

@@ -68,6 +68,19 @@
             </div>
           </div>
 
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Estatura (cm)</label
+            >
+            <p-inputnumber
+              formControlName="estatura"
+              [min]="100"
+              [max]="250"
+              placeholder="175"
+              styleClass="w-full"
+            />
+          </div>
+
           <div class="flex flex-col gap-2">
             <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Tu objetivo</label>
             <div class="grid grid-cols-2 gap-2">

@@ -52,7 +52,9 @@ export class Onboarding implements OnInit {
     peso_objetivo:  [null as number | null],
     objetivo:       ['bajar_peso', Validators.required],
     frecuencia_peso:[30, Validators.required],
+    estatura:       [null as unknown as number, [Validators.required, Validators.min(100), Validators.max(250)]],
   });
+
 
   ngOnInit(): void {
     this.http.get<Implemento[]>(`${API}/rutinas/implementos/`).subscribe({
@@ -94,8 +96,9 @@ export class Onboarding implements OnInit {
 
   protected paso1Valido(): boolean {
     const c = this.form.controls;
-    return c.peso_inicial.valid && c.objetivo.valid;
+    return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid;
   }
+
 
   protected siguientePaso(): void {
     if (this.paso() === 2) {
@@ -112,14 +115,14 @@ export class Onboarding implements OnInit {
 
     private async generarPlan(): Promise<void> {
       this.error.set('');
-      const { peso_inicial, peso_objetivo, objetivo, frecuencia_peso } = this.form.getRawValue();
+      const { peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura } = this.form.getRawValue();
       try {
         await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
           objetivo, peso_inicial,
           ...(peso_objetivo ? { peso_objetivo } : {}),
         }));
         await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
-        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, { frecuencia_peso }));
+        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, { frecuencia_peso, estatura }));
         for (const id of this.seleccionados()) {
           await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento: id }));
         }

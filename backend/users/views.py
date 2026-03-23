@@ -4,13 +4,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import ObjetivoUsuario
+from .models import ObjetivoUsuario, Sexo
 from .serializers import (CustomTokenSerializer, ObjetivoUsuarioSerializer,
-                           RegistroSerializer, UsuarioSerializer)
+                           RegistroSerializer, SexoSerializer, UsuarioSerializer)
 
 
 class RegistroView(generics.CreateAPIView):
-    serializer_class = RegistroSerializer
+    serializer_class   = RegistroSerializer
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -19,9 +19,9 @@ class RegistroView(generics.CreateAPIView):
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
         return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'usuario': UsuarioSerializer(user).data,
+            'access':   str(refresh.access_token),
+            'refresh':  str(refresh),
+            'usuario':  UsuarioSerializer(user).data,
         }, status=201)
 
 
@@ -49,3 +49,9 @@ class ObjetivoUsuarioView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         ObjetivoUsuario.objects.filter(usuario=self.request.user).update(activo=False)
         serializer.save(usuario=self.request.user)
+
+
+class SexoListView(generics.ListAPIView):
+    queryset           = Sexo.objects.all()
+    serializer_class   = SexoSerializer
+    permission_classes = [permissions.AllowAny]
