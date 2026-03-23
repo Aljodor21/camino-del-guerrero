@@ -1,1 +1,193 @@
-<p>progreso works!</p>
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Progreso</h1>
+    <p-button icon="pi pi-plus" label="Registrar" (onClick)="abrirDialog()" />
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1">
+    <button
+      [class]="seccion() === 'peso'
+        ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
+        : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
+      (click)="seccion.set('peso')"
+    >
+      <i class="pi pi-chart-line mr-1"></i> Peso
+    </button>
+    <button
+      [class]="seccion() === 'entrenamiento'
+        ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
+        : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
+      (click)="seccion.set('entrenamiento')"
+    >
+      <i class="pi pi-bolt mr-1"></i> Entrenamientos
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else {
+
+    <!-- PESO -->
+    @if (seccion() === 'peso') {
+      @if (registrosPeso().length > 0) {
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+            <p class="text-xs text-gray-400 mb-1">Peso actual</p>
+            <p class="text-2xl font-bold text-guerrero-red">
+              {{ ultimoPeso() }} <span class="text-sm font-normal">kg</span>
+            </p>
+          </div>
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+            <p class="text-xs text-gray-400 mb-1">Cambio total</p>
+            @if (cambioPeso() !== null) {
+              <p class="text-2xl font-bold"
+                 [class]="cambioPeso()! < 0 ? 'text-green-500' : cambioPeso()! > 0 ? 'text-red-400' : 'text-gray-400'">
+                {{ cambioPeso()! > 0 ? '+' : '' }}{{ cambioPeso() }} <span class="text-sm font-normal">kg</span>
+              </p>
+            } @else {
+              <p class="text-2xl font-bold text-gray-400">—</p>
+            }
+          </div>
+        </div>
+      }
+
+      @if (registrosPeso().length === 0) {
+        <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+          <i class="pi pi-chart-line text-4xl"></i>
+          <p class="mt-2 text-sm">Sin registros de peso. ¡Agrega el primero!</p>
+        </div>
+      } @else {
+        <div class="space-y-2">
+          @for (r of registrosPeso(); track r.id) {
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
+              <div class="text-center min-w-[52px]">
+                <p class="text-lg font-bold text-guerrero-red">{{ r.peso_kg }}</p>
+                <p class="text-xs text-gray-400">kg</p>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatFecha(r.fecha) }}</p>
+                @if (r.nota) {
+                  <p class="text-xs text-gray-400 mt-0.5">{{ r.nota }}</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- ENTRENAMIENTO -->
+    @if (seccion() === 'entrenamiento') {
+      @if (registrosEntrenamiento().length > 0) {
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+            <p class="text-xs text-gray-400 mb-1">Sesiones</p>
+            <p class="text-2xl font-bold text-guerrero-red">{{ totalSesiones() }}</p>
+          </div>
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+            <p class="text-xs text-gray-400 mb-1">Tiempo total</p>
+            <p class="text-2xl font-bold text-guerrero-red">
+              {{ totalMinutos() }} <span class="text-sm font-normal">min</span>
+            </p>
+          </div>
+        </div>
+      }
+
+      @if (registrosEntrenamiento().length === 0) {
+        <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+          <i class="pi pi-bolt text-4xl"></i>
+          <p class="mt-2 text-sm">Sin registros de entrenamiento aún.</p>
+        </div>
+      } @else {
+        <div class="space-y-2">
+          @for (r of registrosEntrenamiento(); track r.id) {
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatFecha(r.fecha) }}</p>
+                <div class="flex gap-4 mt-1">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    <i class="pi pi-refresh mr-0.5 text-guerrero-red"></i>{{ r.rounds }} rounds
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    <i class="pi pi-clock mr-0.5 text-guerrero-red"></i>{{ r.duracion_minutos }} min
+                  </span>
+                </div>
+                @if (r.notas) {
+                  <p class="text-xs text-gray-400 mt-1">{{ r.notas }}</p>
+                }
+              </div>
+              <p-button icon="pi pi-trash" variant="text" [rounded]="true"
+                        severity="danger" (onClick)="eliminarEntrenamiento(r.id)" />
+            </div>
+          }
+        </div>
+      }
+    }
+
+  }
+
+  <!-- Dialog -->
+  <p-dialog
+    [header]="seccion() === 'peso' ? 'Registrar peso' : 'Registrar entrenamiento'"
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: '90vw', maxWidth: '480px' }"
+  >
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full mb-3" />
+    }
+
+    @if (seccion() === 'peso') {
+      <form [formGroup]="formPeso" (ngSubmit)="guardar()" class="space-y-4 pt-2">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso (kg) *</label>
+          <p-inputnumber formControlName="peso_kg" [minFractionDigits]="1" [maxFractionDigits]="1"
+                         placeholder="75.5" styleClass="w-full" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nota</label>
+          <textarea pTextarea formControlName="nota" rows="2"
+                    placeholder="Cómo te sientes hoy..." class="w-full resize-none"></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <p-button type="button" label="Cancelar" variant="outlined" severity="secondary"
+                    (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
+          <p-button type="submit" label="Guardar" [loading]="saving()"
+                    [disabled]="formPeso.invalid" styleClass="flex-1" />
+        </div>
+      </form>
+    }
+
+    @if (seccion() === 'entrenamiento') {
+      <form [formGroup]="formEntrenamiento" (ngSubmit)="guardar()" class="space-y-4 pt-2">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Rounds</label>
+            <p-inputnumber formControlName="rounds" [min]="0" styleClass="w-full" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Minutos</label>
+            <p-inputnumber formControlName="duracion_minutos" [min]="0" styleClass="w-full" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Notas</label>
+          <textarea pTextarea formControlName="notas" rows="3"
+                    placeholder="¿Cómo fue el entrenamiento?" class="w-full resize-none"></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <p-button type="button" label="Cancelar" variant="outlined" severity="secondary"
+                    (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
+          <p-button type="submit" label="Guardar" [loading]="saving()"
+                    [disabled]="formEntrenamiento.invalid" styleClass="flex-1" />
+        </div>
+      </form>
+    }
+  </p-dialog>
+
+</div>
