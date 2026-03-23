@@ -14,6 +14,8 @@
   --color-dark-700:          #2d2d2d;
   --color-success:           #27AE60;
   --color-warning:           #F39C12;
+  --color-warm-bg:           #f0ede8;
+  --color-warm-card:         #faf9f7;
 }
 
 /* Botones secondary (text + outlined) visibles en dark mode */
@@ -41,3 +43,13 @@ html.dark {
 
 /* Transición suave entre temas */
 * { transition: background-color 0.2s ease, border-color 0.2s ease; }
+
+/* Light mode: tarjetas con borde visible y fondo cálido */
+html:not(.dark) .bg-white {
+  background-color: var(--color-warm-card) !important;
+}
+
+html:not(.dark) .shadow-sm {
+  border: 1px solid #d6d0c8;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
