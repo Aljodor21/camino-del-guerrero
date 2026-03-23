@@ -40,12 +40,15 @@ class RegistroSerializer(serializers.ModelSerializer):
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
-    rol  = RolSerializer(read_only=True)
-    sexo = SexoSerializer(read_only=True)
+    rol    = RolSerializer(read_only=True)
+    sexo   = SexoSerializer(read_only=True)
+    sexo_id = serializers.PrimaryKeyRelatedField(
+        queryset=Sexo.objects.all(), source='sexo', required=False, allow_null=True, write_only=True
+    )
 
     class Meta:
         model  = Usuario
-        fields = ['id', 'email', 'nombre', 'rol', 'sexo', 'fecha_nacimiento', 'estatura',
+        fields = ['id', 'email', 'nombre', 'rol', 'sexo', 'sexo_id', 'fecha_nacimiento', 'estatura',
                   'frecuencia_peso', 'nacionalidad', 'region', 'preferencias_alimentarias', 'date_joined']
 
 

@@ -62,6 +62,23 @@ class ObjetivoUsuarioView(generics.ListCreateAPIView):
         serializer.save(usuario=self.request.user)
 
 
+class ObjetivoActivoView(APIView):
+    def get(self, request):
+        obj = ObjetivoUsuario.objects.filter(usuario=request.user, activo=True).first()
+        if not obj:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(ObjetivoUsuarioSerializer(obj).data)
+
+    def patch(self, request):
+        obj = ObjetivoUsuario.objects.filter(usuario=request.user, activo=True).first()
+        if not obj:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = ObjetivoUsuarioSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
 class SexoListView(generics.ListAPIView):
     queryset           = Sexo.objects.all()
     serializer_class   = SexoSerializer

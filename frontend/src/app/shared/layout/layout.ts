@@ -27,6 +27,7 @@ export class Layout {
       { path: '/rutinas',   icon: 'pi pi-bolt',      label: 'Rutinas'   },
       { path: '/progreso',  icon: 'pi pi-chart-line', label: 'Progreso'  },
       { path: '/nutricion', icon: 'pi pi-heart',      label: 'Nutrición' },
+      { path: '/perfil',    icon: 'pi pi-user',       label: 'Perfil'    },
     ];
   });
 }

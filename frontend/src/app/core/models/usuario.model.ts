@@ -21,6 +21,7 @@ export interface Usuario {
   nacionalidad: string;
   region: string;
   preferencias_alimentarias: string;
+  date_joined: string;
 }
 
 export interface ObjetivoUsuario {
