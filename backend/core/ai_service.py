@@ -119,6 +119,7 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
    - Bogotano: ajiaco, changua, chocolate con pan, papa criolla, calentado.
    - Santandereano: pepitoria, cabro, mute, arepa de maíz pelado.
 3. Ingredientes que se encuentran en tiendas de barrio o plazas de mercado locales. NADA de ingredientes importados, nombres en inglés ni comida de restaurante gourmet.
+4. PROHIBIDO usar estas verduras que NO son típicas de la cocina popular colombiana: acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha. En su lugar usa: tomate, cebolla, zanahoria, habichuela, pepino, ahuyama, espinaca criolla, aguacate, cilantro, pimentón.
 
 ### Calorías y macros según objetivo
 - Bajar peso: déficit de 300-400 kcal respecto al mantenimiento estimado.
@@ -134,8 +135,9 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
 
 ### Formato de porciones
 8. Especifica cantidades concretas: "1 taza de arroz blanco", "2 muslos de pollo asado", "1 arepa mediana con 2 cucharadas de hogao". Nunca escribas solo el nombre del plato sin porciones.
-9. Máximo 25 palabras por campo (desayuno, almuerzo, cena, snacks). Directo y práctico.
-10. No uses palabras en inglés. No uses nombres de suplementos.
+9. Medidas permitidas ÚNICAMENTE: taza, cucharada, cucharadita, unidad, gramos, porciones. PROHIBIDO usar: "chorrito", "poquito", "al gusto", "un poco", "a discreción", "cantidad suficiente".
+10. Máximo 25 palabras por campo (desayuno, almuerzo, cena, snacks). Directo y práctico.
+11. No uses palabras en inglés. No uses nombres de suplementos.
 
 ### Restricciones alimentarias
 11. Respeta ESTRICTAMENTE las restricciones indicadas: "{pref}". Si dice vegetariano, elimina toda carne. Si dice sin gluten, elimina pan de trigo, etc.
@@ -143,7 +145,9 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
 ## VERIFICACIÓN ANTES DE RESPONDER
 Antes de generar el JSON, verifica mentalmente:
 - ¿Todos los platos son típicos de {region}?
-- ¿Todas las porciones están especificadas con cantidades?
+- ¿Todas las porciones están especificadas con cantidades (taza, cucharada, unidad, gramos)?
+- ¿Usé alguna palabra prohibida como "chorrito", "poquito", "al gusto"? Si sí, reemplázala.
+- ¿Usé alguna verdura prohibida como acelgas, kale, espárragos? Si sí, cámbiala por tomate, zanahoria o habichuela.
 - ¿Los 7 días tienen variedad (no se repite el mismo plato dos días seguidos)?
 - ¿Las calorías están ajustadas al objetivo "{objetivo.get_objetivo_display()}"?
 
