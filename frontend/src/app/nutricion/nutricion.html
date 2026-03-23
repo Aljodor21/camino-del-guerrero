@@ -36,10 +36,10 @@
       @for (dia of plan()!.dias; track dia.id; let i = $index) {
         <button
           [class]="diaSeleccionado() === i
-            ? 'flex-shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-guerrero-red text-white transition-all'
+            ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-guerrero-red text-white transition-all'
             : esHoy(dia.dia_semana)
-              ? 'flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 border-guerrero-red text-guerrero-red dark:text-guerrero-red bg-transparent transition-all'
-              : 'flex-shrink-0 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400 transition-all'"
+              ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 border-guerrero-red text-guerrero-red dark:text-guerrero-red bg-transparent transition-all'
+              : 'shrink-0 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400 transition-all'"
           (click)="diaSeleccionado.set(i)"
         >{{ dia.dia_nombre }}</button>
       }

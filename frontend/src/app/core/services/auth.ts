@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
 
 import { AuthResponse, LoginPayload, RegistroPayload, Usuario } from '../models/usuario.model';
 
-const API = 'http://localhost:8000/api/usuarios';
+import { environment } from '../../../environments/environment';
+const API = `${environment.apiUrl}/usuarios`;
 const ACCESS_KEY = 'cdg_access';
 const REFRESH_KEY = 'cdg_refresh';
 

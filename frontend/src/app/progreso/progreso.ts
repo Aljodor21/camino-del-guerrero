@@ -11,7 +11,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { RegistroPeso, RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
 import { Rutina, DiaRutina, EjercicioDia } from '../core/models/rutina.model';
 
-const API = 'http://localhost:8000/api';
+import { environment } from '../../environments/environment';
+const API = environment.apiUrl;
 
 interface SerieEstado {
   completada: boolean;

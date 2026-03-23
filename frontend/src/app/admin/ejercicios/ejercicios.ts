@@ -10,7 +10,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { Ejercicio } from '../../core/models/rutina.model';
 
-const API = 'http://localhost:8000/api';
+import { environment } from '../../../environments/environment';
+const API = environment.apiUrl;
 
 @Component({
   selector: 'app-ejercicios',
