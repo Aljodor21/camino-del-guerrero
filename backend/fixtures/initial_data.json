@@ -1,0 +1,82 @@
+[
+{
+  "model": "users.rol",
+  "pk": 1,
+  "fields": {
+    "nombre": "usuario",
+    "descripcion": ""
+  }
+},
+{
+  "model": "users.rol",
+  "pk": 2,
+  "fields": {
+    "nombre": "admin",
+    "descripcion": ""
+  }
+},
+{
+  "model": "users.sexo",
+  "pk": 1,
+  "fields": {
+    "nombre": "Masculino"
+  }
+},
+{
+  "model": "users.sexo",
+  "pk": 2,
+  "fields": {
+    "nombre": "Femenino"
+  }
+},
+{
+  "model": "routines.implemento",
+  "pk": 1,
+  "fields": {
+    "nombre": "Guantes de boxeo",
+    "descripcion": "12 oz",
+    "categoria": "Boxeo",
+    "es_sin_implemento": false
+  }
+},
+{
+  "model": "routines.implemento",
+  "pk": 2,
+  "fields": {
+    "nombre": "Saco de boxeo",
+    "descripcion": "30kg",
+    "categoria": "Boxeo",
+    "es_sin_implemento": false
+  }
+},
+{
+  "model": "routines.implemento",
+  "pk": 3,
+  "fields": {
+    "nombre": "Cuerda para saltar",
+    "descripcion": "",
+    "categoria": "Cardio",
+    "es_sin_implemento": false
+  }
+},
+{
+  "model": "routines.implemento",
+  "pk": 4,
+  "fields": {
+    "nombre": "Plancha para lagartijas",
+    "descripcion": "",
+    "categoria": "fuerza",
+    "es_sin_implemento": false
+  }
+},
+{
+  "model": "routines.implemento",
+  "pk": 5,
+  "fields": {
+    "nombre": "Sin implemento",
+    "descripcion": "Entrenamiento sin equipos",
+    "categoria": "",
+    "es_sin_implemento": true
+  }
+}
+]
