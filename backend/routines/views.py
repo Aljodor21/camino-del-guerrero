@@ -2,9 +2,10 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Ejercicio, Implemento, Rutina, UsuarioImplemento
+from .models import Ejercicio, Implemento, Recomendacion, Rutina, UsuarioImplemento
 from .serializers import (EjercicioSerializer, EjercicioVideoSerializer,
-                           ImplementoSerializer, RutinaSerializer, UsuarioImplementoSerializer)
+                           ImplementoSerializer, RecomendacionSerializer,
+                           RutinaSerializer, UsuarioImplementoSerializer)
 
 
 class IsAdmin(permissions.BasePermission):
@@ -56,6 +57,26 @@ class EjercicioVideoUpdateView(generics.UpdateAPIView):
     serializer_class = EjercicioVideoSerializer
     permission_classes = [IsAdmin]
     http_method_names = ['patch']
+
+
+class RecomendacionListView(generics.ListAPIView):
+    """Usuarios autenticados — solo las activas."""
+    serializer_class = RecomendacionSerializer
+    queryset = Recomendacion.objects.filter(activa=True)
+
+
+class RecomendacionAdminListCreateView(generics.ListCreateAPIView):
+    """Admin — lista todas (activas e inactivas) y crea nuevas."""
+    serializer_class = RecomendacionSerializer
+    permission_classes = [IsAdmin]
+    queryset = Recomendacion.objects.all()
+
+
+class RecomendacionAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Admin — edita y elimina."""
+    serializer_class = RecomendacionSerializer
+    permission_classes = [IsAdmin]
+    queryset = Recomendacion.objects.all()
 
 
 class MiRutinaView(APIView):

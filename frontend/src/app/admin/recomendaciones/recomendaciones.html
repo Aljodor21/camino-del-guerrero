@@ -1,0 +1,128 @@
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Recomendaciones</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Videos y consejos generales para todos los usuarios.</p>
+    </div>
+    @if (!mostrandoForm()) {
+      <p-button icon="pi pi-plus" label="Agregar" (onClick)="abrir()" />
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else {
+
+    <!-- Stats -->
+    @if (total() > 0) {
+      <div class="flex gap-3 flex-wrap">
+        <span class="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold px-3 py-1.5 rounded-full">
+          {{ activas() }} activas
+        </span>
+        <span class="bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-full">
+          {{ total() - activas() }} ocultas
+        </span>
+      </div>
+    }
+
+    <!-- Formulario nuevo / edición -->
+    @if (mostrandoForm()) {
+      <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+        <p class="text-sm font-semibold text-gray-900 dark:text-white">
+          {{ editandoId() ? 'Editar recomendación' : 'Nueva recomendación' }}
+        </p>
+
+        @if (error()) {
+          <p-message severity="error" [text]="error()" styleClass="w-full" />
+        }
+
+        <input pInputText [formControl]="form.controls.titulo"
+               placeholder="Título *" class="w-full" />
+
+        <textarea pTextarea [formControl]="form.controls.descripcion"
+                  placeholder="Descripción (opcional)" rows="2" class="w-full resize-none"></textarea>
+
+        <input pInputText [formControl]="form.controls.url_video"
+               placeholder="URL del video (YouTube u otro)" class="w-full" />
+
+        <div class="flex gap-2">
+          <p-select [formControl]="form.controls.categoria"
+                    [options]="categorias" optionLabel="label" optionValue="value"
+                    placeholder="Categoría" styleClass="flex-1" />
+          <input pInputText [formControl]="form.controls.orden" type="number"
+                 placeholder="Orden" class="w-24 text-center" />
+        </div>
+
+        <div class="flex gap-2 justify-end">
+          <p-button label="Cancelar" variant="outlined" severity="secondary" (onClick)="cancelar()" />
+          <p-button label="Guardar" [loading]="saving()" (onClick)="guardar()"
+                    [disabled]="form.invalid" />
+        </div>
+      </div>
+    }
+
+    <!-- Lista -->
+    @if (recomendaciones().length === 0 && !mostrandoForm()) {
+      <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+        <i class="pi pi-play-circle text-4xl"></i>
+        <p class="mt-2 text-sm">Aún no hay recomendaciones. Agrega la primera.</p>
+      </div>
+    }
+
+    <div class="space-y-2">
+      @for (rec of recomendaciones(); track rec.id) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden"
+             [class]="!rec.activa ? 'opacity-50' : ''">
+          <div class="flex gap-3 p-3">
+
+            <!-- Thumbnail -->
+            <div class="w-20 h-14 rounded-lg overflow-hidden shrink-0 bg-gray-100 dark:bg-dark-700 flex items-center justify-center">
+              @if (thumbnailUrl(rec.url_video); as thumb) {
+                <img [src]="thumb" alt="" class="w-full h-full object-cover" />
+              } @else {
+                <i class="pi pi-play text-gray-400 text-xl"></i>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start gap-2 flex-wrap">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white leading-tight flex-1">{{ rec.titulo }}</p>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                      [class]="categoriaBadge(rec.categoria)">
+                  {{ categoriaLabel(rec.categoria) }}
+                </span>
+              </div>
+              @if (rec.descripcion) {
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{{ rec.descripcion }}</p>
+              }
+            </div>
+
+            <!-- Acciones -->
+            <div class="flex items-center gap-1 shrink-0">
+              <p-button
+                [icon]="rec.activa ? 'pi pi-eye' : 'pi pi-eye-slash'"
+                variant="text" [rounded]="true"
+                [severity]="rec.activa ? 'success' : 'secondary'"
+                [pTooltip]="rec.activa ? 'Ocultar' : 'Mostrar'"
+                tooltipPosition="left"
+                (onClick)="toggleActiva(rec)"
+              />
+              <p-button icon="pi pi-pencil" variant="text" [rounded]="true"
+                        severity="secondary" pTooltip="Editar" tooltipPosition="left"
+                        (onClick)="abrir(rec)" />
+              <p-button icon="pi pi-trash" variant="text" [rounded]="true"
+                        severity="danger" pTooltip="Eliminar" tooltipPosition="left"
+                        (onClick)="eliminar(rec)" />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

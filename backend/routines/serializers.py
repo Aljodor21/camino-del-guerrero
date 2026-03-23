@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from .models import (DiaRutina, EjercicioDia, Ejercicio,
-                     EjercicioImplemento, Implemento, Rutina, UsuarioImplemento)
+                     EjercicioImplemento, Implemento, Recomendacion,
+                     Rutina, UsuarioImplemento)
 
 
 class ImplementoSerializer(serializers.ModelSerializer):
@@ -51,6 +52,12 @@ class DiaRutinaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiaRutina
         fields = ['id', 'dia_semana', 'dia_nombre', 'ejercicios']
+
+
+class RecomendacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recomendacion
+        fields = ['id', 'titulo', 'descripcion', 'url_video', 'categoria', 'activa', 'orden']
 
 
 class RutinaSerializer(serializers.ModelSerializer):

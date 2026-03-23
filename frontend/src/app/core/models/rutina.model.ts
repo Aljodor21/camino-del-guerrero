@@ -32,6 +32,16 @@ export interface DiaRutina {
 }
 
 
+export interface Recomendacion {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  url_video: string;
+  categoria: 'tecnica' | 'fisico' | 'nutricion' | 'mental' | 'general';
+  activa: boolean;
+  orden: number;
+}
+
 export interface Rutina {
   id: number;
   nombre: string;

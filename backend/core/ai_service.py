@@ -236,70 +236,118 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         nivel = objetivo.get_nivel_actividad_display()
         dias  = objetivo.dias_entrenamiento
         duracion = objetivo.duracion_sesion
+        nacionalidad = usuario.nacionalidad or 'No especificada'
+        region = usuario.region or 'No especificada'
+
         nivel_config = {
-            'Principiante': 'series: 2-3, repeticiones bajas, descanso 60-90s. Prioriza aprender la mecánica correcta de cada golpe antes que la velocidad.',
+            'Principiante': 'series: 2-3, repeticiones bajas, descanso 60-90s. Prioriza aprender la mecánica correcta de cada golpe antes que la velocidad. Nombra los ejercicios de forma simple y clara.',
             'Intermedio':   'series: 3-4, combinaciones de 2-3 golpes, descanso 45-60s. Mezcla técnica con acondicionamiento físico.',
             'Avanzado':     'series: 4-5, circuitos sin descanso, combinaciones largas (4-6 golpes), descanso 30-45s. Alta intensidad y variedad táctica.',
         }.get(nivel, 'series: 3')
+
+        # Descripción detallada de cada implemento disponible para que la IA entienda qué puede hacer con cada uno
+        implementos_desc = {
+            'Saco de boxeo':    'golpes directos (jab, cross, uppercut, hook) con potencia real, trabajo de distancia',
+            'Guantes de boxeo': 'necesarios para golpear el saco o el escudo; sin ellos solo se hace sombra',
+            'Cuerda para saltar': 'cardio específico de boxeo, coordinación y ritmo de pies',
+            'Escudo':           'trabajo en pareja con el entrenador o compañero, combinaciones con target real',
+            'Vendas':           'protección de manos, siempre se usan con guantes',
+            'Pera de velocidad': 'velocidad de golpe, timing, coordinación ojo-mano',
+            'Sin implemento':   'solo trabajo de sombra, ejercicios de peso corporal y footwork',
+        }
+        implementos_contexto = '; '.join(
+            f"{n} → {implementos_desc.get(n, 'uso general')}" for n in nombres
+        )
+
         prompt = f"""
-Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando atletas de todos los niveles. Conoces a fondo la técnica del boxeo: guardia, posición de pies, mecánica de cada golpe, trabajo defensivo y acondicionamiento físico específico para el deporte.
+Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando atletas de barrio en Latinoamérica. Diseñas rutinas PRÁCTICAS y REALIZABLES con lo que el atleta tiene en casa o en su gimnasio local.
 
 ## PERFIL DEL ATLETA
 - Sexo: {p['sexo']}
 - Edad: {p['edad']}
 - Estatura: {p['estatura']}
+- Nacionalidad: {nacionalidad} | Región: {region}
 - Objetivo: {objetivo.get_objetivo_display()}
 - Nivel: {nivel}
 - Días de entrenamiento por semana: {dias}
 - Duración por sesión: {duracion} minutos
 - Implementos disponibles: {', '.join(nombres)}
+- Contexto de implementos: {implementos_contexto}
 
 ## ESTRUCTURA DE LA SESIÓN
 Cada sesión de {duracion} minutos debe seguir este orden:
-1. Calentamiento (5-8 min): movilidad articular, trote, activación.
-2. Bloque técnico (golpes, combinaciones, footwork).
-3. Bloque físico (fuerza, resistencia o cardio según objetivo).
+1. Calentamiento (5-8 min): trote en sitio, movilidad articular, activación de hombros y caderas.
+2. Bloque técnico: golpes, combinaciones o footwork según el día.
+3. Bloque físico: fuerza, resistencia o cardio CON los implementos disponibles.
 4. Vuelta a la calma (3-5 min): estiramientos y respiración.
 
 ## REGLAS OBLIGATORIAS
 
+### Implementos — LA REGLA MÁS IMPORTANTE
+1. SOLO usa ejercicios que requieran los implementos que el atleta tiene: {', '.join(nombres)}.
+2. Si tiene saco → incluye rounds al saco. Si NO tiene saco → NUNCA pongas "golpes al saco", usa sombra.
+3. Si tiene cuerda → incluye salto de cuerda. Si NO tiene cuerda → usa trote en sitio o saltos.
+4. Si tiene escudo → incluye trabajo con escudo. Si NO tiene escudo → no lo menciones.
+5. Si solo tiene "Sin implemento" → toda la sesión es sombra, peso corporal y footwork.
+6. requiere_implemento = true SOLO si el ejercicio usa uno de los implementos listados. Si es sombra o peso corporal, es false.
+
 ### Cantidad y nivel
-1. Genera EXACTAMENTE {dias} días de entrenamiento. No pongas días de descanso.
-2. Cada sesión: entre 6 y 8 ejercicios (contando calentamiento y vuelta a la calma).
-3. Nivel {nivel}: {nivel_config}
+7. Genera EXACTAMENTE {dias} días. No pongas días de descanso.
+8. Cada sesión: entre 6 y 8 ejercicios (incluyendo calentamiento y vuelta a la calma).
+9. Nivel {nivel}: {nivel_config}
 
-### Ejercicios de boxeo permitidos
-4. Usa ejercicios técnicos reales: jab, cross, uppercut, hook, hook al cuerpo, jab-cross (1-2), 1-2-3, 1-2-3-2, 1-2-gancho, combinaciones con esquiva, bob and weave, slip, parrys, trabajo de sombra por rounds, golpes al saco (si hay saco), defensa con escudo (si hay escudo), footwork en L, footwork circular, pivote.
-5. Ejercicios físicos complementarios: cuerda de saltar, burpees, sentadillas con salto, planchas, abdominales, trabajo de core, lagartijas en diamante, mountain climbers.
-6. Adapta los ejercicios a los implementos disponibles: {', '.join(nombres)}. Si no hay saco, usa sombra. Si no hay cuerda, usa trote o saltos.
+### Ejercicios técnicos permitidos (según implementos disponibles)
+- Sombra (siempre disponible): jab, cross, uppercut, hook, combinaciones 1-2, 1-2-3, bob and weave, slip, footwork en L, footwork circular, pivote.
+- Con saco: rounds al saco, golpes de poder, combinaciones al saco.
+- Con cuerda: salto de cuerda ritmo constante, salto alternado, doble giro.
+- Con escudo: combinaciones con escudo, jab-cross al escudo, hooks al escudo.
+- Físico sin implemento: burpees, sentadillas con salto, planchas, abdominales, lagartijas, mountain climbers.
 
-### Tipos de ejercicio (campo duracion_segundos vs repeticiones)
-7. Ejercicios por TIEMPO (rounds, cardio, sombra): duracion_segundos = número entero (ej: 120), series = número entero, repeticiones = null.
-8. Ejercicios por REPETICIONES (técnica, fuerza): series = número entero, repeticiones = número entero, duracion_segundos = null.
-9. Nunca pongas duracion_segundos y repeticiones con valor al mismo tiempo. Uno siempre debe ser null.
+### Tipos de ejercicio
+10. Por TIEMPO (rounds, cardio, sombra): duracion_segundos = entero, series = entero, repeticiones = null.
+11. Por REPETICIONES (técnica, fuerza): series = entero, repeticiones = entero, duracion_segundos = null.
+12. Nunca pongas duracion_segundos y repeticiones con valor al mismo tiempo.
 
-### Descripciones técnicas (LO MÁS IMPORTANTE)
-10. La descripción de cada ejercicio debe ser TÉCNICA, ESPECÍFICA y EDUCATIVA. Entre 35 y 60 palabras.
-11. Estructura obligatoria de la descripción:
-    a) Posición inicial: guardia, posición de pies, postura corporal.
-    b) Ejecución paso a paso: cómo se realiza el movimiento, qué partes del cuerpo se activan y en qué orden.
-    c) Punto técnico clave: el detalle que marca la diferencia entre hacerlo bien o mal.
-    d) Error más común: qué suele hacer mal un atleta de nivel {nivel} en este ejercicio.
-12. Ejemplo de descripción correcta para "Jab":
-    "Guardia zurda (pie izquierdo adelante). Extiende el brazo izquierdo directo a la cara del rival, rotando el puño al impactar (palma hacia abajo). La cadera rota levemente. El brazo regresa inmediatamente a proteger el mentón. Punto clave: velocidad de retorno, no de salida. Error común: dejar caído el brazo derecho al lanzar."
-13. Ejemplo de descripción para "Trabajo de sombra 2 min":
-    "Muévete por el espacio como si enfrentaras un rival imaginario. Lanza combinaciones de 2-3 golpes (jab-cross, jab-cross-gancho), esquiva después de cada combinación, usa footwork para cambiar ángulos. Mantén la guardia siempre arriba. Ritmo moderado los primeros 60s, alta intensidad los últimos 60s. Error común: quedarse quieto sin moverse entre combinaciones."
+### Descripciones técnicas
+13. Entre 35 y 60 palabras. Estructura: posición inicial → ejecución → punto clave → error común.
+14. Adapta el lenguaje al nivel {nivel}: para Principiante, explica como si fuera la primera vez.
+
+### Campo busqueda_media — CRÍTICO para mostrar GIFs al atleta
+15. Cada ejercicio debe tener "busqueda_media": término de 2-4 palabras en inglés para buscar un GIF representativo.
+16. Usa SIEMPRE estos términos estandarizados según el ejercicio:
+    - Jab → "boxing jab"
+    - Cross → "boxing cross"
+    - Uppercut → "boxing uppercut"
+    - Hook / Gancho → "boxing hook"
+    - Combinación 1-2 o jab-cross → "boxing jab cross combination"
+    - Trabajo de sombra → "shadow boxing"
+    - Bob and weave / esquiva → "boxing bob weave"
+    - Slip / esquiva lateral → "boxing slip dodge"
+    - Footwork / trabajo de pies → "boxing footwork"
+    - Pivote → "boxing pivot footwork"
+    - Rounds al saco → "boxing heavy bag"
+    - Pera de velocidad → "boxing speed bag"
+    - Trabajo con escudo → "boxing focus mitts"
+    - Cuerda de saltar → "jump rope boxing"
+    - Burpees → "burpee exercise"
+    - Sentadillas con salto → "jump squat exercise"
+    - Planchas → "plank exercise"
+    - Lagartijas → "push up exercise"
+    - Mountain climbers → "mountain climber exercise"
+    - Abdominales → "boxing abs workout"
+    - Calentamiento / trote → "boxing warm up"
+    - Estiramientos / vuelta calma → "boxing cool down stretch"
 
 ### Variedad entre días
-14. Varía los ejercicios entre días. No repitas el mismo bloque técnico dos días seguidos.
-15. Si son {dias} días, distribuye: técnica ofensiva, técnica defensiva, combinaciones, trabajo físico, velocidad.
+17. Distribuye los {dias} días entre: técnica ofensiva, técnica defensiva, combinaciones, trabajo físico, velocidad.
+18. No repitas el mismo bloque técnico dos días seguidos.
 
 ## VERIFICACIÓN ANTES DE RESPONDER
-Antes de generar el JSON, confirma mentalmente:
 - ¿Hay exactamente {dias} días?
-- ¿Cada descripción tiene posición inicial + ejecución + punto clave + error común?
+- ¿Todos los ejercicios con implementos usan SOLO los que tiene el atleta ({', '.join(nombres)})?
+- ¿Cada ejercicio tiene "busqueda_media" con el término estandarizado en inglés?
 - ¿Ningún ejercicio tiene duracion_segundos y repeticiones con valor al mismo tiempo?
-- ¿Los ejercicios usan los implementos disponibles ({', '.join(nombres)})?
+- ¿requiere_implemento es true solo cuando usa un implemento de la lista?
 - ¿El nivel de dificultad corresponde a {nivel}?
 
 ## FORMATO DE SALIDA
@@ -314,6 +362,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         {{
           "nombre": "Nombre claro del ejercicio",
           "descripcion": "Descripción técnica completa de 35-60 palabras",
+          "busqueda_media": "boxing jab",
           "requiere_implemento": false,
           "series": 3,
           "repeticiones": 12,

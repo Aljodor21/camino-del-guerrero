@@ -23,10 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layout/layout').then(m => m.Layout),
     canActivate: [authGuard],
     children: [
-      { path: 'rutinas',   canActivate: [userGuard],  loadComponent: () => import('./rutinas/rutinas').then(m => m.Rutinas) },
-      { path: 'progreso',  canActivate: [userGuard],  loadComponent: () => import('./progreso/progreso').then(m => m.Progreso) },
-      { path: 'nutricion', canActivate: [userGuard],  loadComponent: () => import('./nutricion/nutricion').then(m => m.Nutricion) },
-      { path: 'perfil',    canActivate: [userGuard],  loadComponent: () => import('./perfil/perfil').then(m => m.Perfil) },
+      { path: 'rutinas',          canActivate: [userGuard], loadComponent: () => import('./rutinas/rutinas').then(m => m.Rutinas) },
+      { path: 'progreso',         canActivate: [userGuard], loadComponent: () => import('./progreso/progreso').then(m => m.Progreso) },
+      { path: 'nutricion',        canActivate: [userGuard], loadComponent: () => import('./nutricion/nutricion').then(m => m.Nutricion) },
+      { path: 'recomendaciones',  canActivate: [userGuard], loadComponent: () => import('./recomendaciones/recomendaciones').then(m => m.Recomendaciones) },
+      { path: 'perfil',           canActivate: [userGuard], loadComponent: () => import('./perfil/perfil').then(m => m.Perfil) },
       {
         path: 'admin',
         canActivate: [adminGuard],

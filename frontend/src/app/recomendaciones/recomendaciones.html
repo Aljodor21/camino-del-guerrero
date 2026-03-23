@@ -1,0 +1,96 @@
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Recomendaciones</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Videos y consejos para mejorar tu entrenamiento.</p>
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <p-progressspinner class="w-10 h-10" />
+    </div>
+  } @else if (recomendaciones().length === 0) {
+    <div class="text-center py-16 text-gray-400 dark:text-gray-600">
+      <i class="pi pi-play-circle text-4xl"></i>
+      <p class="mt-2 text-sm">Aún no hay recomendaciones disponibles.</p>
+    </div>
+  } @else {
+
+    <!-- Filtros de categoría -->
+    <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      @for (f of filtros; track f.value) {
+        <button
+          (click)="filtro.set(f.value)"
+          [class]="filtro() === f.value
+            ? 'shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-guerrero-red text-white'
+            : 'shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-400'"
+        >
+          {{ f.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Cards -->
+    @if (filtradas().length === 0) {
+      <div class="text-center py-8 text-gray-400 dark:text-gray-600">
+        <p class="text-sm">No hay recomendaciones en esta categoría.</p>
+      </div>
+    }
+
+    <div class="space-y-3">
+      @for (rec of filtradas(); track rec.id) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+
+          <!-- Video / Thumbnail -->
+          @if (rec.url_video) {
+            @if (reproduciendo() === rec.id && embedUrl(rec.url_video); as src) {
+              <!-- Reproductor embebido -->
+              <div class="relative w-full" style="padding-top: 56.25%">
+                <iframe [src]="src"
+                        class="absolute inset-0 w-full h-full"
+                        frameborder="0"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen>
+                </iframe>
+              </div>
+            } @else if (thumbnailUrl(rec.url_video); as thumb) {
+              <!-- Thumbnail con botón play — YouTube -->
+              <button (click)="reproducir(rec.id)" class="block w-full relative">
+                <img [src]="thumb" [alt]="rec.titulo" class="w-full h-44 object-cover" />
+                <div class="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors">
+                  <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                    <i class="pi pi-play text-guerrero-red text-lg ml-0.5"></i>
+                  </div>
+                </div>
+              </button>
+            } @else {
+              <!-- URL no-YouTube: abre en nueva pestaña -->
+              <a [href]="rec.url_video" target="_blank" rel="noopener"
+                 class="flex items-center justify-center h-28 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors gap-2">
+                <i class="pi pi-external-link text-xl text-gray-400"></i>
+                <span class="text-sm text-gray-500">Ver video</span>
+              </a>
+            }
+          }
+
+          <!-- Contenido -->
+          <div class="p-3 space-y-1">
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{{ rec.titulo }}</p>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    [class]="badge(rec.categoria)">
+                {{ label(rec.categoria) }}
+              </span>
+            </div>
+            @if (rec.descripcion) {
+              <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{{ rec.descripcion }}</p>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>

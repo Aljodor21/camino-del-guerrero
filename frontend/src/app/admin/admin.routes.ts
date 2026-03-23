@@ -14,4 +14,8 @@ export const ADMIN_ROUTES: Routes = [
     path: 'usuarios',
     loadComponent: () => import('./usuarios/usuarios').then(m => m.Usuarios),
   },
+  {
+    path: 'recomendaciones',
+    loadComponent: () => import('./recomendaciones/recomendaciones').then(m => m.AdminRecomendaciones),
+  },
 ];

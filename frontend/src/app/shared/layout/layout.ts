@@ -25,16 +25,18 @@ export class Layout implements OnInit {
   protected navItems = computed(() => {
     if (this.authService.isAdmin()) {
       return [
-        { path: '/admin/implementos', icon: 'pi pi-box',   label: 'Implementos' },
-        { path: '/admin/ejercicios',  icon: 'pi pi-video', label: 'Ejercicios'  },
-        { path: '/admin/usuarios',    icon: 'pi pi-users', label: 'Usuarios'    },
+        { path: '/admin/implementos',    icon: 'pi pi-box',         label: 'Implementos' },
+        { path: '/admin/ejercicios',     icon: 'pi pi-video',       label: 'Ejercicios'  },
+        { path: '/admin/recomendaciones',icon: 'pi pi-play-circle', label: 'Consejos'    },
+        { path: '/admin/usuarios',       icon: 'pi pi-users',       label: 'Usuarios'    },
       ];
     }
     return [
-      { path: '/rutinas',   icon: 'pi pi-bolt',      label: 'Rutinas'   },
-      { path: '/progreso',  icon: 'pi pi-chart-line', label: 'Progreso'  },
-      { path: '/nutricion', icon: 'pi pi-heart',      label: 'Nutrición' },
-      { path: '/perfil',    icon: 'pi pi-user',       label: 'Perfil'    },
+      { path: '/rutinas',         icon: 'pi pi-bolt',        label: 'Rutinas'   },
+      { path: '/progreso',        icon: 'pi pi-chart-line',  label: 'Progreso'  },
+      { path: '/nutricion',       icon: 'pi pi-heart',       label: 'Nutrición' },
+      { path: '/recomendaciones', icon: 'pi pi-play-circle', label: 'Consejos'  },
+      { path: '/perfil',          icon: 'pi pi-user',        label: 'Perfil'    },
     ];
   });
 }

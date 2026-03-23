@@ -71,6 +71,29 @@ class DiaRutina(models.Model):
         return f'{self.rutina} - {self.get_dia_semana_display()}'
 
 
+class Recomendacion(models.Model):
+    CATEGORIAS = [
+        ('tecnica',   'Técnica'),
+        ('fisico',    'Físico'),
+        ('nutricion', 'Nutrición'),
+        ('mental',    'Mental'),
+        ('general',   'General'),
+    ]
+    titulo       = models.CharField(max_length=200)
+    descripcion  = models.TextField(blank=True)
+    url_video    = models.URLField(blank=True)
+    categoria    = models.CharField(max_length=20, choices=CATEGORIAS, default='general')
+    activa       = models.BooleanField(default=True)
+    orden        = models.PositiveIntegerField(default=0)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['orden', '-fecha_creacion']
+
+    def __str__(self):
+        return self.titulo
+
+
 class EjercicioDia(models.Model):
     dia = models.ForeignKey(DiaRutina, on_delete=models.CASCADE, related_name='ejercicios')
     ejercicio = models.ForeignKey(Ejercicio, on_delete=models.CASCADE)
