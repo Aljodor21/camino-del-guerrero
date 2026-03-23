@@ -2,17 +2,15 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Implemento, Rutina, UsuarioImplemento
-from .serializers import (EjercicioVideoSerializer, ImplementoSerializer,
-                           RutinaSerializer, UsuarioImplementoSerializer)
+from .models import Ejercicio, Implemento, Rutina, UsuarioImplemento
+from .serializers import (EjercicioSerializer, EjercicioVideoSerializer,
+                           ImplementoSerializer, RutinaSerializer, UsuarioImplementoSerializer)
 
 
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.rol and request.user.rol.nombre == 'admin')
 
-
-# --- Implementos (admin: CRUD / usuario: solo lectura) ---
 
 class ImplementoListCreateView(generics.ListCreateAPIView):
     queryset = Implemento.objects.all()
@@ -29,8 +27,6 @@ class ImplementoDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ImplementoSerializer
     permission_classes = [IsAdmin]
 
-
-# --- Implementos del usuario ---
 
 class MisImplementosView(generics.ListCreateAPIView):
     serializer_class = UsuarioImplementoSerializer
@@ -49,17 +45,18 @@ class MisImplementosDeleteView(generics.DestroyAPIView):
         return UsuarioImplemento.objects.filter(usuario=self.request.user)
 
 
-# --- Ejercicios (admin: editar video) ---
+class EjercicioListView(generics.ListAPIView):
+    queryset = Ejercicio.objects.prefetch_related('implementos').all()
+    serializer_class = EjercicioSerializer
+    permission_classes = [IsAdmin]
+
 
 class EjercicioVideoUpdateView(generics.UpdateAPIView):
-    from .models import Ejercicio
     queryset = Ejercicio.objects.all()
     serializer_class = EjercicioVideoSerializer
     permission_classes = [IsAdmin]
     http_method_names = ['patch']
 
-
-# --- Rutina del usuario ---
 
 class MiRutinaView(APIView):
     def get(self, request):

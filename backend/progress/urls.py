@@ -1,7 +1,5 @@
 from django.urls import path
-
-from .views import (RegistroEntrenamientoDetailView,
-                    RegistroEntrenamientoView, RegistroPesoView)
+from .views import RegistroEntrenamientoDetailView, RegistroEntrenamientoView, RegistroPesoView
 
 urlpatterns = [
     path('peso/', RegistroPesoView.as_view(), name='registro-peso'),

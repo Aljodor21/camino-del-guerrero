@@ -1,0 +1,85 @@
+<div class="p-4 space-y-4 max-w-2xl mx-auto">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Implementos</h1>
+    <p-button label="Agregar" icon="pi pi-plus" (onClick)="abrir()" />
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else if (implementos().length === 0) {
+    <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+      <i class="pi pi-box text-4xl"></i>
+      <p class="mt-2 text-sm">No hay implementos. Agrega el primero.</p>
+    </div>
+  } @else {
+    <div class="space-y-2">
+      @for (imp of implementos(); track imp.id) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ imp.nombre }}</p>
+            <div class="flex flex-wrap gap-2 mt-1">
+              @if (imp.categoria) {
+                <span class="text-xs bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                  {{ imp.categoria }}
+                </span>
+              }
+              @if (imp.es_sin_implemento) {
+                <span class="text-xs bg-guerrero-gold/20 text-guerrero-gold-dark px-2 py-0.5 rounded-full font-medium">
+                  Peso corporal
+                </span>
+              }
+            </div>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <p-button icon="pi pi-pencil" variant="text" [rounded]="true"
+                      severity="secondary" (onClick)="abrir(imp)" />
+            <p-button icon="pi pi-trash" variant="text" [rounded]="true"
+                      severity="danger" (onClick)="eliminar(imp)" />
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <p-dialog
+    [header]="editandoId() ? 'Editar implemento' : 'Nuevo implemento'"
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [modal]="true"
+    [style]="{ width: '90vw', maxWidth: '480px' }"
+  >
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full mb-3" />
+    }
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4 pt-2">
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nombre *</label>
+        <input pInputText formControlName="nombre" placeholder="Ej: Guantes de boxeo" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Descripción</label>
+        <input pInputText formControlName="descripcion" placeholder="Opcional" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Categoría</label>
+        <input pInputText formControlName="categoria" placeholder="Ej: boxeo, cardio, fuerza" class="w-full" />
+      </div>
+      <div class="flex items-center gap-2">
+        <p-checkbox formControlName="es_sin_implemento" [binary]="true" inputId="sin_imp" />
+        <label for="sin_imp" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          Opción "Sin implemento" (peso corporal)
+        </label>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <p-button type="button" label="Cancelar" variant="outlined" severity="secondary"
+                  (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
+        <p-button type="submit" label="Guardar" [loading]="saving()"
+                  [disabled]="form.invalid" styleClass="flex-1" />
+      </div>
+    </form>
+  </p-dialog>
+
+</div>

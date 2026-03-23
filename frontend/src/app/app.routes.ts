@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
+import { adminGuard } from './core/guards/role-guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
@@ -20,6 +21,11 @@ export const routes: Routes = [
       { path: 'rutinas',   loadComponent: () => import('./rutinas/rutinas').then(m => m.Rutinas) },
       { path: 'progreso',  loadComponent: () => import('./progreso/progreso').then(m => m.Progreso) },
       { path: 'nutricion', loadComponent: () => import('./nutricion/nutricion').then(m => m.Nutricion) },
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES),
+      },
       { path: '', redirectTo: 'rutinas', pathMatch: 'full' },
     ],
   },

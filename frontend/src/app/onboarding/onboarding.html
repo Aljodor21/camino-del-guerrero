@@ -1,22 +1,32 @@
 <div class="min-h-screen bg-gray-50 dark:bg-dark-900 px-4 py-8">
   <div class="max-w-lg mx-auto space-y-6">
-
     <!-- Logo -->
     <div class="flex justify-center">
-      <img [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
-           alt="Camino del Guerrero" class="h-20 w-auto" />
+      <img
+        [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+        alt="Camino del Guerrero"
+        class="h-20 w-auto"
+      />
     </div>
 
     <!-- Indicador de pasos -->
     <div class="flex items-center justify-center gap-2">
       @for (n of [1, 2, 3]; track n) {
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-             [class]="n <= paso() ? 'bg-guerrero-red text-white' : 'bg-gray-200 dark:bg-dark-700 text-gray-400'">
+        <div
+          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+          [class]="
+            n <= paso()
+              ? 'bg-guerrero-red text-white'
+              : 'bg-gray-200 dark:bg-dark-700 text-gray-400'
+          "
+        >
           {{ n }}
         </div>
         @if (n < 3) {
-          <div class="w-12 h-0.5 transition-colors"
-               [class]="n < paso() ? 'bg-guerrero-red' : 'bg-gray-200 dark:bg-dark-700'"></div>
+          <div
+            class="w-12 h-0.5 transition-colors"
+            [class]="n < paso() ? 'bg-guerrero-red' : 'bg-gray-200 dark:bg-dark-700'"
+          ></div>
         }
       }
     </div>
@@ -27,19 +37,34 @@
         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Cuéntanos sobre ti</h2>
 
         <form [formGroup]="form" class="space-y-5">
-
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso actual (kg)</label>
-              <p-inputnumber formControlName="peso_inicial" [min]="20" [max]="300"
-                             [minFractionDigits]="1" [maxFractionDigits]="1"
-                             placeholder="70.0" styleClass="w-full" />
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >Peso actual (kg)</label
+              >
+              <p-inputnumber
+                formControlName="peso_inicial"
+                [min]="20"
+                [max]="300"
+                [minFractionDigits]="1"
+                [maxFractionDigits]="1"
+                placeholder="70.0"
+                styleClass="w-full"
+              />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso meta (kg)</label>
-              <p-inputnumber formControlName="peso_objetivo" [min]="20" [max]="300"
-                             [minFractionDigits]="1" [maxFractionDigits]="1"
-                             placeholder="Opcional" styleClass="w-full" />
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >Peso meta (kg)</label
+              >
+              <p-inputnumber
+                formControlName="peso_objetivo"
+                [min]="20"
+                [max]="300"
+                [minFractionDigits]="1"
+                [maxFractionDigits]="1"
+                placeholder="Opcional"
+                styleClass="w-full"
+              />
             </div>
           </div>
 
@@ -47,8 +72,11 @@
             <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Tu objetivo</label>
             <div class="grid grid-cols-2 gap-2">
               @for (op of objetivoOpciones; track op.value) {
-                <button type="button" (click)="form.controls.objetivo.setValue(op.value)"
-                        [class]="clasesCard(form.controls.objetivo.value === op.value)">
+                <button
+                  type="button"
+                  (click)="form.controls.objetivo.setValue(op.value)"
+                  [class]="clasesCard(form.controls.objetivo.value === op.value)"
+                >
                   <i [class]="op.icon + ' text-lg'"></i>
                   <span class="text-sm font-medium">{{ op.label }}</span>
                 </button>
@@ -60,17 +88,24 @@
             <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
               ¿Cada cuánto registras tu peso?
             </label>
-            <p-selectbutton formControlName="frecuencia_peso"
-                            [options]="frecuenciaOpciones"
-                            optionLabel="label" optionValue="value"
-                            styleClass="w-full" />
+            <p-selectbutton
+              formControlName="frecuencia_peso"
+              [options]="frecuenciaOpciones"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full"
+            />
           </div>
-
         </form>
 
-        <p-button label="Continuar" icon="pi pi-arrow-right" iconPos="right"
-                  [disabled]="!paso1Valido()" (onClick)="siguientePaso()"
-                  styleClass="w-full" />
+        <p-button
+          label="Continuar"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [disabled]="!paso1Valido()"
+          (onClick)="siguientePaso()"
+          styleClass="w-full"
+        />
       </div>
     }
 
@@ -84,29 +119,59 @@
           </p>
         </div>
 
-        @if (implementos().length === 0) {
+        @if (loadingImplementos()) {
           <div class="flex justify-center py-6">
             <p-progressspinner styleClass="w-8 h-8" />
           </div>
+        } @else if (sinImplementos() || implementos().length === 0) {
+          <div class="text-center py-6 space-y-3">
+            <i class="pi pi-exclamation-circle text-3xl text-warning"></i>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              El administrador aún no ha configurado los implementos disponibles. Intenta más tarde.
+            </p>
+          </div>
+          <p-button
+            label="Atrás"
+            icon="pi pi-arrow-left"
+            variant="outlined"
+            (onClick)="anteriorPaso()"
+            styleClass="w-full"
+          />
         } @else {
           <div class="grid grid-cols-2 gap-2">
             @for (imp of implementos(); track imp.id) {
-              <button type="button" (click)="toggleImplemento(imp.id)"
-                      [class]="clasesCard(isSeleccionado(imp.id))">
-                <i [class]="'pi text-lg ' + (isSeleccionado(imp.id) ? 'pi-check-circle' : 'pi-circle')"></i>
+              <button
+                type="button"
+                (click)="toggleImplemento(imp.id)"
+                [class]="clasesCard(isSeleccionado(imp.id))"
+              >
+                <i
+                  [class]="
+                    'pi text-lg ' + (isSeleccionado(imp.id) ? 'pi-check-circle' : 'pi-circle')
+                  "
+                ></i>
                 <span class="text-sm font-medium">{{ imp.nombre }}</span>
               </button>
             }
           </div>
+          <div class="flex gap-3">
+            <p-button
+              label="Atrás"
+              icon="pi pi-arrow-left"
+              variant="outlined"
+              (onClick)="anteriorPaso()"
+              styleClass="flex-1"
+            />
+            <p-button
+              label="Generar mi plan"
+              icon="pi pi-bolt"
+              iconPos="right"
+              [disabled]="seleccionados().length === 0"
+              (onClick)="siguientePaso()"
+              styleClass="flex-1"
+            />
+          </div>
         }
-
-        <div class="flex gap-3">
-          <p-button label="Atrás" icon="pi pi-arrow-left" variant="outlined"
-                    (onClick)="anteriorPaso()" styleClass="flex-1" />
-          <p-button label="Generar mi plan" icon="pi pi-bolt" iconPos="right"
-                    [disabled]="seleccionados().length === 0"
-                    (onClick)="siguientePaso()" styleClass="flex-1" />
-        </div>
       </div>
     }
 
@@ -118,17 +183,21 @@
           <div>
             <h2 class="text-lg font-bold text-gray-900 dark:text-white">Preparando tu plan...</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              La IA está creando tu rutina y plan nutricional personalizado. Esto puede tardar unos segundos.
+              La IA está creando tu rutina y plan nutricional personalizado. Esto puede tardar unos
+              segundos.
             </p>
           </div>
         } @else {
           <i class="pi pi-exclamation-triangle text-4xl text-warning"></i>
           <p-message severity="error" [text]="error()" styleClass="w-full text-left" />
-          <p-button label="Volver atrás" icon="pi pi-arrow-left" variant="outlined"
-                    (onClick)="anteriorPaso()" />
+          <p-button
+            label="Volver atrás"
+            icon="pi pi-arrow-left"
+            variant="outlined"
+            (onClick)="anteriorPaso()"
+          />
         }
       </div>
     }
-
   </div>
 </div>

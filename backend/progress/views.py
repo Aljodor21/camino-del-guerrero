@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 
 from .models import RegistroEntrenamiento, RegistroPeso
 from .serializers import RegistroEntrenamientoSerializer, RegistroPesoSerializer

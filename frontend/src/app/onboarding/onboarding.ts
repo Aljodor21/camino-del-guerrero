@@ -31,6 +31,9 @@ export class Onboarding implements OnInit {
   protected implementos = signal<Implemento[]>([]);
   protected seleccionados = signal<number[]>([]);
 
+  protected loadingImplementos = signal(true);
+  protected sinImplementos = signal(false);
+
   protected readonly objetivoOpciones = [
     { label: 'Bajar de peso',  value: 'bajar_peso',    icon: 'pi pi-arrow-down' },
     { label: 'Ganar músculo',  value: 'ganar_musculo', icon: 'pi pi-bolt'       },
@@ -52,9 +55,17 @@ export class Onboarding implements OnInit {
 
   ngOnInit(): void {
     this.http.get<Implemento[]>(`${API}/rutinas/implementos/`).subscribe({
-      next: data => this.implementos.set(data),
+      next: data => {
+        this.implementos.set(data);
+        this.loadingImplementos.set(false);
+      },
+      error: () => {
+        this.loadingImplementos.set(false);
+        this.sinImplementos.set(true);
+      },
     });
   }
+
 
   protected isSeleccionado(id: number): boolean {
     return this.seleccionados().includes(id);
