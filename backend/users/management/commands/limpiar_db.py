@@ -35,8 +35,8 @@ class Command(BaseCommand):
         ObjetivoUsuario.objects.all().delete()
         self.stdout.write('Objetivos eliminados.')
 
-        # Usuarios no-admin
-        eliminados, _ = Usuario.objects.filter(is_superuser=False).delete()
+        # Usuarios no-admin (conserva usuarios con rol admin)
+        eliminados, _ = Usuario.objects.exclude(rol__nombre='admin').delete()
         self.stdout.write(f'Usuarios eliminados: {eliminados}')
 
         self.stdout.write(self.style.SUCCESS('Limpieza completada. Se conservaron Implemento, Rol y Sexo.'))
