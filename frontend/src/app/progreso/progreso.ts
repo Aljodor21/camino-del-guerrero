@@ -3,11 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
+import { ChartModule } from 'primeng/chart';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+
+import { ThemeService } from '../core/services/theme';
 
 import { RegistroPeso, RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
 import { Rutina, DiaRutina, EjercicioDia } from '../core/models/rutina.model';
@@ -31,12 +34,13 @@ interface EjercicioEstado {
   selector: 'app-progreso',
   templateUrl: './progreso.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonModule, DialogModule, InputNumberModule, TextareaModule, MessageModule, ProgressSpinnerModule],
+  imports: [ReactiveFormsModule, ButtonModule, ChartModule, DialogModule, InputNumberModule, TextareaModule, MessageModule, ProgressSpinnerModule],
 })
 export class Progreso implements OnInit, OnDestroy {
   private http      = inject(HttpClient);
   private fb        = inject(FormBuilder);
   private sanitizer = inject(DomSanitizer);
+  private theme     = inject(ThemeService);
 
   protected videoUrl = signal<SafeResourceUrl | null>(null);
 
@@ -69,6 +73,100 @@ export class Progreso implements OnInit, OnDestroy {
   protected totalMinutosSesiones = computed(() =>
     Math.round(this.registros().reduce((s, r) => s + r.duracion_segundos, 0) / 60)
   );
+  protected promedioMinutos = computed(() => {
+    const r = this.registros();
+    if (!r.length) return 0;
+    return Math.round(r.reduce((s, x) => s + x.duracion_segundos, 0) / r.length / 60);
+  });
+
+  protected topEjercicios = computed(() => {
+    const conteo: Record<string, number> = {};
+    for (const r of this.registros()) {
+      for (const e of r.ejercicios_completados) {
+        if (e.series.some(s => s.completada)) {
+          conteo[e.nombre] = (conteo[e.nombre] ?? 0) + 1;
+        }
+      }
+    }
+    return Object.entries(conteo)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([nombre, veces]) => ({ nombre, veces }));
+  });
+
+  private chartColors = computed(() => {
+    const dark = this.theme.isDark();
+    return {
+      text:    dark ? '#9ca3af' : '#6b7280',
+      grid:    dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    };
+  });
+
+  protected chartPesoData = computed(() => {
+    const r = [...this.registrosPeso()].reverse();
+    if (r.length < 2) return null;
+    return {
+      labels: r.map(p => new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })),
+      datasets: [{
+        label: 'Peso (kg)',
+        data: r.map(p => p.peso_kg),
+        borderColor: '#C0392B',
+        backgroundColor: 'rgba(192,57,43,0.08)',
+        pointBackgroundColor: '#C0392B',
+        pointRadius: 5,
+        tension: 0.3,
+        fill: true,
+      }],
+    };
+  });
+
+  protected chartPesoOptions = computed(() => {
+    const { text, grid } = this.chartColors();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} kg` } },
+      },
+      scales: {
+        x: { ticks: { color: text, font: { size: 11 } }, grid: { color: grid } },
+        y: { ticks: { color: text, font: { size: 11 }, callback: (v: number) => `${v} kg` }, grid: { color: grid } },
+      },
+    };
+  });
+
+  protected chartSesionesData = computed(() => {
+    const r = [...this.registros()].reverse().slice(0, 10);
+    if (!r.length) return null;
+    return {
+      labels: r.map(s => new Date(s.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })),
+      datasets: [{
+        label: 'Minutos',
+        data: r.map(s => Math.round(s.duracion_segundos / 60)),
+        backgroundColor: 'rgba(192,57,43,0.7)',
+        borderColor: '#C0392B',
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    };
+  });
+
+  protected chartSesionesOptions = computed(() => {
+    const { text, grid } = this.chartColors();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} min` } },
+      },
+      scales: {
+        x: { ticks: { color: text, font: { size: 11 } }, grid: { color: grid } },
+        y: { ticks: { color: text, font: { size: 11 }, callback: (v: number) => `${v} min` }, grid: { color: grid }, beginAtZero: true },
+      },
+    };
+  });
 
   // ── ENTRENAMIENTO — sesión ────────────────────────────────────────
   protected vistaEntrenamiento = signal<'lista' | 'elegir_dia' | 'sesion'>('lista');

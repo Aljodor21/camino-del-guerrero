@@ -8,7 +8,7 @@ class RegistroPesoView(generics.ListCreateAPIView):
     serializer_class = RegistroPesoSerializer
 
     def get_queryset(self):
-        return RegistroPeso.objects.filter(usuario=self.request.user)
+        return RegistroPeso.objects.filter(usuario=self.request.user).order_by('-fecha', '-id')
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
@@ -18,7 +18,7 @@ class RegistroEntrenamientoView(generics.ListCreateAPIView):
     serializer_class = RegistroEntrenamientoSerializer
 
     def get_queryset(self):
-        return RegistroEntrenamiento.objects.filter(usuario=self.request.user)
+        return RegistroEntrenamiento.objects.filter(usuario=self.request.user).order_by('-fecha', '-id')
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
