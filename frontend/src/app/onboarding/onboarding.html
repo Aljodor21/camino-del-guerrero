@@ -161,16 +161,28 @@
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Restricciones alimentarias
-                <span class="font-normal text-gray-400">(opcional)</span>
+                Región o ciudad
               </label>
               <input
                 pInputText
-                formControlName="preferencias_alimentarias"
-                placeholder="Ej: sin gluten, vegetariano..."
+                formControlName="region"
+                placeholder="Ej: Paisa, Costa, Bogotá..."
                 class="w-full"
               />
             </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Restricciones alimentarias
+              <span class="font-normal text-gray-400">(opcional)</span>
+            </label>
+            <input
+              pInputText
+              formControlName="preferencias_alimentarias"
+              placeholder="Ej: sin gluten, vegetariano..."
+              class="w-full"
+            />
           </div>
         </form>
 

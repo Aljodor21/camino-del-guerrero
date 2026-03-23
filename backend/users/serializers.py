@@ -46,7 +46,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Usuario
         fields = ['id', 'email', 'nombre', 'rol', 'sexo', 'fecha_nacimiento', 'estatura',
-                  'frecuencia_peso', 'nacionalidad', 'preferencias_alimentarias', 'date_joined']
+                  'frecuencia_peso', 'nacionalidad', 'region', 'preferencias_alimentarias', 'date_joined']
 
 
 class CustomTokenSerializer(TokenObtainPairSerializer):

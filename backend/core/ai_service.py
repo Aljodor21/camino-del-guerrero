@@ -65,6 +65,7 @@ class AIService:
         p = self._perfil(usuario)
         pref = usuario.preferencias_alimentarias or 'Ninguna'
         nacionalidad = usuario.nacionalidad or 'No especificada'
+        region = usuario.region or 'No especificada'
         prompt = f"""
 Eres un nutricionista deportivo especializado en atletas de artes marciales y boxeo.
 Genera un plan nutricional semanal en formato JSON para este atleta:
@@ -77,11 +78,13 @@ PERFIL:
 - Peso objetivo: {objetivo.peso_objetivo if objetivo.peso_objetivo else 'No especificado'} kg
 - Objetivo: {objetivo.get_objetivo_display()}
 - Nacionalidad: {nacionalidad}
+- Región / zona: {region}
 - Restricciones alimentarias: {pref}
 - Días de entrenamiento: {objetivo.dias_entrenamiento} por semana
 
 INSTRUCCIONES:
-- Usa ÚNICAMENTE platos y alimentos comunes en la cocina casera de {nacionalidad}. Ingredientes fáciles de conseguir en mercados locales, nada exótico ni de restaurante.
+- Usa ÚNICAMENTE platos y alimentos típicos de la región "{region}" ({nacionalidad}). Prioriza recetas caseras de esa zona, ingredientes que se consiguen fácil en plazas de mercado o tiendas locales.
+- Si la región es conocida (ej: paisa, costeño, valluno, llanero, bogotano) usa sus platos característicos: frijoles, sancocho, arepas, bandeja, patacones, etc. Sé específico y fiel a la cultura culinaria local.
 - Adapta calorías al objetivo (déficit=bajar, superávit=músculo, mantenimiento=mantener).
 - Varía las comidas cada día, no repitas el mismo menú.
 - Incluye porciones prácticas (ej: "2 huevos + 1 taza de arroz + ensalada de tomate").

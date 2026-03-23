@@ -19,6 +19,7 @@ export interface Usuario {
   estatura: number | null;
   frecuencia_peso: 15 | 30;
   nacionalidad: string;
+  region: string;
   preferencias_alimentarias: string;
 }
 

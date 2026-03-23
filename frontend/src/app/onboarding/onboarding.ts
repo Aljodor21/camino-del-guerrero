@@ -85,6 +85,7 @@ export class Onboarding implements OnInit {
     dias_entrenamiento:       [3, Validators.required],
     duracion_sesion:          [45, Validators.required],
     nacionalidad:             ['', Validators.required],
+    region:                   ['', Validators.required],
     preferencias_alimentarias:[''],
   });
 
@@ -131,7 +132,7 @@ export class Onboarding implements OnInit {
     const c = this.form.controls;
     return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid
         && c.nivel_actividad.valid && c.dias_entrenamiento.valid && c.duracion_sesion.valid
-        && c.nacionalidad.valid;
+        && c.nacionalidad.valid && c.region.valid;
   }
 
 
@@ -152,7 +153,7 @@ export class Onboarding implements OnInit {
       this.error.set('');
       const {
         peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura,
-        nivel_actividad, dias_entrenamiento, duracion_sesion, nacionalidad, preferencias_alimentarias,
+        nivel_actividad, dias_entrenamiento, duracion_sesion, nacionalidad, region, preferencias_alimentarias,
       } = this.form.getRawValue();
       try {
         await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
@@ -163,6 +164,7 @@ export class Onboarding implements OnInit {
         await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, {
           frecuencia_peso, estatura,
           ...(nacionalidad             ? { nacionalidad }              : {}),
+          ...(region                   ? { region }                    : {}),
           ...(preferencias_alimentarias ? { preferencias_alimentarias } : {}),
         }));
         const existentes = await firstValueFrom(this.http.get<{id: number}[]>(`${API}/rutinas/mis-implementos/`));

@@ -29,6 +29,7 @@ class Usuario(AbstractUser):
     estatura                 = models.PositiveIntegerField(null=True, blank=True, help_text='Estatura en centímetros')
     frecuencia_peso          = models.IntegerField(default=30, choices=FRECUENCIA_CHOICES)
     nacionalidad             = models.CharField(max_length=100, blank=True, help_text='País de origen para personalizar recetas')
+    region                   = models.CharField(max_length=150, blank=True, help_text='Región, departamento o ciudad para personalizar recetas')
     preferencias_alimentarias= models.CharField(max_length=300, blank=True, help_text='Restricciones o preferencias dietarias')
 
     USERNAME_FIELD = 'email'
