@@ -1,10 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { AuthService } from '../../core/services/auth';
 import { ThemeService } from '../../core/services/theme';
+import { NotificacionService } from '../../core/services/notificaciones';
 
 @Component({
   selector: 'app-layout',
@@ -12,9 +13,14 @@ import { ThemeService } from '../../core/services/theme';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule],
 })
-export class Layout {
-  protected authService = inject(AuthService);
-  protected themeService = inject(ThemeService);
+export class Layout implements OnInit {
+  protected authService      = inject(AuthService);
+  protected themeService     = inject(ThemeService);
+  protected notificaciones   = inject(NotificacionService);
+
+  ngOnInit(): void {
+    this.notificaciones.verificar();
+  }
 
   protected navItems = computed(() => {
     if (this.authService.isAdmin()) {
