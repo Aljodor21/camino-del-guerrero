@@ -41,10 +41,13 @@ class MiPlanNutricionalView(APIView):
 class GenerarRutinaView(APIView):
     def post(self, request):
         implementos = request.user.implementos.select_related('implemento').all()
+        objetivo = request.user.objetivos.filter(activo=True).first()
+        if not objetivo:
+            return Response({'detail': 'Debes completar el onboarding primero.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             ai = AIService()
-            data = ai.generar_rutina(request.user, implementos)
+            data = ai.generar_rutina(request.user, implementos, objetivo)
 
             Rutina.objects.filter(usuario=request.user).delete()
             rutina = Rutina.objects.create(

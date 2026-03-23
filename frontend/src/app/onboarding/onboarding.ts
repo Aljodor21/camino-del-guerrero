@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -19,7 +20,7 @@ const API = environment.apiUrl;
   selector: 'app-onboarding',
   templateUrl: './onboarding.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, InputNumberModule, SelectButtonModule, ButtonModule, MessageModule, ProgressSpinnerModule],
+  imports: [ReactiveFormsModule, InputNumberModule, InputTextModule, SelectButtonModule, ButtonModule, MessageModule, ProgressSpinnerModule],
 })
 export class Onboarding implements OnInit {
   private http = inject(HttpClient);
@@ -47,12 +48,35 @@ export class Onboarding implements OnInit {
     { label: 'Cada mes',     value: 30 },
   ];
 
+  protected readonly nivelOpciones = [
+    { label: 'Principiante', value: 'principiante' },
+    { label: 'Intermedio',   value: 'intermedio'   },
+    { label: 'Avanzado',     value: 'avanzado'      },
+  ];
+
+  protected readonly diasOpciones = [
+    { label: '3 días', value: 3 },
+    { label: '4 días', value: 4 },
+    { label: '5 días', value: 5 },
+  ];
+
+  protected readonly duracionOpciones = [
+    { label: '30 min', value: 30 },
+    { label: '45 min', value: 45 },
+    { label: '60 min', value: 60 },
+  ];
+
   protected form = this.fb.nonNullable.group({
-    peso_inicial:   [null as unknown as number, [Validators.required, Validators.min(20), Validators.max(300)]],
-    peso_objetivo:  [null as number | null],
-    objetivo:       ['bajar_peso', Validators.required],
-    frecuencia_peso:[30, Validators.required],
-    estatura:       [null as unknown as number, [Validators.required, Validators.min(100), Validators.max(250)]],
+    peso_inicial:             [null as unknown as number, [Validators.required, Validators.min(20), Validators.max(300)]],
+    peso_objetivo:            [null as number | null],
+    objetivo:                 ['bajar_peso', Validators.required],
+    frecuencia_peso:          [30, Validators.required],
+    estatura:                 [null as unknown as number, [Validators.required, Validators.min(100), Validators.max(250)]],
+    nivel_actividad:          ['principiante', Validators.required],
+    dias_entrenamiento:       [3, Validators.required],
+    duracion_sesion:          [45, Validators.required],
+    nacionalidad:             [''],
+    preferencias_alimentarias:[''],
   });
 
 
@@ -96,7 +120,8 @@ export class Onboarding implements OnInit {
 
   protected paso1Valido(): boolean {
     const c = this.form.controls;
-    return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid;
+    return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid
+        && c.nivel_actividad.valid && c.dias_entrenamiento.valid && c.duracion_sesion.valid;
   }
 
 
@@ -115,16 +140,27 @@ export class Onboarding implements OnInit {
 
     private async generarPlan(): Promise<void> {
       this.error.set('');
-      const { peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura } = this.form.getRawValue();
+      const {
+        peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura,
+        nivel_actividad, dias_entrenamiento, duracion_sesion, nacionalidad, preferencias_alimentarias,
+      } = this.form.getRawValue();
       try {
         await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
-          objetivo, peso_inicial,
+          objetivo, peso_inicial, nivel_actividad, dias_entrenamiento, duracion_sesion,
           ...(peso_objetivo ? { peso_objetivo } : {}),
         }));
         await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
-        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, { frecuencia_peso, estatura }));
+        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, {
+          frecuencia_peso, estatura,
+          ...(nacionalidad             ? { nacionalidad }              : {}),
+          ...(preferencias_alimentarias ? { preferencias_alimentarias } : {}),
+        }));
+        const existentes = await firstValueFrom(this.http.get<{id: number}[]>(`${API}/rutinas/mis-implementos/`));
+        for (const e of existentes) {
+          await firstValueFrom(this.http.delete(`${API}/rutinas/mis-implementos/${e.id}/`));
+        }
         for (const id of this.seleccionados()) {
-          await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento: id }));
+          await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento_id: id }));
         }
         await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
         await firstValueFrom(this.http.post(`${API}/nutricion/mi-plan/`, {}));

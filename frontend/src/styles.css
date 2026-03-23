@@ -16,13 +16,22 @@
   --color-warning:           #F39C12;
 }
 
-/* Botones secondary text visibles en dark mode */
+/* Botones secondary (text + outlined) visibles en dark mode */
 html.dark {
   --p-button-text-secondary-color: #9ca3af;
   --p-button-text-secondary-hover-color: #e5e7eb;
   --p-button-text-secondary-hover-background: rgba(156, 163, 175, 0.08);
   --p-button-text-secondary-active-background: rgba(156, 163, 175, 0.16);
   --p-button-text-secondary-active-color: #e5e7eb;
+
+  --p-button-outlined-secondary-color: #9ca3af;
+  --p-button-outlined-secondary-border-color: #4b5563;
+  --p-button-outlined-secondary-hover-color: #e5e7eb;
+  --p-button-outlined-secondary-hover-background: rgba(156, 163, 175, 0.08);
+  --p-button-outlined-secondary-hover-border-color: #9ca3af;
+  --p-button-outlined-secondary-active-color: #e5e7eb;
+  --p-button-outlined-secondary-active-background: rgba(156, 163, 175, 0.16);
+  --p-button-outlined-secondary-active-border-color: #9ca3af;
 }
 
 /* Scrollbar */

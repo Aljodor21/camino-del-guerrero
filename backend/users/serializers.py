@@ -45,7 +45,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Usuario
-        fields = ['id', 'email', 'nombre', 'rol', 'sexo', 'fecha_nacimiento', 'estatura', 'frecuencia_peso', 'date_joined']
+        fields = ['id', 'email', 'nombre', 'rol', 'sexo', 'fecha_nacimiento', 'estatura',
+                  'frecuencia_peso', 'nacionalidad', 'preferencias_alimentarias', 'date_joined']
 
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
@@ -58,5 +59,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
 class ObjetivoUsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model  = ObjetivoUsuario
-        fields = ['id', 'objetivo', 'peso_inicial', 'peso_objetivo', 'fecha_inicio', 'activo']
+        fields = ['id', 'objetivo', 'peso_inicial', 'peso_objetivo',
+                  'nivel_actividad', 'dias_entrenamiento', 'duracion_sesion',
+                  'fecha_inicio', 'activo']
         read_only_fields = ['fecha_inicio', 'activo']

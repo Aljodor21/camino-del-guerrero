@@ -98,6 +98,40 @@
           </div>
 
           <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nivel de actividad física</label>
+            <p-selectbutton
+              formControlName="nivel_actividad"
+              [options]="nivelOpciones"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Días por semana</label>
+              <p-selectbutton
+                formControlName="dias_entrenamiento"
+                [options]="diasOpciones"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Duración por sesión</label>
+              <p-selectbutton
+                formControlName="duracion_sesion"
+                [options]="duracionOpciones"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
             <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
               ¿Cada cuánto registras tu peso?
             </label>
@@ -108,6 +142,33 @@
               optionValue="value"
               styleClass="w-full"
             />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Nacionalidad
+                <span class="font-normal text-gray-400">(opcional)</span>
+              </label>
+              <input
+                pInputText
+                formControlName="nacionalidad"
+                placeholder="Ej: Colombiano, Mexicano..."
+                class="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Restricciones alimentarias
+                <span class="font-normal text-gray-400">(opcional)</span>
+              </label>
+              <input
+                pInputText
+                formControlName="preferencias_alimentarias"
+                placeholder="Ej: sin gluten, vegetariano..."
+                class="w-full"
+              />
+            </div>
           </div>
         </form>
 
