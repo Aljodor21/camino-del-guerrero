@@ -75,7 +75,7 @@ export class Ejercicios implements OnInit {
     this.saving.set(true);
     this.http.patch<Ejercicio>(`${API}/rutinas/ejercicios/${ej.id}/video/`, { url_youtube: this.urlControl.value }).subscribe({
       next: actualizado => {
-        this.ejercicios.update(lista => lista.map(e => e.id === actualizado.id ? actualizado : e));
+        this.ejercicios.update(lista => lista.map(e => e.id === actualizado.id ? { ...e, url_youtube: actualizado.url_youtube } : e));
         this.editandoId.set(null);
         this.saving.set(false);
       },
