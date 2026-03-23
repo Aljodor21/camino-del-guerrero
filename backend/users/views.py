@@ -1,8 +1,9 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from .models import ObjetivoUsuario, Sexo
 from .serializers import (CustomTokenSerializer, ObjetivoUsuarioSerializer,
@@ -27,6 +28,16 @@ class RegistroView(generics.CreateAPIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
+
+
+class SafeTokenRefreshView(TokenRefreshView):
+    """Devuelve 401 en vez de 500 cuando el usuario del token ya no existe."""
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except Exception:
+            return Response({'detail': 'Token inválido o usuario no encontrado.'},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
 
 class PerfilView(APIView):

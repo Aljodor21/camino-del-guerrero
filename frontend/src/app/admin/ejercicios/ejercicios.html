@@ -1,9 +1,10 @@
 <div class="p-4 space-y-4 max-w-2xl mx-auto">
 
+  <!-- Header -->
   <div>
     <h1 class="text-xl font-bold text-gray-900 dark:text-white">Ejercicios</h1>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-      Generados por la IA. Asigna el video de YouTube a cada uno.
+      Catálogo generado por la IA. Agrega el link de YouTube a cada ejercicio.
     </p>
   </div>
 
@@ -17,53 +18,101 @@
       <p class="mt-2 text-sm">Aún no hay ejercicios. Se crean cuando un usuario genera su rutina.</p>
     </div>
   } @else {
+
+    <!-- Stats + filtros -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <i class="pi pi-youtube mr-1"></i>{{ conVideo() }} con video
+      </div>
+      <div class="bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-full">
+        {{ totalActual() - conVideo() }} sin video
+      </div>
+      <button
+        [class]="soloSinVideo()
+          ? 'ml-auto text-xs font-semibold px-3 py-1.5 rounded-full bg-guerrero-red text-white'
+          : 'ml-auto text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-400'"
+        (click)="soloSinVideo.update(v => !v)"
+      >
+        <i class="pi pi-filter mr-1"></i>Solo sin video
+      </button>
+    </div>
+
+    <!-- Búsqueda -->
+    <input
+      pInputText
+      [value]="busqueda()"
+      (input)="busqueda.set($any($event.target).value)"
+      placeholder="Buscar ejercicio..."
+      class="w-full"
+    />
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full" />
+    }
+
+    <!-- Lista -->
     <div class="space-y-2">
-      @for (ej of ejercicios(); track ej.id) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3">
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ ej.nombre }}</p>
-            <div class="mt-1">
-              @if (ej.url_youtube) {
-                <span class="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <i class="pi pi-youtube"></i> Video asignado
-                </span>
-              } @else {
-                <span class="text-xs text-gray-400">Sin video</span>
-              }
+      @for (ej of ejerciciosFiltrados(); track ej.id) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+
+          <!-- Fila normal -->
+          @if (editandoId() !== ej.id) {
+            <div class="flex items-center gap-3 px-4 py-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ ej.nombre }}</p>
+                @if (ej.url_youtube) {
+                  <a [href]="ej.url_youtube" target="_blank"
+                     class="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-0.5 truncate">
+                    <i class="pi pi-youtube shrink-0"></i> {{ ej.url_youtube }}
+                  </a>
+                } @else {
+                  <span class="text-xs text-gray-400 mt-0.5">Sin video</span>
+                }
+              </div>
+              <p-button
+                [icon]="ej.url_youtube ? 'pi pi-pencil' : 'pi pi-plus'"
+                variant="text"
+                [rounded]="true"
+                severity="secondary"
+                [pTooltip]="ej.url_youtube ? 'Editar video' : 'Agregar video'"
+                tooltipPosition="left"
+                (onClick)="iniciarEdicion(ej)"
+              />
             </div>
-          </div>
-          <p-button icon="pi pi-pencil" variant="text" [rounded]="true" severity="secondary"
-                    pTooltip="Asignar video" tooltipPosition="left"
-                    (onClick)="abrirVideo(ej)" />
+
+          <!-- Edición inline -->
+          } @else {
+            <div class="px-4 py-3 space-y-2 bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-400">
+              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ ej.nombre }}</p>
+              <div class="flex gap-2 items-center">
+                <input
+                  pInputText
+                  [formControl]="urlControl"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  class="flex-1 text-sm"
+                  (keydown.enter)="guardar(ej)"
+                  (keydown.escape)="cancelarEdicion()"
+                  autofocus
+                />
+                <p-button icon="pi pi-check" [loading]="saving()" (onClick)="guardar(ej)"
+                          pTooltip="Guardar (Enter)" />
+                <p-button icon="pi pi-times" variant="outlined" severity="secondary"
+                          (onClick)="cancelarEdicion()" pTooltip="Cancelar (Esc)" />
+              </div>
+              <p class="text-xs text-gray-400">Enter para guardar · Esc para cancelar</p>
+            </div>
+          }
+
+        </div>
+      }
+
+      @if (ejerciciosFiltrados().length === 0) {
+        <div class="text-center py-8 text-gray-400 dark:text-gray-600">
+          <i class="pi pi-search text-3xl"></i>
+          <p class="mt-2 text-sm">Sin resultados para "{{ busqueda() }}"</p>
         </div>
       }
     </div>
   }
-
-  <p-dialog
-    header="Video de YouTube"
-    [visible]="dialogVisible()"
-    (visibleChange)="dialogVisible.set($event)"
-    [modal]="true"
-    [style]="{ width: '90vw', maxWidth: '480px' }"
-  >
-    <div class="space-y-4 pt-2">
-      <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ editandoNombre() }}</p>
-      @if (error()) {
-        <p-message severity="error" [text]="error()" styleClass="w-full" />
-      }
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">URL de YouTube</label>
-        <input pInputText [formControl]="urlControl"
-               placeholder="https://www.youtube.com/watch?v=..." class="w-full" />
-      </div>
-      <div class="flex gap-2">
-        <p-button label="Cancelar" variant="outlined" severity="secondary"
-                  (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
-        <p-button label="Guardar" [loading]="saving()"
-                  (onClick)="guardarVideo()" styleClass="flex-1" />
-      </div>
-    </div>
-  </p-dialog>
 
 </div>

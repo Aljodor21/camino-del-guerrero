@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class Rol(models.Model):
@@ -60,7 +61,7 @@ class ObjetivoUsuario(models.Model):
     nivel_actividad    = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='principiante')
     dias_entrenamiento = models.IntegerField(choices=DIAS_CHOICES, default=3)
     duracion_sesion    = models.IntegerField(choices=DURACION_CHOICES, default=45)
-    fecha_inicio       = models.DateField(auto_now_add=True)
+    fecha_inicio       = models.DateField(default=timezone.localdate, editable=False)
     activo             = models.BooleanField(default=True)
 
     def __str__(self):

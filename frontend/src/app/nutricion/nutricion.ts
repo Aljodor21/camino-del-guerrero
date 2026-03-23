@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { PlanNutricional, DiaNutricional } from '../core/models/nutricion.model';
+import { PlanNutricional, ListaMercado, ItemMercado } from '../core/models/nutricion.model';
 
 import { environment } from '../../environments/environment';
 const API = environment.apiUrl;
@@ -17,6 +17,9 @@ const API = environment.apiUrl;
 export class Nutricion implements OnInit {
   private http = inject(HttpClient);
 
+  protected seccion            = signal<'plan' | 'mercado'>('plan');
+
+  // ── PLAN ──────────────────────────────────────────────────────────
   protected loading            = signal(true);
   protected loadingRegenerar   = signal(false);
   protected plan               = signal<PlanNutricional | null>(null);
@@ -29,10 +32,32 @@ export class Nutricion implements OnInit {
     return p.dias[this.diaSeleccionado()] ?? null;
   });
 
+  // ── MERCADO ───────────────────────────────────────────────────────
+  protected lista              = signal<ListaMercado | null>(null);
+  protected loadingLista       = signal(false);
+  protected sinLista           = signal(false);
+
+  protected categorias = computed(() => {
+    const items = this.lista()?.items ?? [];
+    const mapa = new Map<string, { nombre: string; items: ItemMercado[] }>();
+    for (const item of items) {
+      if (!mapa.has(item.categoria)) {
+        mapa.set(item.categoria, { nombre: item.categoria_nombre, items: [] });
+      }
+      mapa.get(item.categoria)!.items.push(item);
+    }
+    return Array.from(mapa.values());
+  });
+
+  protected totalItems     = computed(() => this.lista()?.items.length ?? 0);
+  protected itemsComprados = computed(() => this.lista()?.items.filter(i => i.comprado).length ?? 0);
+
   ngOnInit(): void {
     this.cargarPlan();
+    this.cargarLista();
   }
 
+  // ── PLAN ──────────────────────────────────────────────────────────
   private cargarPlan(): void {
     this.loading.set(true);
     this.http.get<PlanNutricional>(`${API}/nutricion/mi-plan/`).subscribe({
@@ -65,5 +90,33 @@ export class Nutricion implements OnInit {
   protected esHoy(diaSemana: number): boolean {
     const hoy = new Date().getDay();
     return (hoy === 0 ? 7 : hoy) === diaSemana;
+  }
+
+  // ── MERCADO ───────────────────────────────────────────────────────
+  private cargarLista(): void {
+    this.http.get<ListaMercado>(`${API}/nutricion/lista-mercado/`).subscribe({
+      next: lista => this.lista.set(lista),
+      error: () => this.sinLista.set(true),
+    });
+  }
+
+  protected generarLista(): void {
+    this.loadingLista.set(true);
+    this.sinLista.set(false);
+    this.http.post<ListaMercado>(`${API}/nutricion/lista-mercado/`, {}).subscribe({
+      next: lista => { this.lista.set(lista); this.loadingLista.set(false); },
+      error: () => this.loadingLista.set(false),
+    });
+  }
+
+  protected toggleItem(item: ItemMercado): void {
+    this.http.patch<ItemMercado>(`${API}/nutricion/lista-mercado/items/${item.id}/toggle/`, {}).subscribe({
+      next: actualizado => {
+        this.lista.update(l => l ? {
+          ...l,
+          items: l.items.map(i => i.id === actualizado.id ? actualizado : i),
+        } : l);
+      },
+    });
   }
 }

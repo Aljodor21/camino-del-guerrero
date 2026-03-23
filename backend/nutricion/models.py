@@ -31,3 +31,35 @@ class DiaNutricional(models.Model):
 
     def __str__(self):
         return f'{self.plan} - {self.get_dia_semana_display()}'
+
+
+class ListaMercado(models.Model):
+    usuario          = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='lista_mercado')
+    plan             = models.ForeignKey(PlanNutricional, on_delete=models.SET_NULL, null=True)
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Lista de {self.usuario.email}'
+
+
+class ItemMercado(models.Model):
+    CATEGORIAS = [
+        ('proteinas',  'Proteínas'),
+        ('verduras',   'Verduras'),
+        ('frutas',     'Frutas'),
+        ('lacteos',    'Lácteos'),
+        ('granos',     'Granos y cereales'),
+        ('condimentos','Condimentos y otros'),
+    ]
+
+    lista    = models.ForeignKey(ListaMercado, on_delete=models.CASCADE, related_name='items')
+    nombre   = models.CharField(max_length=200)
+    cantidad = models.CharField(max_length=100, blank=True)
+    categoria= models.CharField(max_length=20, choices=CATEGORIAS, default='condimentos')
+    comprado = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['categoria', 'nombre']
+
+    def __str__(self):
+        return f'{self.nombre} ({self.cantidad})'

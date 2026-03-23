@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from routines.models import DiaRutina
 from users.models import Usuario
@@ -7,7 +8,7 @@ from users.models import Usuario
 class RegistroPeso(models.Model):
     usuario  = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='registros_peso')
     peso_kg  = models.FloatField()
-    fecha    = models.DateField(auto_now_add=True)
+    fecha    = models.DateField(default=timezone.localdate, editable=False)
     nota     = models.CharField(max_length=300, blank=True)
 
     class Meta:
@@ -20,7 +21,7 @@ class RegistroPeso(models.Model):
 class RegistroEntrenamiento(models.Model):
     usuario                 = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='registros_entrenamiento')
     dia_rutina              = models.ForeignKey(DiaRutina, on_delete=models.SET_NULL, null=True, blank=True)
-    fecha                   = models.DateField(auto_now_add=True)
+    fecha                   = models.DateField(default=timezone.localdate, editable=False)
     duracion_segundos       = models.PositiveIntegerField(default=0)
     ejercicios_completados  = models.JSONField(default=list, blank=True)
     notas                   = models.TextField(blank=True)

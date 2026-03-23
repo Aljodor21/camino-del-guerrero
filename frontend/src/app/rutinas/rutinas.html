@@ -78,10 +78,12 @@
                   {{ ed.ejercicio.nombre }}
                 </h3>
                 @if (ed.ejercicio.url_youtube) {
-                  <a [href]="ed.ejercicio.url_youtube" target="_blank" rel="noopener"
-                     class="text-guerrero-red hover:opacity-70 shrink-0 transition-opacity">
+                  <button
+                    class="text-guerrero-red hover:opacity-70 shrink-0 transition-opacity"
+                    (click)="verVideo(ed.ejercicio.url_youtube)"
+                  >
                     <i class="pi pi-youtube text-xl"></i>
-                  </a>
+                  </button>
                 }
               </div>
 
@@ -118,3 +120,25 @@
   }
 
 </div>
+
+<!-- Dialog video -->
+<p-dialog
+  [visible]="!!videoUrl()"
+  (visibleChange)="!$event && cerrarVideo()"
+  [modal]="true"
+  [closable]="true"
+  header="Video del ejercicio"
+  [style]="{ width: '95vw', maxWidth: '720px' }"
+>
+  @if (videoUrl()) {
+    <div class="relative w-full" style="padding-top: 56.25%">
+      <iframe
+        [src]="videoUrl()!"
+        class="absolute inset-0 w-full h-full rounded-lg"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+  }
+</p-dialog>

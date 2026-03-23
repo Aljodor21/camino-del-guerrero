@@ -2,9 +2,11 @@ import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } 
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 
 import { Rutina } from '../core/models/rutina.model';
 
@@ -15,11 +17,14 @@ const API = environment.apiUrl;
   selector: 'app-rutinas',
   templateUrl: './rutinas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule],
+  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule],
 })
 export class Rutinas implements OnInit {
-  private http = inject(HttpClient);
-  private router = inject(Router);
+  private http      = inject(HttpClient);
+  private router    = inject(Router);
+  private sanitizer = inject(DomSanitizer);
+
+  protected videoUrl = signal<SafeResourceUrl | null>(null);
 
   protected loading = signal(true);
   protected loadingRegenerar = signal(false);
@@ -78,5 +83,15 @@ export class Rutinas implements OnInit {
 
   protected irOnboarding(): void {
     this.router.navigate(['/onboarding']);
+  }
+
+  protected verVideo(url: string): void {
+    const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const embedUrl = match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : url;
+    this.videoUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl));
+  }
+
+  protected cerrarVideo(): void {
+    this.videoUrl.set(null);
   }
 }

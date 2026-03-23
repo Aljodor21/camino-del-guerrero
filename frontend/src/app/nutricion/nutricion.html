@@ -2,105 +2,186 @@
 
   <!-- Header -->
   <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Nutrición</h1>
-      @if (plan()) {
-        <p class="text-xs text-gray-400 mt-0.5">Plan semanal personalizado</p>
-      }
-    </div>
-    <p-button
-      icon="pi pi-refresh"
-      label="Regenerar"
-      variant="outlined"
-      severity="secondary"
-      [loading]="loadingRegenerar()"
-      (onClick)="regenerar()"
-    />
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Nutrición</h1>
+    @if (seccion() === 'plan' && plan()) {
+      <p-button
+        icon="pi pi-refresh"
+        label="Regenerar"
+        variant="outlined"
+        severity="secondary"
+        [loading]="loadingRegenerar()"
+        (onClick)="regenerar()"
+      />
+    }
+    @if (seccion() === 'mercado') {
+      <p-button
+        icon="pi pi-refresh"
+        label="Generar lista"
+        variant="outlined"
+        severity="secondary"
+        [loading]="loadingLista()"
+        (onClick)="generarLista()"
+      />
+    }
   </div>
 
-  @if (loading()) {
-    <div class="flex justify-center py-16">
-      <p-progressspinner styleClass="w-10 h-10" />
-    </div>
-  } @else if (sinPlan()) {
-    <div class="text-center py-16 text-gray-400 dark:text-gray-600">
-      <i class="pi pi-heart text-5xl"></i>
-      <p class="mt-3 text-sm">No tienes plan nutricional aún.</p>
-      <p-button label="Generar ahora" icon="pi pi-sparkles" styleClass="mt-4"
-                [loading]="loadingRegenerar()" (onClick)="regenerar()" />
-    </div>
-  } @else if (plan()) {
+  <!-- Tabs -->
+  <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1">
+    <button
+      [class]="seccion() === 'plan'
+        ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
+        : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
+      (click)="seccion.set('plan')"
+    ><i class="pi pi-calendar mr-1"></i> Plan semanal</button>
+    <button
+      [class]="seccion() === 'mercado'
+        ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
+        : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
+      (click)="seccion.set('mercado')"
+    ><i class="pi pi-shopping-cart mr-1"></i> Lista de mercado</button>
+  </div>
 
-    <!-- Selector de días -->
-    <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-      @for (dia of plan()!.dias; track dia.id; let i = $index) {
-        <button
-          [class]="diaSeleccionado() === i
-            ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-guerrero-red text-white transition-all'
-            : esHoy(dia.dia_semana)
-              ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 border-guerrero-red text-guerrero-red dark:text-guerrero-red bg-transparent transition-all'
-              : 'shrink-0 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400 transition-all'"
-          (click)="diaSeleccionado.set(i)"
-        >{{ dia.dia_nombre }}</button>
-      }
-    </div>
+  <!-- ====== PLAN SEMANAL ====== -->
+  @if (seccion() === 'plan') {
+    @if (loading()) {
+      <div class="flex justify-center py-16">
+        <p-progressspinner styleClass="w-10 h-10" />
+      </div>
+    } @else if (sinPlan()) {
+      <div class="text-center py-16 text-gray-400 dark:text-gray-600">
+        <i class="pi pi-heart text-5xl"></i>
+        <p class="mt-3 text-sm">No tienes plan nutricional aún.</p>
+        <p-button label="Generar ahora" icon="pi pi-sparkles" styleClass="mt-4"
+                  [loading]="loadingRegenerar()" (onClick)="regenerar()" />
+      </div>
+    } @else if (plan()) {
 
-    <!-- Contenido del día -->
-    @if (diaActual(); as dia) {
-      <div class="space-y-3">
-
-        <!-- Calorías -->
-        @if (dia.calorias_aprox) {
-          <div class="bg-guerrero-red/10 border border-guerrero-red/20 rounded-xl px-4 py-3 flex items-center gap-3">
-            <i class="pi pi-bolt text-guerrero-red text-lg"></i>
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Calorías aproximadas</p>
-              <p class="text-lg font-bold text-guerrero-red">{{ dia.calorias_aprox }} kcal</p>
-            </div>
-          </div>
+      <!-- Selector de días -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        @for (dia of plan()!.dias; track dia.id; let i = $index) {
+          <button
+            [class]="diaSeleccionado() === i
+              ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-guerrero-red text-white transition-all'
+              : esHoy(dia.dia_semana)
+                ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 border-guerrero-red text-guerrero-red dark:text-guerrero-red bg-transparent transition-all'
+                : 'shrink-0 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400 transition-all'"
+            (click)="diaSeleccionado.set(i)"
+          >{{ dia.dia_nombre }}</button>
         }
+      </div>
 
-        <!-- Desayuno -->
-        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-lg">🌅</span>
-            <p class="text-sm font-bold text-gray-800 dark:text-white">Desayuno</p>
-          </div>
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.desayuno }}</p>
-        </div>
-
-        <!-- Almuerzo -->
-        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-lg">☀️</span>
-            <p class="text-sm font-bold text-gray-800 dark:text-white">Almuerzo</p>
-          </div>
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.almuerzo }}</p>
-        </div>
-
-        <!-- Cena -->
-        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-lg">🌙</span>
-            <p class="text-sm font-bold text-gray-800 dark:text-white">Cena</p>
-          </div>
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.cena }}</p>
-        </div>
-
-        <!-- Snacks -->
-        @if (dia.snacks) {
+      <!-- Contenido del día -->
+      @if (diaActual(); as dia) {
+        <div class="space-y-3">
+          @if (dia.calorias_aprox) {
+            <div class="bg-guerrero-red/10 border border-guerrero-red/20 rounded-xl px-4 py-3 flex items-center gap-3">
+              <i class="pi pi-bolt text-guerrero-red text-lg"></i>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Calorías aproximadas</p>
+                <p class="text-lg font-bold text-guerrero-red">{{ dia.calorias_aprox }} kcal</p>
+              </div>
+            </div>
+          }
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
-              <span class="text-lg">🍎</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white">Snacks</p>
+              <span class="text-lg">🌅</span>
+              <p class="text-sm font-bold text-gray-800 dark:text-white">Desayuno</p>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.snacks }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.desayuno }}</p>
           </div>
-        }
-
-      </div>
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-lg">☀️</span>
+              <p class="text-sm font-bold text-gray-800 dark:text-white">Almuerzo</p>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.almuerzo }}</p>
+          </div>
+          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-lg">🌙</span>
+              <p class="text-sm font-bold text-gray-800 dark:text-white">Cena</p>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.cena }}</p>
+          </div>
+          @if (dia.snacks) {
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">🍎</span>
+                <p class="text-sm font-bold text-gray-800 dark:text-white">Snacks</p>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ dia.snacks }}</p>
+            </div>
+          }
+        </div>
+      }
     }
+  }
 
+  <!-- ====== LISTA DE MERCADO ====== -->
+  @if (seccion() === 'mercado') {
+
+    @if (loadingLista()) {
+      <div class="flex justify-center py-16">
+        <p-progressspinner styleClass="w-10 h-10" />
+      </div>
+    } @else if (!lista()) {
+      <div class="text-center py-16 text-gray-400 dark:text-gray-600">
+        <i class="pi pi-shopping-cart text-5xl"></i>
+        <p class="mt-3 text-sm">No tienes lista de mercado aún.</p>
+        <p class="text-xs mt-1">Genera tu plan nutricional primero.</p>
+        <p-button label="Generar lista" icon="pi pi-sparkles" styleClass="mt-4"
+                  [loading]="loadingLista()" (onClick)="generarLista()" />
+      </div>
+    } @else {
+
+      <!-- Progreso de compras -->
+      <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
+        <i class="pi pi-shopping-bag text-guerrero-red text-2xl"></i>
+        <div class="flex-1">
+          <p class="text-sm font-semibold text-gray-800 dark:text-white">
+            {{ itemsComprados() }} / {{ totalItems() }} productos
+          </p>
+          <div class="mt-1.5 h-2 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-guerrero-red rounded-full transition-all"
+              [style.width.%]="totalItems() > 0 ? (itemsComprados() / totalItems()) * 100 : 0"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items por categoría -->
+      @for (cat of categorias(); track cat.nombre) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+          <div class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600">
+            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {{ cat.nombre }}
+            </p>
+          </div>
+          <div class="divide-y divide-gray-50 dark:divide-dark-700">
+            @for (item of cat.items; track item.id) {
+              <button
+                class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-dark-700"
+                (click)="toggleItem(item)"
+              >
+                <i [class]="item.comprado
+                  ? 'pi pi-check-circle text-green-500 text-lg'
+                  : 'pi pi-circle text-gray-300 dark:text-gray-600 text-lg'"></i>
+                <span class="flex-1 text-sm"
+                  [class]="item.comprado
+                    ? 'line-through text-gray-400 dark:text-gray-600'
+                    : 'text-gray-800 dark:text-white'"
+                >{{ item.nombre }}</span>
+                @if (item.cantidad) {
+                  <span class="text-xs text-gray-400 shrink-0">{{ item.cantidad }}</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+    }
   }
 
 </div>

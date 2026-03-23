@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -33,8 +34,11 @@ interface EjercicioEstado {
   imports: [ReactiveFormsModule, ButtonModule, DialogModule, InputNumberModule, TextareaModule, MessageModule, ProgressSpinnerModule],
 })
 export class Progreso implements OnInit, OnDestroy {
-  private http = inject(HttpClient);
-  private fb   = inject(FormBuilder);
+  private http      = inject(HttpClient);
+  private fb        = inject(FormBuilder);
+  private sanitizer = inject(DomSanitizer);
+
+  protected videoUrl = signal<SafeResourceUrl | null>(null);
 
   // ── TABS ──────────────────────────────────────────────────────────
   protected seccion = signal<'peso' | 'entrenamiento'>('peso');
@@ -76,11 +80,27 @@ export class Progreso implements OnInit, OnDestroy {
   protected timerSeg           = signal(0);
   protected savingSesion       = signal(false);
   protected errorSesion        = signal('');
+  protected descansoSeg        = signal(0);
+  protected descansoActivo     = signal(false);
   private sesionInicio: number | null = null;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
+  private descansoInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly DESCANSO_SEG = 60;
 
   protected timerDisplay = computed(() => {
-    const s = this.timerSeg();
+    const activa = this.serieActiva();
+    if (!activa) return '00:00';
+    const duracion = this.ejerciciosEstado()[activa.eIdx]?.ejercicioDia.duracion_segundos;
+    const seg = this.timerSeg();
+    if (duracion) {
+      const restante = Math.max(0, duracion - seg);
+      return `${Math.floor(restante / 60).toString().padStart(2, '0')}:${(restante % 60).toString().padStart(2, '0')}`;
+    }
+    return `${Math.floor(seg / 60).toString().padStart(2, '0')}:${(seg % 60).toString().padStart(2, '0')}`;
+  });
+
+  protected descansoDisplay = computed(() => {
+    const s = this.descansoSeg();
     return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
   });
 
@@ -93,6 +113,7 @@ export class Progreso implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.limpiarTimer();
+    this.limpiarDescanso();
   }
 
   // ── PESO ──────────────────────────────────────────────────────────
@@ -148,6 +169,7 @@ export class Progreso implements OnInit, OnDestroy {
   }
 
   protected iniciarSerie(eIdx: number, sIdx: number): void {
+    this.limpiarDescanso();
     const activa = this.serieActiva();
     if (activa) this.detenerSerie(activa.eIdx, activa.sIdx, false);
     this.limpiarTimer();
@@ -160,13 +182,43 @@ export class Progreso implements OnInit, OnDestroy {
     }));
     this.ejerciciosEstado.set(nuevos);
     this.serieActiva.set({ eIdx, sIdx });
-    this.timerInterval = setInterval(() => this.timerSeg.update(v => v + 1), 1000);
+
+    this.timerInterval = setInterval(() => {
+      this.timerSeg.update(v => v + 1);
+      const duracion = this.ejerciciosEstado()[eIdx]?.ejercicioDia.duracion_segundos;
+      if (duracion && this.timerSeg() >= duracion) {
+        this.finalizarSerie(eIdx, sIdx);
+      }
+    }, 1000);
   }
 
   protected finalizarSerie(eIdx: number, sIdx: number): void {
     this.detenerSerie(eIdx, sIdx, true);
     this.serieActiva.set(null);
     this.limpiarTimer();
+    this.iniciarDescanso();
+  }
+
+  protected saltarDescanso(): void {
+    this.limpiarDescanso();
+  }
+
+  private iniciarDescanso(): void {
+    this.descansoSeg.set(this.DESCANSO_SEG);
+    this.descansoActivo.set(true);
+    this.descansoInterval = setInterval(() => {
+      if (this.descansoSeg() <= 1) {
+        this.limpiarDescanso();
+      } else {
+        this.descansoSeg.update(v => v - 1);
+      }
+    }, 1000);
+  }
+
+  private limpiarDescanso(): void {
+    if (this.descansoInterval) { clearInterval(this.descansoInterval); this.descansoInterval = null; }
+    this.descansoSeg.set(0);
+    this.descansoActivo.set(false);
   }
 
   private detenerSerie(eIdx: number, sIdx: number, completada: boolean): void {
@@ -217,6 +269,7 @@ export class Progreso implements OnInit, OnDestroy {
 
   protected cancelarSesion(): void {
     this.limpiarTimer();
+    this.limpiarDescanso();
     this.serieActiva.set(null);
     this.diaSeleccionado.set(null);
     this.ejerciciosEstado.set([]);
@@ -224,8 +277,14 @@ export class Progreso implements OnInit, OnDestroy {
     this.vistaEntrenamiento.set('lista');
   }
 
-  protected abrirVideo(url: string): void {
-    window.open(url, '_blank');
+  protected verVideo(url: string): void {
+    const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const embedUrl = match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : url;
+    this.videoUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl));
+  }
+
+  protected cerrarVideo(): void {
+    this.videoUrl.set(null);
   }
 
   protected seriesCompletadas(ej: EjercicioCompletado): number {

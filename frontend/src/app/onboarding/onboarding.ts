@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -12,6 +13,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { ThemeService } from '../core/services/theme';
 import { Implemento } from '../core/models/rutina.model';
+import { PAISES } from '../core/constants/paises';
 
 import { environment } from '../../environments/environment';
 const API = environment.apiUrl;
@@ -20,7 +22,7 @@ const API = environment.apiUrl;
   selector: 'app-onboarding',
   templateUrl: './onboarding.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, InputNumberModule, InputTextModule, SelectButtonModule, ButtonModule, MessageModule, ProgressSpinnerModule],
+  imports: [ReactiveFormsModule, InputNumberModule, InputTextModule, AutoCompleteModule, SelectButtonModule, ButtonModule, MessageModule, ProgressSpinnerModule],
 })
 export class Onboarding implements OnInit {
   private http = inject(HttpClient);
@@ -35,6 +37,13 @@ export class Onboarding implements OnInit {
 
   protected loadingImplementos = signal(true);
   protected sinImplementos = signal(false);
+
+  protected paisesFiltrados = signal<string[]>([]);
+
+  protected filtrarPaises(query: string): void {
+    const q = query.toLowerCase();
+    this.paisesFiltrados.set(PAISES.filter(p => p.toLowerCase().includes(q)));
+  }
 
   protected readonly objetivoOpciones = [
     { label: 'Bajar de peso',  value: 'bajar_peso',    icon: 'pi pi-arrow-down' },
@@ -75,7 +84,7 @@ export class Onboarding implements OnInit {
     nivel_actividad:          ['principiante', Validators.required],
     dias_entrenamiento:       [3, Validators.required],
     duracion_sesion:          [45, Validators.required],
-    nacionalidad:             [''],
+    nacionalidad:             ['', Validators.required],
     preferencias_alimentarias:[''],
   });
 
@@ -121,7 +130,8 @@ export class Onboarding implements OnInit {
   protected paso1Valido(): boolean {
     const c = this.form.controls;
     return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid
-        && c.nivel_actividad.valid && c.dias_entrenamiento.valid && c.duracion_sesion.valid;
+        && c.nivel_actividad.valid && c.dias_entrenamiento.valid && c.duracion_sesion.valid
+        && c.nacionalidad.valid;
   }
 
 

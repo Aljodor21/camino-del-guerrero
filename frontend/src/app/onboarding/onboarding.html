@@ -148,13 +148,15 @@
             <div class="flex flex-col gap-1">
               <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Nacionalidad
-                <span class="font-normal text-gray-400">(opcional)</span>
               </label>
-              <input
-                pInputText
+              <p-autocomplete
                 formControlName="nacionalidad"
-                placeholder="Ej: Colombiano, Mexicano..."
-                class="w-full"
+                [suggestions]="paisesFiltrados()"
+                (completeMethod)="filtrarPaises($event.query)"
+                placeholder="Busca tu país..."
+                [forceSelection]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full"
               />
             </div>
             <div class="flex flex-col gap-1">

@@ -14,3 +14,18 @@ export interface PlanNutricional {
   fecha_generacion: string;
   dias: DiaNutricional[];
 }
+
+export interface ItemMercado {
+  id: number;
+  nombre: string;
+  cantidad: string;
+  categoria: string;
+  categoria_nombre: string;
+  comprado: boolean;
+}
+
+export interface ListaMercado {
+  id: number;
+  fecha_generacion: string;
+  items: ItemMercado[];
+}

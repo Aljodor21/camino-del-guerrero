@@ -81,12 +81,13 @@ PERFIL:
 - Días de entrenamiento: {objetivo.dias_entrenamiento} por semana
 
 INSTRUCCIONES:
-- Usa ingredientes y platos típicos de la gastronomía de {nacionalidad} siempre que sea posible.
+- Usa ÚNICAMENTE platos y alimentos comunes en la cocina casera de {nacionalidad}. Ingredientes fáciles de conseguir en mercados locales, nada exótico ni de restaurante.
 - Adapta calorías al objetivo (déficit=bajar, superávit=músculo, mantenimiento=mantener).
-- Varía las comidas cada día, no repitas menús.
-- Incluye porciones (ej: "2 huevos + 1 taza arroz + ensalada").
-- Días de entrenamiento: más carbohidratos complejos. Snacks: proteicos.
-- Respeta las restricciones alimentarias. Descripciones CORTAS (máximo 20 palabras por campo).
+- Varía las comidas cada día, no repitas el mismo menú.
+- Incluye porciones prácticas (ej: "2 huevos + 1 taza de arroz + ensalada de tomate").
+- Días de entrenamiento: más carbohidratos complejos antes del entreno. Snacks: proteicos y simples.
+- Respeta estrictamente las restricciones alimentarias.
+- Descripciones CORTAS y directas, máximo 20 palabras por campo. No uses palabras en inglés.
 
 El JSON debe tener exactamente esta estructura, sin texto adicional:
 {{
@@ -103,6 +104,38 @@ El JSON debe tener exactamente esta estructura, sin texto adicional:
   ]
 }}
 Incluye los 7 días (dia_semana del 1=lunes al 7=domingo). Responde solo con el JSON, sin markdown ni texto extra.
+"""
+        return self._parse_json(self._chat(prompt))
+
+    def generar_lista_mercado(self, plan):
+        comidas = []
+        for dia in plan.dias.all():
+            comidas.append(f'{dia.get_dia_semana_display()}: {dia.desayuno} | {dia.almuerzo} | {dia.cena} | {dia.snacks}')
+        texto_plan = '\n'.join(comidas)
+
+        prompt = f"""
+Analiza este plan alimentario semanal y genera una lista de mercado consolidada para 1 persona, 7 días.
+Extrae todos los ingredientes, agrupa duplicados y estima cantidades totales.
+
+PLAN:
+{texto_plan}
+
+Categorías permitidas para "categoria" (usa exactamente estos valores):
+proteinas, verduras, frutas, lacteos, granos, condimentos
+
+El JSON debe tener exactamente esta estructura, sin texto adicional:
+{{
+  "categorias": [
+    {{
+      "categoria": "proteinas",
+      "items": [
+        {{"nombre": "Huevos", "cantidad": "18 unidades"}},
+        {{"nombre": "Pechuga de pollo", "cantidad": "1 kg"}}
+      ]
+    }}
+  ]
+}}
+Solo incluye categorías que tengan items. Responde únicamente con el JSON, sin markdown.
 """
         return self._parse_json(self._chat(prompt))
 
