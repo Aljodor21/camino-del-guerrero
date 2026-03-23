@@ -35,6 +35,7 @@ class MiPlanNutricionalView(APIView):
 
             return Response(PlanNutricionalSerializer(plan).data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            import traceback; traceback.print_exc()
             return Response({'detail': f'Error al generar el plan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -120,4 +121,5 @@ class GenerarRutinaView(APIView):
             from routines.serializers import RutinaSerializer
             return Response(RutinaSerializer(rutina).data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            import traceback; traceback.print_exc()
             return Response({'detail': f'Error al generar la rutina: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

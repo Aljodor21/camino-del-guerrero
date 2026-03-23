@@ -27,7 +27,9 @@ class AIService:
             headers = {'Authorization': f'Bearer {self.api_key}'}
 
         response = requests.post(
-            url, json=payload, headers=headers, timeout=120)
+            url, json=payload, headers=headers, timeout=600)
+        if not response.ok:
+            raise Exception(f'AI error {response.status_code}: {response.text}')
         response.raise_for_status()
         data = response.json()
 
@@ -35,9 +37,33 @@ class AIService:
             return data.get('response', '')
         return data['choices'][0]['message']['content']
 
+    def _chat_json(self, prompt, max_tokens=8192, retries=3):
+        import re, time
+        for attempt in range(retries + 1):
+            try:
+                return self._parse_json(self._chat(prompt, max_tokens))
+            except json.JSONDecodeError:
+                if attempt == retries:
+                    raise
+            except Exception as e:
+                msg = str(e)
+                if '429' in msg:
+                    wait = 15
+                    match = re.search(r'try again in (\d+(?:\.\d+)?)s', msg)
+                    if match:
+                        wait = float(match.group(1)) + 2
+                    if attempt == retries:
+                        raise
+                    time.sleep(wait)
+                else:
+                    raise
+
     def _parse_json(self, text):
         """Limpia y parsea el JSON, tolerando markdown y texto extra."""
+        import re
         text = text.strip()
+        # Quitar bloque <think>...</think> de modelos de razonamiento
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
         # Quitar bloques markdown: ```json ... ``` o ``` ... ```
         if text.startswith('```'):
             text = text.split('```')[1]
@@ -45,7 +71,7 @@ class AIService:
                 text = text[4:]
             text = text.strip()
         # Intentar parsear directamente
-        return json.loads(text)
+        return json.loads(text, strict=False)
 
     def _perfil(self, usuario):
         edad = None
@@ -138,7 +164,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 }}
 Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
 """
-        return self._parse_json(self._chat(prompt))
+        return self._chat_json(prompt)
 
     def generar_lista_mercado(self, plan):
         comidas = []
@@ -198,7 +224,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
   ]
 }}
 """
-        return self._parse_json(self._chat(prompt))
+        return self._chat_json(prompt)
 
     def generar_rutina(self, usuario, implementos, objetivo):
         p = self._perfil(usuario)
@@ -295,4 +321,4 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
   ]
 }}
 """
-        return self._parse_json(self._chat(prompt))
+        return self._chat_json(prompt)
