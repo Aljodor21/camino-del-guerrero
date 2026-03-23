@@ -1,9 +1,4 @@
-<div class="p-4 space-y-4 max-w-2xl mx-auto">
-
-  <div class="flex items-center justify-between">
-    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Progreso</h1>
-    <p-button icon="pi pi-plus" label="Registrar" (onClick)="abrirDialog()" />
-  </div>
+<div class="p-4 max-w-2xl mx-auto space-y-4">
 
   <!-- Tabs -->
   <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1">
@@ -12,27 +7,26 @@
         ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
         : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
       (click)="seccion.set('peso')"
-    >
-      <i class="pi pi-chart-line mr-1"></i> Peso
-    </button>
+    ><i class="pi pi-chart-line mr-1"></i> Peso</button>
     <button
       [class]="seccion() === 'entrenamiento'
         ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
         : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
       (click)="seccion.set('entrenamiento')"
-    >
-      <i class="pi pi-bolt mr-1"></i> Entrenamientos
-    </button>
+    ><i class="pi pi-bolt mr-1"></i> Entrenamientos</button>
   </div>
 
-  @if (loading()) {
-    <div class="flex justify-center py-12">
-      <p-progressspinner styleClass="w-10 h-10" />
-    </div>
-  } @else {
+  <!-- ====== PESO ====== -->
+  @if (seccion() === 'peso') {
 
-    <!-- PESO -->
-    @if (seccion() === 'peso') {
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Peso</h1>
+      <p-button icon="pi pi-plus" label="Registrar" (onClick)="abrirDialogPeso()" />
+    </div>
+
+    @if (loadingPeso()) {
+      <div class="flex justify-center py-12"><p-progressspinner styleClass="w-10 h-10" /></div>
+    } @else {
       @if (registrosPeso().length > 0) {
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
@@ -46,7 +40,8 @@
             @if (cambioPeso() !== null) {
               <p class="text-2xl font-bold"
                  [class]="cambioPeso()! < 0 ? 'text-green-500' : cambioPeso()! > 0 ? 'text-red-400' : 'text-gray-400'">
-                {{ cambioPeso()! > 0 ? '+' : '' }}{{ cambioPeso() }} <span class="text-sm font-normal">kg</span>
+                {{ cambioPeso()! > 0 ? '+' : '' }}{{ cambioPeso() }}
+                <span class="text-sm font-normal">kg</span>
               </p>
             } @else {
               <p class="text-2xl font-bold text-gray-400">—</p>
@@ -58,13 +53,13 @@
       @if (registrosPeso().length === 0) {
         <div class="text-center py-12 text-gray-400 dark:text-gray-600">
           <i class="pi pi-chart-line text-4xl"></i>
-          <p class="mt-2 text-sm">Sin registros de peso. ¡Agrega el primero!</p>
+          <p class="mt-2 text-sm">Sin registros aún. ¡Agrega el primero!</p>
         </div>
       } @else {
         <div class="space-y-2">
           @for (r of registrosPeso(); track r.id) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
-              <div class="text-center min-w-[52px]">
+              <div class="text-center min-w-13">
                 <p class="text-lg font-bold text-guerrero-red">{{ r.peso_kg }}</p>
                 <p class="text-xs text-gray-400">kg</p>
               </div>
@@ -80,70 +75,12 @@
       }
     }
 
-    <!-- ENTRENAMIENTO -->
-    @if (seccion() === 'entrenamiento') {
-      @if (registrosEntrenamiento().length > 0) {
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
-            <p class="text-xs text-gray-400 mb-1">Sesiones</p>
-            <p class="text-2xl font-bold text-guerrero-red">{{ totalSesiones() }}</p>
-          </div>
-          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
-            <p class="text-xs text-gray-400 mb-1">Tiempo total</p>
-            <p class="text-2xl font-bold text-guerrero-red">
-              {{ totalMinutos() }} <span class="text-sm font-normal">min</span>
-            </p>
-          </div>
-        </div>
+    <p-dialog header="Registrar peso" [visible]="dialogPesoVisible()" (visibleChange)="dialogPesoVisible.set($event)"
+              [modal]="true" [style]="{ width: '90vw', maxWidth: '480px' }">
+      @if (errorPeso()) {
+        <p-message severity="error" [text]="errorPeso()" styleClass="w-full mb-3" />
       }
-
-      @if (registrosEntrenamiento().length === 0) {
-        <div class="text-center py-12 text-gray-400 dark:text-gray-600">
-          <i class="pi pi-bolt text-4xl"></i>
-          <p class="mt-2 text-sm">Sin registros de entrenamiento aún.</p>
-        </div>
-      } @else {
-        <div class="space-y-2">
-          @for (r of registrosEntrenamiento(); track r.id) {
-            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-start gap-3">
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatFecha(r.fecha) }}</p>
-                <div class="flex gap-4 mt-1">
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    <i class="pi pi-refresh mr-0.5 text-guerrero-red"></i>{{ r.rounds }} rounds
-                  </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    <i class="pi pi-clock mr-0.5 text-guerrero-red"></i>{{ r.duracion_minutos }} min
-                  </span>
-                </div>
-                @if (r.notas) {
-                  <p class="text-xs text-gray-400 mt-1">{{ r.notas }}</p>
-                }
-              </div>
-              <p-button icon="pi pi-trash" variant="text" [rounded]="true"
-                        severity="danger" (onClick)="eliminarEntrenamiento(r.id)" />
-            </div>
-          }
-        </div>
-      }
-    }
-
-  }
-
-  <!-- Dialog -->
-  <p-dialog
-    [header]="seccion() === 'peso' ? 'Registrar peso' : 'Registrar entrenamiento'"
-    [visible]="dialogVisible()"
-    (visibleChange)="dialogVisible.set($event)"
-    [modal]="true"
-    [style]="{ width: '90vw', maxWidth: '480px' }"
-  >
-    @if (error()) {
-      <p-message severity="error" [text]="error()" styleClass="w-full mb-3" />
-    }
-
-    @if (seccion() === 'peso') {
-      <form [formGroup]="formPeso" (ngSubmit)="guardar()" class="space-y-4 pt-2">
+      <form [formGroup]="formPeso" (ngSubmit)="guardarPeso()" class="space-y-4 pt-2">
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso (kg) *</label>
           <p-inputnumber formControlName="peso_kg" [minFractionDigits]="1" [maxFractionDigits]="1"
@@ -156,38 +93,185 @@
         </div>
         <div class="flex gap-2 pt-2">
           <p-button type="button" label="Cancelar" variant="outlined" severity="secondary"
-                    (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
-          <p-button type="submit" label="Guardar" [loading]="saving()"
+                    (onClick)="dialogPesoVisible.set(false)" styleClass="flex-1" />
+          <p-button type="submit" label="Guardar" [loading]="savingPeso()"
                     [disabled]="formPeso.invalid" styleClass="flex-1" />
         </div>
       </form>
+    </p-dialog>
+  }
+
+  <!-- ====== ENTRENAMIENTO ====== -->
+  @if (seccion() === 'entrenamiento') {
+
+    <!-- LISTA -->
+    @if (vistaEntrenamiento() === 'lista') {
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Entrenamientos</h1>
+        @if (!sinRutina() && rutina()) {
+          <p-button icon="pi pi-plus" label="Nueva sesión" (onClick)="vistaEntrenamiento.set('elegir_dia')" />
+        }
+      </div>
+
+      @if (sinRutina()) {
+        <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+          <i class="pi pi-bolt text-4xl"></i>
+          <p class="mt-2 text-sm">Genera tu rutina primero para registrar entrenamientos.</p>
+        </div>
+      } @else if (loadingRegistros()) {
+        <div class="flex justify-center py-12"><p-progressspinner styleClass="w-10 h-10" /></div>
+      } @else {
+        @if (registros().length > 0) {
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+              <p class="text-xs text-gray-400 mb-1">Sesiones</p>
+              <p class="text-2xl font-bold text-guerrero-red">{{ totalSesiones() }}</p>
+            </div>
+            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
+              <p class="text-xs text-gray-400 mb-1">Tiempo total</p>
+              <p class="text-2xl font-bold text-guerrero-red">
+                {{ totalMinutosSesiones() }} <span class="text-sm font-normal">min</span>
+              </p>
+            </div>
+          </div>
+        }
+
+        @if (registros().length === 0) {
+          <div class="text-center py-12 text-gray-400 dark:text-gray-600">
+            <i class="pi pi-bolt text-4xl"></i>
+            <p class="mt-2 text-sm">Sin sesiones aún. ¡Comienza tu primera!</p>
+          </div>
+        } @else {
+          <div class="space-y-2">
+            @for (r of registros(); track r.id) {
+              <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ r.dia_nombre }}</p>
+                    <p class="text-xs text-gray-400">{{ formatFecha(r.fecha) }}</p>
+                  </div>
+                  <span class="text-sm font-bold text-guerrero-red font-mono">{{ formatSegundos(r.duracion_segundos) }}</span>
+                </div>
+                @if (r.ejercicios_completados.length > 0) {
+                  <div class="flex flex-wrap gap-1">
+                    @for (ej of r.ejercicios_completados; track ej.ejercicio_dia_id) {
+                      <span class="text-xs bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                        {{ ej.nombre }} {{ seriesCompletadas(ej) }}/{{ ej.series_plan }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
     }
 
-    @if (seccion() === 'entrenamiento') {
-      <form [formGroup]="formEntrenamiento" (ngSubmit)="guardar()" class="space-y-4 pt-2">
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Rounds</label>
-            <p-inputnumber formControlName="rounds" [min]="0" styleClass="w-full" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Minutos</label>
-            <p-inputnumber formControlName="duracion_minutos" [min]="0" styleClass="w-full" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Notas</label>
-          <textarea pTextarea formControlName="notas" rows="3"
-                    placeholder="¿Cómo fue el entrenamiento?" class="w-full resize-none"></textarea>
-        </div>
-        <div class="flex gap-2 pt-2">
-          <p-button type="button" label="Cancelar" variant="outlined" severity="secondary"
-                    (onClick)="dialogVisible.set(false)" styleClass="flex-1" />
-          <p-button type="submit" label="Guardar" [loading]="saving()"
-                    [disabled]="formEntrenamiento.invalid" styleClass="flex-1" />
-        </div>
-      </form>
+    <!-- ELEGIR DÍA -->
+    @if (vistaEntrenamiento() === 'elegir_dia') {
+      <div class="flex items-center gap-2">
+        <p-button icon="pi pi-arrow-left" variant="text" [rounded]="true" severity="secondary"
+                  (onClick)="vistaEntrenamiento.set('lista')" />
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">¿Qué día entrenas hoy?</h1>
+      </div>
+
+      <div class="space-y-2">
+        @for (dia of (rutina()?.dias ?? []); track dia.id) {
+          <button
+            class="w-full bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center justify-between border-2 border-transparent hover:border-guerrero-red transition-all text-left"
+            (click)="elegirDia(dia)"
+          >
+            <div>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ dia.dia_nombre }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ dia.ejercicios.length }} ejercicios</p>
+            </div>
+            <i class="pi pi-chevron-right text-gray-400"></i>
+          </button>
+        }
+      </div>
     }
-  </p-dialog>
+
+    <!-- SESIÓN ACTIVA -->
+    @if (vistaEntrenamiento() === 'sesion') {
+
+      <div class="flex items-center gap-2">
+        <p-button icon="pi pi-times" variant="text" [rounded]="true" severity="secondary"
+                  (onClick)="cancelarSesion()" />
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-gray-900 dark:text-white">{{ diaSeleccionado()?.dia_nombre }}</p>
+          <p class="text-xs text-gray-400">{{ ejerciciosEstado().length }} ejercicios</p>
+        </div>
+        <p-button label="Finalizar" icon="pi pi-flag-fill" (onClick)="finalizarSesion()"
+                  [loading]="savingSesion()" />
+      </div>
+
+      @if (errorSesion()) {
+        <p-message severity="error" [text]="errorSesion()" styleClass="w-full" />
+      }
+
+      <div class="space-y-3">
+        @for (e of ejerciciosEstado(); track e.ejercicioDia.id; let eIdx = $index) {
+          <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+
+            <div class="p-4 pb-3 flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-gray-900 dark:text-white text-sm">
+                  {{ eIdx + 1 }}. {{ e.ejercicioDia.ejercicio.nombre }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  {{ e.series.length }} series
+                  @if (e.ejercicioDia.repeticiones) { · {{ e.ejercicioDia.repeticiones }} reps }
+                  @if (e.ejercicioDia.duracion_segundos) { · {{ e.ejercicioDia.duracion_segundos }}s c/u }
+                </p>
+              </div>
+              @if (e.ejercicioDia.ejercicio.url_youtube) {
+                <button
+                  class="flex items-center gap-1 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1.5 rounded-lg shrink-0 font-medium"
+                  (click)="abrirVideo(e.ejercicioDia.ejercicio.url_youtube)"
+                >
+                  <i class="pi pi-youtube"></i> Ver
+                </button>
+              }
+            </div>
+
+            <div class="px-4 pb-4 space-y-2">
+              @for (s of e.series; track $index; let sIdx = $index) {
+                @if (s.completada) {
+                  <div class="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2.5">
+                    <i class="pi pi-check-circle text-green-500"></i>
+                    <span class="text-sm font-medium text-green-700 dark:text-green-400 flex-1">Serie {{ sIdx + 1 }}</span>
+                    <span class="text-sm font-bold text-green-600 dark:text-green-400 font-mono">{{ formatSegundos(s.duracion_seg) }}</span>
+                  </div>
+                } @else if (s.activa) {
+                  <div class="flex items-center gap-3 bg-guerrero-red/10 border border-guerrero-red/40 rounded-lg px-3 py-2.5">
+                    <i class="pi pi-clock text-guerrero-red animate-pulse"></i>
+                    <span class="text-sm font-bold text-guerrero-red flex-1 font-mono">{{ timerDisplay() }}</span>
+                    <button class="bg-guerrero-red text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+                            (click)="finalizarSerie(eIdx, sIdx)">Finalizar</button>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-3 bg-gray-50 dark:bg-dark-700 rounded-lg px-3 py-2.5">
+                    <i class="pi pi-circle text-gray-300 dark:text-gray-600"></i>
+                    <span class="text-sm text-gray-500 dark:text-gray-400 flex-1">Serie {{ sIdx + 1 }}</span>
+                    <button class="bg-gray-200 dark:bg-dark-600 text-gray-700 dark:text-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg"
+                            (click)="iniciarSerie(eIdx, sIdx)">Iniciar ▶</button>
+                  </div>
+                }
+              }
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <div class="pb-2">
+        <p-button label="Finalizar sesión" icon="pi pi-flag-fill" styleClass="w-full"
+                  (onClick)="finalizarSesion()" [loading]="savingSesion()" />
+      </div>
+
+    }
+
+  }
 
 </div>

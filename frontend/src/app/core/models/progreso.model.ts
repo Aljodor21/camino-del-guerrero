@@ -5,11 +5,28 @@ export interface RegistroPeso {
   nota: string;
 }
 
+export interface SerieCompletada {
+  numero: number;
+  duracion_seg: number;
+  completada: boolean;
+}
+
+export interface EjercicioCompletado {
+  ejercicio_dia_id: number;
+  nombre: string;
+  url_youtube: string;
+  series_plan: number;
+  repeticiones: number | null;
+  duracion_segundos_plan: number | null;
+  series: SerieCompletada[];
+}
+
 export interface RegistroEntrenamiento {
   id: number;
-  rutina: number | null;
+  dia_rutina: number | null;
+  dia_nombre: string;
   fecha: string;
-  rounds: number;
-  duracion_minutos: number;
+  duracion_segundos: number;
+  ejercicios_completados: EjercicioCompletado[];
   notas: string;
 }

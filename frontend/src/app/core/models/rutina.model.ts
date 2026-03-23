@@ -18,7 +18,7 @@ export interface Ejercicio {
 export interface EjercicioDia {
   id: number;
   ejercicio: Ejercicio;
-  series: number;
+  series: number | null;
   repeticiones: number | null;
   duracion_segundos: number | null;
   orden: number;

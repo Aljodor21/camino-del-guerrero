@@ -109,23 +109,25 @@ export class Onboarding implements OnInit {
     this.paso.update(v => v - 1);
   }
 
-  private async generarPlan(): Promise<void> {
-    this.error.set('');
-    const { peso_inicial, peso_objetivo, objetivo, frecuencia_peso } = this.form.getRawValue();
-    try {
-      await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
-        objetivo, peso_inicial,
-        ...(peso_objetivo ? { peso_objetivo } : {}),
-      }));
-      await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, { frecuencia_peso }));
-      for (const id of this.seleccionados()) {
-        await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento: id }));
+    private async generarPlan(): Promise<void> {
+      this.error.set('');
+      const { peso_inicial, peso_objetivo, objetivo, frecuencia_peso } = this.form.getRawValue();
+      try {
+        await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
+          objetivo, peso_inicial,
+          ...(peso_objetivo ? { peso_objetivo } : {}),
+        }));
+        await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
+        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, { frecuencia_peso }));
+        for (const id of this.seleccionados()) {
+          await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento: id }));
+        }
+        await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
+        await firstValueFrom(this.http.post(`${API}/nutricion/mi-plan/`, {}));
+        this.router.navigate(['/rutinas']);
+      } catch {
+        this.error.set('Ocurrió un error al generar tu plan. Vuelve atrás e intenta de nuevo.');
       }
-      await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
-      await firstValueFrom(this.http.post(`${API}/nutricion/mi-plan/`, {}));
-      this.router.navigate(['/rutinas']);
-    } catch {
-      this.error.set('Ocurrió un error al generar tu plan. Vuelve atrás e intenta de nuevo.');
     }
-  }
+
 }
