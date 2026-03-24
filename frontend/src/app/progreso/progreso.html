@@ -31,17 +31,14 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
             <p class="text-xs text-gray-400 mb-1">Peso actual</p>
-            <p class="text-2xl font-bold text-guerrero-red">
-              {{ ultimoPeso() }} <span class="text-sm font-normal">kg</span>
-            </p>
+            <p class="text-2xl font-bold text-guerrero-red">{{ ultimoPeso() }} <span class="text-sm font-normal">kg</span></p>
           </div>
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
             <p class="text-xs text-gray-400 mb-1">Cambio total</p>
             @if (cambioPeso() !== null) {
               <p class="text-2xl font-bold"
                  [class]="cambioPeso()! < 0 ? 'text-green-500' : cambioPeso()! > 0 ? 'text-red-400' : 'text-gray-400'">
-                {{ cambioPeso()! > 0 ? '+' : '' }}{{ cambioPeso() }}
-                <span class="text-sm font-normal">kg</span>
+                {{ cambioPeso()! > 0 ? '+' : '' }}{{ cambioPeso() }} <span class="text-sm font-normal">kg</span>
               </p>
             } @else {
               <p class="text-2xl font-bold text-gray-400">—</p>
@@ -56,8 +53,6 @@
           <p class="mt-2 text-sm">Sin registros aún. ¡Agrega el primero!</p>
         </div>
       } @else {
-
-        <!-- Gráfica de evolución -->
         @if (chartPesoData()) {
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
             <p class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Evolución del peso</p>
@@ -66,7 +61,6 @@
             </div>
           </div>
         }
-
         <div class="space-y-2">
           @for (r of registrosPeso(); track r.id) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
@@ -124,6 +118,31 @@
         }
       </div>
 
+      <!-- Banner sesión pendiente -->
+      @if (sesionPendiente()) {
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <i class="pi pi-clock text-amber-500 text-xl mt-0.5"></i>
+            <div class="flex-1">
+              <p class="text-sm font-bold text-amber-700 dark:text-amber-300">Sesión guardada sin finalizar</p>
+              <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                {{ sesionPendiente()!.diaNombre }} · {{ formatTimestamp(sesionPendiente()!.inicio) }}
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button (click)="restaurarSesion()"
+                    class="flex-1 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors">
+              Continuar sesión
+            </button>
+            <button (click)="descartarSesionLocal()"
+                    class="flex-1 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-lg">
+              Descartar
+            </button>
+          </div>
+        </div>
+      }
+
       @if (sinRutina()) {
         <div class="text-center py-12 text-gray-400 dark:text-gray-600">
           <i class="pi pi-bolt text-4xl"></i>
@@ -140,19 +159,14 @@
             </div>
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
               <p class="text-xs text-gray-400 mb-1">Total</p>
-              <p class="text-2xl font-bold text-guerrero-red">
-                {{ totalMinutosSesiones() }}<span class="text-xs font-normal ml-0.5">min</span>
-              </p>
+              <p class="text-2xl font-bold text-guerrero-red">{{ totalMinutosSesiones() }}<span class="text-xs font-normal ml-0.5">min</span></p>
             </div>
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
               <p class="text-xs text-gray-400 mb-1">Promedio</p>
-              <p class="text-2xl font-bold text-guerrero-red">
-                {{ promedioMinutos() }}<span class="text-xs font-normal ml-0.5">min</span>
-              </p>
+              <p class="text-2xl font-bold text-guerrero-red">{{ promedioMinutos() }}<span class="text-xs font-normal ml-0.5">min</span></p>
             </div>
           </div>
 
-          <!-- Gráfica de sesiones -->
           @if (chartSesionesData()) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
               <p class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Duración últimas sesiones</p>
@@ -162,20 +176,16 @@
             </div>
           }
 
-          <!-- Top ejercicios -->
           @if (topEjercicios().length > 0) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-3">
               <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Ejercicios más frecuentes</p>
               @for (ej of topEjercicios(); track ej.nombre; let i = $index) {
                 <div class="flex items-center gap-3">
-                  <span class="w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0">
-                    {{ i + 1 }}
-                  </span>
+                  <span class="w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0">{{ i + 1 }}</span>
                   <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{{ ej.nombre }}</span>
                   <span class="text-xs font-semibold text-gray-400">{{ ej.veces }}x</span>
                   <div class="w-16 bg-gray-100 dark:bg-dark-700 rounded-full h-1.5">
-                    <div class="bg-guerrero-red h-1.5 rounded-full"
-                         [style.width.%]="(ej.veces / topEjercicios()[0].veces) * 100"></div>
+                    <div class="bg-guerrero-red h-1.5 rounded-full" [style.width.%]="(ej.veces / topEjercicios()[0].veces) * 100"></div>
                   </div>
                 </div>
               }
@@ -223,119 +233,317 @@
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">¿Qué día entrenas hoy?</h1>
       </div>
 
+      <!-- Barra de progreso de la rutina -->
+      <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-2">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Progreso de la rutina</p>
+          <p class="text-sm font-bold text-guerrero-red">
+            {{ progresoRutina().completados }} / {{ progresoRutina().total }} días
+          </p>
+        </div>
+        <div class="w-full bg-gray-100 dark:bg-dark-700 rounded-full h-3 overflow-hidden">
+          <div
+            class="bg-guerrero-red h-full rounded-full transition-all duration-500"
+            [style.width.%]="progresoRutina().porcentaje"
+          ></div>
+        </div>
+        @if (progresoRutina().completados === progresoRutina().total && progresoRutina().total > 0) {
+          <p class="text-xs text-green-600 dark:text-green-400 font-semibold text-center">
+            ¡Completaste todos los días! Puedes repetir cualquiera.
+          </p>
+        }
+      </div>
+
       <div class="space-y-2">
         @for (dia of (rutina()?.dias ?? []); track dia.id) {
+          @let hecho = !!diasUltimaVez()[dia.id];
           <button
-            class="w-full bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center justify-between border-2 border-transparent hover:border-guerrero-red transition-all text-left"
+            class="w-full bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3 border-2 transition-all text-left"
+            [class]="hecho
+              ? 'border-green-200 dark:border-green-800 hover:border-guerrero-red'
+              : 'border-transparent hover:border-guerrero-red'"
             (click)="elegirDia(dia)"
           >
-            <div>
-              <p class="font-semibold text-gray-900 dark:text-white">{{ dia.dia_nombre }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ dia.ejercicios.length }} ejercicios</p>
+            <!-- Icono de estado -->
+            <div
+              class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              [class]="hecho ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-dark-700'"
+            >
+              <i
+                class="text-base"
+                [class]="hecho ? 'pi pi-check text-green-500' : 'pi pi-bolt text-gray-400'"
+              ></i>
             </div>
-            <i class="pi pi-chevron-right text-gray-400"></i>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-900 dark:text-white">{{ dia.dia_nombre }}</p>
+              <p class="text-xs mt-0.5"
+                 [class]="hecho ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+                @if (hecho) {
+                  Completado · {{ formatFecha(diasUltimaVez()[dia.id]) }}
+                } @else {
+                  {{ dia.ejercicios.length }} ejercicios
+                }
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-gray-300 dark:text-gray-600 shrink-0"></i>
           </button>
         }
       </div>
     }
 
-    <!-- SESIÓN ACTIVA -->
-    @if (vistaEntrenamiento() === 'sesion') {
-
+    <!-- PRE-SESIÓN -->
+    @if (vistaEntrenamiento() === 'pre_sesion') {
       <div class="flex items-center gap-2">
-        <p-button icon="pi pi-times" variant="text" [rounded]="true" severity="secondary"
-                  (onClick)="cancelarSesion()" />
-        <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-900 dark:text-white">{{ diaSeleccionado()?.dia_nombre }}</p>
-          <p class="text-xs text-gray-400">{{ ejerciciosEstado().length }} ejercicios</p>
-        </div>
-        <p-button label="Finalizar" icon="pi pi-flag-fill" (onClick)="finalizarSesion()"
-                  [loading]="savingSesion()" />
+        <p-button icon="pi pi-arrow-left" variant="text" [rounded]="true" severity="secondary"
+                  (onClick)="vistaEntrenamiento.set('elegir_dia')" />
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ diaSeleccionado()?.dia_nombre }}</h1>
       </div>
 
-      @if (errorSesion()) {
-        <p-message severity="error" [text]="errorSesion()" styleClass="w-full" />
-      }
-
-      <div class="space-y-3">
-        @for (e of ejerciciosEstado(); track e.ejercicioDia.id; let eIdx = $index) {
-          <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
-
-            <div class="p-4 pb-3 flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <p class="font-semibold text-gray-900 dark:text-white text-sm">
-                  {{ eIdx + 1 }}. {{ e.ejercicioDia.ejercicio.nombre }}
-                </p>
-                <p class="text-xs text-gray-400 mt-0.5">
-                  {{ e.series.length }} series
-                  @if (e.ejercicioDia.repeticiones) { · {{ e.ejercicioDia.repeticiones }} reps }
-                  @if (e.ejercicioDia.duracion_segundos) { · {{ e.ejercicioDia.duracion_segundos }}s c/u }
-                </p>
-              </div>
-              @if (e.ejercicioDia.ejercicio.url_youtube) {
-                <button
-                  class="flex items-center gap-1 text-xs text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1.5 rounded-lg shrink-0 font-medium"
-                  (click)="verVideo(e.ejercicioDia.ejercicio.url_youtube)"
-                >
-                  <i class="pi pi-youtube"></i> Ver
-                </button>
-              }
+      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm divide-y divide-gray-100 dark:divide-dark-700">
+        @for (ej of (diaSeleccionado()?.ejercicios ?? []); track ej.id; let i = $index) {
+          <div class="flex items-center gap-3 px-4 py-3">
+            <span class="w-7 h-7 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0">
+              {{ i + 1 }}
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">{{ ej.ejercicio.nombre }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                {{ ej.series ?? 1 }} series
+                @if (ej.repeticiones) { · {{ ej.repeticiones }} reps }
+                @if (ej.duracion_segundos) { · {{ ej.duracion_segundos }}s }
+              </p>
             </div>
-
-            <div class="px-4 pb-4 space-y-2">
-              @for (s of e.series; track $index; let sIdx = $index) {
-                @if (s.completada) {
-                  <div class="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2.5">
-                    <i class="pi pi-check-circle text-green-500"></i>
-                    <span class="text-sm font-medium text-green-700 dark:text-green-400 flex-1">Serie {{ sIdx + 1 }}</span>
-                    <span class="text-sm font-bold text-green-600 dark:text-green-400 font-mono">{{ formatSegundos(s.duracion_seg) }}</span>
-                  </div>
-                } @else if (s.activa) {
-                  <div class="flex items-center gap-3 bg-guerrero-red/10 border border-guerrero-red/40 rounded-lg px-3 py-2.5">
-                    <i class="pi pi-clock text-guerrero-red animate-pulse"></i>
-                    <div class="flex-1">
-                      <span class="text-sm font-bold text-guerrero-red font-mono">{{ timerDisplay() }}</span>
-                      @if (e.ejercicioDia.duracion_segundos) {
-                        <span class="text-xs text-guerrero-red/60 ml-1">restante</span>
-                      }
-                    </div>
-                    <button class="bg-guerrero-red text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-                            (click)="finalizarSerie(eIdx, sIdx)">Finalizar</button>
-                  </div>
-                } @else {
-                  <div class="flex items-center gap-3 bg-gray-50 dark:bg-dark-700 rounded-lg px-3 py-2.5">
-                    <i class="pi pi-circle text-gray-300 dark:text-gray-600"></i>
-                    <span class="text-sm text-gray-500 dark:text-gray-400 flex-1">Serie {{ sIdx + 1 }}</span>
-                    <button class="bg-gray-200 dark:bg-dark-700 text-gray-800 dark:text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-300 dark:border-dark-600"
-                            (click)="iniciarSerie(eIdx, sIdx)">Iniciar ▶</button>
-                  </div>
-                }
-              }
-            </div>
-
+            @if (ej.ejercicio.url_youtube) {
+              <i class="pi pi-youtube text-red-400 shrink-0"></i>
+            }
           </div>
         }
       </div>
 
-      @if (descansoActivo()) {
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 flex items-center gap-3">
-          <i class="pi pi-hourglass text-blue-500 text-lg"></i>
-          <div class="flex-1">
-            <p class="text-sm font-bold text-blue-700 dark:text-blue-300">Descanso</p>
-            <p class="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400">{{ descansoDisplay() }}</p>
-          </div>
-          <button
-            class="text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 px-3 py-1.5 rounded-lg"
-            (click)="saltarDescanso()"
-          >Omitir</button>
-        </div>
-      }
+      <p-button
+        label="¡A entrenar!"
+        icon="pi pi-bolt"
+        iconPos="right"
+        styleClass="w-full"
+        (onClick)="iniciarSesion()"
+      />
+    }
 
-      <div class="pb-2">
-        <p-button label="Finalizar sesión" icon="pi pi-flag-fill" styleClass="w-full"
-                  (onClick)="finalizarSesion()" [loading]="savingSesion()" />
+    <!-- SESIÓN ACTIVA -->
+    @if (vistaEntrenamiento() === 'sesion') {
+
+      <!-- Header de sesión -->
+      <div class="flex items-center gap-2">
+        <p-button icon="pi pi-times" variant="text" [rounded]="true" severity="secondary"
+                  (onClick)="cancelarSesion()" />
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ sesion()?.diaNombre }}</p>
+          <p class="text-xs text-gray-400">
+            Ejercicio {{ (sesion()?.ejercicioActual ?? 0) + 1 }} de {{ sesion()?.ejercicios?.length }}
+          </p>
+        </div>
+        <!-- Timer total de sesión -->
+        <div class="bg-gray-100 dark:bg-dark-700 px-3 py-1.5 rounded-lg">
+          <span class="text-sm font-mono font-bold text-gray-600 dark:text-gray-300">{{ sesionDuracionDisplay() }}</span>
+        </div>
       </div>
 
+      <!-- Barra de progreso -->
+      <div class="w-full bg-gray-100 dark:bg-dark-700 rounded-full h-1.5 overflow-hidden">
+        <div
+          class="bg-guerrero-red h-full rounded-full transition-all duration-500"
+          [style.width.%]="progresoEjercicios()"
+        ></div>
+      </div>
+
+      @if (ejercicioActual(); as ej) {
+
+        <!-- Tarjeta del ejercicio -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm overflow-hidden">
+
+          <!-- Thumbnail YouTube o cabecera -->
+          @if (youtubeThumb(ej.url_youtube); as thumb) {
+            <div class="relative">
+              <img [src]="thumb" [alt]="ej.nombre" class="w-full h-40 object-cover" />
+              <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
+              <button
+                (click)="verVideo(ej.url_youtube!)"
+                class="absolute inset-0 flex items-end p-4 gap-2"
+              >
+                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg shrink-0">
+                  <i class="pi pi-play text-guerrero-red ml-0.5"></i>
+                </div>
+                <span class="text-white text-sm font-semibold drop-shadow">Ver video del ejercicio</span>
+              </button>
+            </div>
+          } @else if (ej.url_youtube) {
+            <a [href]="ej.url_youtube" target="_blank" rel="noopener"
+               class="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30">
+              <i class="pi pi-youtube text-red-500"></i>
+              <span class="text-sm font-medium text-red-600 dark:text-red-400">Ver video del ejercicio</span>
+            </a>
+          }
+
+          <div class="p-5 space-y-5">
+
+            <!-- Nombre y descripción -->
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{{ ej.nombre }}</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ ej.series_plan }} series
+                @if (ej.repeticiones) { &nbsp;·&nbsp; {{ ej.repeticiones }} repeticiones }
+                @if (ej.duracion_segundos_plan) { &nbsp;·&nbsp; {{ ej.duracion_segundos_plan }}s por serie }
+              </p>
+            </div>
+
+            <!-- Indicadores de series -->
+            <div class="flex gap-2 items-center">
+              @for (s of ej.series; track $index; let si = $index) {
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    class="w-full h-2 rounded-full transition-all"
+                    [class]="s.completada
+                      ? 'bg-guerrero-red'
+                      : si === serieActivaIdx()
+                        ? 'bg-guerrero-red/40 animate-pulse'
+                        : 'bg-gray-200 dark:bg-dark-600'"
+                  ></div>
+                  <span
+                    class="text-xs font-bold transition-colors"
+                    [class]="s.completada ? 'text-guerrero-red' : 'text-gray-400'"
+                  >
+                    @if (s.completada) { ✓ } @else { {{ si + 1 }} }
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Zona activa -->
+
+            <!-- DESCANSO -->
+            @if (enDescanso()) {
+              <div class="rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 text-center space-y-4">
+                <p class="text-xs font-bold text-blue-500 uppercase tracking-widest">Descansando</p>
+                <p class="text-7xl font-mono font-bold text-blue-500 tabular-nums leading-none">{{ descansoDisplay() }}</p>
+                <p class="text-xs text-blue-400">
+                  Siguiente: serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
+                </p>
+                <button
+                  (click)="saltarDescanso()"
+                  class="w-full py-3 text-sm font-bold text-blue-600 border-2 border-blue-300 dark:border-blue-700 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                >
+                  Saltar descanso
+                </button>
+              </div>
+            }
+
+            <!-- SERIE ACTIVA -->
+            @if (!enDescanso() && serieActivaIdx() !== null) {
+              <div class="rounded-2xl bg-guerrero-red/5 border-2 border-guerrero-red/30 p-6 text-center space-y-4">
+                <p class="text-xs font-bold text-guerrero-red uppercase tracking-widest">
+                  Serie {{ serieActivaIdx()! + 1 }} de {{ ej.series_plan }} en curso
+                </p>
+
+                @if (ej.duracion_segundos_plan) {
+                  <!-- Por tiempo: cuenta regresiva grande -->
+                  <p class="text-8xl font-mono font-bold text-guerrero-red tabular-nums leading-none">
+                    {{ timerDisplay() }}
+                  </p>
+                  <p class="text-xs text-guerrero-red/60">segundos restantes</p>
+                } @else {
+                  <!-- Por repeticiones: número grande -->
+                  <p class="text-8xl font-bold text-guerrero-red leading-none">{{ ej.repeticiones }}</p>
+                  <p class="text-sm font-semibold text-guerrero-red/70">repeticiones</p>
+                }
+
+                <button
+                  (click)="completarSerie()"
+                  class="w-full bg-guerrero-red hover:bg-red-700 active:scale-95 text-white font-bold py-5 rounded-2xl text-lg transition-all shadow-lg shadow-guerrero-red/30"
+                >
+                  ✓ &nbsp;Completar serie {{ serieActivaIdx()! + 1 }}
+                </button>
+              </div>
+            }
+
+            <!-- INICIAR SIGUIENTE SERIE -->
+            @if (!enDescanso() && serieActivaIdx() === null && seriesPendientes() > 0) {
+              <button
+                (click)="iniciarSerie()"
+                class="w-full border-2 border-guerrero-red text-guerrero-red hover:bg-guerrero-red hover:text-white active:scale-95 font-bold py-5 rounded-2xl text-lg transition-all"
+              >
+                ▶ &nbsp;Iniciar serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
+              </button>
+            }
+
+            <!-- EJERCICIO COMPLETADO -->
+            @if (ejercicioCompletado()) {
+              <div class="flex items-center justify-center gap-2 py-4 bg-green-50 dark:bg-green-900/20 rounded-2xl">
+                <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+                <span class="font-bold text-green-700 dark:text-green-400 text-lg">¡Ejercicio completado!</span>
+              </div>
+            }
+
+          </div>
+        </div>
+
+        <!-- Error de guardado -->
+        @if (errorSesion()) {
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-3">
+            <div class="flex gap-2">
+              <i class="pi pi-exclamation-circle text-red-500 mt-0.5 shrink-0"></i>
+              <p class="text-sm text-red-700 dark:text-red-300">{{ errorSesion() }}</p>
+            </div>
+            <button
+              (click)="reintentarGuardar()"
+              [disabled]="savingSesion()"
+              class="w-full py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
+            >
+              @if (savingSesion()) { Guardando... } @else { Reintentar guardar }
+            </button>
+          </div>
+        }
+
+        <!-- Botones de navegación -->
+        @if (!errorSesion()) {
+          <div class="pb-4">
+            @if (!esUltimoEjercicio()) {
+              <!-- No es el último: solo puede avanzar si completó -->
+              @if (ejercicioCompletado()) {
+                <p-button
+                  label="Siguiente ejercicio"
+                  icon="pi pi-arrow-right"
+                  iconPos="right"
+                  styleClass="w-full"
+                  (onClick)="siguienteEjercicio()"
+                />
+              }
+            } @else {
+              <!-- Último ejercicio -->
+              @if (ejercicioCompletado()) {
+                <p-button
+                  label="Finalizar sesión"
+                  icon="pi pi-flag-fill"
+                  iconPos="right"
+                  styleClass="w-full"
+                  [loading]="savingSesion()"
+                  (onClick)="finalizarSesion()"
+                />
+              } @else if (!enDescanso() && serieActivaIdx() === null) {
+                <button
+                  (click)="finalizarSesion()"
+                  [disabled]="savingSesion()"
+                  class="w-full py-3 text-sm font-medium text-gray-400 border border-gray-200 dark:border-dark-600 rounded-xl disabled:opacity-60"
+                >
+                  Finalizar sesión igualmente
+                </button>
+              }
+            }
+          </div>
+        }
+
+      }
     }
 
   }
