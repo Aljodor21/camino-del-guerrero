@@ -75,7 +75,8 @@ class EjercicioYoutubeSugerenciasView(APIView):
         if not api_key:
             return Response({'detail': 'YouTube API key no configurada.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        query = ejercicio.busqueda_media or ejercicio.nombre
+        term = ejercicio.busqueda_media or ejercicio.nombre
+        query = f'{term} tutorial' if ejercicio.busqueda_media else term
         try:
             resp = req.get(
                 'https://www.googleapis.com/youtube/v3/search',
@@ -85,8 +86,8 @@ class EjercicioYoutubeSugerenciasView(APIView):
                     'maxResults': 6,
                     'q': query,
                     'key': api_key,
-                    'relevanceLanguage': 'es',
                     'videoDuration': 'short',
+                    'videoCategoryId': '17',
                 },
                 timeout=10,
             )
