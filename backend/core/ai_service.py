@@ -387,6 +387,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
     def generar_rutina(self, usuario, implementos, objetivo):
         p = self._perfil(usuario)
         nombres = [i.implemento.nombre for i in implementos] or ['Sin implemento']
+        implementos_extra = (getattr(usuario, 'implementos_adicionales', '') or '').strip()
         nivel = objetivo.get_nivel_actividad_display()
         dias  = objetivo.dias_entrenamiento
         duracion = objetivo.duracion_sesion
@@ -420,6 +421,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 - Días de entrenamiento por semana: {dias}
 - Duración por sesión: {duracion} minutos
 - Implementos disponibles: {', '.join(nombres)}
+- Implementos adicionales del atleta: {implementos_extra if implementos_extra else 'Ninguno'}
 - Contexto de implementos: {implementos_contexto}
 
 ## ESTRUCTURA DE LA SESIÓN
@@ -429,7 +431,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 ## REGLAS OBLIGATORIAS
 
 ### Implementos — LA REGLA MÁS IMPORTANTE
-1. SOLO usa ejercicios que requieran los implementos que el atleta tiene: {', '.join(nombres)}.
+1. SOLO usa ejercicios que requieran los implementos que el atleta tiene: {', '.join(nombres)}{f', {implementos_extra}' if implementos_extra else ''}.
 2. Si NO tiene un implemento, NUNCA lo menciones ni lo uses.
 3. Si solo tiene "Sin implemento" → toda la sesión es con peso corporal.
 4. requiere_implemento = true SOLO si el ejercicio usa uno de los implementos listados.
@@ -462,7 +464,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 
 ## VERIFICACIÓN ANTES DE RESPONDER
 - ¿Hay exactamente {dias} días?
-- ¿Todos los ejercicios con implementos usan SOLO los que tiene el atleta ({', '.join(nombres)})?
+- ¿Todos los ejercicios con implementos usan SOLO los que tiene el atleta ({', '.join(nombres)}{f', {implementos_extra}' if implementos_extra else ''})?
 - ¿Cada ejercicio tiene "busqueda_media" en inglés?
 - ¿Ningún ejercicio tiene duracion_segundos y repeticiones con valor al mismo tiempo?
 - ¿requiere_implemento es true solo cuando usa un implemento de la lista?

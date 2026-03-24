@@ -31,6 +31,7 @@ class Usuario(AbstractUser):
     nacionalidad             = models.CharField(max_length=100, blank=True, help_text='País de origen para personalizar recetas')
     region                   = models.CharField(max_length=150, blank=True, help_text='Región, departamento o ciudad para personalizar recetas')
     preferencias_alimentarias= models.CharField(max_length=300, blank=True, help_text='Restricciones o preferencias dietarias')
+    implementos_adicionales  = models.CharField(max_length=300, blank=True, help_text='Implementos extra que tiene el usuario fuera del listado del admin')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'nombre']

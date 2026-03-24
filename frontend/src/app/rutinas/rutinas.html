@@ -33,13 +33,12 @@
       </div>
       <p-button
         icon="pi pi-refresh"
-        [loading]="loadingRegenerar()"
         [rounded]="true"
         variant="outlined"
         severity="secondary"
         pTooltip="Regenerar con IA"
         tooltipPosition="left"
-        (onClick)="regenerar()"
+        (onClick)="abrirRegenerar()"
       />
     </div>
 
@@ -120,6 +119,75 @@
   }
 
 </div>
+
+<!-- Dialog regenerar: elegir implementos -->
+<p-dialog
+  [visible]="mostrarDialogReg()"
+  (visibleChange)="!$event && mostrarDialogReg.set(false)"
+  [modal]="true"
+  [closable]="!loadingConfirmarReg()"
+  header="Actualizar implementos"
+  [style]="{ width: '95vw', maxWidth: '480px' }"
+>
+  @if (loadingDialogReg()) {
+    <div class="flex justify-center py-8">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else {
+    <div class="space-y-4">
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Selecciona los implementos disponibles y agrega cualquier equipo extra. La IA regenerará tu rutina con esta información.
+      </p>
+
+      <div class="grid grid-cols-2 gap-2">
+        @for (imp of implementosDisp(); track imp.id) {
+          <button
+            type="button"
+            (click)="toggleImplementoReg(imp.id)"
+            [class]="clasesCard(isSeleccionadoReg(imp.id))"
+          >
+            <i [class]="'pi text-lg ' + (isSeleccionadoReg(imp.id) ? 'pi-check-circle' : 'pi-circle')"></i>
+            <span class="text-sm font-medium">{{ imp.nombre }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+          ¿Tienes algo más? <span class="font-normal text-gray-400">(opcional)</span>
+        </label>
+        <input
+          pInputText
+          [value]="implementosAdicReg()"
+          (input)="implementosAdicReg.set($any($event.target).value)"
+          placeholder="Ej: kettlebell 16 kg, TRX, banco de pesas..."
+          class="w-full"
+        />
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          variant="outlined"
+          severity="secondary"
+          [disabled]="loadingConfirmarReg()"
+          (onClick)="mostrarDialogReg.set(false)"
+          styleClass="flex-1"
+        />
+        <p-button
+          label="Regenerar rutina"
+          icon="pi pi-bolt"
+          iconPos="right"
+          [loading]="loadingConfirmarReg()"
+          [disabled]="seleccionadosReg().length === 0"
+          (onClick)="confirmarRegenerar()"
+          styleClass="flex-1"
+        />
+      </div>
+    </div>
+  }
+</p-dialog>
 
 <!-- Dialog video -->
 <p-dialog

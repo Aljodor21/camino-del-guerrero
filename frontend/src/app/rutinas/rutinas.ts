@@ -3,12 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { firstValueFrom } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
-import { Rutina } from '../core/models/rutina.model';
+import { Implemento, Rutina } from '../core/models/rutina.model';
 
 import { environment } from '../../environments/environment';
 const API = environment.apiUrl;
@@ -17,7 +19,7 @@ const API = environment.apiUrl;
   selector: 'app-rutinas',
   templateUrl: './rutinas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule],
+  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule, InputTextModule],
 })
 export class Rutinas implements OnInit {
   private http      = inject(HttpClient);
@@ -27,9 +29,16 @@ export class Rutinas implements OnInit {
   protected videoUrl = signal<SafeResourceUrl | null>(null);
 
   protected loading = signal(true);
-  protected loadingRegenerar = signal(false);
   protected rutina = signal<Rutina | null>(null);
   protected diaSeleccionado = signal(0);
+
+  // Dialog de configuración antes de regenerar
+  protected mostrarDialogReg    = signal(false);
+  protected loadingDialogReg    = signal(false);
+  protected loadingConfirmarReg = signal(false);
+  protected implementosDisp     = signal<Implemento[]>([]);
+  protected seleccionadosReg    = signal<number[]>([]);
+  protected implementosAdicReg  = signal('');
 
   protected diaActual = computed(() => {
     const r = this.rutina();
@@ -51,21 +60,78 @@ export class Rutinas implements OnInit {
         const idx = rutina.dias.findIndex(d => d.dia_semana === hoyDjango);
         this.diaSeleccionado.set(idx >= 0 ? idx : 0);
         this.loading.set(false);
-        this.loadingRegenerar.set(false);
+        this.loadingConfirmarReg.set(false);
       },
       error: () => {
         this.loading.set(false);
-        this.loadingRegenerar.set(false);
+        this.loadingConfirmarReg.set(false);
       },
     });
   }
 
-  protected regenerar(): void {
-    this.loadingRegenerar.set(true);
-    this.http.post(`${API}/nutricion/generar-rutina/`, {}).subscribe({
-      next: () => this.cargarRutina(),
-      error: () => this.loadingRegenerar.set(false),
+  protected abrirRegenerar(): void {
+    this.loadingDialogReg.set(true);
+    this.mostrarDialogReg.set(true);
+    Promise.all([
+      firstValueFrom(this.http.get<Implemento[]>(`${API}/rutinas/implementos/`)),
+      firstValueFrom(this.http.get<{ id: number; implemento: Implemento }[]>(`${API}/rutinas/mis-implementos/`)),
+      firstValueFrom(this.http.get<{ implementos_adicionales: string }>(`${API}/usuarios/perfil/`)),
+    ]).then(([disponibles, actuales, perfil]) => {
+      this.implementosDisp.set(disponibles);
+      this.seleccionadosReg.set(actuales.map(u => u.implemento.id));
+      this.implementosAdicReg.set(perfil.implementos_adicionales ?? '');
+      this.loadingDialogReg.set(false);
+    }).catch(() => {
+      this.mostrarDialogReg.set(false);
+      this.loadingDialogReg.set(false);
     });
+  }
+
+  protected isSeleccionadoReg(id: number): boolean {
+    return this.seleccionadosReg().includes(id);
+  }
+
+  protected toggleImplementoReg(id: number): void {
+    const sinImp = this.implementosDisp().find(i => i.es_sin_implemento)?.id;
+    const actual = this.seleccionadosReg();
+    if (id === sinImp) {
+      this.seleccionadosReg.set(actual.includes(id) ? [] : [id]);
+      return;
+    }
+    const filtrado = actual.filter(i => i !== sinImp);
+    this.seleccionadosReg.set(
+      filtrado.includes(id) ? filtrado.filter(i => i !== id) : [...filtrado, id]
+    );
+  }
+
+  protected clasesCard(activo: boolean): string {
+    const base = 'flex items-center gap-2 p-3 rounded-xl border-2 text-left transition-all w-full';
+    return activo
+      ? `${base} border-guerrero-red bg-red-50 dark:bg-guerrero-red/10 text-guerrero-red`
+      : `${base} border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400`;
+  }
+
+  protected async confirmarRegenerar(): Promise<void> {
+    this.loadingConfirmarReg.set(true);
+    try {
+      await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, {
+        implementos_adicionales: this.implementosAdicReg(),
+      }));
+      const existentes = await firstValueFrom(
+        this.http.get<{ id: number }[]>(`${API}/rutinas/mis-implementos/`)
+      );
+      for (const e of existentes) {
+        await firstValueFrom(this.http.delete(`${API}/rutinas/mis-implementos/${e.id}/`));
+      }
+      for (const id of this.seleccionadosReg()) {
+        await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento_id: id }));
+      }
+      await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
+      this.mostrarDialogReg.set(false);
+      this.cargarRutina();
+    } catch {
+      this.loadingConfirmarReg.set(false);
+    }
   }
 
   protected seleccionarDia(index: number): void {

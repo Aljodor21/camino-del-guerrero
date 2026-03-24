@@ -260,6 +260,18 @@
               </button>
             }
           </div>
+          <div class="flex flex-col gap-1" [formGroup]="form">
+            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              ¿Tienes algo más? <span class="font-normal text-gray-400">(opcional)</span>
+            </label>
+            <input
+              pInputText
+              formControlName="implementos_adicionales"
+              placeholder="Ej: kettlebell 16 kg, TRX, banco de pesas..."
+              class="w-full"
+            />
+          </div>
+
           <div class="flex gap-3">
             <p-button
               label="Atrás"

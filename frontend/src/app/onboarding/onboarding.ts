@@ -96,6 +96,7 @@ export class Onboarding implements OnInit {
     nacionalidad:             ['', Validators.required],
     region:                   ['', Validators.required],
     preferencias_alimentarias:[''],
+    implementos_adicionales:  [''],
   });
 
 
@@ -164,7 +165,7 @@ export class Onboarding implements OnInit {
       const {
         peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura,
         enfoque_entrenamiento, nivel_actividad, dias_entrenamiento, duracion_sesion,
-        nacionalidad, region, preferencias_alimentarias,
+        nacionalidad, region, preferencias_alimentarias, implementos_adicionales,
       } = this.form.getRawValue();
       try {
         await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
@@ -175,9 +176,10 @@ export class Onboarding implements OnInit {
         await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
         await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, {
           frecuencia_peso, estatura,
-          ...(nacionalidad             ? { nacionalidad }              : {}),
-          ...(region                   ? { region }                    : {}),
-          ...(preferencias_alimentarias ? { preferencias_alimentarias } : {}),
+          ...(nacionalidad              ? { nacionalidad }               : {}),
+          ...(region                    ? { region }                     : {}),
+          ...(preferencias_alimentarias ? { preferencias_alimentarias }  : {}),
+          ...(implementos_adicionales   ? { implementos_adicionales }    : {}),
         }));
         const existentes = await firstValueFrom(this.http.get<{id: number}[]>(`${API}/rutinas/mis-implementos/`));
         for (const e of existentes) {

@@ -77,9 +77,27 @@
       </h1>
 
       <p class="text-lg sm:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-        Tu rutina de boxeo y plan nutricional, generados por inteligencia artificial
+        Tu rutina de entrenamiento y plan nutricional, generados por inteligencia artificial
         y adaptados a tu nivel, tus objetivos y la comida de tu región.
       </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <span class="inline-flex items-center gap-1.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+          <i class="pi pi-star text-guerrero-red text-xs"></i> Boxeo
+        </span>
+        <span class="inline-flex items-center gap-1.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+          <i class="pi pi-heart text-guerrero-red text-xs"></i> Cardio en casa
+        </span>
+        <span class="inline-flex items-center gap-1.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+          <i class="pi pi-bolt text-guerrero-red text-xs"></i> Funcional / HIIT
+        </span>
+        <span class="inline-flex items-center gap-1.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+          <i class="pi pi-arrow-up text-guerrero-red text-xs"></i> Fuerza
+        </span>
+        <span class="inline-flex items-center gap-1.5 bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+          <i class="pi pi-sun text-guerrero-red text-xs"></i> Yoga / Movilidad
+        </span>
+      </div>
 
       @if (auth.isLoggedIn()) {
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -155,13 +173,13 @@
           <div class="w-12 h-12 bg-guerrero-red/10 rounded-xl flex items-center justify-center group-hover:bg-guerrero-red/20 transition-colors">
             <i class="pi pi-bolt text-guerrero-red text-xl"></i>
           </div>
-          <h3 class="font-bold text-lg">Rutina de boxeo</h3>
+          <h3 class="font-bold text-lg">Rutina personalizada</h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-            Generada por IA según tu nivel, días disponibles y duración de sesión. Ejercicios reales de boxeo, no genéricos.
+            Generada por IA según tu enfoque, nivel y disponibilidad. Boxeo, fuerza, HIIT, cardio o movilidad.
           </p>
           <ul class="space-y-1.5">
             <li class="flex items-center gap-2 text-xs text-gray-400">
-              <i class="pi pi-check text-guerrero-red shrink-0"></i> Jab, cross, combinaciones
+              <i class="pi pi-check text-guerrero-red shrink-0"></i> 5 enfoques de entrenamiento
             </li>
             <li class="flex items-center gap-2 text-xs text-gray-400">
               <i class="pi pi-check text-guerrero-red shrink-0"></i> Calentamiento y vuelta a la calma
@@ -265,7 +283,7 @@
           <div class="bg-white dark:bg-dark-800 border border-gray-200 dark:border-white/5 rounded-2xl p-6 flex-1">
             <h3 class="font-bold text-lg mb-1">La IA construye tu plan</h3>
             <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-              En segundos tendrás una rutina de boxeo completa y un plan de alimentación para 7 días. Ambos diseñados específicamente para tus objetivos, no sacados de una plantilla.
+              En segundos tendrás una rutina completa según tu enfoque elegido y un plan de alimentación para 7 días. Ambos diseñados específicamente para tus objetivos, no sacados de una plantilla.
             </p>
           </div>
         </div>
