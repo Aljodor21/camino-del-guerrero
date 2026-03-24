@@ -132,12 +132,12 @@
           </div>
           <div class="flex gap-2">
             <button (click)="restaurarSesion()"
-                    class="flex-1 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors">
-              Continuar sesión
+                    class="flex-1 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
+              <i class="pi pi-play"></i> Continuar sesión
             </button>
             <button (click)="descartarSesionLocal()"
-                    class="flex-1 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-lg">
-              Descartar
+                    class="flex-1 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center justify-center gap-1.5">
+              <i class="pi pi-trash"></i> Descartar
             </button>
           </div>
         </div>
@@ -414,7 +414,7 @@
                     class="text-xs font-bold transition-colors"
                     [class]="s.completada ? 'text-guerrero-red' : 'text-gray-400'"
                   >
-                    @if (s.completada) { ✓ } @else { {{ si + 1 }} }
+                    @if (s.completada) { <i class="pi pi-check"></i> } @else { {{ si + 1 }} }
                   </span>
                 </div>
               }
@@ -425,16 +425,18 @@
             <!-- DESCANSO -->
             @if (enDescanso()) {
               <div class="rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 text-center space-y-4">
-                <p class="text-xs font-bold text-blue-500 uppercase tracking-widest">Descansando</p>
+                <p class="text-xs font-bold text-blue-500 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                  <i class="pi pi-hourglass"></i> Descansando
+                </p>
                 <p class="text-7xl font-mono font-bold text-blue-500 tabular-nums leading-none">{{ descansoDisplay() }}</p>
                 <p class="text-xs text-blue-400">
                   Siguiente: serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
                 </p>
                 <button
                   (click)="saltarDescanso()"
-                  class="w-full py-3 text-sm font-bold text-blue-600 border-2 border-blue-300 dark:border-blue-700 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                  class="w-full py-3 text-sm font-bold text-blue-600 border-2 border-blue-300 dark:border-blue-700 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  Saltar descanso
+                  <i class="pi pi-forward"></i> Saltar descanso
                 </button>
               </div>
             }
@@ -462,7 +464,7 @@
                   (click)="completarSerie()"
                   class="w-full bg-guerrero-red hover:bg-red-700 active:scale-95 text-white font-bold py-5 rounded-2xl text-lg transition-all shadow-lg shadow-guerrero-red/30"
                 >
-                  ✓ &nbsp;Completar serie {{ serieActivaIdx()! + 1 }}
+                  <i class="pi pi-check mr-2"></i>Completar serie {{ serieActivaIdx()! + 1 }}
                 </button>
               </div>
             }
@@ -473,7 +475,7 @@
                 (click)="iniciarSerie()"
                 class="w-full border-2 border-guerrero-red text-guerrero-red hover:bg-guerrero-red hover:text-white active:scale-95 font-bold py-5 rounded-2xl text-lg transition-all"
               >
-                ▶ &nbsp;Iniciar serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
+                <i class="pi pi-play mr-2"></i>Iniciar serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
               </button>
             }
 
@@ -498,9 +500,13 @@
             <button
               (click)="reintentarGuardar()"
               [disabled]="savingSesion()"
-              class="w-full py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60"
+              class="w-full py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
             >
-              @if (savingSesion()) { Guardando... } @else { Reintentar guardar }
+              @if (savingSesion()) {
+                <i class="pi pi-spin pi-spinner"></i> Guardando...
+              } @else {
+                <i class="pi pi-refresh"></i> Reintentar guardar
+              }
             </button>
           </div>
         }
@@ -534,9 +540,9 @@
                 <button
                   (click)="finalizarSesion()"
                   [disabled]="savingSesion()"
-                  class="w-full py-3 text-sm font-medium text-gray-400 border border-gray-200 dark:border-dark-600 rounded-xl disabled:opacity-60"
+                  class="w-full py-3 text-sm font-medium text-gray-400 border border-gray-200 dark:border-dark-600 rounded-xl disabled:opacity-60 flex items-center justify-center gap-1.5"
                 >
-                  Finalizar sesión igualmente
+                  <i class="pi pi-flag"></i> Finalizar sesión igualmente
                 </button>
               }
             }

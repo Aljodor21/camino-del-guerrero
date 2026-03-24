@@ -52,16 +52,24 @@ class ObjetivoUsuario(models.Model):
         ('intermedio',   'Intermedio'),
         ('avanzado',     'Avanzado'),
     ]
-    DIAS_CHOICES  = [(3, '3 días'), (4, '4 días'), (5, '5 días')]
+    DIAS_CHOICES     = [(3, '3 días'), (4, '4 días'), (5, '5 días')]
     DURACION_CHOICES = [(30, '30 min'), (45, '45 min'), (60, '60 min')]
+    ENFOQUE_CHOICES  = [
+        ('boxeo',       'Boxeo'),
+        ('cardio_casa', 'Cardio en casa'),
+        ('funcional',   'Funcional / HIIT'),
+        ('fuerza',      'Fuerza'),
+        ('movilidad',   'Yoga / Movilidad'),
+    ]
 
-    usuario            = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='objetivos')
-    objetivo           = models.CharField(max_length=50, choices=OBJETIVOS)
-    peso_inicial       = models.FloatField()
-    peso_objetivo      = models.FloatField(null=True, blank=True)
-    nivel_actividad    = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='principiante')
-    dias_entrenamiento = models.IntegerField(choices=DIAS_CHOICES, default=3)
-    duracion_sesion    = models.IntegerField(choices=DURACION_CHOICES, default=45)
+    usuario               = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='objetivos')
+    objetivo              = models.CharField(max_length=50, choices=OBJETIVOS)
+    peso_inicial          = models.FloatField()
+    peso_objetivo         = models.FloatField(null=True, blank=True)
+    nivel_actividad       = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='principiante')
+    dias_entrenamiento    = models.IntegerField(choices=DIAS_CHOICES, default=3)
+    duracion_sesion       = models.IntegerField(choices=DURACION_CHOICES, default=45)
+    enfoque_entrenamiento = models.CharField(max_length=30, choices=ENFOQUE_CHOICES, default='boxeo')
     fecha_inicio       = models.DateField(default=timezone.localdate, editable=False)
     activo             = models.BooleanField(default=True)
 

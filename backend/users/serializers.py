@@ -64,5 +64,5 @@ class ObjetivoUsuarioSerializer(serializers.ModelSerializer):
         model  = ObjetivoUsuario
         fields = ['id', 'objetivo', 'peso_inicial', 'peso_objetivo',
                   'nivel_actividad', 'dias_entrenamiento', 'duracion_sesion',
-                  'fecha_inicio', 'activo']
+                  'enfoque_entrenamiento', 'fecha_inicio', 'activo']
         read_only_fields = ['fecha_inicio', 'activo']

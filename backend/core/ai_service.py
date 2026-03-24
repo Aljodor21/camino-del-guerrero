@@ -230,6 +230,160 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 """
         return self._chat_json(prompt)
 
+    # ── Configuración por enfoque ─────────────────────────────────────
+    _ENFOQUE_CONFIG = {
+        'boxeo': {
+            'persona': 'Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando atletas de barrio en Latinoamérica. Diseñas rutinas PRÁCTICAS y REALIZABLES con lo que el atleta tiene en casa o en su gimnasio local.',
+            'implementos_desc': {
+                'Saco de boxeo':      'golpes directos (jab, cross, uppercut, hook) con potencia real, trabajo de distancia',
+                'Guantes de boxeo':   'necesarios para golpear el saco o el escudo; sin ellos solo se hace sombra',
+                'Cuerda para saltar': 'cardio específico de boxeo, coordinación y ritmo de pies',
+                'Escudo':             'trabajo en pareja con el entrenador o compañero, combinaciones con target real',
+                'Vendas':             'protección de manos, siempre se usan con guantes',
+                'Pera de velocidad':  'velocidad de golpe, timing, coordinación ojo-mano',
+                'Sin implemento':     'solo trabajo de sombra, ejercicios de peso corporal y footwork',
+            },
+            'estructura': '1. Calentamiento (5-8 min): trote en sitio, movilidad articular, activación de hombros.\n2. Bloque técnico: golpes, combinaciones o footwork según el día.\n3. Bloque físico: fuerza, resistencia o cardio con los implementos disponibles.\n4. Vuelta a la calma (3-5 min): estiramientos y respiración.',
+            'ejercicios_permitidos': (
+                '- Sombra (siempre): jab, cross, uppercut, hook, combinaciones 1-2, 1-2-3, bob and weave, slip, footwork en L, pivote.\n'
+                '- Con saco: rounds al saco, golpes de poder, combinaciones al saco.\n'
+                '- Con cuerda: salto de cuerda constante, salto alternado, doble giro.\n'
+                '- Con escudo: combinaciones con escudo, jab-cross, hooks al escudo.\n'
+                '- Físico: burpees, sentadillas con salto, planchas, abdominales, lagartijas, mountain climbers.'
+            ),
+            'variedad': 'Distribuye los días entre: técnica ofensiva, técnica defensiva, combinaciones, trabajo físico, velocidad.',
+            'busqueda_media': (
+                '- Jab → "boxing jab"\n- Cross → "boxing cross"\n- Uppercut → "boxing uppercut"\n'
+                '- Hook → "boxing hook"\n- Combinación 1-2 → "boxing jab cross combination"\n'
+                '- Sombra → "shadow boxing"\n- Bob and weave → "boxing bob weave"\n'
+                '- Slip → "boxing slip dodge"\n- Footwork → "boxing footwork"\n'
+                '- Pivote → "boxing pivot footwork"\n- Rounds al saco → "boxing heavy bag"\n'
+                '- Pera de velocidad → "boxing speed bag"\n- Escudo → "boxing focus mitts"\n'
+                '- Cuerda → "jump rope boxing"\n- Burpees → "burpee exercise"\n'
+                '- Sentadillas con salto → "jump squat exercise"\n- Planchas → "plank exercise"\n'
+                '- Lagartijas → "push up exercise"\n- Mountain climbers → "mountain climber exercise"\n'
+                '- Abdominales → "boxing abs workout"\n- Calentamiento → "boxing warm up"\n'
+                '- Estiramientos → "boxing cool down stretch"'
+            ),
+        },
+        'cardio_casa': {
+            'persona': 'Eres un entrenador de cardio en casa con 10 años de experiencia diseñando rutinas intensas y efectivas sin necesidad de ir al gimnasio. Tus rutinas usan implementos básicos como cuerda, colchoneta y peso corporal.',
+            'implementos_desc': {
+                'Cuerda para saltar': 'cardio de alto impacto, coordinación y quema calórica',
+                'Colchoneta':         'ejercicios de suelo, abdominales, estiramientos y yoga',
+                'Mancuernas':         'resistencia adicional en ejercicios de peso corporal',
+                'Sin implemento':     'peso corporal puro: burpees, saltos, mountain climbers',
+            },
+            'estructura': '1. Calentamiento dinámico (5 min): jumping jacks, trote en sitio, movilidad.\n2. Bloque cardio principal: intervalos o circuitos continuos.\n3. Bloque de fuerza corporal: ejercicios de tonificación.\n4. Vuelta a la calma (5 min): respiración y estiramientos.',
+            'ejercicios_permitidos': (
+                '- Cardio: salto de cuerda, jumping jacks, burpees, mountain climbers, saltos en estrella, trote en sitio, high knees.\n'
+                '- Fuerza corporal: sentadillas, zancadas, planchas, lagartijas, abdominales, puente de glúteos, superman.\n'
+                '- Cardio HIIT: tabata de burpees, intervalos de cuerda, circuitos de saltos.\n'
+                '- Con colchoneta: abdominales variados, estiramiento, yoga básico.'
+            ),
+            'variedad': 'Distribuye los días entre: día de cardio puro, día de fuerza corporal, día HIIT mixto.',
+            'busqueda_media': (
+                '- Salto de cuerda → "jump rope cardio"\n- Jumping jacks → "jumping jacks exercise"\n'
+                '- Burpees → "burpee exercise"\n- Mountain climbers → "mountain climber exercise"\n'
+                '- High knees → "high knees cardio"\n- Sentadillas → "squat exercise"\n'
+                '- Zancadas → "lunge exercise"\n- Planchas → "plank exercise"\n'
+                '- Lagartijas → "push up exercise"\n- Abdominales → "crunches exercise"\n'
+                '- Puente de glúteos → "glute bridge exercise"\n- Superman → "superman exercise"\n'
+                '- HIIT circuito → "hiit workout home"\n- Calentamiento → "cardio warm up"\n'
+                '- Estiramientos → "full body stretch cool down"'
+            ),
+        },
+        'funcional': {
+            'persona': 'Eres un entrenador de entrenamiento funcional e HIIT con 12 años de experiencia. Diseñas circuitos intensos que mejoran fuerza, resistencia y agilidad usando movimientos naturales del cuerpo y los implementos disponibles.',
+            'implementos_desc': {
+                'Cuerda para saltar': 'intervalos de cardio entre bloques funcionales',
+                'Colchoneta':         'movimientos de suelo y core',
+                'Mancuernas':         'carga adicional para sentadillas, peso muerto rumano, press',
+                'Kettlebell':         'swings, cleans, press funcional',
+                'Sin implemento':     'movimientos funcionales de peso corporal: burpees, sentadillas, dominadas',
+            },
+            'estructura': '1. Calentamiento funcional (5-8 min): movilidad articular completa.\n2. Bloque de fuerza funcional: movimientos compuestos pesados.\n3. Bloque HIIT: circuito de alta intensidad con poco descanso.\n4. Core y vuelta a la calma (5 min).',
+            'ejercicios_permitidos': (
+                '- Funcional básico: sentadillas, sentadillas con salto, zancadas alternas, burpees, lagartijas, dominadas (si hay barra).\n'
+                '- Core: plancha, plancha lateral, hollow body, russian twist, mountain climbers.\n'
+                '- HIIT: tabata de burpees, circuito 40-20, intervalos de salto.\n'
+                '- Con mancuernas/kettlebell: swings, goblet squat, peso muerto rumano, press de hombros.\n'
+                '- Cardio: salto de cuerda, jumping jacks, box jumps.'
+            ),
+            'variedad': 'Distribuye los días entre: día de fuerza funcional, día HIIT cardiovascular, día de core y movilidad.',
+            'busqueda_media': (
+                '- Sentadillas → "squat exercise"\n- Sentadilla con salto → "jump squat exercise"\n'
+                '- Zancadas → "lunge exercise"\n- Burpees → "burpee exercise"\n'
+                '- Lagartijas → "push up exercise"\n- Plancha → "plank exercise"\n'
+                '- Mountain climbers → "mountain climber exercise"\n- Russian twist → "russian twist exercise"\n'
+                '- Kettlebell swing → "kettlebell swing"\n- Goblet squat → "goblet squat"\n'
+                '- Peso muerto rumano → "romanian deadlift"\n- Salto de cuerda → "jump rope hiit"\n'
+                '- Circuito HIIT → "hiit circuit workout"\n- Calentamiento → "functional warm up"\n'
+                '- Vuelta calma → "cool down stretch"'
+            ),
+        },
+        'fuerza': {
+            'persona': 'Eres un entrenador de fuerza y acondicionamiento con 15 años de experiencia. Diseñas programas de hipertrofia y fuerza progresiva adaptados a lo que el atleta tiene disponible en casa o gimnasio básico.',
+            'implementos_desc': {
+                'Mancuernas':    'ejercicios unilaterales y bilaterales de press, jalón, curl, extensión',
+                'Barra':         'sentadilla, press de banca, peso muerto, remo',
+                'Kettlebell':    'swings, press, goblet squat, remo',
+                'Colchoneta':    'ejercicios de suelo y core',
+                'Bandas elásticas': 'tensión constante para jalones, curls y extensiones',
+                'Sin implemento': 'calistenia: lagartijas, fondos, sentadillas, dominadas',
+            },
+            'estructura': '1. Calentamiento específico (5-8 min): movilidad de articulaciones a trabajar.\n2. Ejercicio principal compuesto (el más exigente).\n3. Ejercicios accesorios (2-3 ejercicios de soporte).\n4. Core y vuelta a la calma.',
+            'ejercicios_permitidos': (
+                '- Piernas: sentadillas, sentadilla goblet, zancadas, peso muerto, hip thrust, step-up.\n'
+                '- Pecho: lagartijas, lagartijas diamante, press con mancuernas, fondos en silla.\n'
+                '- Espalda: remo con mancuernas, remo invertido, jalón con banda, dominadas.\n'
+                '- Hombros: press de hombros, elevaciones laterales, Arnold press.\n'
+                '- Brazos: curl de bíceps, extensión de tríceps, curl martillo.\n'
+                '- Core: plancha, hollow body, dead bug, russian twist.'
+            ),
+            'variedad': 'Organiza los días por grupos musculares: día de piernas, día de empuje (pecho/hombros/tríceps), día de jalón (espalda/bíceps), día full-body.',
+            'busqueda_media': (
+                '- Sentadilla → "squat exercise"\n- Peso muerto → "deadlift exercise"\n'
+                '- Lagartijas → "push up exercise"\n- Press mancuernas → "dumbbell press"\n'
+                '- Remo mancuernas → "dumbbell row"\n- Fondos → "tricep dips"\n'
+                '- Dominadas → "pull up exercise"\n- Curl bíceps → "bicep curl"\n'
+                '- Extensión tríceps → "tricep extension"\n- Zancadas → "lunge exercise"\n'
+                '- Hip thrust → "hip thrust exercise"\n- Plancha → "plank exercise"\n'
+                '- Kettlebell swing → "kettlebell swing"\n- Calentamiento → "strength training warm up"\n'
+                '- Vuelta calma → "cool down stretch"'
+            ),
+        },
+        'movilidad': {
+            'persona': 'Eres un instructor certificado de yoga y movilidad con 10 años de experiencia. Diseñas secuencias que mejoran flexibilidad, movilidad articular, fuerza suave y bienestar mental, adaptadas al nivel del practicante.',
+            'implementos_desc': {
+                'Colchoneta':    'base para todas las posturas de suelo, vinyasa y restaurativas',
+                'Bloque de yoga': 'soporte para posturas con poca flexibilidad',
+                'Banda elástica': 'asistencia en estiramientos profundos',
+                'Sin implemento': 'posturas de pie, sentado y suelo sin soporte',
+            },
+            'estructura': '1. Respiración y centrado (3-5 min): respiración diafragmática.\n2. Calentamiento articular: círculos de cuello, hombros, caderas.\n3. Bloque principal: secuencia de posturas o movilidad.\n4. Posturas restaurativas y savasana (5 min).',
+            'ejercicios_permitidos': (
+                '- Calentamiento: círculos de cuello, hombros, caderas, tobillos, Cat-Cow.\n'
+                '- Estiramiento activo: postura del guerrero I y II, triángulo, media luna.\n'
+                '- Movilidad de cadera: paloma, mariposa, lagartija baja, cuadrado.\n'
+                '- Core suave: tabla, puente, bird-dog, dead bug.\n'
+                '- Equilibrio: árbol, guerrero III, media luna.\n'
+                '- Restaurativas: niño, piernas en pared, torsión supina, savasana.'
+            ),
+            'variedad': 'Distribuye los días entre: movilidad de caderas y piernas, apertura de espalda y hombros, equilibrio y core suave.',
+            'busqueda_media': (
+                '- Cat-Cow → "cat cow yoga"\n- Guerrero I → "warrior one yoga"\n'
+                '- Guerrero II → "warrior two yoga"\n- Triángulo → "triangle pose yoga"\n'
+                '- Paloma → "pigeon pose yoga"\n- Mariposa → "butterfly pose yoga"\n'
+                '- Lagartija baja → "low lunge yoga"\n- Tabla → "plank yoga"\n'
+                '- Puente → "bridge pose yoga"\n- Bird-dog → "bird dog exercise"\n'
+                '- Árbol → "tree pose yoga"\n- Postura del niño → "childs pose yoga"\n'
+                '- Torsión supina → "supine twist yoga"\n- Calentamiento → "yoga warm up"\n'
+                '- Savasana → "savasana relaxation"'
+            ),
+        },
+    }
+
     def generar_rutina(self, usuario, implementos, objetivo):
         p = self._perfil(usuario)
         nombres = [i.implemento.nombre for i in implementos] or ['Sin implemento']
@@ -238,29 +392,22 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         duracion = objetivo.duracion_sesion
         nacionalidad = usuario.nacionalidad or 'No especificada'
         region = usuario.region or 'No especificada'
+        enfoque = getattr(objetivo, 'enfoque_entrenamiento', 'boxeo') or 'boxeo'
+
+        cfg = self._ENFOQUE_CONFIG.get(enfoque, self._ENFOQUE_CONFIG['boxeo'])
 
         nivel_config = {
-            'Principiante': 'series: 2-3, repeticiones bajas, descanso 60-90s. Prioriza aprender la mecánica correcta de cada golpe antes que la velocidad. Nombra los ejercicios de forma simple y clara.',
-            'Intermedio':   'series: 3-4, combinaciones de 2-3 golpes, descanso 45-60s. Mezcla técnica con acondicionamiento físico.',
-            'Avanzado':     'series: 4-5, circuitos sin descanso, combinaciones largas (4-6 golpes), descanso 30-45s. Alta intensidad y variedad táctica.',
+            'Principiante': 'series: 2-3, carga baja, descanso 60-90s. Prioriza aprender la mecánica correcta antes que la intensidad. Explica cada ejercicio con detalle.',
+            'Intermedio':   'series: 3-4, carga moderada, descanso 45-60s. Mezcla técnica con acondicionamiento físico.',
+            'Avanzado':     'series: 4-5, carga alta, poco descanso (30-45s). Alta intensidad y variedad.',
         }.get(nivel, 'series: 3')
 
-        # Descripción detallada de cada implemento disponible para que la IA entienda qué puede hacer con cada uno
-        implementos_desc = {
-            'Saco de boxeo':    'golpes directos (jab, cross, uppercut, hook) con potencia real, trabajo de distancia',
-            'Guantes de boxeo': 'necesarios para golpear el saco o el escudo; sin ellos solo se hace sombra',
-            'Cuerda para saltar': 'cardio específico de boxeo, coordinación y ritmo de pies',
-            'Escudo':           'trabajo en pareja con el entrenador o compañero, combinaciones con target real',
-            'Vendas':           'protección de manos, siempre se usan con guantes',
-            'Pera de velocidad': 'velocidad de golpe, timing, coordinación ojo-mano',
-            'Sin implemento':   'solo trabajo de sombra, ejercicios de peso corporal y footwork',
-        }
         implementos_contexto = '; '.join(
-            f"{n} → {implementos_desc.get(n, 'uso general')}" for n in nombres
+            f"{n} → {cfg['implementos_desc'].get(n, 'uso general')}" for n in nombres
         )
 
         prompt = f"""
-Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando atletas de barrio en Latinoamérica. Diseñas rutinas PRÁCTICAS y REALIZABLES con lo que el atleta tiene en casa o en su gimnasio local.
+{cfg['persona']}
 
 ## PERFIL DEL ATLETA
 - Sexo: {p['sexo']}
@@ -268,6 +415,7 @@ Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando a
 - Estatura: {p['estatura']}
 - Nacionalidad: {nacionalidad} | Región: {region}
 - Objetivo: {objetivo.get_objetivo_display()}
+- Enfoque de entrenamiento: {objetivo.get_enfoque_entrenamiento_display()}
 - Nivel: {nivel}
 - Días de entrenamiento por semana: {dias}
 - Duración por sesión: {duracion} minutos
@@ -276,79 +424,49 @@ Eres un entrenador de boxeo profesional con 15 años de experiencia entrenando a
 
 ## ESTRUCTURA DE LA SESIÓN
 Cada sesión de {duracion} minutos debe seguir este orden:
-1. Calentamiento (5-8 min): trote en sitio, movilidad articular, activación de hombros y caderas.
-2. Bloque técnico: golpes, combinaciones o footwork según el día.
-3. Bloque físico: fuerza, resistencia o cardio CON los implementos disponibles.
-4. Vuelta a la calma (3-5 min): estiramientos y respiración.
+{cfg['estructura']}
 
 ## REGLAS OBLIGATORIAS
 
 ### Implementos — LA REGLA MÁS IMPORTANTE
 1. SOLO usa ejercicios que requieran los implementos que el atleta tiene: {', '.join(nombres)}.
-2. Si tiene saco → incluye rounds al saco. Si NO tiene saco → NUNCA pongas "golpes al saco", usa sombra.
-3. Si tiene cuerda → incluye salto de cuerda. Si NO tiene cuerda → usa trote en sitio o saltos.
-4. Si tiene escudo → incluye trabajo con escudo. Si NO tiene escudo → no lo menciones.
-5. Si solo tiene "Sin implemento" → toda la sesión es sombra, peso corporal y footwork.
-6. requiere_implemento = true SOLO si el ejercicio usa uno de los implementos listados. Si es sombra o peso corporal, es false.
+2. Si NO tiene un implemento, NUNCA lo menciones ni lo uses.
+3. Si solo tiene "Sin implemento" → toda la sesión es con peso corporal.
+4. requiere_implemento = true SOLO si el ejercicio usa uno de los implementos listados.
 
 ### Cantidad y nivel
-7. Genera EXACTAMENTE {dias} días. No pongas días de descanso.
-8. Cada sesión: entre 6 y 8 ejercicios (incluyendo calentamiento y vuelta a la calma).
-9. Nivel {nivel}: {nivel_config}
+5. Genera EXACTAMENTE {dias} días. No pongas días de descanso.
+6. Cada sesión: entre 6 y 8 ejercicios (incluyendo calentamiento y vuelta a la calma).
+7. Nivel {nivel}: {nivel_config}
 
-### Ejercicios técnicos permitidos (según implementos disponibles)
-- Sombra (siempre disponible): jab, cross, uppercut, hook, combinaciones 1-2, 1-2-3, bob and weave, slip, footwork en L, footwork circular, pivote.
-- Con saco: rounds al saco, golpes de poder, combinaciones al saco.
-- Con cuerda: salto de cuerda ritmo constante, salto alternado, doble giro.
-- Con escudo: combinaciones con escudo, jab-cross al escudo, hooks al escudo.
-- Físico sin implemento: burpees, sentadillas con salto, planchas, abdominales, lagartijas, mountain climbers.
+### Ejercicios permitidos para este enfoque ({objetivo.get_enfoque_entrenamiento_display()})
+{cfg['ejercicios_permitidos']}
 
 ### Tipos de ejercicio
-10. Por TIEMPO (rounds, cardio, sombra): duracion_segundos = entero, series = entero, repeticiones = null.
-11. Por REPETICIONES (técnica, fuerza): series = entero, repeticiones = entero, duracion_segundos = null.
-12. Nunca pongas duracion_segundos y repeticiones con valor al mismo tiempo.
+8. Por TIEMPO (cardio, circuitos): duracion_segundos = entero, series = entero, repeticiones = null.
+9. Por REPETICIONES (técnica, fuerza): series = entero, repeticiones = entero, duracion_segundos = null.
+10. Nunca pongas duracion_segundos y repeticiones con valor al mismo tiempo.
 
 ### Descripciones técnicas
-13. Entre 35 y 60 palabras. Estructura: posición inicial → ejecución → punto clave → error común.
-14. Adapta el lenguaje al nivel {nivel}: para Principiante, explica como si fuera la primera vez.
+11. Entre 35 y 60 palabras. Estructura: posición inicial → ejecución → punto clave → error común.
+12. Adapta el lenguaje al nivel {nivel}: para Principiante, explica como si fuera la primera vez.
 
 ### Campo busqueda_media — CRÍTICO para mostrar GIFs al atleta
-15. Cada ejercicio debe tener "busqueda_media": término de 2-4 palabras en inglés para buscar un GIF representativo.
-16. Usa SIEMPRE estos términos estandarizados según el ejercicio:
-    - Jab → "boxing jab"
-    - Cross → "boxing cross"
-    - Uppercut → "boxing uppercut"
-    - Hook / Gancho → "boxing hook"
-    - Combinación 1-2 o jab-cross → "boxing jab cross combination"
-    - Trabajo de sombra → "shadow boxing"
-    - Bob and weave / esquiva → "boxing bob weave"
-    - Slip / esquiva lateral → "boxing slip dodge"
-    - Footwork / trabajo de pies → "boxing footwork"
-    - Pivote → "boxing pivot footwork"
-    - Rounds al saco → "boxing heavy bag"
-    - Pera de velocidad → "boxing speed bag"
-    - Trabajo con escudo → "boxing focus mitts"
-    - Cuerda de saltar → "jump rope boxing"
-    - Burpees → "burpee exercise"
-    - Sentadillas con salto → "jump squat exercise"
-    - Planchas → "plank exercise"
-    - Lagartijas → "push up exercise"
-    - Mountain climbers → "mountain climber exercise"
-    - Abdominales → "boxing abs workout"
-    - Calentamiento / trote → "boxing warm up"
-    - Estiramientos / vuelta calma → "boxing cool down stretch"
+13. Cada ejercicio debe tener "busqueda_media": término de 2-4 palabras en inglés.
+14. Usa estos términos estandarizados:
+{cfg['busqueda_media']}
 
 ### Variedad entre días
-17. Distribuye los {dias} días entre: técnica ofensiva, técnica defensiva, combinaciones, trabajo físico, velocidad.
-18. No repitas el mismo bloque técnico dos días seguidos.
+15. {cfg['variedad']}
+16. No repitas el mismo ejercicio principal dos días seguidos.
 
 ## VERIFICACIÓN ANTES DE RESPONDER
 - ¿Hay exactamente {dias} días?
 - ¿Todos los ejercicios con implementos usan SOLO los que tiene el atleta ({', '.join(nombres)})?
-- ¿Cada ejercicio tiene "busqueda_media" con el término estandarizado en inglés?
+- ¿Cada ejercicio tiene "busqueda_media" en inglés?
 - ¿Ningún ejercicio tiene duracion_segundos y repeticiones con valor al mismo tiempo?
 - ¿requiere_implemento es true solo cuando usa un implemento de la lista?
-- ¿El nivel de dificultad corresponde a {nivel}?
+- ¿El nivel y enfoque ({objetivo.get_enfoque_entrenamiento_display()}) corresponden al perfil?
 
 ## FORMATO DE SALIDA
 Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
@@ -362,7 +480,7 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         {{
           "nombre": "Nombre claro del ejercicio",
           "descripcion": "Descripción técnica completa de 35-60 palabras",
-          "busqueda_media": "boxing jab",
+          "busqueda_media": "exercise term",
           "requiere_implemento": false,
           "series": 3,
           "repeticiones": 12,

@@ -45,6 +45,14 @@ export class Onboarding implements OnInit {
     this.paisesFiltrados.set(PAISES.filter(p => p.toLowerCase().includes(q)));
   }
 
+  protected readonly enfoqueOpciones = [
+    { label: 'Boxeo',           value: 'boxeo',       icon: 'pi pi-star',        desc: 'Guantes, saco, cuerda'      },
+    { label: 'Cardio en casa',  value: 'cardio_casa', icon: 'pi pi-heart',       desc: 'Cuerda, colchoneta'         },
+    { label: 'Funcional / HIIT',value: 'funcional',   icon: 'pi pi-bolt',        desc: 'Sin equipo o mancuernas'    },
+    { label: 'Fuerza',          value: 'fuerza',      icon: 'pi pi-arrow-up',    desc: 'Barra, mancuernas, máquinas'},
+    { label: 'Yoga / Movilidad',value: 'movilidad',   icon: 'pi pi-sun',         desc: 'Colchoneta, bloques'        },
+  ];
+
   protected readonly objetivoOpciones = [
     { label: 'Bajar de peso',  value: 'bajar_peso',    icon: 'pi pi-arrow-down' },
     { label: 'Ganar músculo',  value: 'ganar_musculo', icon: 'pi pi-bolt'       },
@@ -81,6 +89,7 @@ export class Onboarding implements OnInit {
     objetivo:                 ['bajar_peso', Validators.required],
     frecuencia_peso:          [30, Validators.required],
     estatura:                 [null as unknown as number, [Validators.required, Validators.min(100), Validators.max(250)]],
+    enfoque_entrenamiento:    ['boxeo', Validators.required],
     nivel_actividad:          ['principiante', Validators.required],
     dias_entrenamiento:       [3, Validators.required],
     duracion_sesion:          [45, Validators.required],
@@ -131,7 +140,8 @@ export class Onboarding implements OnInit {
   protected paso1Valido(): boolean {
     const c = this.form.controls;
     return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid
-        && c.nivel_actividad.valid && c.dias_entrenamiento.valid && c.duracion_sesion.valid
+        && c.enfoque_entrenamiento.valid && c.nivel_actividad.valid
+        && c.dias_entrenamiento.valid && c.duracion_sesion.valid
         && c.nacionalidad.valid && c.region.valid;
   }
 
@@ -153,11 +163,13 @@ export class Onboarding implements OnInit {
       this.error.set('');
       const {
         peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura,
-        nivel_actividad, dias_entrenamiento, duracion_sesion, nacionalidad, region, preferencias_alimentarias,
+        enfoque_entrenamiento, nivel_actividad, dias_entrenamiento, duracion_sesion,
+        nacionalidad, region, preferencias_alimentarias,
       } = this.form.getRawValue();
       try {
         await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
           objetivo, peso_inicial, nivel_actividad, dias_entrenamiento, duracion_sesion,
+          enfoque_entrenamiento,
           ...(peso_objetivo ? { peso_objetivo } : {}),
         }));
         await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
