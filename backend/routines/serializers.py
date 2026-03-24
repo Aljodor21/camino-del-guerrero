@@ -27,7 +27,7 @@ class EjercicioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ejercicio
-        fields = ['id', 'nombre', 'descripcion', 'url_youtube', 'requiere_implemento', 'implementos']
+        fields = ['id', 'nombre', 'descripcion', 'url_youtube', 'busqueda_media', 'requiere_implemento', 'implementos']
 
 
 class EjercicioVideoSerializer(serializers.ModelSerializer):

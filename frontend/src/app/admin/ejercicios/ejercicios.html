@@ -82,8 +82,10 @@
 
           <!-- Edición inline -->
           } @else {
-            <div class="px-4 py-3 space-y-2 bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-400">
+            <div class="px-4 py-3 space-y-3 bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-400">
               <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ ej.nombre }}</p>
+
+              <!-- Input URL -->
               <div class="flex gap-2 items-center">
                 <input
                   pInputText
@@ -99,6 +101,43 @@
                 <p-button icon="pi pi-times" variant="outlined" severity="secondary"
                           (onClick)="cancelarEdicion()" pTooltip="Cancelar (Esc)" />
               </div>
+
+              <!-- Sugerencias YouTube -->
+              @if (loadingSugerencias()) {
+                <div class="flex items-center gap-2 text-xs text-gray-400 py-1">
+                  <p-progressspinner styleClass="w-4 h-4" />
+                  Buscando sugerencias en YouTube...
+                </div>
+              } @else if (sugerencias().length > 0) {
+                <div>
+                  <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    <i class="pi pi-youtube text-red-500 mr-1"></i>
+                    Sugerencias — clic para usar
+                  </p>
+                  <div class="grid grid-cols-3 gap-2">
+                    @for (s of sugerencias(); track s.video_id) {
+                      <button
+                        type="button"
+                        (click)="elegirSugerencia(s.url)"
+                        class="group relative rounded-lg overflow-hidden border-2 transition-all text-left"
+                        [class]="urlControl.value === s.url
+                          ? 'border-guerrero-red'
+                          : 'border-transparent hover:border-blue-400'"
+                      >
+                        <img [src]="s.thumbnail" [alt]="s.titulo" class="w-full aspect-video object-cover" />
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <i class="pi pi-play text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity drop-shadow"></i>
+                        </div>
+                        <div class="p-1.5 bg-white dark:bg-dark-800">
+                          <p class="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight">{{ s.titulo }}</p>
+                          <p class="text-xs text-gray-400 mt-0.5 truncate">{{ s.canal }}</p>
+                        </div>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
               <p class="text-xs text-gray-400">Enter para guardar · Esc para cancelar</p>
             </div>
           }

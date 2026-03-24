@@ -11,6 +11,7 @@ export interface Ejercicio {
   nombre: string;
   descripcion: string;
   url_youtube: string;
+  busqueda_media: string;
   requiere_implemento: boolean;
   implementos: Implemento[];
 }

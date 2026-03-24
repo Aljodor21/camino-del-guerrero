@@ -120,5 +120,8 @@ AI_BASE_URL = config('AI_BASE_URL', default='http://localhost:11434')
 AI_MODEL = config('AI_MODEL', default='llama3')
 AI_API_KEY = config('AI_API_KEY', default='')
 
+# YouTube Data API
+YOUTUBE_API_KEY = config('YOUTUBE_API_KEY', default='')
+
 
 AUTH_USER_MODEL = 'users.Usuario'

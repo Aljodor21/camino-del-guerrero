@@ -107,8 +107,19 @@ class GenerarRutinaView(APIView):
                         defaults={
                             'descripcion': ej_data.get('descripcion', ''),
                             'requiere_implemento': ej_data.get('requiere_implemento', True),
+                            'busqueda_media': ej_data.get('busqueda_media', ''),
                         }
                     )
+                    if not created:
+                        update_fields = []
+                        if ej_data.get('descripcion') and not ejercicio.descripcion:
+                            ejercicio.descripcion = ej_data['descripcion']
+                            update_fields.append('descripcion')
+                        if ej_data.get('busqueda_media') and not ejercicio.busqueda_media:
+                            ejercicio.busqueda_media = ej_data['busqueda_media']
+                            update_fields.append('busqueda_media')
+                        if update_fields:
+                            ejercicio.save(update_fields=update_fields)
                     EjercicioDia.objects.create(
                         dia=dia,
                         ejercicio=ejercicio,

@@ -9,6 +9,14 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { Ejercicio } from '../../core/models/rutina.model';
 
+interface YoutubeSugerencia {
+  video_id: string;
+  titulo: string;
+  canal: string;
+  thumbnail: string;
+  url: string;
+}
+
 import { environment } from '../../../environments/environment';
 const API = environment.apiUrl;
 
@@ -29,6 +37,9 @@ export class Ejercicios implements OnInit {
   protected busqueda        = signal('');
   protected soloSinVideo    = signal(false);
   protected editandoId      = signal<number | null>(null);
+
+  protected sugerencias        = signal<YoutubeSugerencia[]>([]);
+  protected loadingSugerencias = signal(false);
 
   protected urlControl = this.fb.nonNullable.control('');
 
@@ -61,14 +72,29 @@ export class Ejercicios implements OnInit {
 
   protected iniciarEdicion(ej: Ejercicio): void {
     this.error.set('');
+    this.sugerencias.set([]);
     this.editandoId.set(ej.id);
     this.urlControl.setValue(ej.url_youtube ?? '');
+    this.cargarSugerencias(ej.id);
   }
 
   protected cancelarEdicion(): void {
     this.editandoId.set(null);
     this.urlControl.setValue('');
+    this.sugerencias.set([]);
     this.error.set('');
+  }
+
+  protected cargarSugerencias(id: number): void {
+    this.loadingSugerencias.set(true);
+    this.http.get<{ sugerencias: YoutubeSugerencia[] }>(`${API}/rutinas/ejercicios/${id}/youtube-sugerencias/`).subscribe({
+      next: data => { this.sugerencias.set(data.sugerencias); this.loadingSugerencias.set(false); },
+      error: () => this.loadingSugerencias.set(false),
+    });
+  }
+
+  protected elegirSugerencia(url: string): void {
+    this.urlControl.setValue(url);
   }
 
   protected guardar(ej: Ejercicio): void {

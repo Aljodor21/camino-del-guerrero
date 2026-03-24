@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import (EjercicioListView, EjercicioVideoUpdateView, ImplementoDetailView,
-                    ImplementoListCreateView, MisImplementosDeleteView, MisImplementosView,
+from .views import (EjercicioListView, EjercicioVideoUpdateView, EjercicioYoutubeSugerenciasView,
+                    ImplementoDetailView, ImplementoListCreateView,
+                    MisImplementosDeleteView, MisImplementosView,
                     MiRutinaView, RecomendacionAdminDetailView,
                     RecomendacionAdminListCreateView, RecomendacionListView)
 
@@ -11,6 +12,7 @@ urlpatterns = [
     path('mis-implementos/<int:pk>/', MisImplementosDeleteView.as_view(), name='mis-implementos-delete'),
     path('ejercicios/', EjercicioListView.as_view(), name='ejercicios'),
     path('ejercicios/<int:pk>/video/', EjercicioVideoUpdateView.as_view(), name='ejercicio-video'),
+    path('ejercicios/<int:pk>/youtube-sugerencias/', EjercicioYoutubeSugerenciasView.as_view(), name='ejercicio-youtube-sugerencias'),
     path('mi-rutina/', MiRutinaView.as_view(), name='mi-rutina'),
     path('recomendaciones/', RecomendacionListView.as_view(), name='recomendaciones'),
     path('admin/recomendaciones/', RecomendacionAdminListCreateView.as_view(), name='admin-recomendaciones'),

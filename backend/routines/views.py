@@ -1,3 +1,6 @@
+import requests as req
+
+from django.conf import settings
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -57,6 +60,51 @@ class EjercicioVideoUpdateView(generics.UpdateAPIView):
     serializer_class = EjercicioVideoSerializer
     permission_classes = [IsAdmin]
     http_method_names = ['patch']
+
+
+class EjercicioYoutubeSugerenciasView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, pk):
+        try:
+            ejercicio = Ejercicio.objects.get(pk=pk)
+        except Ejercicio.DoesNotExist:
+            return Response({'detail': 'Ejercicio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        api_key = settings.YOUTUBE_API_KEY
+        if not api_key:
+            return Response({'detail': 'YouTube API key no configurada.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        query = ejercicio.busqueda_media or ejercicio.nombre
+        try:
+            resp = req.get(
+                'https://www.googleapis.com/youtube/v3/search',
+                params={
+                    'part': 'snippet',
+                    'type': 'video',
+                    'maxResults': 6,
+                    'q': query,
+                    'key': api_key,
+                    'relevanceLanguage': 'es',
+                    'videoDuration': 'short',
+                },
+                timeout=10,
+            )
+            resp.raise_for_status()
+            items = resp.json().get('items', [])
+            sugerencias = [
+                {
+                    'video_id': item['id']['videoId'],
+                    'titulo': item['snippet']['title'],
+                    'canal': item['snippet']['channelTitle'],
+                    'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                    'url': f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+                }
+                for item in items
+            ]
+            return Response({'query': query, 'sugerencias': sugerencias})
+        except Exception as e:
+            return Response({'detail': f'Error al consultar YouTube: {str(e)}'}, status=status.HTTP_502_BAD_GATEWAY)
 
 
 class RecomendacionListView(generics.ListAPIView):

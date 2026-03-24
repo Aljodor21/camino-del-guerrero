@@ -28,6 +28,7 @@ class Ejercicio(models.Model):
     nombre = models.CharField(max_length=150)
     descripcion = models.TextField(blank=True)
     url_youtube = models.URLField(blank=True)  # el admin agrega esto
+    busqueda_media = models.CharField(max_length=100, blank=True, help_text='Término en inglés para buscar GIFs/videos (generado por IA)')
     requiere_implemento = models.BooleanField(default=True)
     implementos = models.ManyToManyField(Implemento, through='EjercicioImplemento', blank=True)
 
