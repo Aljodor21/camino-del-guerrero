@@ -123,5 +123,8 @@ AI_API_KEY = config('AI_API_KEY', default='')
 # YouTube Data API
 YOUTUBE_API_KEY = config('YOUTUBE_API_KEY', default='')
 
+# Giphy API
+GIPHY_API_KEY = config('GIPHY_API_KEY', default='')
+
 
 AUTH_USER_MODEL = 'users.Usuario'

@@ -23,6 +23,7 @@ interface EjercicioEnSesion {
   ejercicioDiaId: number;
   nombre: string;
   url_youtube: string | null;
+  busqueda_media: string | null;
   series_plan: number;
   repeticiones: number | null;
   duracion_segundos_plan: number | null;
@@ -184,6 +185,7 @@ export class Progreso implements OnInit, OnDestroy {
   protected sesionTotalSeg  = signal(0);
   protected savingSesion    = signal(false);
   protected errorSesion     = signal('');
+  protected gifsCache       = signal<Record<string, string>>({});
 
   private timerInterval:    ReturnType<typeof setInterval> | null = null;
   private descansoInterval: ReturnType<typeof setInterval> | null = null;
@@ -212,6 +214,12 @@ export class Progreso implements OnInit, OnDestroy {
   protected ejercicioCompletado = computed(() =>
     this.seriesPendientes() === 0 && this.serieActivaIdx() === null && !this.enDescanso()
   );
+
+  protected gifActual = computed(() => {
+    const ej = this.ejercicioActual();
+    if (!ej || ej.url_youtube || !ej.busqueda_media) return null;
+    return this.gifsCache()[ej.busqueda_media] ?? null;
+  });
 
   protected timerDisplay = computed(() => {
     const ej = this.ejercicioActual();
@@ -337,6 +345,7 @@ export class Progreso implements OnInit, OnDestroy {
           ejercicioDiaId:        ed.id,
           nombre:                ed.ejercicio.nombre,
           url_youtube:           ed.ejercicio.url_youtube || null,
+          busqueda_media:        ed.ejercicio.busqueda_media || null,
           series_plan:           ed.series ?? 1,
           repeticiones:          ed.repeticiones,
           duracion_segundos_plan: ed.duracion_segundos,
@@ -351,6 +360,8 @@ export class Progreso implements OnInit, OnDestroy {
     this.sesionPendiente.set(null);
     this.serieActivaIdx.set(null);
     this.sesionTotalSeg.set(0);
+    this.gifsCache.set({});
+    this.precargarGifs(nueva.ejercicios);
     this.iniciarTimerSesion();
     this.vistaEntrenamiento.set('sesion');
   }
@@ -546,6 +557,20 @@ export class Progreso implements OnInit, OnDestroy {
   }
 
   // ── VIDEO ─────────────────────────────────────────────────────────
+  private precargarGifs(ejercicios: EjercicioEnSesion[]): void {
+    for (const ej of ejercicios) {
+      if (!ej.url_youtube && ej.busqueda_media) {
+        const term = ej.busqueda_media;
+        this.http.get<{ gif_url: string | null }>(`${API}/rutinas/gif/?q=${encodeURIComponent(term)}`).subscribe({
+          next: data => {
+            if (data.gif_url) this.gifsCache.update(c => ({ ...c, [term]: data.gif_url! }));
+          },
+          error: () => {},
+        });
+      }
+    }
+  }
+
   protected youtubeThumb(url: string | null): string | null {
     if (!url) return null;
     const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);

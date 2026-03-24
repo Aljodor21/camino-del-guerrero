@@ -384,6 +384,8 @@
               <i class="pi pi-youtube text-red-500"></i>
               <span class="text-sm font-medium text-red-600 dark:text-red-400">Ver video del ejercicio</span>
             </a>
+          } @else if (gifActual()) {
+            <img [src]="gifActual()!" [alt]="ej.nombre" class="w-full h-64 object-contain bg-black" />
           }
 
           <div class="p-5 space-y-5">

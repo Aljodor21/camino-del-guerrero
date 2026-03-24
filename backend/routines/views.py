@@ -108,6 +108,34 @@ class EjercicioYoutubeSugerenciasView(APIView):
             return Response({'detail': f'Error al consultar YouTube: {str(e)}'}, status=status.HTTP_502_BAD_GATEWAY)
 
 
+class GifProxyView(APIView):
+    """Proxy para Giphy — evita exponer la API key en el frontend."""
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+        if not q:
+            return Response({'detail': 'Parámetro q requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = settings.GIPHY_API_KEY
+        if not api_key:
+            return Response({'detail': 'Giphy API key no configurada.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        try:
+            resp = req.get(
+                'https://api.giphy.com/v1/gifs/search',
+                params={'api_key': api_key, 'q': q, 'limit': 1, 'rating': 'g', 'lang': 'en'},
+                timeout=8,
+            )
+            resp.raise_for_status()
+            data = resp.json().get('data', [])
+            if not data:
+                return Response({'gif_url': None})
+            gif_url = data[0]['images']['fixed_height']['url']
+            return Response({'gif_url': gif_url})
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
 class RecomendacionListView(generics.ListAPIView):
     """Usuarios autenticados — solo las activas."""
     serializer_class = RecomendacionSerializer
