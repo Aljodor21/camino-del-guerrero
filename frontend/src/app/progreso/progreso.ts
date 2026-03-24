@@ -11,6 +11,7 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { ThemeService } from '../core/services/theme';
+import { AudioService } from '../core/services/audio';
 import { RegistroPeso, RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
 import { Rutina, DiaRutina } from '../core/models/rutina.model';
 import { environment } from '../../environments/environment';
@@ -50,6 +51,7 @@ export class Progreso implements OnInit, OnDestroy {
   private fb        = inject(FormBuilder);
   private sanitizer = inject(DomSanitizer);
   private theme     = inject(ThemeService);
+  private audio     = inject(AudioService);
 
   protected videoUrl = signal<SafeResourceUrl | null>(null);
   protected seccion  = signal<'peso' | 'entrenamiento'>('peso');
@@ -372,7 +374,7 @@ export class Progreso implements OnInit, OnDestroy {
 
   protected cancelarSesion(): void {
     this.limpiarTimer();
-    this.limpiarDescanso();
+    this.limpiarDescanso(true);
     this.limpiarTimerSesion();
     this.borrarLocal();
     this.sesion.set(null);
@@ -397,10 +399,13 @@ export class Progreso implements OnInit, OnDestroy {
 
     this.serieActivaIdx.set(nextIdx);
     this.limpiarTimer();
+    this.audio.iniciarSerie();
 
     const duracion = ej.duracion_segundos_plan;
     this.timerInterval = setInterval(() => {
       this.timerSeg.update(v => v + 1);
+      const restante = duracion ? duracion - this.timerSeg() : null;
+      if (restante !== null && restante <= 3 && restante > 0) this.audio.tick();
       if (duracion && this.timerSeg() >= duracion) this.completarSerie();
     }, 1000);
   }
@@ -423,6 +428,7 @@ export class Progreso implements OnInit, OnDestroy {
 
     this.serieActivaIdx.set(null);
     this.limpiarTimer();
+    this.audio.completarSerie();
     this.guardarLocal();
 
     // Descanso solo si quedan más series
@@ -441,7 +447,7 @@ export class Progreso implements OnInit, OnDestroy {
   protected siguienteEjercicio(): void {
     const s = this.sesion();
     if (!s) return;
-    this.limpiarDescanso();
+    this.limpiarDescanso(true);
     this.limpiarTimer();
     this.serieActivaIdx.set(null);
     this.sesion.set({ ...s, ejercicioActual: s.ejercicioActual + 1 });
@@ -453,7 +459,7 @@ export class Progreso implements OnInit, OnDestroy {
     if (!s) return;
 
     this.limpiarTimer();
-    this.limpiarDescanso();
+    this.limpiarDescanso(true);
     this.limpiarTimerSesion();
 
     const duracion = Math.floor((Date.now() - s.inicio) / 1000);
@@ -478,6 +484,7 @@ export class Progreso implements OnInit, OnDestroy {
       ejercicios_completados: ejerciciosCompletados,
     }).subscribe({
       next: () => {
+        this.audio.sesionFinalizada();
         this.borrarLocal();
         this.sesion.set(null);
         this.savingSesion.set(false);
@@ -501,6 +508,7 @@ export class Progreso implements OnInit, OnDestroy {
 
   // ── DESCANSO ──────────────────────────────────────────────────────
   private iniciarDescanso(): void {
+    this.audio.iniciarDescanso();
     this.descansoSeg.set(this.DESCANSO_SEG);
     this.enDescanso.set(true);
     this.descansoInterval = setInterval(() => {
@@ -516,10 +524,11 @@ export class Progreso implements OnInit, OnDestroy {
     this.limpiarDescanso();
   }
 
-  private limpiarDescanso(): void {
+  private limpiarDescanso(silencioso = false): void {
     if (this.descansoInterval) { clearInterval(this.descansoInterval); this.descansoInterval = null; }
     this.descansoSeg.set(0);
     this.enDescanso.set(false);
+    if (!silencioso) this.audio.finDescanso();
   }
 
   private limpiarTimer(): void {
