@@ -177,6 +177,69 @@ Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
 """
         return self._chat_json(prompt)
 
+    def ajustar_plan_nutricional(self, usuario, objetivo, plan, dia_obj, campo_rechazado):
+        pref = usuario.preferencias_alimentarias or 'Ninguna'
+        region = usuario.region or 'No especificada'
+        texto_rechazado = getattr(dia_obj, campo_rechazado)
+
+        dias_texto = []
+        for dia in plan.dias.all():
+            dias_texto.append(
+                f"Día {dia.dia_semana} ({dia.get_dia_semana_display()}):\n"
+                f"  desayuno: {dia.desayuno}\n"
+                f"  almuerzo: {dia.almuerzo}\n"
+                f"  cena: {dia.cena}\n"
+                f"  snacks: {dia.snacks}\n"
+                f"  calorias_aprox: {dia.calorias_aprox}"
+            )
+        plan_actual = '\n\n'.join(dias_texto)
+
+        prompt = f"""
+Eres el mismo nutricionista deportivo experto en cocina colombiana regional que armó este plan. Tu tarea AHORA es AJUSTAR el plan existente porque el atleta rechazó un plato puntual — NO generes un plan nuevo desde cero.
+
+## PERFIL DEL ATLETA
+- Región o zona cultural: {region}
+- Restricciones o preferencias alimentarias: {pref}
+
+## PLAN ACTUAL (7 días)
+{plan_actual}
+
+## PLATO RECHAZADO
+- Día: {dia_obj.get_dia_semana_display()}
+- Campo: {campo_rechazado}
+- Texto exacto: "{texto_rechazado}"
+El atleta NO quiere volver a comer esto.
+
+## REGLAS OBLIGATORIAS
+1. Mantén EXACTAMENTE IGUAL, palabra por palabra, cualquier día/campo del plan actual que NO contenga el plato o ingrediente principal rechazado.
+2. Reemplaza el campo rechazado ({campo_rechazado} de {dia_obj.get_dia_semana_display()}) por una opción distinta, típica de la región "{region}", que no se parezca al plato rechazado.
+3. Si el mismo plato o ingrediente principal rechazado aparece en OTRO día o campo, reemplázalo también — no dejes ninguna repetición del plato rechazado en ningún día.
+4. El reemplazo debe seguir las mismas reglas del plan original: porciones exactas (taza, cucharada, unidad, gramos — nada de "al gusto" ni "poquito"), ingredientes de tienda de barrio o plaza de mercado, nada de verduras no típicas (acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha), calorías ajustadas al objetivo "{objetivo.get_objetivo_display()}".
+5. Si la región no está entre las conocidas (paisa, costeño, valluno, bogotano, santandereano, llanero), no inventes platos — usa comida genérica colombiana real (sancocho, arroz con pollo, lentejas).
+
+## VERIFICACIÓN ANTES DE RESPONDER
+- ¿Los días/campos que no tenían el plato rechazado quedaron EXACTAMENTE iguales al texto original?
+- ¿El campo rechazado y cualquier repetición del mismo plato en otros días fueron reemplazados?
+- ¿El reemplazo tiene porciones exactas y es típico de la región?
+
+## FORMATO DE SALIDA
+Responde ÚNICAMENTE con el JSON completo de los 7 días, mismo formato del plan original, sin markdown, sin texto antes ni después:
+{{
+  "dias": [
+    {{
+      "dia_semana": 1,
+      "desayuno": "Descripción con porciones exactas",
+      "almuerzo": "Descripción con porciones exactas",
+      "cena": "Descripción con porciones exactas",
+      "snacks": "1-2 opciones con porciones",
+      "calorias_aprox": 2100
+    }}
+  ]
+}}
+Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
+"""
+        return self._chat_json(prompt)
+
     def generar_lista_mercado(self, plan):
         comidas = []
         for dia in plan.dias.all():

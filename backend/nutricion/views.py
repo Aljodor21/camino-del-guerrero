@@ -39,6 +39,38 @@ class MiPlanNutricionalView(APIView):
             return Response({'detail': f'Error al generar el plan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class RechazarComidaView(APIView):
+    CAMPOS_VALIDOS = ('desayuno', 'almuerzo', 'cena', 'snacks')
+
+    def post(self, request, pk):
+        try:
+            dia = DiaNutricional.objects.select_related('plan').get(pk=pk, plan__usuario=request.user)
+        except DiaNutricional.DoesNotExist:
+            return Response({'detail': 'Día no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        campo = request.data.get('campo')
+        if campo not in self.CAMPOS_VALIDOS:
+            return Response({'detail': 'Campo inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        objetivo = request.user.objetivos.filter(activo=True).first()
+        if not objetivo:
+            return Response({'detail': 'Debes completar el onboarding primero.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ai = AIService()
+            data = ai.ajustar_plan_nutricional(request.user, objetivo, dia.plan, dia, campo)
+
+            plan = dia.plan
+            plan.dias.all().delete()
+            for dia_data in data['dias']:
+                DiaNutricional.objects.create(plan=plan, **dia_data)
+
+            return Response(PlanNutricionalSerializer(plan).data)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            return Response({'detail': f'Error al ajustar el plan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class ListaMercadoView(APIView):
     def get(self, request):
         try:

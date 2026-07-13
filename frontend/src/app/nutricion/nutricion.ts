@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  computed,
+  OnInit,
+} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -17,14 +24,14 @@ const API = environment.apiUrl;
 export class Nutricion implements OnInit {
   private http = inject(HttpClient);
 
-  protected seccion            = signal<'plan' | 'mercado'>('plan');
+  protected seccion = signal<'plan' | 'mercado'>('plan');
 
   // ── PLAN ──────────────────────────────────────────────────────────
-  protected loading            = signal(true);
-  protected loadingRegenerar   = signal(false);
-  protected plan               = signal<PlanNutricional | null>(null);
-  protected sinPlan            = signal(false);
-  protected diaSeleccionado    = signal(0);
+  protected loading = signal(true);
+  protected loadingRegenerar = signal(false);
+  protected plan = signal<PlanNutricional | null>(null);
+  protected sinPlan = signal(false);
+  protected diaSeleccionado = signal(0);
 
   protected diaActual = computed(() => {
     const p = this.plan();
@@ -33,9 +40,9 @@ export class Nutricion implements OnInit {
   });
 
   // ── MERCADO ───────────────────────────────────────────────────────
-  protected lista              = signal<ListaMercado | null>(null);
-  protected loadingLista       = signal(false);
-  protected sinLista           = signal(false);
+  protected lista = signal<ListaMercado | null>(null);
+  protected loadingLista = signal(false);
+  protected sinLista = signal(false);
 
   protected categorias = computed(() => {
     const items = this.lista()?.items ?? [];
@@ -49,8 +56,10 @@ export class Nutricion implements OnInit {
     return Array.from(mapa.values());
   });
 
-  protected totalItems     = computed(() => this.lista()?.items.length ?? 0);
-  protected itemsComprados = computed(() => this.lista()?.items.filter(i => i.comprado).length ?? 0);
+  protected totalItems = computed(() => this.lista()?.items.length ?? 0);
+  protected itemsComprados = computed(
+    () => this.lista()?.items.filter((i) => i.comprado).length ?? 0,
+  );
 
   ngOnInit(): void {
     this.cargarPlan();
@@ -61,11 +70,11 @@ export class Nutricion implements OnInit {
   private cargarPlan(): void {
     this.loading.set(true);
     this.http.get<PlanNutricional>(`${API}/nutricion/mi-plan/`).subscribe({
-      next: plan => {
+      next: (plan) => {
         this.plan.set(plan);
         const hoy = new Date().getDay();
         const hoyDjango = hoy === 0 ? 7 : hoy;
-        const idx = plan.dias.findIndex(d => d.dia_semana === hoyDjango);
+        const idx = plan.dias.findIndex((d) => d.dia_semana === hoyDjango);
         this.diaSeleccionado.set(idx >= 0 ? idx : 0);
         this.loading.set(false);
         this.loadingRegenerar.set(false);
@@ -92,10 +101,27 @@ export class Nutricion implements OnInit {
     return (hoy === 0 ? 7 : hoy) === diaSemana;
   }
 
+  protected loadingRechazo = signal<string | null>(null);
+
+  protected rechazarComida(campo: 'desayuno' | 'almuerzo' | 'cena' | 'snacks'): void {
+    const dia = this.diaActual();
+    if (!dia || this.loadingRechazo()) return;
+    this.loadingRechazo.set(campo);
+    this.http
+      .post<PlanNutricional>(`${API}/nutricion/mi-plan/dias/${dia.id}/rechazar/`, { campo })
+      .subscribe({
+        next: (plan) => {
+          this.plan.set(plan);
+          this.loadingRechazo.set(null);
+        },
+        error: () => this.loadingRechazo.set(null),
+      });
+  }
+
   // ── MERCADO ───────────────────────────────────────────────────────
   private cargarLista(): void {
     this.http.get<ListaMercado>(`${API}/nutricion/lista-mercado/`).subscribe({
-      next: lista => this.lista.set(lista),
+      next: (lista) => this.lista.set(lista),
       error: () => this.sinLista.set(true),
     });
   }
@@ -104,19 +130,28 @@ export class Nutricion implements OnInit {
     this.loadingLista.set(true);
     this.sinLista.set(false);
     this.http.post<ListaMercado>(`${API}/nutricion/lista-mercado/`, {}).subscribe({
-      next: lista => { this.lista.set(lista); this.loadingLista.set(false); },
+      next: (lista) => {
+        this.lista.set(lista);
+        this.loadingLista.set(false);
+      },
       error: () => this.loadingLista.set(false),
     });
   }
 
   protected toggleItem(item: ItemMercado): void {
-    this.http.patch<ItemMercado>(`${API}/nutricion/lista-mercado/items/${item.id}/toggle/`, {}).subscribe({
-      next: actualizado => {
-        this.lista.update(l => l ? {
-          ...l,
-          items: l.items.map(i => i.id === actualizado.id ? actualizado : i),
-        } : l);
-      },
-    });
+    this.http
+      .patch<ItemMercado>(`${API}/nutricion/lista-mercado/items/${item.id}/toggle/`, {})
+      .subscribe({
+        next: (actualizado) => {
+          this.lista.update((l) =>
+            l
+              ? {
+                  ...l,
+                  items: l.items.map((i) => (i.id === actualizado.id ? actualizado : i)),
+                }
+              : l,
+          );
+        },
+      });
   }
 }

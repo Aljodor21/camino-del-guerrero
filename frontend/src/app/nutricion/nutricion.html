@@ -102,7 +102,19 @@
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-lg">🌅</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white">Desayuno</p>
+              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Desayuno</p>
+              <button
+                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
+                [disabled]="loadingRechazo() === 'desayuno'"
+                title="No me gusta, generar otra opción"
+                (click)="rechazarComida('desayuno')"
+              >
+                <i
+                  [class]="
+                    loadingRechazo() === 'desayuno' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
+                  "
+                ></i>
+              </button>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
               {{ dia.desayuno }}
@@ -111,7 +123,19 @@
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-lg">☀️</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white">Almuerzo</p>
+              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Almuerzo</p>
+              <button
+                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
+                [disabled]="loadingRechazo() === 'almuerzo'"
+                title="No me gusta, generar otra opción"
+                (click)="rechazarComida('almuerzo')"
+              >
+                <i
+                  [class]="
+                    loadingRechazo() === 'almuerzo' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
+                  "
+                ></i>
+              </button>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
               {{ dia.almuerzo }}
@@ -120,7 +144,19 @@
           <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-lg">🌙</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white">Cena</p>
+              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Cena</p>
+              <button
+                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
+                [disabled]="loadingRechazo() === 'cena'"
+                title="No me gusta, generar otra opción"
+                (click)="rechazarComida('cena')"
+              >
+                <i
+                  [class]="
+                    loadingRechazo() === 'cena' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
+                  "
+                ></i>
+              </button>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
               {{ dia.cena }}
@@ -130,7 +166,19 @@
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
               <div class="flex items-center gap-2 mb-2">
                 <span class="text-lg">🍎</span>
-                <p class="text-sm font-bold text-gray-800 dark:text-white">Snacks</p>
+                <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Snacks</p>
+                <button
+                  class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
+                  [disabled]="loadingRechazo() === 'snacks'"
+                  title="No me gusta, generar otra opción"
+                  (click)="rechazarComida('snacks')"
+                >
+                  <i
+                    [class]="
+                      loadingRechazo() === 'snacks' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
+                    "
+                  ></i>
+                </button>
               </div>
               <p
                 class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line"
