@@ -1,1 +1,4 @@
-"venv/\n__pycache__/\n*.pyc\n.env\nfrontend/node_modules/\nfrontend/dist/" 
+venv/
+__pycache__/
+*.pyc
+.env
