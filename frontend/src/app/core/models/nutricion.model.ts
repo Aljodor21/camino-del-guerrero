@@ -28,4 +28,6 @@ export interface ListaMercado {
   id: number;
   fecha_generacion: string;
   items: ItemMercado[];
+  consejos_compra: string[];
+  plan_preparacion: string[];
 }

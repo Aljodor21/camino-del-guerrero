@@ -37,6 +37,8 @@ class ListaMercado(models.Model):
     usuario          = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='lista_mercado')
     plan             = models.ForeignKey(PlanNutricional, on_delete=models.SET_NULL, null=True)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
+    consejos_compra  = models.JSONField(default=list, blank=True)
+    plan_preparacion = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f'Lista de {self.usuario.email}'

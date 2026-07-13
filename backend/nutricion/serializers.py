@@ -32,4 +32,4 @@ class ListaMercadoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = ListaMercado
-        fields = ['id', 'fecha_generacion', 'items']
+        fields = ['id', 'fecha_generacion', 'items', 'consejos_compra', 'plan_preparacion']

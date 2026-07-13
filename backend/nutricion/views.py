@@ -56,7 +56,12 @@ class ListaMercadoView(APIView):
             ai   = AIService()
             data = ai.generar_lista_mercado(plan)
             ListaMercado.objects.filter(usuario=request.user).delete()
-            lista = ListaMercado.objects.create(usuario=request.user, plan=plan)
+            lista = ListaMercado.objects.create(
+                usuario=request.user,
+                plan=plan,
+                consejos_compra=data.get('consejos_compra', []),
+                plan_preparacion=data.get('plan_preparacion', []),
+            )
             for cat in data.get('categorias', []):
                 for item in cat.get('items', []):
                     ItemMercado.objects.create(
