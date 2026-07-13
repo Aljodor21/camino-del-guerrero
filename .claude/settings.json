@@ -3,5 +3,20 @@
     "allow": [
       "WebSearch"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_response.filePath // .tool_input.file_path // empty'); case \"$f\" in */frontend/*) \"${CLAUDE_PROJECT_DIR:-.}/frontend/node_modules/.bin/prettier\" --ignore-unknown --write \"$f\" >/dev/null 2>&1 || true ;; esac",
+            "timeout": 30,
+            "statusMessage": "Formatting with prettier..."
+          }
+        ]
+      }
+    ]
   }
 }
