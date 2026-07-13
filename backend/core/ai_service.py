@@ -24,6 +24,10 @@ class AIService:
                 'messages': [{'role': 'user', 'content': prompt}],
                 'max_tokens': max_tokens,
             }
+            if 'deepseek.com' in self.base_url:
+                # v4-flash/v4-pro piensan por defecto y se comen el max_tokens
+                # razonando antes de escribir el JSON — lo desactivamos.
+                payload['thinking'] = {'type': 'disabled'}
             headers = {'Authorization': f'Bearer {self.api_key}'}
 
         response = requests.post(
@@ -112,14 +116,16 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
 
 ### Cultura culinaria (MÁS IMPORTANTE)
 1. Usa EXCLUSIVAMENTE platos, ingredientes y preparaciones típicas de la región "{region}" dentro de {nacionalidad}.
-2. Si la región es reconocible (paisa, costeño, valluno, santandereano, llanero, bogotano, caleño, etc.), usa sus platos emblema:
-   - Paisa: fríjoles con pezuña, bandeja paisa, arepa de chócolo, mazamorra, chicharrón, aguapanela.
-   - Costeño: arroz con coco, patacones, sancocho de pescado, bollo de yuca, fritos de maíz.
-   - Valluno / Caleño: sancocho de gallina, cholado, lulada, empanadas de pipián, pandebono.
-   - Bogotano: ajiaco, changua, chocolate con pan, papa criolla, calentado.
-   - Santandereano: pepitoria, cabro, mute, arepa de maíz pelado.
-3. Ingredientes que se encuentran en tiendas de barrio o plazas de mercado locales. NADA de ingredientes importados, nombres en inglés ni comida de restaurante gourmet.
-4. PROHIBIDO usar estas verduras que NO son típicas de la cocina popular colombiana: acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha. En su lugar usa: tomate, cebolla, zanahoria, habichuela, pepino, ahuyama, espinaca criolla, aguacate, cilantro, pimentón.
+2. Si la región es reconocible, usa tanto sus platos de bandera como su comida casera de diario (sopas, comida de mamá) — no te quedes solo en los platos "famosos":
+   - Paisa: bandeja paisa, fríjoles con garra, arepa de chócolo, mazamorra, chicharrón, aguapanela, sancocho paisa, mondongo, sopa de arroz con costilla.
+   - Costeño: arroz con coco, patacones, sancocho de pescado o de guandú, bollo de yuca, fritos de maíz, mote de queso, arroz de lisa.
+   - Valluno / Caleño: sancocho de gallina, cholado, lulada, empanadas de pipián, pandebono, sopa de arroz con pollo, aborrajados.
+   - Bogotano / Cundiboyacense: ajiaco, changua, chocolate con pan y queso, papa criolla, calentado, cocido boyacense, sopa de arroz.
+   - Santandereano: pepitoria, cabro o carne oreada, mute santandereano, arepa de maíz pelado, sopa de fríjol con garra.
+   - Llanero: mamona o carne a la llanera, hayaca llanera, casabe, plátano asado, sopa de cuchuco con espinazo, arroz llanero.
+3. Si la región indicada NO está en esta lista o no la reconoces con certeza, NO inventes nombres de platos que no existen. Usa preparaciones caseras genéricas y reales de la cocina popular colombiana: sancocho, arroz con pollo, lentejas o fríjoles guisados, sopa de verduras con papa, huevos pericos, arepa con queso.
+4. Ingredientes que se encuentran en tiendas de barrio o plazas de mercado locales. NADA de ingredientes importados, nombres en inglés ni comida de restaurante gourmet.
+5. PROHIBIDO usar estas verduras que NO son típicas de la cocina popular colombiana: acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha. En su lugar usa: tomate, cebolla, zanahoria, habichuela, pepino, ahuyama, espinaca criolla, aguacate, cilantro, pimentón.
 
 ### Calorías y macros según objetivo
 - Bajar peso: déficit de 300-400 kcal respecto al mantenimiento estimado.
@@ -148,6 +154,7 @@ Antes de generar el JSON, verifica mentalmente:
 - ¿Todas las porciones están especificadas con cantidades (taza, cucharada, unidad, gramos)?
 - ¿Usé alguna palabra prohibida como "chorrito", "poquito", "al gusto"? Si sí, reemplázala.
 - ¿Usé alguna verdura prohibida como acelgas, kale, espárragos? Si sí, cámbiala por tomate, zanahoria o habichuela.
+- Si la región no está en la lista curada, ¿usé solo comida genérica colombiana real, sin inventar nombres de platos?
 - ¿Los 7 días tienen variedad (no se repite el mismo plato dos días seguidos)?
 - ¿Las calorías están ajustadas al objetivo "{objetivo.get_objetivo_display()}"?
 
@@ -177,7 +184,7 @@ Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
         texto_plan = '\n'.join(comidas)
 
         prompt = f"""
-Eres un asistente de compras preciso. Tu única tarea es extraer los ingredientes del plan alimentario que se te da y convertirlos en una lista de mercado organizada para 1 persona durante 7 días.
+Eres un asesor colombiano de mercado y meal prep, preciso y práctico. Tu tarea tiene tres partes: (1) extraer los ingredientes del plan alimentario y convertirlos en una lista de mercado organizada para 1 persona durante 7 días, (2) dar consejos reales de dónde comprar cada cosa más barato en Colombia, y (3) armar un plan de preparación de inicio de semana para ahorrar tiempo entre semana.
 
 ## PLAN ALIMENTARIO DE LA SEMANA
 {texto_plan}
@@ -207,12 +214,27 @@ Eres un asistente de compras preciso. Tu única tarea es extraer los ingrediente
 10. Si un ítem no encaja claramente en ninguna categoría, ponlo en la más cercana.
 11. Omite categorías que no tengan ningún ítem.
 
+### Consejos de compra (ahorro real)
+12. Genera de 3 a 5 tips concretos de dónde comprar más barato cada tipo de producto DE ESTA LISTA en Colombia:
+    - Granos, enlatados, aseo: normalmente más baratos en tiendas de descuento duro (D1, Ara, Justo & Bueno).
+    - Carnes, frutas y verduras frescas: normalmente más baratas en plaza de mercado o tienda de barrio que en supermercado de cadena.
+    - Lácteos: comparar precio de marca propia en D1/Ara contra marca reconocida antes de comprar.
+13. Usa ÚNICAMENTE nombres reales de tiendas colombianas: D1, Ara, Justo & Bueno, Éxito, Olímpica, Carulla, plaza de mercado, tienda de barrio. No inventes cadenas que no existen.
+14. Sé específico con los ítems de ESTA lista (ej. "el arroz y las lentejas" en vez de "los granos en general").
+
+### Plan de preparación (meal prep de inicio de semana)
+15. Genera de 4 a 6 pasos concretos de qué preparar el domingo o primer día, basados en los platos REALES del plan de la semana (arriba), para que el resto de la semana solo sea calentar o armar.
+16. Cada paso debe ser accionable: qué cocinar, cuánta cantidad, y cómo guardarlo (nevera o congelador, cuántos días dura).
+17. Prioriza lo que más tiempo toma entre semana: proteínas (cocinar y porcionar de una vez), granos base (arroz, lentejas, frijoles), y lo que se dañe rápido si no se prepara bien.
+
 ## VERIFICACIÓN ANTES DE RESPONDER
 Revisa mentalmente:
 - ¿Cada ítem de la lista aparece textualmente en el plan?
 - ¿Consolidé las repeticiones semanales en una sola cantidad?
 - ¿Las cantidades son realistas para 1 persona en 7 días?
 - ¿Hay algún ingrediente duplicado en dos categorías? Si sí, elimínalo de una.
+- ¿Los consejos de compra mencionan solo tiendas reales de Colombia y son específicos a los ítems de esta lista?
+- ¿El plan de preparación se basa en los platos reales de esta semana, no en genéricos?
 
 ## FORMATO DE SALIDA
 Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
@@ -225,6 +247,14 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         {{"nombre": "Pechuga de pollo", "cantidad": "1.2 kg"}}
       ]
     }}
+  ],
+  "consejos_compra": [
+    "El arroz y las lentejas salen más baratos en D1 o Ara que en un supermercado grande.",
+    "La pechuga de pollo y las verduras frescas cómpralas en la plaza de mercado o tienda de barrio."
+  ],
+  "plan_preparacion": [
+    "Domingo: cocina las 5 pechugas de pollo de una vez, porciona en recipientes y congela 3, deja 2 en nevera para lunes y martes.",
+    "Domingo: cocina 2 tazas de arroz, guárdalo en nevera hasta 3 días y recaliéntalo con un poco de agua."
   ]
 }}
 """
