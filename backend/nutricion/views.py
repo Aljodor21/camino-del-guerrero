@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,7 +9,7 @@ from core.ai_service import AIService
 from routines.models import (DiaRutina, EjercicioDia, Ejercicio,
                               EjercicioImplemento, Rutina)
 
-from .models import DiaNutricional, ItemMercado, ListaMercado, PlanNutricional
+from .models import DiaNutricional, ItemMercado, ItemRecurrente, ListaMercado, PlanNutricional
 from .serializers import ItemMercadoSerializer, ListaMercadoSerializer, PlanNutricionalSerializer
 
 
@@ -28,6 +31,10 @@ class MiPlanNutricionalView(APIView):
             data = ai.generar_plan_nutricional(request.user, objetivo)
 
             PlanNutricional.objects.filter(usuario=request.user).delete()
+            # La lista de mercado se armó a partir del plan anterior — al
+            # quedar huérfana (plan=null por el SET_NULL) mostraría ingredientes
+            # de un plan que ya no existe, así que la borramos también.
+            ListaMercado.objects.filter(usuario=request.user).delete()
             plan = PlanNutricional.objects.create(usuario=request.user, objetivo=objetivo)
 
             for dia_data in data['dias']:
@@ -64,6 +71,9 @@ class RechazarComidaView(APIView):
             plan.dias.all().delete()
             for dia_data in data['dias']:
                 DiaNutricional.objects.create(plan=plan, **dia_data)
+            # El ajuste cambió ingredientes del plan — la lista de mercado
+            # vieja quedaría desactualizada, así que se borra también.
+            ListaMercado.objects.filter(usuario=request.user).delete()
 
             return Response(PlanNutricionalSerializer(plan).data)
         except Exception as e:
@@ -84,15 +94,35 @@ class ListaMercadoView(APIView):
             plan = PlanNutricional.objects.get(usuario=request.user)
         except PlanNutricional.DoesNotExist:
             return Response({'detail': 'Genera tu plan nutricional primero.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        anterior = ListaMercado.objects.filter(usuario=request.user).first()
+        default_personas = anterior.num_personas if anterior else 1
+        try:
+            num_personas = int(request.data.get('num_personas', default_personas))
+        except (TypeError, ValueError):
+            num_personas = default_personas
+        num_personas = max(1, min(num_personas, 20))
+
+        hoy = timezone.localdate()
+        limite = hoy - timedelta(days=13)
+        recurrentes = ItemRecurrente.objects.filter(usuario=request.user, ultima_compra__gte=limite)
+        excluir = [r.nombre for r in recurrentes]
+        items_ya_comprados = [
+            {'nombre': r.nombre, 'ultima_compra': r.ultima_compra.isoformat()}
+            for r in recurrentes
+        ]
+
         try:
             ai   = AIService()
-            data = ai.generar_lista_mercado(plan)
+            data = ai.generar_lista_mercado(plan, num_personas, excluir=excluir)
             ListaMercado.objects.filter(usuario=request.user).delete()
             lista = ListaMercado.objects.create(
                 usuario=request.user,
                 plan=plan,
                 consejos_compra=data.get('consejos_compra', []),
                 plan_preparacion=data.get('plan_preparacion', []),
+                num_personas=num_personas,
+                items_ya_comprados=items_ya_comprados,
             )
             for cat in data.get('categorias', []):
                 for item in cat.get('items', []):
@@ -101,9 +131,11 @@ class ListaMercadoView(APIView):
                         nombre=item['nombre'],
                         cantidad=item.get('cantidad', ''),
                         categoria=cat['categoria'],
+                        frecuencia=item.get('frecuencia', 'semanal'),
                     )
             return Response(ListaMercadoSerializer(lista).data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            import traceback; traceback.print_exc()
             return Response({'detail': f'Error al generar la lista: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -115,6 +147,16 @@ class ItemMercadoToggleView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         item.comprado = not item.comprado
         item.save(update_fields=['comprado'])
+
+        if item.frecuencia == 'quincenal':
+            if item.comprado:
+                ItemRecurrente.objects.update_or_create(
+                    usuario=request.user, nombre=item.nombre,
+                    defaults={'ultima_compra': timezone.localdate()},
+                )
+            else:
+                ItemRecurrente.objects.filter(usuario=request.user, nombre=item.nombre).delete()
+
         return Response(ItemMercadoSerializer(item).data)
 
 

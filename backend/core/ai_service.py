@@ -241,62 +241,88 @@ Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
 """
         return self._chat_json(prompt)
 
-    def generar_lista_mercado(self, plan):
+    def generar_lista_mercado(self, plan, num_personas=1, excluir=None):
         comidas = []
         for dia in plan.dias.all():
             comidas.append(f'{dia.get_dia_semana_display()}: {dia.desayuno} | {dia.almuerzo} | {dia.cena} | {dia.snacks}')
         texto_plan = '\n'.join(comidas)
+        personas_txt = f'{num_personas} persona' if num_personas == 1 else f'{num_personas} personas'
+
+        excluir = excluir or []
+        bloque_excluir = ''
+        if excluir:
+            lista_excluir = ', '.join(excluir)
+            bloque_excluir = f"""
+## YA COMPRADOS — NO INCLUIR
+El atleta ya compró estos ítems hace poco y todavía le duran (son de compra quincenal): {lista_excluir}.
+NO los incluyas en la lista, aunque aparezcan en el plan de la semana.
+"""
 
         prompt = f"""
-Eres un asesor colombiano de mercado y meal prep, preciso y práctico. Tu tarea tiene tres partes: (1) extraer los ingredientes del plan alimentario y convertirlos en una lista de mercado organizada para 1 persona durante 7 días, (2) dar consejos reales de dónde comprar cada cosa más barato en Colombia, y (3) armar un plan de preparación de inicio de semana para ahorrar tiempo entre semana.
+Eres un asesor colombiano de mercado y meal prep, preciso y práctico. Tu tarea tiene tres partes: (1) extraer los ingredientes del plan alimentario y convertirlos en una lista de mercado organizada para {personas_txt} durante 7 días, (2) dar consejos reales de dónde comprar cada cosa más barato en Colombia, y (3) armar un plan de preparación de inicio de semana para ahorrar tiempo entre semana.
 
 ## PLAN ALIMENTARIO DE LA SEMANA
 {texto_plan}
+{bloque_excluir}
 
 ## REGLAS ESTRICTAS DE EXTRACCIÓN
 
 ### Qué SÍ incluir
 1. Solo ingredientes que aparecen EXPLÍCITAMENTE mencionados en el texto del plan anterior.
-2. Consolida el mismo ingrediente que aparece en varios días: suma las cantidades en una sola entrada. Ejemplo: si hay "1 taza de arroz" en 5 días → "Arroz blanco: 5 tazas (aprox. 900g)".
-3. Convierte las porciones a unidades de mercado prácticas: tazas → gramos/kg, unidades → docenas si aplica.
-4. Escribe el nombre del ingrediente en su forma genérica de compra (ej: "Pechuga de pollo" no "pollo asado con papas").
+2. El plan está escrito para 1 persona por porción — MULTIPLICA cada cantidad por {num_personas} antes de consolidar, porque la lista es para {personas_txt}.
+3. Consolida el mismo ingrediente que aparece en varios días: suma las cantidades YA multiplicadas en una sola entrada.
+4. La cantidad final SIEMPRE debe ser algo que se compre tal cual en una tienda colombiana — NUNCA cucharadas, cucharaditas ni tazas en el resultado final (esas son medidas de cocina, no de compra):
+   - Sólidos y granos (arroz, lentejas, azúcar, panela, avena, carnes, harinas): usa LIBRAS como unidad principal (1 libra = 500g). Ejemplo: si hay "1 taza de arroz" en 5 días para 1 persona → "Arroz blanco: 2 libras" (redondea hacia arriba al medio o entero más cercano, nunca dejes gramos sueltos como "900g").
+   - Líquidos (aceite, vinagre, salsas líquidas, jugo): usa BOTELLA con la presentación real que se vende en Colombia: 250 ml, 500 ml o 1 L — elige la que más se acerque sin quedar corto. Ejemplo: "2 cucharaditas de vinagre" en varios días → "Vinagre blanco: 1 botella de 250 ml".
+   - Unidades discretas (huevos, arepas, panes): unidad o docena.
+   - Condimentos en polvo que se compran en bolsa/paquete pequeño (sal, comino, pimienta, color): 1 paquete o bolsita pequeña, nunca "cucharadita".
+5. Escribe el nombre del ingrediente en su forma genérica de compra (ej: "Pechuga de pollo" no "pollo asado con papas").
 
 ### Qué NO incluir
-5. NO agregues ingredientes que no estén en el texto (nada de sal, aceite, agua, azúcar, ni condimentos básicos a menos que el plan los mencione explícitamente).
-6. NO inventes ingredientes por inferencia. Si el plan dice "sancocho de pollo" solo extrae "pollo" y las verduras que mencione, no inventes que lleva yuca si no lo dice.
-7. NO incluyas preparaciones ni platos completos, solo el ingrediente en bruto (ej: "huevos", no "huevos revueltos").
-8. NO repitas el mismo ingrediente en dos categorías distintas.
+6. NO agregues ingredientes que no estén en el texto (nada de sal, aceite, agua, azúcar, ni condimentos básicos a menos que el plan los mencione explícitamente).
+7. NO inventes ingredientes por inferencia. Si el plan dice "sancocho de pollo" solo extrae "pollo" y las verduras que mencione, no inventes que lleva yuca si no lo dice.
+8. NO incluyas preparaciones ni platos completos, solo el ingrediente en bruto (ej: "huevos", no "huevos revueltos").
+9. NO repitas el mismo ingrediente en dos categorías distintas.
 
 ### Categorías
-9. Clasifica cada ingrediente en exactamente una de estas categorías (usa estos valores exactos en minúscula):
+10. Clasifica cada ingrediente en exactamente una de estas categorías (usa estos valores exactos en minúscula):
    - proteinas: carnes, pollo, pescado, huevos, legumbres, fríjoles, lentejas
    - verduras: verduras, hortalizas, tubérculos (papa, yuca, plátano verde)
    - frutas: frutas frescas, jugos de fruta natural
    - lacteos: leche, queso, yogur, mantequilla, crema
    - granos: arroz, pasta, pan, arepa, avena, maíz
    - condimentos: salsas, especias, hogao, panela, caldo (solo si están explícitamente en el plan)
-10. Si un ítem no encaja claramente en ninguna categoría, ponlo en la más cercana.
-11. Omite categorías que no tengan ningún ítem.
+11. Si un ítem no encaja claramente en ninguna categoría, ponlo en la más cercana.
+12. Omite categorías que no tengan ningún ítem.
+
+### Frecuencia de compra
+12b. Clasifica cada ítem también por frecuencia (usa exactamente "semanal" o "quincenal"):
+   - semanal: todo lo perecedero — carnes frescas, pescado, verduras, frutas, lácteos, huevos.
+   - quincenal: todo lo no perecedero que dura semanas — granos secos (arroz, lentejas, fríjoles, avena, pasta), enlatados, panela, aceite, vinagre, condimentos, aseo.
 
 ### Consejos de compra (ahorro real)
-12. Genera de 3 a 5 tips concretos de dónde comprar más barato cada tipo de producto DE ESTA LISTA en Colombia:
+13. Genera de 3 a 5 tips concretos de dónde comprar más barato cada tipo de producto DE ESTA LISTA en Colombia:
     - Granos, enlatados, aseo: normalmente más baratos en tiendas de descuento duro (D1, Ara, Justo & Bueno).
     - Carnes, frutas y verduras frescas: normalmente más baratas en plaza de mercado o tienda de barrio que en supermercado de cadena.
     - Lácteos: comparar precio de marca propia en D1/Ara contra marca reconocida antes de comprar.
-13. Usa ÚNICAMENTE nombres reales de tiendas colombianas: D1, Ara, Justo & Bueno, Éxito, Olímpica, Carulla, plaza de mercado, tienda de barrio. No inventes cadenas que no existen.
-14. Sé específico con los ítems de ESTA lista (ej. "el arroz y las lentejas" en vez de "los granos en general").
+14. Usa ÚNICAMENTE nombres reales de tiendas colombianas: D1, Ara, Justo & Bueno, Éxito, Olímpica, Carulla, plaza de mercado, tienda de barrio. No inventes cadenas que no existen.
+15. Sé específico con los ítems de ESTA lista (ej. "el arroz y las lentejas" en vez de "los granos en general").
 
 ### Plan de preparación (meal prep de inicio de semana)
-15. Genera de 4 a 6 pasos concretos de qué preparar el domingo o primer día, basados en los platos REALES del plan de la semana (arriba), para que el resto de la semana solo sea calentar o armar.
-16. Cada paso debe ser accionable: qué cocinar, cuánta cantidad, y cómo guardarlo (nevera o congelador, cuántos días dura).
-17. Prioriza lo que más tiempo toma entre semana: proteínas (cocinar y porcionar de una vez), granos base (arroz, lentejas, frijoles), y lo que se dañe rápido si no se prepara bien.
+16. Genera de 4 a 6 pasos concretos de qué preparar el domingo o primer día, basados en los platos REALES del plan de la semana (arriba), para que el resto de la semana solo sea calentar o armar.
+17. Cada paso debe ser accionable: qué cocinar, cuánta cantidad, y cómo guardarlo (nevera o congelador, cuántos días dura).
+18. Prioriza lo que más tiempo toma entre semana: proteínas (cocinar y porcionar de una vez), granos base (arroz, lentejas, frijoles), y lo que se dañe rápido si no se prepara bien. Ten en cuenta que la cantidad ya está pensada para {personas_txt}.
 
 ## VERIFICACIÓN ANTES DE RESPONDER
 Revisa mentalmente:
 - ¿Cada ítem de la lista aparece textualmente en el plan?
 - ¿Consolidé las repeticiones semanales en una sola cantidad?
-- ¿Las cantidades son realistas para 1 persona en 7 días?
+- ¿Multipliqué las cantidades por {num_personas} antes de consolidar?
+- ¿Las cantidades son realistas para {personas_txt} en 7 días?
+- ¿Alguna cantidad quedó en cucharadas, cucharaditas o tazas? Si sí, conviértela a libras (sólidos/granos) o botella de 250/500/1000 ml (líquidos).
 - ¿Hay algún ingrediente duplicado en dos categorías? Si sí, elimínalo de una.
+- ¿Cada ítem tiene frecuencia "semanal" o "quincenal" asignada correctamente?
+- ¿Excluí los ítems de la sección "YA COMPRADOS" si aplica?
 - ¿Los consejos de compra mencionan solo tiendas reales de Colombia y son específicos a los ítems de esta lista?
 - ¿El plan de preparación se basa en los platos reales de esta semana, no en genéricos?
 
@@ -307,8 +333,9 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
     {{
       "categoria": "proteinas",
       "items": [
-        {{"nombre": "Huevos", "cantidad": "14 unidades"}},
-        {{"nombre": "Pechuga de pollo", "cantidad": "1.2 kg"}}
+        {{"nombre": "Huevos", "cantidad": "14 unidades", "frecuencia": "semanal"}},
+        {{"nombre": "Pechuga de pollo", "cantidad": "3 libras", "frecuencia": "semanal"}},
+        {{"nombre": "Vinagre blanco", "cantidad": "1 botella de 250 ml", "frecuencia": "quincenal"}}
       ]
     }}
   ],

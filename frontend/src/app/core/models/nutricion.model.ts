@@ -21,7 +21,14 @@ export interface ItemMercado {
   cantidad: string;
   categoria: string;
   categoria_nombre: string;
+  frecuencia: 'semanal' | 'quincenal';
+  frecuencia_nombre: string;
   comprado: boolean;
+}
+
+export interface ItemYaComprado {
+  nombre: string;
+  ultima_compra: string;
 }
 
 export interface ListaMercado {
@@ -30,4 +37,6 @@ export interface ListaMercado {
   items: ItemMercado[];
   consejos_compra: string[];
   plan_preparacion: string[];
+  num_personas: number;
+  items_ya_comprados: ItemYaComprado[];
 }

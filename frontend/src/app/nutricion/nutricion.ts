@@ -61,6 +61,18 @@ export class Nutricion implements OnInit {
     () => this.lista()?.items.filter((i) => i.comprado).length ?? 0,
   );
 
+  // ── OVERLAY GLOBAL DE CARGA ───────────────────────────────────────
+  protected mostrandoOverlay = computed(
+    () => this.loadingRegenerar() || this.loadingLista() || this.loadingRechazo() !== null,
+  );
+
+  protected mensajeOverlay = computed(() => {
+    if (this.loadingRechazo()) return 'Ajustando tu plan con IA...';
+    if (this.loadingRegenerar()) return 'Generando tu plan nutricional con IA...';
+    if (this.loadingLista()) return 'Generando tu lista de mercado con IA...';
+    return '';
+  });
+
   ngOnInit(): void {
     this.cargarPlan();
     this.cargarLista();
@@ -119,23 +131,35 @@ export class Nutricion implements OnInit {
   }
 
   // ── MERCADO ───────────────────────────────────────────────────────
+  protected numPersonas = signal(1);
+
   private cargarLista(): void {
     this.http.get<ListaMercado>(`${API}/nutricion/lista-mercado/`).subscribe({
-      next: (lista) => this.lista.set(lista),
+      next: (lista) => {
+        this.lista.set(lista);
+        this.numPersonas.set(lista.num_personas);
+      },
       error: () => this.sinLista.set(true),
     });
+  }
+
+  protected ajustarPersonas(delta: number): void {
+    this.numPersonas.update((n) => Math.min(20, Math.max(1, n + delta)));
   }
 
   protected generarLista(): void {
     this.loadingLista.set(true);
     this.sinLista.set(false);
-    this.http.post<ListaMercado>(`${API}/nutricion/lista-mercado/`, {}).subscribe({
-      next: (lista) => {
-        this.lista.set(lista);
-        this.loadingLista.set(false);
-      },
-      error: () => this.loadingLista.set(false),
-    });
+    this.http
+      .post<ListaMercado>(`${API}/nutricion/lista-mercado/`, { num_personas: this.numPersonas() })
+      .subscribe({
+        next: (lista) => {
+          this.lista.set(lista);
+          this.numPersonas.set(lista.num_personas);
+          this.loadingLista.set(false);
+        },
+        error: () => this.loadingLista.set(false),
+      });
   }
 
   protected toggleItem(item: ItemMercado): void {

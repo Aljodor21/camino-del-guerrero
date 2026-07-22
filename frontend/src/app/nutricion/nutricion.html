@@ -1,3 +1,14 @@
+@if (mostrandoOverlay()) {
+  <div
+    class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
+  >
+    <p-progressspinner styleClass="w-14 h-14" strokeWidth="4" />
+    <p class="text-white text-sm font-medium px-8 text-center max-w-xs">
+      {{ mensajeOverlay() }}
+    </p>
+  </div>
+}
+
 <div class="p-4 max-w-2xl mx-auto space-y-4">
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -194,6 +205,34 @@
 
   <!-- ====== LISTA DE MERCADO ====== -->
   @if (seccion() === 'mercado') {
+    <!-- Badge de personas -->
+    <div
+      class="bg-white dark:bg-dark-800 rounded-xl p-3 shadow-sm flex items-center justify-between gap-3"
+    >
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+        <i class="pi pi-users text-guerrero-red"></i> Personas
+      </span>
+      <div class="flex items-center gap-3">
+        <button
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
+          [disabled]="numPersonas() <= 1"
+          (click)="ajustarPersonas(-1)"
+        >
+          -
+        </button>
+        <span class="text-base font-bold text-gray-800 dark:text-white w-6 text-center">{{
+          numPersonas()
+        }}</span>
+        <button
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
+          [disabled]="numPersonas() >= 20"
+          (click)="ajustarPersonas(1)"
+        >
+          +
+        </button>
+      </div>
+    </div>
+
     @if (loadingLista()) {
       <div class="flex justify-center py-16">
         <p-progressspinner styleClass="w-10 h-10" />
@@ -228,6 +267,28 @@
         </div>
       </div>
 
+      <!-- Ya tienes esto (quincenales comprados recientemente) -->
+      @if (lista()!.items_ya_comprados.length) {
+        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+          <div
+            class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
+          >
+            <i class="pi pi-verified text-green-500"></i>
+            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Ya tienes esto
+            </p>
+          </div>
+          <ul class="divide-y divide-gray-50 dark:divide-dark-700">
+            @for (yc of lista()!.items_ya_comprados; track yc.nombre) {
+              <li class="px-4 py-3 text-sm flex items-center justify-between gap-3">
+                <span class="text-gray-600 dark:text-gray-300">{{ yc.nombre }}</span>
+                <span class="text-xs text-gray-400 shrink-0">Comprado {{ yc.ultima_compra }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
       <!-- Items por categoría -->
       @for (cat of categorias(); track cat.nombre) {
         <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
@@ -260,6 +321,13 @@
                   "
                   >{{ item.nombre }}</span
                 >
+                @if (item.frecuencia === 'quincenal') {
+                  <span
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0"
+                    title="Compra quincenal — te dura ~2 semanas"
+                    >Q</span
+                  >
+                }
                 @if (item.cantidad) {
                   <span class="text-xs text-gray-400 shrink-0">{{ item.cantidad }}</span>
                 }

@@ -20,11 +20,13 @@ class PlanNutricionalSerializer(serializers.ModelSerializer):
 
 
 class ItemMercadoSerializer(serializers.ModelSerializer):
-    categoria_nombre = serializers.CharField(source='get_categoria_display', read_only=True)
+    categoria_nombre  = serializers.CharField(source='get_categoria_display', read_only=True)
+    frecuencia_nombre = serializers.CharField(source='get_frecuencia_display', read_only=True)
 
     class Meta:
         model  = ItemMercado
-        fields = ['id', 'nombre', 'cantidad', 'categoria', 'categoria_nombre', 'comprado']
+        fields = ['id', 'nombre', 'cantidad', 'categoria', 'categoria_nombre',
+                  'frecuencia', 'frecuencia_nombre', 'comprado']
 
 
 class ListaMercadoSerializer(serializers.ModelSerializer):
@@ -32,4 +34,5 @@ class ListaMercadoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = ListaMercado
-        fields = ['id', 'fecha_generacion', 'items', 'consejos_compra', 'plan_preparacion']
+        fields = ['id', 'fecha_generacion', 'items', 'consejos_compra', 'plan_preparacion',
+                  'num_personas', 'items_ya_comprados']
