@@ -50,17 +50,18 @@ class AIService:
                 if attempt == retries:
                     raise
             except Exception as e:
+                if attempt == retries:
+                    raise
                 msg = str(e)
+                wait = 3
                 if '429' in msg:
                     wait = 15
                     match = re.search(r'try again in (\d+(?:\.\d+)?)s', msg)
                     if match:
                         wait = float(match.group(1)) + 2
-                    if attempt == retries:
-                        raise
-                    time.sleep(wait)
-                else:
-                    raise
+                # DeepSeek a veces devuelve contenido vacío/cortado o un 5xx
+                # transitorio — reintentamos en vez de fallar de una.
+                time.sleep(wait)
 
     def _parse_json(self, text):
         """Limpia y parsea el JSON, tolerando markdown y texto extra."""
