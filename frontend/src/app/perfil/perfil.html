@@ -1,5 +1,4 @@
 <div class="p-4 max-w-2xl mx-auto space-y-6 pb-8">
-
   <div>
     <h1 class="text-xl font-bold text-gray-900 dark:text-white">Mi perfil</h1>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -21,7 +20,6 @@
     }
 
     <form [formGroup]="formPerfil" (ngSubmit)="guardarPerfil()" class="space-y-4">
-
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nombre completo</label>
         <input pInputText formControlName="nombre" placeholder="Tu nombre" class="w-full" />
@@ -40,15 +38,22 @@
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Fecha de nacimiento</label>
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Fecha de nacimiento</label
+          >
           <input pInputText type="date" formControlName="fecha_nacimiento" class="w-full" />
         </div>
       </div>
 
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Estatura (cm)</label>
-        <p-inputnumber formControlName="estatura" [min]="100" [max]="250"
-                       placeholder="175" styleClass="w-full" />
+        <p-inputnumber
+          formControlName="estatura"
+          [min]="100"
+          [max]="250"
+          placeholder="175"
+          styleClass="w-full"
+        />
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -65,9 +70,15 @@
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Región o ciudad</label>
-          <input pInputText formControlName="region"
-                 placeholder="Ej: Paisa, Costa, Bogotá..." class="w-full" />
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Región o ciudad</label
+          >
+          <input
+            pInputText
+            formControlName="region"
+            placeholder="Ej: Paisa, Costa, Bogotá..."
+            class="w-full"
+          />
         </div>
       </div>
 
@@ -76,8 +87,12 @@
           Restricciones alimentarias
           <span class="font-normal text-gray-400">(opcional)</span>
         </label>
-        <input pInputText formControlName="preferencias_alimentarias"
-               placeholder="Ej: sin gluten, vegetariano..." class="w-full" />
+        <input
+          pInputText
+          formControlName="preferencias_alimentarias"
+          placeholder="Ej: sin gluten, vegetariano..."
+          class="w-full"
+        />
       </div>
 
       <div class="flex flex-col gap-2">
@@ -93,10 +108,14 @@
         />
       </div>
 
-      <p-button type="submit" label="Guardar datos personales" icon="pi pi-check"
-                [loading]="savingPerfil()" [disabled]="formPerfil.invalid"
-                styleClass="w-full" />
-
+      <p-button
+        type="submit"
+        label="Guardar datos personales"
+        icon="pi pi-check"
+        [loading]="savingPerfil()"
+        [disabled]="formPerfil.invalid"
+        styleClass="w-full"
+      />
     </form>
   </div>
 
@@ -107,8 +126,8 @@
         <i class="pi pi-bolt text-guerrero-red"></i> Objetivo y entrenamiento
       </h2>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        Cambiar estos datos no regenera automáticamente tu rutina. Usa el botón "Regenerar"
-        en la sección de Rutinas si quieres un plan nuevo.
+        Cambiar estos datos no regenera automáticamente tu rutina. Usa el botón "Regenerar" en la
+        sección de Rutinas si quieres un plan nuevo.
       </p>
     </div>
 
@@ -116,21 +135,28 @@
       <p-message severity="error" [text]="errorObjetivo()" styleClass="w-full" />
     }
     @if (okObjetivo()) {
-      <p-message severity="success" text="Objetivo actualizado correctamente." styleClass="w-full" />
+      <p-message
+        severity="success"
+        text="Objetivo actualizado correctamente."
+        styleClass="w-full"
+      />
     }
 
     <form [formGroup]="formObjetivo" (ngSubmit)="guardarObjetivo()" class="space-y-4">
-
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Objetivo principal</label>
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Objetivo principal</label
+        >
         <div class="grid grid-cols-2 gap-2">
           @for (op of objetivoOpciones; track op.value) {
             <button
               type="button"
               (click)="formObjetivo.controls.objetivo.setValue(op.value)"
-              [class]="formObjetivo.controls.objetivo.value === op.value
-                ? 'p-3 rounded-xl border-2 border-guerrero-red bg-red-50 dark:bg-guerrero-red/10 text-guerrero-red text-sm font-semibold text-left transition-all'
-                : 'p-3 rounded-xl border-2 border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 text-sm font-medium text-left transition-all'"
+              [class]="
+                formObjetivo.controls.objetivo.value === op.value
+                  ? 'p-3 rounded-xl border-2 border-guerrero-red bg-red-50 dark:bg-guerrero-red/10 text-guerrero-red text-sm font-semibold text-left transition-all'
+                  : 'p-3 rounded-xl border-2 border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 text-sm font-medium text-left transition-all'
+              "
             >
               {{ op.label }}
             </button>
@@ -140,46 +166,84 @@
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso actual (kg)</label>
-          <p-inputnumber formControlName="peso_inicial" [min]="20" [max]="300"
-                         [minFractionDigits]="1" [maxFractionDigits]="1"
-                         placeholder="70.0" styleClass="w-full" />
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Peso actual (kg)</label
+          >
+          <p-inputnumber
+            formControlName="peso_inicial"
+            [min]="20"
+            [max]="300"
+            [minFractionDigits]="1"
+            [maxFractionDigits]="1"
+            placeholder="70.0"
+            styleClass="w-full"
+          />
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
             Peso meta (kg)
             <span class="font-normal text-gray-400">(opcional)</span>
           </label>
-          <p-inputnumber formControlName="peso_objetivo" [min]="20" [max]="300"
-                         [minFractionDigits]="1" [maxFractionDigits]="1"
-                         placeholder="65.0" styleClass="w-full" />
+          <p-inputnumber
+            formControlName="peso_objetivo"
+            [min]="20"
+            [max]="300"
+            [minFractionDigits]="1"
+            [maxFractionDigits]="1"
+            placeholder="65.0"
+            styleClass="w-full"
+          />
         </div>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nivel de actividad</label>
-        <p-selectbutton formControlName="nivel_actividad" [options]="nivelOpciones"
-                        optionLabel="label" optionValue="value" styleClass="w-full" />
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Nivel de actividad</label
+        >
+        <p-selectbutton
+          formControlName="nivel_actividad"
+          [options]="nivelOpciones"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Días por semana</label>
-          <p-selectbutton formControlName="dias_entrenamiento" [options]="diasOpciones"
-                          optionLabel="label" optionValue="value" styleClass="w-full" />
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Días por semana</label
+          >
+          <p-selectbutton
+            formControlName="dias_entrenamiento"
+            [options]="diasOpciones"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          />
         </div>
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Duración por sesión</label>
-          <p-selectbutton formControlName="duracion_sesion" [options]="duracionOpciones"
-                          optionLabel="label" optionValue="value" styleClass="w-full" />
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Duración por sesión</label
+          >
+          <p-selectbutton
+            formControlName="duracion_sesion"
+            [options]="duracionOpciones"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          />
         </div>
       </div>
 
-      <p-button type="submit" label="Guardar objetivo" icon="pi pi-check"
-                [loading]="savingObjetivo()" [disabled]="formObjetivo.invalid"
-                styleClass="w-full" />
-
+      <p-button
+        type="submit"
+        label="Guardar objetivo"
+        icon="pi pi-check"
+        [loading]="savingObjetivo()"
+        [disabled]="formObjetivo.invalid"
+        styleClass="w-full"
+      />
     </form>
   </div>
-
 </div>

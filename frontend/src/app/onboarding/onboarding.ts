@@ -12,7 +12,9 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { ThemeService } from '../core/services/theme';
+import { AuthService } from '../core/services/auth';
 import { Implemento } from '../core/models/rutina.model';
+import { Usuario } from '../core/models/usuario.model';
 import { PAISES } from '../core/constants/paises';
 
 import { environment } from '../../environments/environment';
@@ -22,13 +24,23 @@ const API = environment.apiUrl;
   selector: 'app-onboarding',
   templateUrl: './onboarding.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, InputNumberModule, InputTextModule, AutoCompleteModule, SelectButtonModule, ButtonModule, MessageModule, ProgressSpinnerModule],
+  imports: [
+    ReactiveFormsModule,
+    InputNumberModule,
+    InputTextModule,
+    AutoCompleteModule,
+    SelectButtonModule,
+    ButtonModule,
+    MessageModule,
+    ProgressSpinnerModule,
+  ],
 })
 export class Onboarding implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
   protected theme = inject(ThemeService);
   private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
 
   protected paso = signal(1);
   protected error = signal('');
@@ -42,33 +54,53 @@ export class Onboarding implements OnInit {
 
   protected filtrarPaises(query: string): void {
     const q = query.toLowerCase();
-    this.paisesFiltrados.set(PAISES.filter(p => p.toLowerCase().includes(q)));
+    this.paisesFiltrados.set(PAISES.filter((p) => p.toLowerCase().includes(q)));
   }
 
   protected readonly enfoqueOpciones = [
-    { label: 'Boxeo',           value: 'boxeo',       icon: 'pi pi-star',        desc: 'Guantes, saco, cuerda'      },
-    { label: 'Cardio en casa',  value: 'cardio_casa', icon: 'pi pi-heart',       desc: 'Cuerda, colchoneta'         },
-    { label: 'Funcional / HIIT',value: 'funcional',   icon: 'pi pi-bolt',        desc: 'Sin equipo o mancuernas'    },
-    { label: 'Fuerza',          value: 'fuerza',      icon: 'pi pi-arrow-up',    desc: 'Barra, mancuernas, máquinas'},
-    { label: 'Yoga / Movilidad',value: 'movilidad',   icon: 'pi pi-sun',         desc: 'Colchoneta, bloques'        },
+    { label: 'Boxeo', value: 'boxeo', icon: 'pi pi-star', desc: 'Guantes, saco, cuerda' },
+    {
+      label: 'Cardio en casa',
+      value: 'cardio_casa',
+      icon: 'pi pi-heart',
+      desc: 'Cuerda, colchoneta',
+    },
+    {
+      label: 'Funcional / HIIT',
+      value: 'funcional',
+      icon: 'pi pi-bolt',
+      desc: 'Sin equipo o mancuernas',
+    },
+    {
+      label: 'Fuerza',
+      value: 'fuerza',
+      icon: 'pi pi-arrow-up',
+      desc: 'Barra, mancuernas, máquinas',
+    },
+    {
+      label: 'Yoga / Movilidad',
+      value: 'movilidad',
+      icon: 'pi pi-sun',
+      desc: 'Colchoneta, bloques',
+    },
   ];
 
   protected readonly objetivoOpciones = [
-    { label: 'Bajar de peso',  value: 'bajar_peso',    icon: 'pi pi-arrow-down' },
-    { label: 'Ganar músculo',  value: 'ganar_musculo', icon: 'pi pi-bolt'       },
-    { label: 'Mantener',       value: 'mantener',      icon: 'pi pi-minus'      },
-    { label: 'Resistencia',    value: 'resistencia',   icon: 'pi pi-heart'      },
+    { label: 'Bajar de peso', value: 'bajar_peso', icon: 'pi pi-arrow-down' },
+    { label: 'Ganar músculo', value: 'ganar_musculo', icon: 'pi pi-bolt' },
+    { label: 'Mantener', value: 'mantener', icon: 'pi pi-minus' },
+    { label: 'Resistencia', value: 'resistencia', icon: 'pi pi-heart' },
   ];
 
   protected readonly frecuenciaOpciones = [
     { label: 'Cada 15 días', value: 15 },
-    { label: 'Cada mes',     value: 30 },
+    { label: 'Cada mes', value: 30 },
   ];
 
   protected readonly nivelOpciones = [
     { label: 'Principiante', value: 'principiante' },
-    { label: 'Intermedio',   value: 'intermedio'   },
-    { label: 'Avanzado',     value: 'avanzado'      },
+    { label: 'Intermedio', value: 'intermedio' },
+    { label: 'Avanzado', value: 'avanzado' },
   ];
 
   protected readonly diasOpciones = [
@@ -84,25 +116,30 @@ export class Onboarding implements OnInit {
   ];
 
   protected form = this.fb.nonNullable.group({
-    peso_inicial:             [null as unknown as number, [Validators.required, Validators.min(20), Validators.max(300)]],
-    peso_objetivo:            [null as number | null],
-    objetivo:                 ['bajar_peso', Validators.required],
-    frecuencia_peso:          [30, Validators.required],
-    estatura:                 [null as unknown as number, [Validators.required, Validators.min(100), Validators.max(250)]],
-    enfoque_entrenamiento:    ['boxeo', Validators.required],
-    nivel_actividad:          ['principiante', Validators.required],
-    dias_entrenamiento:       [3, Validators.required],
-    duracion_sesion:          [45, Validators.required],
-    nacionalidad:             ['', Validators.required],
-    region:                   ['', Validators.required],
-    preferencias_alimentarias:[''],
-    implementos_adicionales:  [''],
+    peso_inicial: [
+      null as unknown as number,
+      [Validators.required, Validators.min(20), Validators.max(300)],
+    ],
+    peso_objetivo: [null as number | null],
+    objetivo: ['bajar_peso', Validators.required],
+    frecuencia_peso: [30, Validators.required],
+    estatura: [
+      null as unknown as number,
+      [Validators.required, Validators.min(100), Validators.max(250)],
+    ],
+    enfoque_entrenamiento: ['boxeo', Validators.required],
+    nivel_actividad: ['principiante', Validators.required],
+    dias_entrenamiento: [3, Validators.required],
+    duracion_sesion: [45, Validators.required],
+    nacionalidad: ['', Validators.required],
+    region: ['', Validators.required],
+    preferencias_alimentarias: [''],
+    implementos_adicionales: [''],
   });
-
 
   ngOnInit(): void {
     this.http.get<Implemento[]>(`${API}/rutinas/implementos/`).subscribe({
-      next: data => {
+      next: (data) => {
         this.implementos.set(data);
         this.loadingImplementos.set(false);
       },
@@ -112,7 +149,6 @@ export class Onboarding implements OnInit {
       },
     });
   }
-
 
   protected isSeleccionado(id: number): boolean {
     return this.seleccionados().includes(id);
@@ -126,74 +162,103 @@ export class Onboarding implements OnInit {
   }
 
   protected toggleImplemento(id: number): void {
-    const sinImplemento = this.implementos().find(i => i.es_sin_implemento)?.id;
+    const sinImplemento = this.implementos().find((i) => i.es_sin_implemento)?.id;
     const actual = this.seleccionados();
     if (id === sinImplemento) {
       this.seleccionados.set(actual.includes(id) ? [] : [id]);
       return;
     }
-    const filtrado = actual.filter(i => i !== sinImplemento);
+    const filtrado = actual.filter((i) => i !== sinImplemento);
     this.seleccionados.set(
-      filtrado.includes(id) ? filtrado.filter(i => i !== id) : [...filtrado, id]
+      filtrado.includes(id) ? filtrado.filter((i) => i !== id) : [...filtrado, id],
     );
   }
 
   protected paso1Valido(): boolean {
     const c = this.form.controls;
-    return c.peso_inicial.valid && c.objetivo.valid && c.estatura.valid
-        && c.enfoque_entrenamiento.valid && c.nivel_actividad.valid
-        && c.dias_entrenamiento.valid && c.duracion_sesion.valid
-        && c.nacionalidad.valid && c.region.valid;
+    return (
+      c.peso_inicial.valid &&
+      c.objetivo.valid &&
+      c.estatura.valid &&
+      c.enfoque_entrenamiento.valid &&
+      c.nivel_actividad.valid &&
+      c.dias_entrenamiento.valid &&
+      c.duracion_sesion.valid &&
+      c.nacionalidad.valid &&
+      c.region.valid
+    );
   }
-
 
   protected siguientePaso(): void {
     if (this.paso() === 2) {
       this.paso.set(3);
       this.generarPlan();
     } else {
-      this.paso.update(v => v + 1);
+      this.paso.update((v) => v + 1);
     }
   }
 
   protected anteriorPaso(): void {
-    this.paso.update(v => v - 1);
+    this.paso.update((v) => v - 1);
   }
 
-    private async generarPlan(): Promise<void> {
-      this.error.set('');
-      const {
-        peso_inicial, peso_objetivo, objetivo, frecuencia_peso, estatura,
-        enfoque_entrenamiento, nivel_actividad, dias_entrenamiento, duracion_sesion,
-        nacionalidad, region, preferencias_alimentarias, implementos_adicionales,
-      } = this.form.getRawValue();
-      try {
-        await firstValueFrom(this.http.post(`${API}/usuarios/objetivo/`, {
-          objetivo, peso_inicial, nivel_actividad, dias_entrenamiento, duracion_sesion,
+  private async generarPlan(): Promise<void> {
+    this.error.set('');
+    const {
+      peso_inicial,
+      peso_objetivo,
+      objetivo,
+      frecuencia_peso,
+      estatura,
+      enfoque_entrenamiento,
+      nivel_actividad,
+      dias_entrenamiento,
+      duracion_sesion,
+      nacionalidad,
+      region,
+      preferencias_alimentarias,
+      implementos_adicionales,
+    } = this.form.getRawValue();
+    try {
+      await firstValueFrom(
+        this.http.post(`${API}/usuarios/objetivo/`, {
+          objetivo,
+          peso_inicial,
+          nivel_actividad,
+          dias_entrenamiento,
+          duracion_sesion,
           enfoque_entrenamiento,
           ...(peso_objetivo ? { peso_objetivo } : {}),
-        }));
-        await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
-        await firstValueFrom(this.http.patch(`${API}/usuarios/perfil/`, {
-          frecuencia_peso, estatura,
-          ...(nacionalidad              ? { nacionalidad }               : {}),
-          ...(region                    ? { region }                     : {}),
-          ...(preferencias_alimentarias ? { preferencias_alimentarias }  : {}),
-          ...(implementos_adicionales   ? { implementos_adicionales }    : {}),
-        }));
-        const existentes = await firstValueFrom(this.http.get<{id: number}[]>(`${API}/rutinas/mis-implementos/`));
-        for (const e of existentes) {
-          await firstValueFrom(this.http.delete(`${API}/rutinas/mis-implementos/${e.id}/`));
-        }
-        for (const id of this.seleccionados()) {
-          await firstValueFrom(this.http.post(`${API}/rutinas/mis-implementos/`, { implemento_id: id }));
-        }
-        await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
-        await firstValueFrom(this.http.post(`${API}/nutricion/mi-plan/`, {}));
-        this.router.navigate(['/rutinas']);
-      } catch {
-        this.error.set('Ocurrió un error al generar tu plan. Vuelve atrás e intenta de nuevo.');
+        }),
+      );
+      await firstValueFrom(this.http.post(`${API}/progreso/peso/`, { peso_kg: peso_inicial }));
+      const usuarioActualizado = await firstValueFrom(
+        this.http.patch<Usuario>(`${API}/usuarios/perfil/`, {
+          frecuencia_peso,
+          estatura,
+          ...(nacionalidad ? { nacionalidad } : {}),
+          ...(region ? { region } : {}),
+          ...(preferencias_alimentarias ? { preferencias_alimentarias } : {}),
+          ...(implementos_adicionales ? { implementos_adicionales } : {}),
+        }),
+      );
+      this.auth.actualizarUsuario(usuarioActualizado);
+      const existentes = await firstValueFrom(
+        this.http.get<{ id: number }[]>(`${API}/rutinas/mis-implementos/`),
+      );
+      for (const e of existentes) {
+        await firstValueFrom(this.http.delete(`${API}/rutinas/mis-implementos/${e.id}/`));
       }
+      for (const id of this.seleccionados()) {
+        await firstValueFrom(
+          this.http.post(`${API}/rutinas/mis-implementos/`, { implemento_id: id }),
+        );
+      }
+      await firstValueFrom(this.http.post(`${API}/nutricion/generar-rutina/`, {}));
+      await firstValueFrom(this.http.post(`${API}/nutricion/mi-plan/`, {}));
+      this.router.navigate(['/rutinas']);
+    } catch {
+      this.error.set('Ocurrió un error al generar tu plan. Vuelve atrás e intenta de nuevo.');
     }
-
+  }
 }
