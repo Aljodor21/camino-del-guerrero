@@ -1,0 +1,114 @@
+@if (proceso(); as p) {
+  <section
+    class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3"
+    aria-labelledby="rp-titulo"
+  >
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="flex flex-wrap items-center gap-2">
+          <span id="rp-titulo" class="font-semibold text-gray-900 dark:text-white">{{
+            p.objetivo_nombre
+          }}</span>
+          @if (p.fase_nombre) {
+            <span
+              class="text-xs font-semibold text-guerrero-red bg-red-50 dark:bg-guerrero-red/15 rounded-full px-2.5 py-0.5"
+            >
+              {{ p.fase_nombre }}
+            </span>
+          }
+        </p>
+        @if (avance(); as a) {
+          <p class="text-2xl font-bold text-gray-900 dark:text-white tabular-nums mt-1">
+            Semana {{ a.semana }}
+            @if (a.semanas) {
+              <span class="text-base font-medium text-gray-500 dark:text-gray-400"
+                >de {{ a.semanas }}</span
+              >
+            }
+          </p>
+        } @else if (diasParaIniciar() !== null) {
+          <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {{
+              diasParaIniciar() === 1
+                ? 'Empieza mañana'
+                : 'Empieza en ' + diasParaIniciar() + ' días'
+            }}
+          </p>
+        }
+      </div>
+      <a
+        routerLink="/perfil"
+        class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-guerrero-red px-2 py-1 -mr-2 rounded"
+      >
+        Ajustar
+      </a>
+    </div>
+
+    @if (avance(); as a) {
+      @if (a.porcentaje !== null) {
+        <div
+          class="h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
+          role="progressbar"
+          [attr.aria-valuenow]="a.porcentaje"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Avance del proceso"
+        >
+          <div class="h-full rounded-full bg-guerrero-red" [style.width.%]="a.porcentaje"></div>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 tabular-nums">
+          @if (a.diasRestantes! > 0) {
+            Día {{ a.dia }} · faltan {{ a.diasRestantes }}
+            {{ a.diasRestantes === 1 ? 'día' : 'días' }}, hasta el
+            {{ formatearFecha(p.fecha_fin_plan!, 'larga') }}
+          } @else if (a.diasRestantes === 0) {
+            Día {{ a.dia }} · hoy termina lo planeado
+          } @else {
+            Lo planeado terminó el {{ formatearFecha(p.fecha_fin_plan!, 'larga') }}.
+            <a routerLink="/perfil" class="font-semibold text-guerrero-red underline"
+              >Ajusta la fecha</a
+            >
+            o inicia un nuevo proceso.
+          }
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Día {{ a.dia }} · desde el {{ formatearFecha(p.fecha_inicio) }}.
+          <a routerLink="/perfil" class="font-semibold text-guerrero-red underline"
+            >Define hasta cuándo va</a
+          >
+        </p>
+      }
+    } @else {
+      <p class="text-sm text-gray-600 dark:text-gray-300 first-letter:uppercase">
+        {{ formatearFecha(p.fecha_inicio, 'larga') }}
+        @if (p.fecha_fin_plan) {
+          al {{ formatearFecha(p.fecha_fin_plan, 'larga') }} · {{ semanasPlan() }} semanas
+        }
+      </p>
+    }
+
+    <button
+      type="button"
+      (click)="verAgenda.emit()"
+      class="w-full flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-dark-700/60 px-3 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-dark-700 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+    >
+      <i class="pi pi-calendar text-gray-500 dark:text-gray-400" aria-hidden="true"></i>
+      @if (proximo(); as r) {
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-medium text-gray-900 dark:text-white truncate">{{
+            r.titulo
+          }}</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">
+            {{ cuandoEs(r.fecha) }} · {{ formatearFecha(r.fecha, 'larga') }}
+          </span>
+        </span>
+      } @else {
+        <span class="flex-1 text-sm text-gray-600 dark:text-gray-300"
+          >Agrega tu próximo control o fecha importante</span
+        >
+      }
+      <i class="pi pi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+    </button>
+  </section>
+}

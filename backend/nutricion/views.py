@@ -1,16 +1,23 @@
 from datetime import timedelta
 
+from django.db.models import F
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.ai_service import AIService
+from core.exceptions import ReglaNegocioError
+from users.models import Proceso
+from users.procesos import proceso_de_referencia
 from routines.models import (DiaRutina, EjercicioDia, Ejercicio,
                               EjercicioImplemento, Rutina)
 
-from .models import DiaNutricional, ItemMercado, ItemRecurrente, ListaMercado, PlanNutricional
-from .serializers import ItemMercadoSerializer, ListaMercadoSerializer, PlanNutricionalSerializer
+from . import suplementos
+from .models import DiaNutricional, ItemMercado, ItemRecurrente, ListaMercado, PlanNutricional, Suplemento
+from .serializers import (ContinuarSerializer, ItemMercadoSerializer, ListaMercadoSerializer,
+                          PlanNutricionalSerializer, SuplementoEditarSerializer, SuplementoSerializer)
 
 
 class MiPlanNutricionalView(APIView):
@@ -22,20 +29,20 @@ class MiPlanNutricionalView(APIView):
             return Response({'detail': 'No tienes plan nutricional generado aún.'}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
-        objetivo = request.user.objetivos.filter(activo=True).first()
-        if not objetivo:
-            return Response({'detail': 'Debes completar el onboarding primero.'}, status=status.HTTP_400_BAD_REQUEST)
+        proceso = proceso_de_referencia(request.user)
+        if not proceso or not proceso.incluye_alimentacion:
+            return Response({'detail': 'Tu proceso no incluye alimentación.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             ai = AIService()
-            data = ai.generar_plan_nutricional(request.user, objetivo)
+            data = ai.generar_plan_nutricional(request.user, proceso)
 
             PlanNutricional.objects.filter(usuario=request.user).delete()
             # La lista de mercado se armó a partir del plan anterior — al
             # quedar huérfana (plan=null por el SET_NULL) mostraría ingredientes
             # de un plan que ya no existe, así que la borramos también.
             ListaMercado.objects.filter(usuario=request.user).delete()
-            plan = PlanNutricional.objects.create(usuario=request.user, objetivo=objetivo)
+            plan = PlanNutricional.objects.create(usuario=request.user, proceso=proceso)
 
             for dia_data in data['dias']:
                 DiaNutricional.objects.create(plan=plan, **dia_data)
@@ -59,13 +66,13 @@ class RechazarComidaView(APIView):
         if campo not in self.CAMPOS_VALIDOS:
             return Response({'detail': 'Campo inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        objetivo = request.user.objetivos.filter(activo=True).first()
-        if not objetivo:
-            return Response({'detail': 'Debes completar el onboarding primero.'}, status=status.HTTP_400_BAD_REQUEST)
+        proceso = proceso_de_referencia(request.user)
+        if not proceso or not proceso.incluye_alimentacion:
+            return Response({'detail': 'Tu proceso no incluye alimentación.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             ai = AIService()
-            data = ai.ajustar_plan_nutricional(request.user, objetivo, dia.plan, dia, campo)
+            data = ai.ajustar_plan_nutricional(request.user, proceso, dia.plan, dia, campo)
 
             plan = dia.plan
             plan.dias.all().delete()
@@ -163,13 +170,13 @@ class ItemMercadoToggleView(APIView):
 class GenerarRutinaView(APIView):
     def post(self, request):
         implementos = request.user.implementos.select_related('implemento').all()
-        objetivo = request.user.objetivos.filter(activo=True).first()
-        if not objetivo:
-            return Response({'detail': 'Debes completar el onboarding primero.'}, status=status.HTTP_400_BAD_REQUEST)
+        proceso = proceso_de_referencia(request.user)
+        if not proceso or not proceso.incluye_entrenamiento or not hasattr(proceso, 'entrenamiento'):
+            return Response({'detail': 'Tu proceso no incluye entrenamiento.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             ai = AIService()
-            data = ai.generar_rutina(request.user, implementos, objetivo)
+            data = ai.generar_rutina(request.user, implementos, proceso)
 
             Rutina.objects.filter(usuario=request.user).delete()
             rutina = Rutina.objects.create(
@@ -213,3 +220,63 @@ class GenerarRutinaView(APIView):
         except Exception as e:
             import traceback; traceback.print_exc()
             return Response({'detail': f'Error al generar la rutina: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SuplementoListCreateView(generics.ListCreateAPIView):
+    """Suplementos del proceso vigente: activos primero y luego los que ya terminaron."""
+    serializer_class = SuplementoSerializer
+
+    def get_queryset(self):
+        proceso = proceso_de_referencia(self.request.user)
+        return (Suplemento.objects.filter(usuario=self.request.user, proceso=proceso)
+                .select_related('proceso').order_by(F('fecha_fin').desc(nulls_first=True), 'fecha_inicio', 'id'))
+
+    def create(self, request, *args, **kwargs):
+        # Al crear un proceso programado, sus suplementos van a él y no al que sigue en curso.
+        if request.data.get('proceso'):
+            proceso = get_object_or_404(Proceso, pk=request.data['proceso'], usuario=request.user)
+        else:
+            proceso = proceso_de_referencia(request.user)
+        if not proceso:
+            raise ReglaNegocioError('Primero crea tu proceso.')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        suplemento = suplementos.crear_suplemento(proceso, serializer.validated_data)
+        return Response(SuplementoSerializer(suplemento).data, status=status.HTTP_201_CREATED)
+
+
+class SuplementoDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = SuplementoEditarSerializer
+    http_method_names = ['get', 'patch', 'delete']
+
+    def get_queryset(self):
+        return Suplemento.objects.filter(usuario=self.request.user).select_related('proceso')
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        suplemento = suplementos.actualizar_suplemento(serializer.instance, serializer.validated_data)
+        return Response(SuplementoSerializer(suplemento).data)
+
+
+class SuplementoAccionView(APIView):
+    """Acciones del día a día: abrí un envase nuevo, sigo con él, lo dejé o lo cambié por otro."""
+
+    def post(self, request, pk, accion):
+        suplemento = get_object_or_404(Suplemento.objects.select_related('proceso'), pk=pk, usuario=request.user)
+        if accion == 'abrir-envase':
+            resultado = suplementos.abrir_envase(suplemento)
+        elif accion == 'continuar':
+            datos = ContinuarSerializer(data=request.data)
+            datos.is_valid(raise_exception=True)
+            resultado = suplementos.continuar(suplemento, datos.validated_data['dias'])
+        elif accion == 'terminar':
+            resultado = suplementos.terminar(suplemento)
+        elif accion == 'reemplazar':
+            datos = SuplementoEditarSerializer(data=request.data)
+            datos.is_valid(raise_exception=True)
+            resultado = suplementos.reemplazar(suplemento, datos.validated_data)
+            return Response(SuplementoSerializer(resultado).data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(SuplementoSerializer(resultado).data)

@@ -5,9 +5,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
-from .models import ObjetivoUsuario, Sexo, Usuario
-from .serializers import (CustomTokenSerializer, ObjetivoUsuarioSerializer,
-                           RegistroSerializer, SexoSerializer, UsuarioSerializer)
+from progress.serializers import MedicionSerializer
+
+from . import procesos
+from .models import Proceso, Sexo, Usuario
+from .serializers import (CustomTokenSerializer, ProcesoActualizarSerializer,
+                          ProcesoCrearSerializer, ProcesoSerializer,
+                          RegistroSerializer, SexoSerializer, UsuarioSerializer)
 
 
 class EsAdmin(permissions.BasePermission):
@@ -57,32 +61,63 @@ class PerfilView(APIView):
         return Response(serializer.data)
 
 
-class ObjetivoUsuarioView(generics.ListCreateAPIView):
-    serializer_class = ObjetivoUsuarioSerializer
+class ProcesoListCreateView(generics.ListCreateAPIView):
+    """Historial de procesos del usuario y creación de uno nuevo."""
 
     def get_queryset(self):
-        return ObjetivoUsuario.objects.filter(usuario=self.request.user)
+        return (Proceso.objects.filter(usuario=self.request.user)
+                .select_related('medicion_inicial', 'entrenamiento'))
 
-    def perform_create(self, serializer):
-        ObjetivoUsuario.objects.filter(usuario=self.request.user).update(activo=False)
-        serializer.save(usuario=self.request.user)
+    def get_serializer_class(self):
+        return ProcesoCrearSerializer if self.request.method == 'POST' else ProcesoSerializer
 
-
-class ObjetivoActivoView(APIView):
-    def get(self, request):
-        obj = ObjetivoUsuario.objects.filter(usuario=request.user, activo=True).first()
-        if not obj:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        return Response(ObjetivoUsuarioSerializer(obj).data)
-
-    def patch(self, request):
-        obj = ObjetivoUsuario.objects.filter(usuario=request.user, activo=True).first()
-        if not obj:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = ObjetivoUsuarioSerializer(obj, data=request.data, partial=True)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        proceso = serializer.save()
+        return Response(ProcesoSerializer(proceso).data, status=status.HTTP_201_CREATED)
+
+
+class ProcesoEstadoView(APIView):
+    """El proceso en curso y el programado, si existen."""
+
+    def get(self, request):
+        actual = procesos.proceso_actual(request.user)
+        programado = procesos.proceso_programado(request.user)
+        return Response({
+            'actual':     ProcesoSerializer(actual).data if actual else None,
+            'programado': ProcesoSerializer(programado).data if programado else None,
+        })
+
+
+class ProcesoDetailView(generics.RetrieveUpdateDestroyAPIView):
+    http_method_names = ['get', 'patch', 'delete']
+
+    def get_queryset(self):
+        return Proceso.objects.filter(usuario=self.request.user)
+
+    def get_serializer_class(self):
+        return ProcesoActualizarSerializer if self.request.method == 'PATCH' else ProcesoSerializer
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        proceso = serializer.save()
+        return Response(ProcesoSerializer(proceso).data)
+
+    def perform_destroy(self, instance):
+        procesos.cancelar_programado(instance)
+
+
+class ProcesoMedicionInicialView(APIView):
+    """Registra la medición inicial de un proceso que inició sin ella (programado)."""
+
+    def post(self, request, pk):
+        proceso = generics.get_object_or_404(Proceso, pk=pk, usuario=request.user)
+        serializer = MedicionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        proceso = procesos.registrar_medicion_inicial(proceso, serializer.validated_data)
+        return Response(ProcesoSerializer(proceso).data, status=status.HTTP_201_CREATED)
 
 
 class SexoListView(generics.ListAPIView):

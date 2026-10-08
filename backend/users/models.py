@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+from core.exceptions import DatoInmutableError
+
 
 class Rol(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
@@ -40,13 +42,115 @@ class Usuario(AbstractUser):
         return self.email
 
 
-class ObjetivoUsuario(models.Model):
+class ProcesoQuerySet(models.QuerySet):
+    def en_curso(self, hoy=None):
+        hoy = hoy or timezone.localdate()
+        return self.filter(fecha_inicio__lte=hoy).filter(
+            models.Q(fecha_fin__isnull=True) | models.Q(fecha_fin__gte=hoy)
+        )
+
+    def programados(self, hoy=None):
+        return self.filter(fecha_inicio__gt=hoy or timezone.localdate())
+
+
+class Proceso(models.Model):
+    """Etapa del usuario con un objetivo concreto (ej. volumen con hipercalórico).
+
+    Alimentación y entrenamiento son módulos opcionales del proceso. El objetivo,
+    la fase, la fecha de inicio y la medición inicial son datos sagrados: se fijan
+    una sola vez y nunca se modifican (ver `save`).
+    """
+
     OBJETIVOS = [
         ('bajar_peso',   'Bajar peso'),
         ('ganar_musculo','Ganar músculo'),
         ('mantener',     'Mantener peso'),
         ('resistencia',  'Mejorar resistencia'),
     ]
+    FASES = [
+        ('volumen',       'Volumen'),
+        ('definicion',    'Definición'),
+        ('mantenimiento', 'Mantenimiento'),
+    ]
+    ESTADOS = [
+        ('programado', 'Programado'),
+        ('en_curso',   'En curso'),
+        ('finalizado', 'Finalizado'),
+    ]
+    CAMPOS_SAGRADOS = ('usuario_id', 'objetivo', 'fase', 'fecha_inicio')
+
+    usuario               = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='procesos')
+    objetivo              = models.CharField(max_length=50, choices=OBJETIVOS)
+    fase                  = models.CharField(max_length=20, choices=FASES, blank=True)
+    peso_objetivo         = models.FloatField(null=True, blank=True)
+    incluye_alimentacion  = models.BooleanField(default=True)
+    incluye_entrenamiento = models.BooleanField(default=False)
+    fecha_inicio          = models.DateField(default=timezone.localdate)
+    fecha_fin             = models.DateField(null=True, blank=True)
+    # Hasta cuándo está pensado el proceso (ej. hasta el control con la nutricionista).
+    # Es un plan, no un dato de inicio: se puede ajustar mientras el proceso no termine.
+    fecha_fin_plan        = models.DateField(null=True, blank=True)
+    medicion_inicial      = models.OneToOneField(
+        'progress.Medicion', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='proceso_iniciado',
+    )
+    notas                 = models.TextField(blank=True)
+    fecha_creacion        = models.DateTimeField(auto_now_add=True)
+
+    objects = ProcesoQuerySet.as_manager()
+
+    class Meta:
+        ordering = ['-fecha_inicio', '-id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['usuario'], condition=models.Q(fecha_fin__isnull=True),
+                name='proceso_unico_abierto_por_usuario',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(incluye_alimentacion=True) | models.Q(incluye_entrenamiento=True),
+                name='proceso_con_algun_modulo',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(fecha_fin__isnull=True) | models.Q(fecha_fin__gte=models.F('fecha_inicio')),
+                name='proceso_fechas_coherentes',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(fecha_fin_plan__isnull=True) | models.Q(fecha_fin_plan__gt=models.F('fecha_inicio')),
+                name='proceso_plan_despues_del_inicio',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.get_objetivo_display()} ({self.fecha_inicio})'
+
+    @property
+    def estado(self):
+        hoy = timezone.localdate()
+        if self.fecha_inicio > hoy:
+            return 'programado'
+        if self.fecha_fin and self.fecha_fin < hoy:
+            return 'finalizado'
+        return 'en_curso'
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            self._verificar_datos_sagrados()
+        super().save(*args, **kwargs)
+
+    def _verificar_datos_sagrados(self):
+        original = (Proceso.objects.filter(pk=self.pk)
+                    .values(*self.CAMPOS_SAGRADOS, 'medicion_inicial_id').first())
+        if original is None:
+            return
+        cambiados = [c for c in self.CAMPOS_SAGRADOS if getattr(self, c) != original[c]]
+        if original['medicion_inicial_id'] and self.medicion_inicial_id != original['medicion_inicial_id']:
+            cambiados.append('medicion_inicial')
+        if cambiados:
+            raise DatoInmutableError(f'Datos sagrados del proceso no modificables: {", ".join(cambiados)}')
+
+
+class ConfiguracionEntrenamiento(models.Model):
+    """Módulo de entrenamiento de un proceso: lo que la IA necesita para la rutina."""
 
     NIVEL_CHOICES = [
         ('principiante', 'Principiante'),
@@ -63,16 +167,11 @@ class ObjetivoUsuario(models.Model):
         ('movilidad',   'Yoga / Movilidad'),
     ]
 
-    usuario               = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='objetivos')
-    objetivo              = models.CharField(max_length=50, choices=OBJETIVOS)
-    peso_inicial          = models.FloatField()
-    peso_objetivo         = models.FloatField(null=True, blank=True)
+    proceso               = models.OneToOneField(Proceso, on_delete=models.CASCADE, related_name='entrenamiento')
     nivel_actividad       = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='principiante')
     dias_entrenamiento    = models.IntegerField(choices=DIAS_CHOICES, default=3)
     duracion_sesion       = models.IntegerField(choices=DURACION_CHOICES, default=45)
     enfoque_entrenamiento = models.CharField(max_length=30, choices=ENFOQUE_CHOICES, default='boxeo')
-    fecha_inicio       = models.DateField(default=timezone.localdate, editable=False)
-    activo             = models.BooleanField(default=True)
 
     def __str__(self):
-        return f'{self.usuario.email} - {self.objetivo}'
+        return f'Entrenamiento de {self.proceso}'

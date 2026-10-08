@@ -1,0 +1,54 @@
+<div class="space-y-2">
+  <ul class="grid grid-cols-3 gap-2">
+    @for (p of opciones(); track p.value) {
+      @let foto = fotos()[p.value];
+      <li class="flex flex-col gap-1">
+        @if (foto) {
+          <div
+            class="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-900"
+          >
+            <img
+              [src]="vista(foto)"
+              [alt]="'Foto de ' + p.label.toLowerCase()"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+            <button
+              type="button"
+              (click)="quitar(p.value)"
+              class="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-white"
+              [attr.aria-label]="'Quitar foto de ' + p.label.toLowerCase()"
+            >
+              <i class="pi pi-times text-xs" aria-hidden="true"></i>
+            </button>
+          </div>
+        } @else {
+          <label
+            [for]="idPrefijo() + '-' + p.value"
+            class="aspect-[3/4] rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1.5 cursor-pointer text-gray-500 dark:text-gray-400 hover:border-guerrero-red hover:text-guerrero-red transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-guerrero-red"
+          >
+            @if (procesando() === p.value) {
+              <i class="pi pi-spin pi-spinner text-lg" aria-hidden="true"></i>
+            } @else {
+              <i class="pi pi-camera text-lg" aria-hidden="true"></i>
+            }
+            <span class="text-xs">Agregar</span>
+            <input
+              [id]="idPrefijo() + '-' + p.value"
+              type="file"
+              accept="image/*"
+              class="sr-only"
+              [disabled]="procesando() !== null"
+              (change)="elegir(p.value, $event)"
+            />
+          </label>
+        }
+        <span class="text-xs font-medium text-center text-gray-600 dark:text-gray-300">{{
+          p.label
+        }}</span>
+      </li>
+    }
+  </ul>
+  @if (error()) {
+    <p class="text-xs text-red-600 dark:text-red-400" role="alert">{{ error() }}</p>
+  }
+</div>

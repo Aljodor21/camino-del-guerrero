@@ -92,12 +92,32 @@ class AIService:
             'estatura': f'{usuario.estatura} cm' if usuario.estatura else 'No especificada',
         }
 
-    def generar_plan_nutricional(self, usuario, objetivo):
+    def _proceso(self, usuario, proceso):
+        """Datos del proceso que comparten los prompts de nutrición y rutina."""
+        ultima = usuario.mediciones.first()
+        peso_actual = ultima.peso_kg if ultima else (
+            proceso.medicion_inicial.peso_kg if proceso.medicion_inicial else None)
+        entreno = getattr(proceso, 'entrenamiento', None) if proceso.incluye_entrenamiento else None
+        return {
+            'objetivo':      proceso.get_objetivo_display(),
+            'fase':          proceso.get_fase_display() or 'No definida',
+            'peso_actual':   f'{peso_actual} kg' if peso_actual else 'No registrado',
+            'peso_objetivo': f'{proceso.peso_objetivo} kg' if proceso.peso_objetivo else 'No definido',
+            'entrenamiento': entreno,
+        }
+
+    def generar_plan_nutricional(self, usuario, proceso):
         p = self._perfil(usuario)
+        c = self._proceso(usuario, proceso)
         pref = usuario.preferencias_alimentarias or 'Ninguna'
         nacionalidad = usuario.nacionalidad or 'No especificada'
         region = usuario.region or 'No especificada'
-        es_dia_entreno = f"Los días de entrenamiento son {objetivo.dias_entrenamiento} por semana (distribuidos entre lunes y viernes preferiblemente)."
+        if c['entrenamiento']:
+            frecuencia = f"{c['entrenamiento'].dias_entrenamiento} días por semana"
+            es_dia_entreno = f"Los días de entrenamiento son {c['entrenamiento'].dias_entrenamiento} por semana (distribuidos entre lunes y viernes preferiblemente)."
+        else:
+            frecuencia = 'No registra entrenamiento en la app'
+            es_dia_entreno = 'El atleta no registra entrenamiento en la app: distribuye la energía de forma pareja todos los días.'
         prompt = f"""
 Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxeadores y atletas de combate en Latinoamérica. Tu especialidad es diseñar planes alimentarios basados en la gastronomía local de cada región, usando ingredientes reales que se consiguen en plazas de mercado y tiendas de barrio, no en supermercados de cadena ni restaurantes.
 
@@ -105,13 +125,14 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
 - Sexo: {p['sexo']}
 - Edad: {p['edad']}
 - Estatura: {p['estatura']}
-- Peso actual: {objetivo.peso_inicial} kg
-- Peso objetivo: {objetivo.peso_objetivo if objetivo.peso_objetivo else 'No definido'} kg
-- Objetivo principal: {objetivo.get_objetivo_display()}
+- Peso actual: {c['peso_actual']}
+- Peso objetivo: {c['peso_objetivo']}
+- Objetivo principal: {c['objetivo']}
+- Fase del proceso: {c['fase']}
 - Nacionalidad: {nacionalidad}
 - Región o zona cultural: {region}
 - Restricciones o preferencias alimentarias: {pref}
-- Frecuencia de entrenamiento: {objetivo.dias_entrenamiento} días por semana
+- Frecuencia de entrenamiento: {frecuencia}
 
 ## REGLAS OBLIGATORIAS
 
@@ -133,6 +154,7 @@ Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxea
 - Ganar músculo: superávit de 200-300 kcal, alto en proteína (1.8-2.2 g/kg).
 - Mantener peso: calorías de mantenimiento, balance de macros.
 - Mejorar resistencia: alto en carbohidratos complejos, proteína moderada.
+- Si la fase del proceso es Volumen, el superávit calórico es prioridad; en Definición, el déficit; en Mantenimiento, las calorías de mantenimiento.
 
 ### Estructura diaria
 4. Cada día debe incluir: desayuno, almuerzo, cena y snacks.
@@ -157,7 +179,7 @@ Antes de generar el JSON, verifica mentalmente:
 - ¿Usé alguna verdura prohibida como acelgas, kale, espárragos? Si sí, cámbiala por tomate, zanahoria o habichuela.
 - Si la región no está en la lista curada, ¿usé solo comida genérica colombiana real, sin inventar nombres de platos?
 - ¿Los 7 días tienen variedad (no se repite el mismo plato dos días seguidos)?
-- ¿Las calorías están ajustadas al objetivo "{objetivo.get_objetivo_display()}"?
+- ¿Las calorías están ajustadas al objetivo "{c['objetivo']}" y a la fase "{c['fase']}"?
 
 ## FORMATO DE SALIDA
 Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
@@ -178,7 +200,7 @@ Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
 """
         return self._chat_json(prompt)
 
-    def ajustar_plan_nutricional(self, usuario, objetivo, plan, dia_obj, campo_rechazado):
+    def ajustar_plan_nutricional(self, usuario, proceso, plan, dia_obj, campo_rechazado):
         pref = usuario.preferencias_alimentarias or 'Ninguna'
         region = usuario.region or 'No especificada'
         texto_rechazado = getattr(dia_obj, campo_rechazado)
@@ -215,7 +237,7 @@ El atleta NO quiere volver a comer esto.
 1. Mantén EXACTAMENTE IGUAL, palabra por palabra, cualquier día/campo del plan actual que NO contenga el plato o ingrediente principal rechazado.
 2. Reemplaza el campo rechazado ({campo_rechazado} de {dia_obj.get_dia_semana_display()}) por una opción distinta, típica de la región "{region}", que no se parezca al plato rechazado.
 3. Si el mismo plato o ingrediente principal rechazado aparece en OTRO día o campo, reemplázalo también — no dejes ninguna repetición del plato rechazado en ningún día.
-4. El reemplazo debe seguir las mismas reglas del plan original: porciones exactas (taza, cucharada, unidad, gramos — nada de "al gusto" ni "poquito"), ingredientes de tienda de barrio o plaza de mercado, nada de verduras no típicas (acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha), calorías ajustadas al objetivo "{objetivo.get_objetivo_display()}".
+4. El reemplazo debe seguir las mismas reglas del plan original: porciones exactas (taza, cucharada, unidad, gramos — nada de "al gusto" ni "poquito"), ingredientes de tienda de barrio o plaza de mercado, nada de verduras no típicas (acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha), calorías ajustadas al objetivo "{proceso.get_objetivo_display()}".
 5. Si la región no está entre las conocidas (paisa, costeño, valluno, bogotano, santandereano, llanero), no inventes platos — usa comida genérica colombiana real (sancocho, arroz con pollo, lentejas).
 
 ## VERIFICACIÓN ANTES DE RESPONDER
@@ -505,16 +527,18 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         },
     }
 
-    def generar_rutina(self, usuario, implementos, objetivo):
+    def generar_rutina(self, usuario, implementos, proceso):
         p = self._perfil(usuario)
+        c = self._proceso(usuario, proceso)
+        config = proceso.entrenamiento
         nombres = [i.implemento.nombre for i in implementos] or ['Sin implemento']
         implementos_extra = (getattr(usuario, 'implementos_adicionales', '') or '').strip()
-        nivel = objetivo.get_nivel_actividad_display()
-        dias  = objetivo.dias_entrenamiento
-        duracion = objetivo.duracion_sesion
+        nivel = config.get_nivel_actividad_display()
+        dias  = config.dias_entrenamiento
+        duracion = config.duracion_sesion
         nacionalidad = usuario.nacionalidad or 'No especificada'
         region = usuario.region or 'No especificada'
-        enfoque = getattr(objetivo, 'enfoque_entrenamiento', 'boxeo') or 'boxeo'
+        enfoque = getattr(config, 'enfoque_entrenamiento', 'boxeo') or 'boxeo'
 
         cfg = self._ENFOQUE_CONFIG.get(enfoque, self._ENFOQUE_CONFIG['boxeo'])
 
@@ -536,8 +560,8 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 - Edad: {p['edad']}
 - Estatura: {p['estatura']}
 - Nacionalidad: {nacionalidad} | Región: {region}
-- Objetivo: {objetivo.get_objetivo_display()}
-- Enfoque de entrenamiento: {objetivo.get_enfoque_entrenamiento_display()}
+- Objetivo: {c['objetivo']} (fase: {c['fase']})
+- Enfoque de entrenamiento: {config.get_enfoque_entrenamiento_display()}
 - Nivel: {nivel}
 - Días de entrenamiento por semana: {dias}
 - Duración por sesión: {duracion} minutos
@@ -562,7 +586,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 6. Cada sesión: entre 6 y 8 ejercicios (incluyendo calentamiento y vuelta a la calma).
 7. Nivel {nivel}: {nivel_config}
 
-### Ejercicios permitidos para este enfoque ({objetivo.get_enfoque_entrenamiento_display()})
+### Ejercicios permitidos para este enfoque ({config.get_enfoque_entrenamiento_display()})
 {cfg['ejercicios_permitidos']}
 
 ### Tipos de ejercicio
@@ -589,7 +613,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 - ¿Cada ejercicio tiene "busqueda_media" en inglés?
 - ¿Ningún ejercicio tiene duracion_segundos y repeticiones con valor al mismo tiempo?
 - ¿requiere_implemento es true solo cuando usa un implemento de la lista?
-- ¿El nivel y enfoque ({objetivo.get_enfoque_entrenamiento_display()}) corresponden al perfil?
+- ¿El nivel y enfoque ({config.get_enfoque_entrenamiento_display()}) corresponden al perfil?
 
 ## FORMATO DE SALIDA
 Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:

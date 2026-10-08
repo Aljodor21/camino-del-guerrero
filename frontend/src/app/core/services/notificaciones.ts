@@ -24,9 +24,12 @@ export class NotificacionService {
 
     const frecuencia = usuario.frecuencia_peso ?? 30;
 
-    this.http.get<{ fecha: string }[]>(`${API}/progreso/peso/`).subscribe({
-      next: records => {
-        if (!records.length) { this._recordatorioPeso.set(true); return; }
+    this.http.get<{ fecha: string }[]>(`${API}/progreso/mediciones/`).subscribe({
+      next: (records) => {
+        if (!records.length) {
+          this._recordatorioPeso.set(true);
+          return;
+        }
         const ultima = new Date(records[0].fecha + 'T00:00:00');
         const dias = Math.floor((Date.now() - ultima.getTime()) / (1000 * 60 * 60 * 24));
         this._recordatorioPeso.set(dias >= frecuencia);

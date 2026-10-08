@@ -11,7 +11,9 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../core/services/auth';
-import { Sexo, ObjetivoUsuario, Usuario } from '../core/models/usuario.model';
+import { Sexo, Usuario } from '../core/models/usuario.model';
+import { FRECUENCIAS_PESO } from '../core/constants/proceso';
+import { MiProceso } from './mi-proceso/mi-proceso';
 import { PAISES } from '../core/constants/paises';
 
 import { environment } from '../../environments/environment';
@@ -30,6 +32,7 @@ const API = environment.apiUrl;
     SelectButtonModule,
     ButtonModule,
     MessageModule,
+    MiProceso,
   ],
 })
 export class Perfil implements OnInit {
@@ -40,37 +43,10 @@ export class Perfil implements OnInit {
   protected sexos = signal<Sexo[]>([]);
   protected paisesFiltrados = signal<string[]>([]);
   protected savingPerfil = signal(false);
-  protected savingObjetivo = signal(false);
   protected errorPerfil = signal('');
-  protected errorObjetivo = signal('');
   protected okPerfil = signal(false);
-  protected okObjetivo = signal(false);
 
-  protected readonly objetivoOpciones = [
-    { label: 'Bajar peso', value: 'bajar_peso' },
-    { label: 'Ganar músculo', value: 'ganar_musculo' },
-    { label: 'Mantener', value: 'mantener' },
-    { label: 'Resistencia', value: 'resistencia' },
-  ];
-  protected readonly nivelOpciones = [
-    { label: 'Principiante', value: 'principiante' },
-    { label: 'Intermedio', value: 'intermedio' },
-    { label: 'Avanzado', value: 'avanzado' },
-  ];
-  protected readonly diasOpciones = [
-    { label: '3 días', value: 3 },
-    { label: '4 días', value: 4 },
-    { label: '5 días', value: 5 },
-  ];
-  protected readonly duracionOpciones = [
-    { label: '30 min', value: 30 },
-    { label: '45 min', value: 45 },
-    { label: '60 min', value: 60 },
-  ];
-  protected readonly frecuenciaOpciones = [
-    { label: 'Cada 15 días', value: 15 },
-    { label: 'Cada mes', value: 30 },
-  ];
+  protected readonly frecuenciaOpciones = FRECUENCIAS_PESO;
 
   protected formPerfil = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
@@ -83,15 +59,6 @@ export class Perfil implements OnInit {
     frecuencia_peso: [30 as 15 | 30, Validators.required],
   });
 
-  protected formObjetivo = this.fb.nonNullable.group({
-    objetivo: ['bajar_peso', Validators.required],
-    peso_inicial: [null as unknown as number, [Validators.required, Validators.min(20)]],
-    peso_objetivo: [null as number | null],
-    nivel_actividad: ['principiante', Validators.required],
-    dias_entrenamiento: [3, Validators.required],
-    duracion_sesion: [45, Validators.required],
-  });
-
   ngOnInit(): void {
     this.http.get<Sexo[]>(`${API}/usuarios/sexos/`).subscribe({
       next: (data) => this.sexos.set(data),
@@ -102,18 +69,6 @@ export class Perfil implements OnInit {
   private cargarDatos(): void {
     const u = this.auth.usuario();
     if (u) this.patchPerfil(u);
-
-    this.http.get<ObjetivoUsuario>(`${API}/usuarios/objetivo/activo/`).subscribe({
-      next: (obj) =>
-        this.formObjetivo.patchValue({
-          objetivo: obj.objetivo,
-          peso_inicial: obj.peso_inicial,
-          peso_objetivo: obj.peso_objetivo,
-          nivel_actividad: obj.nivel_actividad,
-          dias_entrenamiento: obj.dias_entrenamiento,
-          duracion_sesion: obj.duracion_sesion,
-        }),
-    });
   }
 
   private patchPerfil(u: Usuario): void {
@@ -150,24 +105,6 @@ export class Perfil implements OnInit {
       this.errorPerfil.set('Error al guardar los datos personales.');
     } finally {
       this.savingPerfil.set(false);
-    }
-  }
-
-  protected async guardarObjetivo(): Promise<void> {
-    if (this.formObjetivo.invalid) return;
-    this.savingObjetivo.set(true);
-    this.errorObjetivo.set('');
-    this.okObjetivo.set(false);
-    try {
-      await firstValueFrom(
-        this.http.patch(`${API}/usuarios/objetivo/activo/`, this.formObjetivo.getRawValue()),
-      );
-      this.okObjetivo.set(true);
-      setTimeout(() => this.okObjetivo.set(false), 3000);
-    } catch {
-      this.errorObjetivo.set('Error al guardar el objetivo.');
-    } finally {
-      this.savingObjetivo.set(false);
     }
   }
 }

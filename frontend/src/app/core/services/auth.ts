@@ -21,17 +21,16 @@ export class AuthService {
   readonly isLoggedIn = computed(() => this._usuario() !== null);
   readonly isAdmin = computed(() => this._usuario()?.rol?.nombre === 'admin');
 
-
   registro(payload: RegistroPayload): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API}/registro/`, payload).pipe(
-      tap(res => this._guardarSesion(res))
-    );
+    return this.http
+      .post<AuthResponse>(`${API}/registro/`, payload)
+      .pipe(tap((res) => this._guardarSesion(res)));
   }
 
   login(payload: LoginPayload): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API}/login/`, payload).pipe(
-      tap(res => this._guardarSesion(res))
-    );
+    return this.http
+      .post<AuthResponse>(`${API}/login/`, payload)
+      .pipe(tap((res) => this._guardarSesion(res)));
   }
 
   logout(): void {
@@ -44,9 +43,9 @@ export class AuthService {
 
   refreshToken(): Observable<{ access: string }> {
     const refresh = localStorage.getItem(REFRESH_KEY);
-    return this.http.post<{ access: string }>(`${API}/token/refresh/`, { refresh }).pipe(
-      tap(res => localStorage.setItem(ACCESS_KEY, res.access))
-    );
+    return this.http
+      .post<{ access: string }>(`${API}/token/refresh/`, { refresh })
+      .pipe(tap((res) => localStorage.setItem(ACCESS_KEY, res.access)));
   }
 
   getAccessToken(): string | null {

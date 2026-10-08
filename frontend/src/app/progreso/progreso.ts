@@ -1,23 +1,27 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
 import { DialogModule } from 'primeng/dialog';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { TextareaModule } from 'primeng/textarea';
-import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { ThemeService } from '../core/services/theme';
 import { AudioService } from '../core/services/audio';
-import { RegistroPeso, RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
+import { RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
+import { ProcesoService } from '../core/services/proceso';
+import { Medidas } from './medidas/medidas';
+import { Agenda } from './agenda/agenda';
+import { ResumenProceso } from './resumen-proceso/resumen-proceso';
+import { AgendaService } from '../core/services/agenda';
 import { Rutina, DiaRutina } from '../core/models/rutina.model';
 import { environment } from '../../environments/environment';
 
 const API = environment.apiUrl;
 const LOCAL_KEY = 'cdg_sesion';
+
+type Seccion = 'medidas' | 'agenda' | 'entrenamiento';
 
 interface EjercicioEnSesion {
   ejercicioDiaId: number;
@@ -43,38 +47,31 @@ interface SesionGuardada {
   templateUrl: './progreso.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule, ButtonModule, ChartModule, DialogModule,
-    InputNumberModule, TextareaModule, MessageModule, ProgressSpinnerModule,
+    ButtonModule, ChartModule, DialogModule, ProgressSpinnerModule, Medidas, Agenda, ResumenProceso,
   ],
 })
 export class Progreso implements OnInit, OnDestroy {
   private http      = inject(HttpClient);
-  private fb        = inject(FormBuilder);
+  private procesos  = inject(ProcesoService);
   private sanitizer = inject(DomSanitizer);
   private theme     = inject(ThemeService);
   private audio     = inject(AudioService);
+  private route     = inject(ActivatedRoute);
+  private agenda    = inject(AgendaService);
 
   protected videoUrl = signal<SafeResourceUrl | null>(null);
-  protected seccion  = signal<'peso' | 'entrenamiento'>('peso');
+  protected seccion  = signal<Seccion>(this.seccionInicial());
+  protected tieneEntrenamiento = computed(() => this.procesos.vigente()?.incluye_entrenamiento ?? false);
+  protected pestanas = computed(() => [
+    { id: 'medidas' as const, label: 'Medidas', icon: 'pi pi-chart-line' },
+    { id: 'agenda' as const, label: 'Agenda', icon: 'pi pi-calendar' },
+    ...(this.tieneEntrenamiento() ? [{ id: 'entrenamiento' as const, label: 'Sesiones', icon: 'pi pi-bolt' }] : []),
+  ]);
 
-  // ── PESO ──────────────────────────────────────────────────────────
-  protected registrosPeso     = signal<RegistroPeso[]>([]);
-  protected loadingPeso       = signal(true);
-  protected savingPeso        = signal(false);
-  protected errorPeso         = signal('');
-  protected dialogPesoVisible = signal(false);
-
-  protected formPeso = this.fb.nonNullable.group({
-    peso_kg: [null as unknown as number, [Validators.required, Validators.min(20), Validators.max(300)]],
-    nota:    [''],
-  });
-
-  protected ultimoPeso = computed(() => this.registrosPeso()[0]?.peso_kg ?? null);
-  protected cambioPeso = computed(() => {
-    const r = this.registrosPeso();
-    if (r.length < 2) return null;
-    return +(r[0].peso_kg - r[r.length - 1].peso_kg).toFixed(1);
-  });
+  private seccionInicial(): Seccion {
+    const pedida = this.route.snapshot.queryParamMap.get('seccion');
+    return pedida === 'agenda' || pedida === 'entrenamiento' ? pedida : 'medidas';
+  }
 
   // ── ENTRENAMIENTO — historial ──────────────────────────────────────
   protected registros            = signal<RegistroEntrenamiento[]>([]);
@@ -126,27 +123,6 @@ export class Progreso implements OnInit, OnDestroy {
     text: this.theme.isDark() ? '#9ca3af' : '#6b7280',
     grid: this.theme.isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
   }));
-
-  protected chartPesoData = computed(() => {
-    const r = [...this.registrosPeso()].reverse();
-    if (r.length < 2) return null;
-    return {
-      labels: r.map(p => new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })),
-      datasets: [{ label: 'Peso (kg)', data: r.map(p => p.peso_kg), borderColor: '#C0392B', backgroundColor: 'rgba(192,57,43,0.08)', pointBackgroundColor: '#C0392B', pointRadius: 5, tension: 0.3, fill: true }],
-    };
-  });
-
-  protected chartPesoOptions = computed(() => {
-    const { text, grid } = this.chartColors();
-    return {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} kg` } } },
-      scales: {
-        x: { ticks: { color: text, font: { size: 11 } }, grid: { color: grid } },
-        y: { ticks: { color: text, font: { size: 11 }, callback: (v: number) => `${v} kg` }, grid: { color: grid } },
-      },
-    };
-  });
 
   protected chartSesionesData = computed(() => {
     const r = [...this.registros()].reverse().slice(0, 10);
@@ -256,7 +232,11 @@ export class Progreso implements OnInit, OnDestroy {
 
   // ── LIFECYCLE ─────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.cargarPeso();
+    this.agenda.cargar().subscribe();
+    if (!this.tieneEntrenamiento()) {
+      if (this.seccion() === 'entrenamiento') this.seccion.set('medidas');
+      return;
+    }
     this.cargarRegistros();
     this.cargarRutina();
     const guardada = this.leerLocal();
@@ -267,29 +247,6 @@ export class Progreso implements OnInit, OnDestroy {
     this.limpiarTimer();
     this.limpiarDescanso();
     this.limpiarTimerSesion();
-  }
-
-  // ── PESO ──────────────────────────────────────────────────────────
-  private cargarPeso(): void {
-    this.http.get<RegistroPeso[]>(`${API}/progreso/peso/`).subscribe({
-      next: data => { this.registrosPeso.set(data); this.loadingPeso.set(false); },
-      error: ()   => this.loadingPeso.set(false),
-    });
-  }
-
-  protected abrirDialogPeso(): void {
-    this.errorPeso.set('');
-    this.formPeso.reset({ peso_kg: null as unknown as number, nota: '' });
-    this.dialogPesoVisible.set(true);
-  }
-
-  protected guardarPeso(): void {
-    if (this.formPeso.invalid) return;
-    this.savingPeso.set(true);
-    this.http.post<RegistroPeso>(`${API}/progreso/peso/`, this.formPeso.getRawValue()).subscribe({
-      next: () => { this.savingPeso.set(false); this.dialogPesoVisible.set(false); this.cargarPeso(); },
-      error: () => { this.errorPeso.set('Error al guardar.'); this.savingPeso.set(false); },
-    });
   }
 
   // ── HISTORIAL ─────────────────────────────────────────────────────

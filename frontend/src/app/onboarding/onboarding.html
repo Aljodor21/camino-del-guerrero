@@ -1,320 +1,768 @@
-<div class="min-h-screen bg-gray-50 dark:bg-dark-900 px-4 py-8">
+<div class="min-h-screen bg-warm-bg dark:bg-dark-900 px-4 py-8">
   <div class="max-w-lg mx-auto space-y-6">
-    <!-- Logo -->
-    <div class="flex justify-center">
+    <div class="flex items-center justify-between">
       <img
         [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
         alt="Camino del Guerrero"
-        class="h-20 w-auto"
+        class="h-14 w-auto"
       />
-    </div>
-
-    <!-- Indicador de pasos -->
-    <div class="flex items-center justify-center gap-2">
-      @for (n of [1, 2, 3]; track n) {
-        <div
-          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-          [class]="
-            n <= paso()
-              ? 'bg-guerrero-red text-white'
-              : 'bg-gray-200 dark:bg-dark-700 text-gray-400'
-          "
+      @if (esNuevoProceso()) {
+        <a
+          routerLink="/perfil"
+          class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-guerrero-red transition-colors"
         >
-          {{ n }}
-        </div>
-        @if (n < 3) {
-          <div
-            class="w-12 h-0.5 transition-colors"
-            [class]="n < paso() ? 'bg-guerrero-red' : 'bg-gray-200 dark:bg-dark-700'"
-          ></div>
-        }
+          Cancelar
+        </a>
       }
     </div>
 
-    <!-- Paso 1: Perfil -->
-    @if (paso() === 1) {
-      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-6 space-y-6">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Cuéntanos sobre ti</h2>
-
-        <form [formGroup]="form" class="space-y-5">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso actual (kg)</label>
-              <p-inputnumber
-                formControlName="peso_inicial"
-                [min]="20"
-                [max]="300"
-                [minFractionDigits]="1"
-                [maxFractionDigits]="1"
-                [showButtons]="false"
-                placeholder="70.0"
-                styleClass="w-full"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso meta (kg)</label>
-              <p-inputnumber
-                formControlName="peso_objetivo"
-                [min]="20"
-                [max]="300"
-                [minFractionDigits]="1"
-                [maxFractionDigits]="1"
-                [showButtons]="false"
-                placeholder="Opcional"
-                styleClass="w-full"
-              />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400"
-              >Estatura (cm)</label
-            >
-            <p-inputnumber
-              formControlName="estatura"
-              [min]="100"
-              [max]="250"
-              [showButtons]="false"
-              placeholder="175"
-              styleClass="w-full"
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Enfoque de entrenamiento</label>
-            <div class="grid grid-cols-1 gap-2">
-              @for (op of enfoqueOpciones; track op.value) {
-                <button
-                  type="button"
-                  (click)="form.controls.enfoque_entrenamiento.setValue(op.value)"
-                  [class]="clasesCard(form.controls.enfoque_entrenamiento.value === op.value)"
-                >
-                  <i [class]="op.icon + ' text-lg shrink-0'"></i>
-                  <div class="flex flex-col items-start">
-                    <span class="text-sm font-medium leading-tight">{{ op.label }}</span>
-                    <span class="text-xs opacity-60 leading-tight">{{ op.desc }}</span>
-                  </div>
-                </button>
-              }
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Tu objetivo</label>
-            <div class="grid grid-cols-2 gap-2">
-              @for (op of objetivoOpciones; track op.value) {
-                <button
-                  type="button"
-                  (click)="form.controls.objetivo.setValue(op.value)"
-                  [class]="clasesCard(form.controls.objetivo.value === op.value)"
-                >
-                  <i [class]="op.icon + ' text-lg'"></i>
-                  <span class="text-sm font-medium">{{ op.label }}</span>
-                </button>
-              }
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Nivel de actividad física</label>
-            <p-selectbutton
-              formControlName="nivel_actividad"
-              [options]="nivelOpciones"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Días por semana</label>
-              <p-selectbutton
-                formControlName="dias_entrenamiento"
-                [options]="diasOpciones"
-                optionLabel="label"
-                optionValue="value"
-                styleClass="w-full"
-              />
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Duración por sesión</label>
-              <p-selectbutton
-                formControlName="duracion_sesion"
-                [options]="duracionOpciones"
-                optionLabel="label"
-                optionValue="value"
-                styleClass="w-full"
-              />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              ¿Cada cuánto registras tu peso?
-            </label>
-            <p-selectbutton
-              formControlName="frecuencia_peso"
-              [options]="frecuenciaOpciones"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Nacionalidad
-              </label>
-              <p-autocomplete
-                formControlName="nacionalidad"
-                [suggestions]="paisesFiltrados()"
-                (completeMethod)="filtrarPaises($event.query)"
-                placeholder="Busca tu país..."
-                [forceSelection]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Región o ciudad
-              </label>
-              <input
-                pInputText
-                formControlName="region"
-                placeholder="Ej: Paisa, Costa, Bogotá..."
-                class="w-full"
-              />
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Restricciones alimentarias
-              <span class="font-normal text-gray-400">(opcional)</span>
-            </label>
-            <input
-              pInputText
-              formControlName="preferencias_alimentarias"
-              placeholder="Ej: sin gluten, vegetariano..."
-              class="w-full"
-            />
-          </div>
-        </form>
-
-        <p-button
-          label="Continuar"
-          icon="pi pi-arrow-right"
-          iconPos="right"
-          [disabled]="!paso1Valido()"
-          (onClick)="siguientePaso()"
-          styleClass="w-full"
-        />
-      </div>
-    }
-
-    <!-- Paso 2: Implementos -->
-    @if (paso() === 2) {
-      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-6 space-y-5">
-        <div>
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">¿Con qué entrenas?</h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Selecciona los implementos que tienes disponibles
-          </p>
-        </div>
-
-        @if (loadingImplementos()) {
-          <div class="flex justify-center py-6">
-            <p-progressspinner styleClass="w-8 h-8" />
-          </div>
-        } @else if (sinImplementos() || implementos().length === 0) {
-          <div class="text-center py-6 space-y-3">
-            <i class="pi pi-exclamation-circle text-3xl text-warning"></i>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              El administrador aún no ha configurado los implementos disponibles. Intenta más tarde.
-            </p>
+    @if (cargando()) {
+      <div class="flex justify-center py-16"><p-progressspinner styleClass="w-10 h-10" /></div>
+    } @else if (enviando() || avisos().length) {
+      <!-- Creando el proceso -->
+      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-8 text-center space-y-5">
+        @if (avisos().length) {
+          <i class="pi pi-info-circle text-3xl text-warning" aria-hidden="true"></i>
+          <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            <p class="font-medium text-gray-900 dark:text-white">Tu proceso quedó creado.</p>
+            @for (aviso of avisos(); track aviso) {
+              <p>{{ aviso }}</p>
+            }
           </div>
           <p-button
-            label="Atrás"
-            icon="pi pi-arrow-left"
-            variant="outlined"
-            (onClick)="anteriorPaso()"
+            label="Continuar"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            (onClick)="continuar()"
             styleClass="w-full"
           />
         } @else {
-          <div class="grid grid-cols-2 gap-2">
-            @for (imp of implementos(); track imp.id) {
-              <button
-                type="button"
-                (click)="toggleImplemento(imp.id)"
-                [class]="clasesCard(isSeleccionado(imp.id))"
-              >
-                <i
-                  [class]="
-                    'pi text-lg ' + (isSeleccionado(imp.id) ? 'pi-check-circle' : 'pi-circle')
-                  "
-                ></i>
-                <span class="text-sm font-medium">{{ imp.nombre }}</span>
-              </button>
+          <p-progressspinner styleClass="w-14 h-14" strokeWidth="4" />
+          <div role="status">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+              {{ generandoRutina() ? 'Preparando tu rutina' : 'Creando tu proceso' }}
+            </h2>
+            @if (generandoRutina()) {
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Esto puede tardar unos segundos.
+              </p>
             }
           </div>
-          <div class="flex flex-col gap-1" [formGroup]="form">
-            <label class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              ¿Tienes algo más? <span class="font-normal text-gray-400">(opcional)</span>
-            </label>
-            <input
-              pInputText
-              formControlName="implementos_adicionales"
-              placeholder="Ej: kettlebell 16 kg, TRX, banco de pesas..."
-              class="w-full"
-            />
-          </div>
+        }
+      </div>
+    } @else if (procesos.programado(); as programado) {
+      <!-- Ya hay uno programado: hay que cancelarlo antes de crear otro -->
+      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-6 space-y-4">
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white">
+          Ya tienes un proceso programado
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          {{ programado.objetivo_nombre }}
+          @if (programado.fase_nombre) {
+            · {{ programado.fase_nombre }}
+          }
+          inicia el {{ formatearFecha(programado.fecha_inicio, 'larga') }}. Para crear otro, primero
+          cancélalo desde tu perfil.
+        </p>
+        <p-button
+          label="Ir a mi perfil"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          routerLink="/perfil"
+          styleClass="w-full"
+        />
+      </div>
+    } @else {
+      <!-- Progreso -->
+      <div class="space-y-2">
+        <div
+          class="flex gap-1.5"
+          role="progressbar"
+          [attr.aria-valuenow]="indice() + 1"
+          aria-valuemin="1"
+          [attr.aria-valuemax]="pasos().length"
+          [attr.aria-label]="'Paso ' + (indice() + 1) + ' de ' + pasos().length"
+        >
+          @for (p of pasos(); track p; let i = $index) {
+            <div
+              class="h-1 flex-1 rounded-full transition-colors"
+              [class]="i <= indice() ? 'bg-guerrero-red' : 'bg-gray-300 dark:bg-dark-700'"
+            ></div>
+          }
+        </div>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+          {{ esNuevoProceso() ? 'Nuevo proceso' : 'Bienvenido' }} · paso {{ indice() + 1 }} de
+          {{ pasos().length }}
+        </p>
+      </div>
 
-          <div class="flex gap-3">
+      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-6 space-y-6">
+        <header>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white text-balance">
+            {{ infoPaso().titulo }}
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ infoPaso().descripcion }}</p>
+        </header>
+
+        @switch (paso()) {
+          <!-- ── Módulos ── -->
+          @case ('modulos') {
+            <div role="radiogroup" aria-label="Módulos del proceso" class="space-y-2">
+              @for (op of modulosOpciones; track op.value) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="modulos() === op.value"
+                  (click)="elegirModulos(op.value)"
+                  [class]="clasesOpcion(modulos() === op.value) + ' !items-start !p-4'"
+                >
+                  <i [class]="op.icon + ' text-xl mt-0.5 shrink-0'" aria-hidden="true"></i>
+                  <span class="flex flex-col items-start gap-0.5">
+                    <span class="font-semibold leading-tight">{{ op.label }}</span>
+                    <span class="text-sm opacity-75 leading-snug">{{ op.desc }}</span>
+                  </span>
+                </button>
+              }
+            </div>
+          }
+
+          <!-- ── Perfil ── -->
+          @case ('perfil') {
+            <form [formGroup]="perfilForm" class="space-y-5" (ngSubmit)="siguiente()">
+              <div class="flex flex-col gap-1">
+                <label
+                  for="ob-estatura"
+                  class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >Estatura (cm)</label
+                >
+                <input
+                  pInputText
+                  appDecimal
+                  id="ob-estatura"
+                  formControlName="estatura"
+                  placeholder="175"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1">
+                  <label for="ob-pais" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                    >Nacionalidad</label
+                  >
+                  <p-autocomplete
+                    inputId="ob-pais"
+                    formControlName="nacionalidad"
+                    [suggestions]="paisesFiltrados()"
+                    (completeMethod)="filtrarPaises($event.query)"
+                    placeholder="Busca tu país"
+                    [forceSelection]="true"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="ob-region"
+                    class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                    >Región o ciudad</label
+                  >
+                  <input
+                    pInputText
+                    id="ob-region"
+                    formControlName="region"
+                    placeholder="Ej: Paisa, Costa, Bogotá"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label
+                  for="ob-restricciones"
+                  class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Restricciones alimentarias
+                  <span class="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <input
+                  pInputText
+                  id="ob-restricciones"
+                  formControlName="preferencias_alimentarias"
+                  placeholder="Ej: sin gluten, vegetariano"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <span
+                  id="ob-frecuencia"
+                  class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  ¿Cada cuánto quieres registrar tu peso?
+                </span>
+                <p-selectbutton
+                  ariaLabelledBy="ob-frecuencia"
+                  formControlName="frecuencia_peso"
+                  [options]="frecuencias"
+                  optionLabel="label"
+                  optionValue="value"
+                  [allowEmpty]="false"
+                  styleClass="w-full"
+                />
+              </div>
+            </form>
+          }
+
+          <!-- ── Objetivo ── -->
+          @case ('objetivo') {
+            <form [formGroup]="objetivoForm" class="space-y-5" (ngSubmit)="siguiente()">
+              <div class="flex flex-col gap-2">
+                <span id="ob-objetivo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >Objetivo</span
+                >
+                <div role="radiogroup" aria-labelledby="ob-objetivo" class="grid grid-cols-2 gap-2">
+                  @for (op of objetivos; track op.value) {
+                    <button
+                      type="button"
+                      role="radio"
+                      [attr.aria-checked]="objetivoForm.controls.objetivo.value === op.value"
+                      (click)="objetivoForm.controls.objetivo.setValue(op.value)"
+                      [class]="clasesOpcion(objetivoForm.controls.objetivo.value === op.value)"
+                    >
+                      <i [class]="op.icon + ' shrink-0'" aria-hidden="true"></i>
+                      <span class="text-sm font-medium">{{ op.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <span id="ob-fase" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >Fase</span
+                >
+                <div role="radiogroup" aria-labelledby="ob-fase" class="grid grid-cols-2 gap-2">
+                  @for (op of fases; track op.value) {
+                    <button
+                      type="button"
+                      role="radio"
+                      [attr.aria-checked]="objetivoForm.controls.fase.value === op.value"
+                      (click)="objetivoForm.controls.fase.setValue(op.value)"
+                      [class]="clasesOpcion(objetivoForm.controls.fase.value === op.value)"
+                    >
+                      <span class="flex flex-col items-start">
+                        <span class="text-sm font-medium leading-tight">{{ op.label }}</span>
+                        <span class="text-xs opacity-70 leading-tight">{{ op.desc }}</span>
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label for="ob-meta" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Peso meta (kg) <span class="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <input
+                  pInputText
+                  appDecimal
+                  id="ob-meta"
+                  formControlName="peso_objetivo"
+                  placeholder="68,0"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label for="ob-notas" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Notas del proceso <span class="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                  pTextarea
+                  id="ob-notas"
+                  formControlName="notas"
+                  rows="2"
+                  placeholder="Ej: volumen con hipercalórico, plan de la nutricionista"
+                  class="w-full resize-none"
+                ></textarea>
+              </div>
+            </form>
+          }
+
+          <!-- ── Entrenamiento ── -->
+          @case ('entrenamiento') {
+            <app-entrenamiento-form [form]="entrenamientoForm" />
+
+            @if (implementos().length > 0) {
+              <div class="flex flex-col gap-2">
+                <span
+                  id="ob-implementos"
+                  class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >¿Con qué entrenas?</span
+                >
+                <div role="group" aria-labelledby="ob-implementos" class="grid grid-cols-2 gap-2">
+                  @for (imp of implementos(); track imp.id) {
+                    <button
+                      type="button"
+                      [attr.aria-pressed]="isSeleccionado(imp.id)"
+                      (click)="toggleImplemento(imp.id)"
+                      [class]="clasesOpcion(isSeleccionado(imp.id))"
+                    >
+                      <i
+                        [class]="
+                          'pi shrink-0 ' +
+                          (isSeleccionado(imp.id) ? 'pi-check-circle' : 'pi-circle')
+                        "
+                        aria-hidden="true"
+                      ></i>
+                      <span class="text-sm font-medium">{{ imp.nombre }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="flex flex-col gap-1">
+              <label for="ob-extra" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                ¿Tienes algo más? <span class="font-normal text-gray-400">(opcional)</span>
+              </label>
+              <input
+                pInputText
+                id="ob-extra"
+                [value]="implementosAdicionales()"
+                (input)="implementosAdicionales.set($any($event.target).value)"
+                placeholder="Ej: kettlebell 16 kg, TRX, banco"
+                class="w-full"
+              />
+            </div>
+          }
+
+          <!-- ── Inicio ── -->
+          @case ('inicio') {
+            <div
+              role="radiogroup"
+              aria-label="Día de inicio"
+              class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+            >
+              @if (puedeIniciarHoy()) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="opcionInicio() === 'hoy'"
+                  (click)="opcionInicio.set('hoy')"
+                  [class]="clasesOpcion(opcionInicio() === 'hoy')"
+                >
+                  <span class="flex flex-col items-start">
+                    <span class="text-sm font-semibold">Hoy</span>
+                    <span class="text-xs opacity-70 first-letter:uppercase">{{
+                      formatearFecha(hoy, 'dia')
+                    }}</span>
+                  </span>
+                </button>
+              }
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="opcionInicio() === 'lunes'"
+                (click)="opcionInicio.set('lunes')"
+                [class]="clasesOpcion(opcionInicio() === 'lunes')"
+              >
+                <span class="flex flex-col items-start">
+                  <span class="text-sm font-semibold">El lunes</span>
+                  <span class="text-xs opacity-70 first-letter:uppercase">{{
+                    formatearFecha(proximoLunes(), 'dia')
+                  }}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="opcionInicio() === 'otra'"
+                (click)="opcionInicio.set('otra')"
+                [class]="clasesOpcion(opcionInicio() === 'otra')"
+              >
+                <span class="flex flex-col items-start">
+                  <span class="text-sm font-semibold">Otra fecha</span>
+                  <span class="text-xs opacity-70">Hasta 60 días</span>
+                </span>
+              </button>
+            </div>
+
+            @if (opcionInicio() === 'otra') {
+              <div class="flex flex-col gap-1">
+                <label for="ob-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >Fecha de inicio</label
+                >
+                <input
+                  pInputText
+                  id="ob-fecha"
+                  type="date"
+                  [min]="fechaMinima()"
+                  [max]="fechaMaxima"
+                  [value]="fechaOtra()"
+                  (change)="fechaOtra.set($any($event.target).value)"
+                  class="w-full"
+                />
+              </div>
+            }
+
+            @if (iniciaHoy()) {
+              <div class="space-y-3">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Tu medición inicial
+                </h2>
+                <app-medicion-form [form]="medicionForm" />
+                <div class="space-y-2 pt-1">
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Fotos de inicio
+                    <span class="ml-1 text-xs font-normal text-gray-400">opcional</span>
+                  </p>
+                  <app-selector-fotos [(fotos)]="fotosIniciales" idPrefijo="inicio-foto" />
+                  <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Te servirán para ver tu cambio. Solo se ven desde tu cuenta.
+                  </p>
+                </div>
+              </div>
+            } @else if (fechaInicio()) {
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                Ese día la app te pedirá tu medición inicial: peso y talla, y si los tienes,
+                perímetros y pliegues.
+              </p>
+            }
+
+            <p class="flex gap-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              <i class="pi pi-lock text-xs mt-0.5 shrink-0" aria-hidden="true"></i>
+              La fecha de inicio y la medición inicial quedan guardadas tal cual. No se podrán
+              modificar después.
+            </p>
+          }
+
+          <!-- ── Duración ── -->
+          @case ('duracion') {
+            <div
+              role="radiogroup"
+              aria-label="Duración del proceso"
+              class="grid grid-cols-1 sm:grid-cols-2 gap-2"
+            >
+              @for (o of opcionesDuracion(); track o.id) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="opcionDuracion() === o.id"
+                  (click)="opcionDuracion.set(o.id)"
+                  [class]="clasesOpcion(opcionDuracion() === o.id)"
+                >
+                  <span class="flex flex-col items-start">
+                    <span class="text-sm font-semibold">{{ o.titulo }}</span>
+                    @if (o.detalle) {
+                      <span class="text-xs opacity-70">{{ o.detalle }}</span>
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+
+            @if (opcionDuracion() === 'control') {
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="ob-control"
+                    class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                    >Fecha del control</label
+                  >
+                  <input
+                    pInputText
+                    id="ob-control"
+                    type="date"
+                    [min]="minimoControl()"
+                    [max]="maximoControl()"
+                    [value]="fechaControl()"
+                    (change)="fechaControl.set($any($event.target).value)"
+                    class="w-full"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="ob-control-hora"
+                    class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                  >
+                    Hora <span class="text-xs font-normal text-gray-400">opcional</span>
+                  </label>
+                  <input
+                    pInputText
+                    id="ob-control-hora"
+                    type="time"
+                    [value]="horaControl()"
+                    (change)="horaControl.set($any($event.target).value)"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                Queda en tu agenda y la app te avisa tres días antes.
+              </p>
+            }
+          }
+
+          <!-- ── Suplementos ── -->
+          @case ('suplementos') {
+            <div class="space-y-3">
+              @for (s of suplementosIniciales(); track s.tipo; let i = $index) {
+                <div
+                  class="rounded-xl border-2 transition-colors"
+                  [class]="
+                    s.activo
+                      ? 'border-guerrero-red'
+                      : 'border-gray-200 dark:border-dark-700'
+                  "
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    [attr.aria-checked]="s.activo"
+                    (click)="cambiarSuplemento(i, { activo: !s.activo })"
+                    class="w-full flex items-center gap-3 p-3 text-left rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+                  >
+                    <span
+                      class="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center"
+                      [class]="
+                        s.activo
+                          ? 'bg-guerrero-red border-guerrero-red text-white'
+                          : 'border-gray-300 dark:border-gray-600'
+                      "
+                    >
+                      @if (s.activo) {
+                        <i class="pi pi-check text-[10px]" aria-hidden="true"></i>
+                      }
+                    </span>
+                    <span class="flex-1">
+                      <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{
+                        nombreTipo(s.tipo)
+                      }}</span>
+                      @if (!s.activo) {
+                        <span class="block text-xs text-gray-500 dark:text-gray-400">
+                          Lo usual: {{ duracionEnPalabras(duracionUsual(s.tipo)) }}
+                        </span>
+                      }
+                    </span>
+                  </button>
+
+                  @if (s.activo) {
+                    <div class="px-3 pb-3 space-y-3">
+                      <div class="space-y-2">
+                        <p
+                          [id]="'ob-sup-conf-' + s.tipo"
+                          class="text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          {{ supuesto(s.tipo) }} ¿Así te lo indicó tu nutricionista?
+                        </p>
+                        <div
+                          role="radiogroup"
+                          [attr.aria-labelledby]="'ob-sup-conf-' + s.tipo"
+                          class="grid grid-cols-3 gap-2"
+                        >
+                          @for (c of confirmaciones; track c.value) {
+                            <button
+                              type="button"
+                              role="radio"
+                              [attr.aria-checked]="s.confirmacion === c.value"
+                              (click)="cambiarSuplemento(i, { confirmacion: c.value })"
+                              [class]="clasesChip(s.confirmacion === c.value)"
+                            >
+                              {{ c.label }}
+                            </button>
+                          }
+                        </div>
+                        @if (s.confirmacion === 'nose') {
+                          <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Lo dejamos en tu agenda para que lo confirmes en tu control.
+                          </p>
+                        }
+                      </div>
+
+                      @if (s.confirmacion === 'otro') {
+                        <div
+                          role="radiogroup"
+                          [attr.aria-label]="'Duración de ' + nombreTipo(s.tipo)"
+                          class="flex flex-wrap gap-2"
+                        >
+                          @for (d of otrasDuraciones(s.tipo); track d.label) {
+                            <button
+                              type="button"
+                              role="radio"
+                              [attr.aria-checked]="s.duracion === d.value"
+                              (click)="cambiarSuplemento(i, { duracion: d.value })"
+                              [class]="clasesChip(s.duracion === d.value)"
+                            >
+                              {{ d.label }}
+                            </button>
+                          }
+                        </div>
+                      }
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col gap-1">
+                          <label
+                            [for]="'ob-sup-envase-' + s.tipo"
+                            class="text-xs font-medium text-gray-600 dark:text-gray-400"
+                            >Porciones del envase</label
+                          >
+                          <input
+                            pInputText
+                            [id]="'ob-sup-envase-' + s.tipo"
+                            inputmode="numeric"
+                            placeholder="Ej. 30"
+                            [value]="s.porcionesEnvase ?? ''"
+                            (change)="
+                              cambiarSuplemento(i, {
+                                porcionesEnvase: leerPorciones($any($event.target).value),
+                              })
+                            "
+                            class="w-full"
+                          />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                          <label
+                            [for]="'ob-sup-dia-' + s.tipo"
+                            class="text-xs font-medium text-gray-600 dark:text-gray-400"
+                            >Porciones al día</label
+                          >
+                          <input
+                            pInputText
+                            [id]="'ob-sup-dia-' + s.tipo"
+                            inputmode="decimal"
+                            [value]="s.porcionesDia ?? ''"
+                            (change)="
+                              cambiarSuplemento(i, {
+                                porcionesDia: leerPorciones($any($event.target).value),
+                              })
+                            "
+                            class="w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Confirmar ── -->
+          @case ('confirmar') {
+            @let r = resumen();
+            <dl class="divide-y divide-gray-200 dark:divide-dark-700 text-sm">
+              <div class="flex justify-between gap-4 py-2.5">
+                <dt class="text-gray-500 dark:text-gray-400">Módulos</dt>
+                <dd class="font-medium text-gray-900 dark:text-white text-right">
+                  {{ r.modulos }}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-4 py-2.5">
+                <dt class="text-gray-500 dark:text-gray-400">Objetivo</dt>
+                <dd class="font-medium text-gray-900 dark:text-white text-right">
+                  {{ r.objetivo }}
+                  @if (r.fase) {
+                    · {{ r.fase }}
+                  }
+                </dd>
+              </div>
+              @if (r.pesoObjetivo) {
+                <div class="flex justify-between gap-4 py-2.5">
+                  <dt class="text-gray-500 dark:text-gray-400">Peso meta</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white tabular-nums">
+                    {{ num(r.pesoObjetivo, 1) }} kg
+                  </dd>
+                </div>
+              }
+              @if (r.notas) {
+                <div class="flex justify-between gap-4 py-2.5">
+                  <dt class="text-gray-500 dark:text-gray-400 shrink-0">Notas</dt>
+                  <dd class="text-gray-900 dark:text-white text-right">{{ r.notas }}</dd>
+                </div>
+              }
+              <div class="flex justify-between gap-4 py-2.5">
+                <dt class="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <i class="pi pi-lock text-xs" aria-hidden="true"></i> Inicio
+                </dt>
+                <dd
+                  class="font-medium text-gray-900 dark:text-white text-right first-letter:uppercase"
+                >
+                  {{ formatearFecha(fechaInicio(), 'larga') }}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-4 py-2.5">
+                <dt class="text-gray-500 dark:text-gray-400">Va hasta</dt>
+                <dd
+                  class="font-medium text-gray-900 dark:text-white text-right first-letter:uppercase"
+                >
+                  @if (fechaFinPlan(); as fin) {
+                    {{ formatearFecha(fin, 'larga') }}
+                    @if (opcionDuracion() === 'control') {
+                      <span class="block text-xs font-normal text-gray-500 dark:text-gray-400"
+                        >Tu próximo control</span
+                      >
+                    }
+                  } @else {
+                    Sin definir
+                  }
+                </dd>
+              </div>
+              @if (resumenSuplementos().length) {
+                <div class="flex justify-between gap-4 py-2.5">
+                  <dt class="text-gray-500 dark:text-gray-400 shrink-0">Suplementos</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white text-right">
+                    @for (linea of resumenSuplementos(); track linea) {
+                      <span class="block">{{ linea }}</span>
+                    }
+                  </dd>
+                </div>
+              }
+              <div class="flex justify-between gap-4 py-2.5">
+                <dt class="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <i class="pi pi-lock text-xs" aria-hidden="true"></i> Peso inicial
+                </dt>
+                <dd class="font-medium text-gray-900 dark:text-white tabular-nums">
+                  {{ iniciaHoy() ? num(pesoInicial()) + ' kg' : 'Se registra ese día' }}
+                </dd>
+              </div>
+            </dl>
+
+            @if (procesos.actual(); as actual) {
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                Tu proceso actual ({{ actual.objetivo_nombre }}) se cerrará el día anterior. Su
+                historial queda guardado.
+              </p>
+            }
+          }
+        }
+
+        @if (error()) {
+          <p-message severity="error" [text]="error()" styleClass="w-full" />
+        }
+
+        <div class="flex gap-3">
+          @if (indice() > 0) {
             <p-button
               label="Atrás"
               icon="pi pi-arrow-left"
               variant="outlined"
-              (onClick)="anteriorPaso()"
-              styleClass="flex-1"
+              severity="secondary"
+              (onClick)="anterior()"
+              class="flex-1"
+              styleClass="w-full"
             />
-            <p-button
-              label="Generar mi plan"
-              icon="pi pi-bolt"
-              iconPos="right"
-              [disabled]="seleccionados().length === 0"
-              (onClick)="siguientePaso()"
-              styleClass="flex-1"
-            />
-          </div>
-        }
-      </div>
-    }
-
-    <!-- Paso 3: Generando -->
-    @if (paso() === 3) {
-      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-8 text-center space-y-6">
-        @if (!error()) {
-          <p-progressspinner styleClass="w-16 h-16" />
-          <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Preparando tu plan...</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              La IA está creando tu rutina y plan nutricional personalizado. Esto puede tardar unos
-              segundos.
-            </p>
-          </div>
-        } @else {
-          <i class="pi pi-exclamation-triangle text-4xl text-warning"></i>
-          <p-message severity="error" [text]="error()" styleClass="w-full text-left" />
+          }
           <p-button
-            label="Volver atrás"
-            icon="pi pi-arrow-left"
-            variant="outlined"
-            (onClick)="anteriorPaso()"
+            [label]="esUltimo() ? (iniciaHoy() ? 'Iniciar' : 'Programar') : 'Continuar'"
+            [icon]="esUltimo() ? 'pi pi-check' : 'pi pi-arrow-right'"
+            iconPos="right"
+            [disabled]="!pasoValido()"
+            (onClick)="siguiente()"
+            class="flex-1"
+            styleClass="w-full"
           />
-        }
+        </div>
       </div>
     }
   </div>

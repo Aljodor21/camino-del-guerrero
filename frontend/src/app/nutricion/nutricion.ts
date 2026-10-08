@@ -67,9 +67,9 @@ export class Nutricion implements OnInit {
   );
 
   protected mensajeOverlay = computed(() => {
-    if (this.loadingRechazo()) return 'Ajustando tu plan con IA...';
-    if (this.loadingRegenerar()) return 'Generando tu plan nutricional con IA...';
-    if (this.loadingLista()) return 'Generando tu lista de mercado con IA...';
+    if (this.loadingRechazo()) return 'Ajustando tu plan…';
+    if (this.loadingRegenerar()) return 'Generando tu plan nutricional…';
+    if (this.loadingLista()) return 'Generando tu lista de mercado…';
     return '';
   });
 

@@ -1,0 +1,365 @@
+<div class="space-y-4">
+  <div class="flex items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Medidas</h1>
+    @if (procesos.medicionInicialPendiente()) {
+      <p-button icon="pi pi-flag" label="Medición inicial" (onClick)="abrir('inicial')" />
+    } @else {
+      <p-button icon="pi pi-plus" label="Registrar" (onClick)="abrir('nueva')" />
+    }
+  </div>
+
+  @if (error() && !modo()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12"><p-progressspinner styleClass="w-10 h-10" /></div>
+  } @else if (mediciones().length === 0) {
+    <div class="text-center py-12 px-6 space-y-2">
+      <i class="pi pi-chart-line text-4xl text-gray-300 dark:text-gray-600" aria-hidden="true"></i>
+      <p class="text-sm text-gray-600 dark:text-gray-300">Aún no tienes mediciones.</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Registra tu peso y talla para seguir tu progreso.
+      </p>
+    </div>
+  } @else {
+    @if (ultima(); as u) {
+      <dl
+        class="grid grid-cols-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm divide-x divide-gray-200 dark:divide-dark-700"
+      >
+        <div class="p-4">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Peso actual</dt>
+          <dd class="text-xl font-bold text-gray-900 dark:text-white tabular-nums mt-0.5">
+            {{ num(u.peso_kg) }}<span class="text-sm font-normal text-gray-500"> kg</span>
+          </dd>
+        </div>
+        <div class="p-4">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">IMC</dt>
+          <dd class="text-xl font-bold text-gray-900 dark:text-white tabular-nums mt-0.5">
+            {{ num(u.imc) }}
+          </dd>
+        </div>
+        <div class="p-4">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">Desde el inicio</dt>
+          <dd class="text-xl font-bold tabular-nums mt-0.5" [class]="tonoCambio()">
+            @if (cambio() !== null) {
+              {{ cambio()! > 0 ? '+' : '' }}{{ num(cambio())
+              }}<span class="text-sm font-normal"> kg</span>
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+      </dl>
+    }
+
+    @if (inicialSinFotos(); as inicial) {
+      <div
+        class="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 p-4"
+      >
+        <i class="pi pi-camera text-amber-700 dark:text-amber-300" aria-hidden="true"></i>
+        <p class="flex-1 text-sm text-amber-900 dark:text-amber-200 leading-snug">
+          Agrega las fotos de tu inicio para ver tu cambio.
+          @if (inicial.fotos_hasta) {
+            <span class="block text-xs text-amber-800/80 dark:text-amber-300/80"
+              >Puedes hacerlo hasta el {{ formatearFecha(inicial.fotos_hasta, 'larga') }}.</span
+            >
+          }
+        </p>
+        <p-button label="Agregar" size="small" (onClick)="abrirFotos(inicial)" />
+      </div>
+    }
+
+    <app-comparar-fotos [mediciones]="mediciones()" (ampliar)="ampliada.set($event)" />
+
+    @if (chartData()) {
+      <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
+        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          Evolución del peso
+        </p>
+        <div class="h-52">
+          <p-chart type="line" [data]="chartData()" [options]="chartOptions()" />
+        </div>
+      </div>
+    }
+
+    <ul class="space-y-2">
+      @for (m of mediciones(); track m.id) {
+        <li class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
+          <div class="text-center min-w-14">
+            <p class="text-lg font-bold text-guerrero-red tabular-nums">{{ num(m.peso_kg) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">kg</p>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2 flex-wrap"
+            >
+              {{ formatearFecha(m.fecha) }}
+              @if (m.es_inicial) {
+                <span
+                  class="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 rounded-full px-2 py-0.5"
+                >
+                  <i class="pi pi-lock text-[10px]" aria-hidden="true"></i> Inicial
+                </span>
+              }
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+              @if (m.imc) {
+                IMC {{ num(m.imc) }} ·
+              }
+              @if (m.cintura_cm) {
+                cintura {{ num(m.cintura_cm, 1) }} cm ·
+              }
+              {{ m.origen === 'profesional' ? 'profesional' : 'por ti' }}
+              @if (m.nota) {
+                · {{ m.nota }}
+              }
+            </p>
+          </div>
+          @if (m.fotos.length || m.admite_fotos) {
+            <button
+              type="button"
+              (click)="abrirFotos(m)"
+              class="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+              [attr.aria-label]="
+                m.fotos.length ? 'Ver fotos (' + m.fotos.length + ')' : 'Agregar fotos'
+              "
+            >
+              <i class="pi pi-camera" aria-hidden="true"></i>
+              @if (m.fotos.length) {
+                <span class="tabular-nums">{{ m.fotos.length }}</span>
+              } @else {
+                <i class="pi pi-plus text-[10px]" aria-hidden="true"></i>
+              }
+            </button>
+          }
+          @if (!m.es_inicial) {
+            @if (confirmarEliminar() === m.id) {
+              <div class="flex items-center gap-1 shrink-0">
+                <p-button label="Eliminar" severity="danger" size="small" (onClick)="eliminar(m)" />
+                <p-button
+                  icon="pi pi-times"
+                  variant="text"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="No eliminar"
+                  (onClick)="confirmarEliminar.set(null)"
+                />
+              </div>
+            } @else {
+              <p-button
+                icon="pi pi-trash"
+                variant="text"
+                severity="secondary"
+                [rounded]="true"
+                ariaLabel="Eliminar medición"
+                (onClick)="confirmarEliminar.set(m.id)"
+              />
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+<p-dialog
+  [header]="modo() === 'inicial' ? 'Medición inicial' : 'Registrar medición'"
+  [visible]="modo() !== null"
+  (visibleChange)="!$event && cerrar()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '92vw', maxWidth: '520px' }"
+>
+  <div class="space-y-4 pt-1">
+    @if (modo() === 'inicial') {
+      <p class="flex gap-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        <i class="pi pi-lock text-xs mt-1 shrink-0" aria-hidden="true"></i>
+        Es el punto de partida de tu proceso. Queda guardada con la fecha de hoy y no se podrá
+        modificar.
+      </p>
+    }
+    <app-medicion-form [form]="form" [conFecha]="modo() === 'nueva'" />
+    <div class="space-y-2">
+      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Fotos <span class="ml-1 text-xs font-normal text-gray-400">opcional</span>
+      </p>
+      <app-selector-fotos [(fotos)]="fotosNuevas" idPrefijo="registro-foto" />
+      <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+        Para comparar bien: mismo lugar, misma luz y misma distancia. Solo se ven desde tu cuenta.
+      </p>
+    </div>
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full" />
+    }
+    <div class="flex gap-3">
+      <p-button
+        label="Cancelar"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="cerrar()"
+        class="flex-1"
+        styleClass="w-full"
+      />
+      <p-button
+        label="Guardar"
+        icon="pi pi-check"
+        [loading]="guardando()"
+        [disabled]="form.invalid"
+        (onClick)="guardar()"
+        class="flex-1"
+        styleClass="w-full"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<p-dialog
+  [header]="medicionFotos() ? 'Fotos · ' + formatearFecha(medicionFotos()!.fecha) : 'Fotos'"
+  [visible]="verFotosDe() !== null"
+  (visibleChange)="!$event && cerrarFotos()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '92vw', maxWidth: '520px' }"
+>
+  @if (medicionFotos(); as m) {
+    <div class="space-y-4 pt-1">
+      @if (m.fotos.length) {
+        <ul class="grid grid-cols-3 gap-2">
+          @for (f of m.fotos; track f.id) {
+            <li class="flex flex-col gap-1">
+              <button
+                type="button"
+                class="block rounded-lg overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+                (click)="ampliada.set({ foto: f, medicion: m })"
+                [attr.aria-label]="'Ampliar foto de ' + nombrePose(f.pose).toLowerCase()"
+              >
+                <app-foto
+                  [fotoId]="f.id"
+                  [alt]="'Foto de ' + nombrePose(f.pose).toLowerCase()"
+                  class="aspect-[3/4]"
+                />
+              </button>
+              <div class="flex items-center justify-between gap-1 min-h-8">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{
+                  nombrePose(f.pose)
+                }}</span>
+                @if (m.es_inicial) {
+                  <i
+                    class="pi pi-lock text-[10px] text-amber-700 dark:text-amber-300"
+                    aria-label="Foto de inicio, no se puede eliminar"
+                  ></i>
+                } @else if (confirmarEliminarFoto() === f.id) {
+                  <button
+                    type="button"
+                    (click)="eliminarFoto(f)"
+                    class="text-xs font-semibold text-red-600 dark:text-red-400 px-1.5 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40"
+                  >
+                    Eliminar
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="confirmarEliminarFoto.set(f.id)"
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700"
+                    [attr.aria-label]="'Eliminar foto de ' + nombrePose(f.pose).toLowerCase()"
+                  >
+                    <i class="pi pi-trash text-xs" aria-hidden="true"></i>
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (posesLibres().length) {
+        <div class="space-y-2">
+          @if (m.fotos.length) {
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Agregar</p>
+          }
+          <app-selector-fotos
+            [(fotos)]="fotosAgregar"
+            [poses]="posesLibres()"
+            idPrefijo="agregar-foto"
+          />
+          @if (m.es_inicial && m.fotos_hasta) {
+            <p class="flex gap-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              <i class="pi pi-lock text-xs mt-0.5 shrink-0" aria-hidden="true"></i>
+              Son las fotos de tu punto de partida: puedes completarlas hasta el
+              {{ formatearFecha(m.fotos_hasta, 'larga') }} y no se podrán eliminar.
+            </p>
+          } @else {
+            <p class="text-xs text-gray-500 dark:text-gray-400">Solo se ven desde tu cuenta.</p>
+          }
+        </div>
+      } @else if (!m.fotos.length) {
+        <p class="text-sm text-gray-500 dark:text-gray-400">Esta medición no tiene fotos.</p>
+      }
+
+      @if (errorFotos()) {
+        <p-message severity="error" [text]="errorFotos()" styleClass="w-full" />
+      }
+
+      @if (posesLibres().length) {
+        <div class="flex gap-3">
+          <p-button
+            label="Cerrar"
+            variant="outlined"
+            severity="secondary"
+            (onClick)="cerrarFotos()"
+            class="flex-1"
+            styleClass="w-full"
+          />
+          <p-button
+            label="Subir fotos"
+            icon="pi pi-upload"
+            [loading]="subiendoFotos()"
+            [disabled]="!hayFotosAgregar()"
+            (onClick)="subirFotos()"
+            class="flex-1"
+            styleClass="w-full"
+          />
+        </div>
+      }
+    </div>
+  }
+</p-dialog>
+
+<p-dialog
+  [header]="
+    ampliada()
+      ? nombrePose(ampliada()!.foto.pose) + ' · ' + formatearFecha(ampliada()!.medicion.fecha)
+      : ''
+  "
+  [visible]="ampliada() !== null"
+  (visibleChange)="!$event && ampliada.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '96vw', maxWidth: '640px' }"
+>
+  @if (ampliada(); as a) {
+    <app-foto
+      [fotoId]="a.foto.id"
+      tamano="completa"
+      ajuste="object-contain"
+      [alt]="
+        'Foto de ' +
+        nombrePose(a.foto.pose).toLowerCase() +
+        ' del ' +
+        formatearFecha(a.medicion.fecha)
+      "
+      class="rounded-lg h-[70vh]"
+    />
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300 tabular-nums">
+      {{ num(a.medicion.peso_kg) }} kg
+      @if (a.medicion.imc) {
+        · IMC {{ num(a.medicion.imc) }}
+      }
+      @if (a.medicion.es_inicial) {
+        · <span class="text-amber-800 dark:text-amber-300">Inicio</span>
+      }
+    </p>
+  }
+</p-dialog>

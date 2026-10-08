@@ -4,7 +4,7 @@ import Lara from '@primeuix/themes/lara';
 export const GuerreroPreset = definePreset(Lara, {
   semantic: {
     primary: {
-      50:  '#fdf2f1',
+      50: '#fdf2f1',
       100: '#fbe5e3',
       200: '#f6cbc8',
       300: '#f0a7a3',
@@ -19,8 +19,8 @@ export const GuerreroPreset = definePreset(Lara, {
     colorScheme: {
       light: {
         surface: {
-          0:   '#ffffff',
-          50:  '#f5f5f5',
+          0: '#ffffff',
+          50: '#f5f5f5',
           100: '#e8e8e8',
           200: '#d4d4d4',
           300: '#b0b0b0',
@@ -35,8 +35,8 @@ export const GuerreroPreset = definePreset(Lara, {
       },
       dark: {
         surface: {
-          0:   '#ffffff',
-          50:  '#2d2d2d',
+          0: '#ffffff',
+          50: '#2d2d2d',
           100: '#272727',
           200: '#222222',
           300: '#1e1e1e',

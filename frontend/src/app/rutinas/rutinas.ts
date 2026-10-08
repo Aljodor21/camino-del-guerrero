@@ -1,6 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
@@ -23,7 +22,6 @@ const API = environment.apiUrl;
 })
 export class Rutinas implements OnInit {
   private http      = inject(HttpClient);
-  private router    = inject(Router);
   private sanitizer = inject(DomSanitizer);
 
   protected videoUrl = signal<SafeResourceUrl | null>(null);
@@ -145,10 +143,6 @@ export class Rutinas implements OnInit {
 
   protected formatDuracion(segundos: number): string {
     return segundos >= 60 ? `${Math.floor(segundos / 60)} min` : `${segundos} seg`;
-  }
-
-  protected irOnboarding(): void {
-    this.router.navigate(['/onboarding']);
   }
 
   protected verVideo(url: string): void {

@@ -24,18 +24,6 @@ export interface Usuario {
   date_joined: string;
 }
 
-export interface ObjetivoUsuario {
-  id: number;
-  objetivo: 'bajar_peso' | 'ganar_musculo' | 'mantener' | 'resistencia';
-  peso_inicial: number;
-  peso_objetivo: number | null;
-  nivel_actividad: 'principiante' | 'intermedio' | 'avanzado';
-  dias_entrenamiento: 3 | 4 | 5;
-  duracion_sesion: 30 | 45 | 60;
-  fecha_inicio: string;
-  activo: boolean;
-}
-
 export interface AuthResponse {
   access: string;
   refresh: string;

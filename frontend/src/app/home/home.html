@@ -26,7 +26,7 @@
 
         @if (auth.isLoggedIn()) {
           <!-- Ya tiene sesión -->
-          <a [routerLink]="['/rutinas']"
+          <a [routerLink]="['/inicio']"
              class="text-sm font-semibold bg-guerrero-red hover:bg-guerrero-red-dark text-white px-4 py-2 rounded-lg transition-colors">
             Ir al dashboard
           </a>
@@ -101,7 +101,7 @@
 
       @if (auth.isLoggedIn()) {
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a [routerLink]="['/rutinas']"
+          <a [routerLink]="['/inicio']"
              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-base px-8 py-4 rounded-xl transition-all shadow-lg shadow-guerrero-red/20 hover:shadow-guerrero-red/40">
             <i class="pi pi-bolt"></i>
             Ir a mi dashboard
@@ -361,7 +361,7 @@
         Regístrate en dos minutos. Sin tarjeta. Sin compromisos.
       </p>
       @if (auth.isLoggedIn()) {
-        <a [routerLink]="['/rutinas']"
+        <a [routerLink]="['/inicio']"
            class="inline-flex items-center gap-2 bg-guerrero-red hover:bg-guerrero-red-dark text-white font-bold text-lg px-10 py-5 rounded-xl transition-all shadow-xl shadow-guerrero-red/25 hover:shadow-guerrero-red/45">
           <i class="pi pi-bolt"></i>
           Ir a mi dashboard
@@ -391,7 +391,7 @@
       </p>
       <div class="flex items-center gap-4">
         @if (auth.isLoggedIn()) {
-          <a [routerLink]="['/rutinas']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Dashboard</a>
+          <a [routerLink]="['/inicio']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Dashboard</a>
           <button (click)="auth.logout()" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Cerrar sesión</button>
         } @else {
           <a [routerLink]="['/auth/login']" class="text-xs text-gray-400 hover:text-guerrero-red transition-colors">Iniciar sesión</a>

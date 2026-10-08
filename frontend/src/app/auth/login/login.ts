@@ -36,7 +36,7 @@ export class Login {
     this.error.set('');
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate([this.auth.isAdmin() ? '/admin/implementos' : '/rutinas']),
+      next: () => this.router.navigate(['/inicio']),
       error: () => {
         this.error.set('Correo o contraseña incorrectos.');
         this.loading.set(false);
