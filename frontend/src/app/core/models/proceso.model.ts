@@ -65,8 +65,12 @@ export interface Proceso {
   incluye_entrenamiento: boolean;
   fecha_inicio: string;
   fecha_fin: string | null;
-  /** Hasta cuándo está pensado el proceso; se puede ajustar. */
+  /** La fecha de control: fija una vez puesta; solo cambia al llegar el control o con un plan nuevo. */
   fecha_fin_plan: string | null;
+  /** Ya llegó la fecha de control: toca preguntar si sigue o cambia. */
+  plan_terminado: boolean;
+  /** Fechas meta anteriores. */
+  renovaciones: { hasta: string; cambiada_el: string }[];
   estado: EstadoProceso;
   medicion_inicial: Medicion | null;
   entrenamiento: ConfigEntrenamiento | null;

@@ -55,8 +55,44 @@ export class SuplementoService {
     return this.conAgenda(this.http.post<Suplemento>(`${API}/${id}/${accion}/`, datos));
   }
 
+  /** Sube la foto o el PDF de la etiqueta (reemplaza al anterior). */
+  subirInfo(id: number, archivo: File): Observable<Suplemento> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    return this.recargando(this.http.post<Suplemento>(`${API}/${id}/info/`, cuerpo));
+  }
+
+  quitarInfo(id: number): Observable<Suplemento> {
+    return this.recargando(this.http.delete<Suplemento>(`${API}/${id}/info/`));
+  }
+
+  /** El archivo es privado: se pide con el token. */
+  verInfo(id: number): Observable<Blob> {
+    return this.http.get(`${API}/${id}/info/`, { responseType: 'blob' });
+  }
+
+  /** Sube la foto del producto (reemplaza a la anterior). */
+  subirFoto(id: number, archivo: File): Observable<Suplemento> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    return this.recargando(this.http.post<Suplemento>(`${API}/${id}/foto/`, cuerpo));
+  }
+
+  quitarFoto(id: number): Observable<Suplemento> {
+    return this.recargando(this.http.delete<Suplemento>(`${API}/${id}/foto/`));
+  }
+
+  /** La foto es privada: se pide con el token. */
+  verFoto(id: number): Observable<Blob> {
+    return this.http.get(`${API}/${id}/foto/`, { responseType: 'blob' });
+  }
+
   eliminar(id: number): Observable<void> {
     return this.conAgenda(this.http.delete<void>(`${API}/${id}/`));
+  }
+
+  private recargando(peticion: Observable<Suplemento>): Observable<Suplemento> {
+    return peticion.pipe(switchMap((s) => this.cargar().pipe(map(() => s))));
   }
 
   /** Recarga la lista (una acción puede tocar dos suplementos) y la agenda. */

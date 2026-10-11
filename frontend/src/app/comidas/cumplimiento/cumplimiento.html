@@ -1,0 +1,169 @@
+<div class="p-4 max-w-2xl mx-auto space-y-4">
+  <app-portada
+    foto="progreso"
+    titulo="Cumplimiento"
+    subtitulo="Lo que comes frente a lo que pidió tu nutricionista."
+  />
+
+  @if (recienContada(); as t) {
+    <p-message
+      severity="success"
+      [text]="'Listo, guardamos tu ' + tiempos[t].label.toLowerCase() + '.'"
+      styleClass="w-full"
+    />
+  }
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Periodo">
+    @for (p of periodos; track p.id) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="periodo() === p.id"
+        [class]="clasesChip(periodo() === p.id)"
+        (click)="elegir(p.id)"
+      >
+        {{ p.label }}
+      </button>
+    }
+  </div>
+
+  @if (cargando() && !datos()) {
+    <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Calculando…</p>
+  } @else if (datos(); as d) {
+    <section
+      aria-labelledby="cu-torta"
+      class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4"
+      [class.opacity-60]="cargando()"
+    >
+      <h2 id="cu-torta" class="sr-only">Cumplimiento de tu plan</h2>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        <figure class="relative w-44 h-44 shrink-0 mx-auto sm:mx-0" aria-describedby="cu-mensaje">
+          <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90" role="img"
+            [attr.aria-label]="d.porcentaje === null ? 'Sin comidas contadas' : 'Cumples al ' + d.porcentaje + ' por ciento'">
+            <circle cx="50" cy="50" [attr.r]="radio" fill="none" stroke-width="14"
+              class="stroke-gray-200 dark:stroke-dark-700" />
+            @if (d.porcentaje !== null && d.porcentaje < 100) {
+              <circle cx="50" cy="50" [attr.r]="radio" fill="none" stroke-width="14"
+                class="stroke-guerrero-red/70" />
+            }
+            @if (d.porcentaje !== null) {
+              <circle cx="50" cy="50" [attr.r]="radio" fill="none" stroke-width="14"
+                class="stroke-green-600 transition-[stroke-dasharray] duration-700 motion-reduce:transition-none"
+                [attr.stroke-dasharray]="trazoCumplido() + ' ' + perimetro" />
+            }
+          </svg>
+          <figcaption class="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span class="text-4xl font-bold tabular-nums" [class]="tono()">
+              {{ d.porcentaje === null ? '—' : d.porcentaje + '%' }}
+            </span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">cumplido</span>
+          </figcaption>
+        </figure>
+
+        <div class="space-y-3 flex-1 min-w-0">
+          <p id="cu-mensaje" class="text-sm text-gray-800 dark:text-gray-100">{{ d.mensaje }}</p>
+          @if (d.porcentaje !== null) {
+            <ul class="text-sm space-y-1">
+              <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <span class="w-3 h-3 rounded-sm bg-green-600" aria-hidden="true"></span>
+                Comiste {{ num(d.porciones_comidas, 1) }} de {{ num(d.porciones_pedidas, 1) }} porciones del plan
+              </li>
+              @if (faltoPorciones() > 0) {
+                <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <span class="w-3 h-3 rounded-sm bg-guerrero-red/70" aria-hidden="true"></span>
+                  Faltaron {{ num(faltoPorciones(), 1) }} {{ faltoPorciones() === 1 ? 'porción' : 'porciones' }}
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (d.faltantes.length) {
+      <section aria-labelledby="cu-falto" class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <h2 id="cu-falto" class="font-semibold text-gray-900 dark:text-white">Lo que hizo falta</h2>
+        <ul class="space-y-3">
+          @for (g of d.por_grupo; track g.grupo) {
+            @if (g.comido < g.pedido) {
+              <li class="space-y-1">
+                <div class="flex items-baseline justify-between gap-3 text-sm">
+                  <span class="text-gray-800 dark:text-gray-100">{{ grupos[g.grupo] }}</span>
+                  <span class="tabular-nums text-gray-600 dark:text-gray-300">
+                    {{ num(g.comido, 1) }} de {{ num(g.pedido, 1) }}
+                  </span>
+                </div>
+                <div class="h-1.5 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden" aria-hidden="true">
+                  <div class="h-full bg-green-600" [style.width.%]="(g.comido / g.pedido) * 100"></div>
+                </div>
+              </li>
+            }
+          }
+        </ul>
+      </section>
+    }
+
+    @if (d.comidas.length) {
+      <section aria-labelledby="cu-comidas" class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <h2 id="cu-comidas" class="font-semibold text-gray-900 dark:text-white">Comidas que contaste</h2>
+        <ul class="divide-y divide-gray-100 dark:divide-dark-700">
+          @for (c of d.comidas; track c.id) {
+            <li class="py-3 flex items-start gap-3">
+              @if (c.tiene_foto) {
+                <app-foto-comida [registro]="c.id" class="w-14 h-14 rounded-lg shrink-0" />
+              }
+              <div class="flex-1 min-w-0 space-y-0.5">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ c.nombre }}
+                  <span class="font-normal text-gray-500 dark:text-gray-400">· {{ fecha(c.fecha) }}</span>
+                </p>
+                @if (c.nota) {
+                  <p class="text-sm text-gray-600 dark:text-gray-300">{{ c.nota }}</p>
+                }
+                @if (c.faltaron.length) {
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Faltó:
+                    @for (f of c.faltaron; track f.grupo; let ultimo = $last) {
+                      {{ porciones(f.grupo, f.porciones) }}{{ ultimo ? '' : ', ' }}
+                    }
+                  </p>
+                }
+              </div>
+              <span class="text-sm font-semibold tabular-nums"
+                [class]="c.porcentaje >= 90 ? 'text-green-600 dark:text-green-400' : c.porcentaje >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-guerrero-red'">
+                {{ c.porcentaje }}%
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (d.sin_contar.length) {
+      <section aria-labelledby="cu-sin" class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <h2 id="cu-sin" class="font-semibold text-gray-900 dark:text-white">Sin contar</h2>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          No entran al porcentaje. Puedes contarlas hasta 7 días después.
+          @if (perdidas()) {
+            Otras {{ perdidas() }} ya pasaron de esos 7 días.
+          }
+        </p>
+        <ul class="flex flex-wrap gap-2">
+          @for (s of porContar(); track s.fecha + s.tiempo) {
+            <li>
+              <a
+                routerLink="/comidas/contar"
+                [queryParams]="{ tiempo: s.tiempo, fecha: s.fecha }"
+                class="inline-flex px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 hover:border-guerrero-red"
+                >{{ s.nombre }} · {{ fecha(s.fecha) }}</a
+              >
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

@@ -25,7 +25,14 @@
     @let a = avance(s);
     <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
       <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
+        @if (s.tiene_foto) {
+          <app-foto-suplemento
+            [suplemento]="s.id"
+            [version]="fotoVersion()"
+            class="w-14 h-14 shrink-0 rounded-lg"
+          />
+        }
+        <div class="min-w-0 flex-1">
           <p class="font-semibold text-gray-900 dark:text-white truncate">
             {{ s.tipo_nombre }}
             @if (s.nombre) {
@@ -52,6 +59,43 @@
           <i class="pi pi-pencil text-sm" aria-hidden="true"></i>
         </button>
       </div>
+
+      @if (ubicacion(s); as u) {
+        <p class="text-sm text-gray-600 dark:text-gray-300 -mt-1">{{ u }}</p>
+      }
+
+      @if (s.info_url || s.info_archivo_tipo) {
+        <p class="flex flex-wrap gap-x-4 gap-y-1 text-sm -mt-1">
+          @if (s.info_url) {
+            <a
+              [href]="s.info_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-medium text-guerrero-red underline"
+              >Información nutricional</a
+            >
+          }
+          @if (s.info_archivo_tipo) {
+            <button
+              type="button"
+              (click)="verInfo(s)"
+              class="font-medium text-guerrero-red underline"
+            >
+              Ver {{ s.info_archivo_tipo === 'pdf' ? 'el PDF' : 'la foto' }} de la etiqueta
+            </button>
+          }
+        </p>
+      }
+      @if (faltaAdjunto(s); as texto) {
+        <button
+          type="button"
+          (click)="agregarInfo(s)"
+          class="self-start inline-flex items-center gap-1.5 text-sm font-medium text-guerrero-red hover:underline -mt-1"
+        >
+          <i class="pi pi-plus text-xs" aria-hidden="true"></i>
+          {{ texto }}
+        </button>
+      }
 
       @if (a.porcentaje !== null) {
         <div
@@ -115,7 +159,10 @@
             } @else {
               Envase hasta el {{ formatearFecha(s.se_acaba, 'grafica') }}
               <span class="text-gray-400 dark:text-gray-500">
-                · {{ a.diasEnvase === 0 ? 'hoy' : a.diasEnvase === 1 ? '1 día' : a.diasEnvase + ' días' }}
+                ·
+                {{
+                  a.diasEnvase === 0 ? 'hoy' : a.diasEnvase === 1 ? '1 día' : a.diasEnvase + ' días'
+                }}
               </span>
             }
           </p>
@@ -253,7 +300,9 @@
     @case ('revisar') {
       @if (s) {
         <div class="space-y-5 pt-1">
-          <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed first-letter:uppercase">
+          <p
+            class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed first-letter:uppercase"
+          >
             @if (s.duracion_dias) {
               Los {{ duracionEnPalabras(s.duracion_dias) }} de {{ nombre(s) }}
               {{ (avance(s).diasRestantes ?? 0) < 0 ? 'terminaron' : 'terminan' }} el
@@ -326,21 +375,23 @@
             />
           </div>
         } @else if (modo() === 'reemplazar' && s) {
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed first-letter:uppercase">
+          <p
+            class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed first-letter:uppercase"
+          >
             {{ nombre(s) }} termina hoy y empieza el nuevo. Queda en tu historial.
           </p>
         }
 
         <div class="flex flex-col gap-1">
           <label for="sp-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Producto <span class="text-xs font-normal text-gray-400">opcional</span>
+            Tipo o marca <span class="text-xs font-normal text-gray-400">opcional</span>
           </label>
           <input
             pInputText
             id="sp-nombre"
             formControlName="nombre"
             maxlength="120"
-            placeholder="Marca o nombre"
+            placeholder="Ej. whey, hipercalórica, Whey Gold"
             class="w-full"
           />
         </div>
@@ -389,36 +440,137 @@
           }
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <app-etiqueta-suplemento prefijo="sp" [(etiqueta)]="etiqueta" />
+
+        @if (modo() === 'editar' && actual(); as sup) {
+          <fieldset id="sp-foto" class="space-y-3">
+            <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Foto de la proteína
+              <span class="text-xs font-normal text-gray-400">opcional</span>
+            </legend>
+            <div class="flex flex-wrap items-center gap-3">
+              @if (sup.tiene_foto) {
+                <app-foto-suplemento
+                  [suplemento]="sup.id"
+                  [version]="fotoVersion()"
+                  class="w-16 h-16 shrink-0 rounded-lg"
+                />
+              }
+              <label
+                for="sp-foto-archivo"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+              >
+                <i class="pi pi-camera" aria-hidden="true"></i>
+                {{ subiendoFoto() ? 'Subiendo…' : sup.tiene_foto ? 'Cambiar foto' : 'Subir foto' }}
+              </label>
+              <input
+                id="sp-foto-archivo"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                [disabled]="subiendoFoto()"
+                (change)="elegirFoto($event)"
+              />
+              @if (sup.tiene_foto) {
+                <button
+                  type="button"
+                  (click)="quitarFoto()"
+                  [disabled]="subiendoFoto()"
+                  class="text-sm text-gray-500 dark:text-gray-400 underline"
+                >
+                  Quitar
+                </button>
+              }
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Solo tú la ves. Hasta 10 MB.</p>
+          </fieldset>
+        }
+
+        <fieldset id="sp-info" class="space-y-3">
+          <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Información nutricional
+            <span class="text-xs font-normal text-gray-400">opcional</span>
+          </legend>
           <div class="flex flex-col gap-1">
-            <label for="sp-envase" class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Porciones por envase
-            </label>
+            <label for="sp-info-url" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              >Enlace</label
+            >
             <input
               pInputText
-              id="sp-envase"
-              formControlName="porciones_envase"
-              appDecimal
-              placeholder="Ej. 30"
+              id="sp-info-url"
+              type="url"
+              inputmode="url"
+              formControlName="info_url"
+              maxlength="500"
+              placeholder="https://…"
+              [attr.aria-invalid]="form.controls.info_url.invalid"
               class="w-full"
             />
+            @if (form.controls.info_url.invalid) {
+              <small class="text-xs text-red-600 dark:text-red-400"
+                >Debe empezar por http:// o https://.</small
+              >
+            }
           </div>
-          <div class="flex flex-col gap-1">
-            <label for="sp-dia" class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Porciones al día
-            </label>
-            <input
-              pInputText
-              id="sp-dia"
-              formControlName="porciones_dia"
-              appDecimal
-              class="w-full"
-            />
-          </div>
-        </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 -mt-2">
-          Con esto calculamos cuándo se acaba el envase. Está en la etiqueta.
-        </p>
+          @if (modo() === 'editar' && actual(); as sup) {
+            <div class="space-y-1.5">
+              <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Foto o PDF de la etiqueta
+              </p>
+              <div class="flex flex-wrap items-center gap-2">
+                <label
+                  for="sp-info-archivo"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+                >
+                  <i class="pi pi-upload" aria-hidden="true"></i>
+                  {{
+                    subiendoInfo()
+                      ? 'Subiendo…'
+                      : sup.info_archivo_tipo
+                        ? 'Cambiar archivo'
+                        : 'Subir archivo'
+                  }}
+                </label>
+                <input
+                  id="sp-info-archivo"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  class="sr-only"
+                  [disabled]="subiendoInfo()"
+                  (change)="elegirInfo($event)"
+                />
+                @if (sup.info_archivo_tipo) {
+                  <button
+                    type="button"
+                    (click)="verInfo(sup)"
+                    class="text-sm font-medium text-guerrero-red underline"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    type="button"
+                    (click)="quitarInfo()"
+                    [disabled]="subiendoInfo()"
+                    class="text-sm text-gray-500 dark:text-gray-400 underline"
+                  >
+                    Quitar
+                  </button>
+                }
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Solo tú lo ves. Hasta 10 MB.
+              </p>
+            </div>
+          }
+        </fieldset>
+
+        @if (minuta(); as m) {
+          <app-tomas-suplemento
+            [porciones]="m.porciones"
+            [scoopsPorcion]="etiqueta().scoops"
+            [(tomas)]="tomas"
+          />
+        }
 
         @if (error()) {
           <p-message severity="error" [text]="error()" styleClass="w-full" />
@@ -445,7 +597,7 @@
             label="Guardar"
             icon="pi pi-check"
             [loading]="guardando()"
-            [disabled]="form.invalid"
+            [disabled]="form.invalid || !etiquetaValida()"
           />
         </div>
       </form>

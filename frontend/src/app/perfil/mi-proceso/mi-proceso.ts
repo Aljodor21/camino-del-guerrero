@@ -6,16 +6,15 @@ import {
   computed,
   OnInit,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageModule } from 'primeng/message';
 
 import { ProcesoService } from '../../core/services/proceso';
-import { Proceso } from '../../core/models/proceso.model';
+import { Modulo, Proceso } from '../../core/models/proceso.model';
 import { CONFIG_ENTRENAMIENTO_INICIAL } from '../../core/constants/proceso';
 import {
   EntrenamientoForm,
@@ -38,7 +37,6 @@ import { DecimalInput } from '../../shared/decimal-input';
     ButtonModule,
     InputTextModule,
     TextareaModule,
-    ToggleSwitchModule,
     MessageModule,
     EntrenamientoForm,
   ],
@@ -46,12 +44,32 @@ import { DecimalInput } from '../../shared/decimal-input';
 export class MiProceso implements OnInit {
   private fb = inject(NonNullableFormBuilder);
   protected procesos = inject(ProcesoService);
+  private router = inject(Router);
 
   protected proceso = this.procesos.vigente;
   protected historial = signal<Proceso[]>([]);
   protected guardando = signal(false);
-  protected cancelando = signal(false);
-  protected confirmandoCancelacion = signal(false);
+  protected confirmandoBorrado = signal(false);
+  /** El módulo que se está por quitar (pide confirmación). */
+  protected quitando = signal<Modulo | null>(null);
+  protected readonly modulos: { id: Modulo; nombre: string; icono: string; aviso: string }[] = [
+    {
+      id: 'alimentacion',
+      nombre: 'Alimentación',
+      icono: 'pi pi-heart',
+      aviso:
+        'Se borra tu plan de comida, menús, lista de mercado, suplementos y lo que contaste de tus comidas. El entrenamiento sigue igual.',
+    },
+    {
+      id: 'entrenamiento',
+      nombre: 'Entrenamiento',
+      icono: 'pi pi-bolt',
+      aviso:
+        'Se borra tu rutina, tus implementos y tus sesiones registradas. La alimentación sigue igual.',
+    },
+  ];
+  protected quitandoCargando = signal(false);
+  protected borrando = signal(false);
   protected error = signal('');
   protected guardado = signal(false);
   protected formatearFecha = formatearFecha;
@@ -61,8 +79,6 @@ export class MiProceso implements OnInit {
     peso_objetivo: this.fb.control<number | null>(null, [Validators.min(20), Validators.max(300)]),
     fecha_fin_plan: this.fb.control(''),
     notas: this.fb.control(''),
-    incluye_alimentacion: this.fb.control(true),
-    incluye_entrenamiento: this.fb.control(false),
   });
   protected entrenamientoForm = crearEntrenamientoForm(this.fb);
 
@@ -79,9 +95,12 @@ export class MiProceso implements OnInit {
     return despuesDelInicio > hoyISO() ? despuesDelInicio : hoyISO();
   });
 
+  /** La fecha meta se puede poner una vez; ya puesta, no se mueve. */
+  protected finPlanFijo = computed(() => !!this.proceso()?.fecha_fin_plan);
+
   protected anteriores = computed(() => {
-    const vigentes = [this.procesos.actual()?.id, this.procesos.programado()?.id];
-    return this.historial().filter((p) => !vigentes.includes(p.id));
+    const vigente = this.proceso()?.id;
+    return this.historial().filter((p) => p.id !== vigente);
   });
 
   ngOnInit(): void {
@@ -96,30 +115,25 @@ export class MiProceso implements OnInit {
       peso_objetivo: p.peso_objetivo,
       fecha_fin_plan: p.fecha_fin_plan ?? '',
       notas: p.notas,
-      incluye_alimentacion: p.incluye_alimentacion,
-      incluye_entrenamiento: p.incluye_entrenamiento,
     });
     this.entrenamientoForm.reset(p.entrenamiento ?? CONFIG_ENTRENAMIENTO_INICIAL);
-  }
-
-  protected sinModulos(): boolean {
-    const { incluye_alimentacion, incluye_entrenamiento } = this.form.getRawValue();
-    return !incluye_alimentacion && !incluye_entrenamiento;
+    if (p.fecha_fin_plan) this.form.controls.fecha_fin_plan.disable({ emitEvent: false });
   }
 
   protected guardar(): void {
     const p = this.proceso();
-    if (!p || this.form.invalid || this.sinModulos()) return;
+    if (!p || this.form.invalid) return;
     const v = this.form.getRawValue();
+    const nuevaFecha = this.finPlanFijo() ? {} : { fecha_fin_plan: v.fecha_fin_plan || null };
     this.guardando.set(true);
     this.error.set('');
     this.guardado.set(false);
     this.procesos
       .actualizar(p.id, {
-        ...v,
-        fecha_fin_plan: v.fecha_fin_plan || null,
+        peso_objetivo: v.peso_objetivo,
+        ...nuevaFecha,
         notas: v.notas.trim(),
-        ...(v.incluye_entrenamiento ? { entrenamiento: this.entrenamientoForm.getRawValue() } : {}),
+        ...(p.incluye_entrenamiento ? { entrenamiento: this.entrenamientoForm.getRawValue() } : {}),
       })
       .subscribe({
         next: () => {
@@ -136,20 +150,38 @@ export class MiProceso implements OnInit {
       });
   }
 
-  protected cancelarProgramado(): void {
-    const programado = this.procesos.programado();
-    if (!programado) return;
-    this.cancelando.set(true);
-    this.procesos.cancelarProgramado(programado.id).subscribe({
+  protected quitarModulo(modulo: Modulo): void {
+    const p = this.proceso();
+    if (!p) return;
+    this.quitandoCargando.set(true);
+    this.error.set('');
+    this.procesos.quitarModulo(p.id, modulo).subscribe({
+      next: () => {
+        this.quitandoCargando.set(false);
+        this.quitando.set(null);
+        this.llenarFormulario();
+      },
+      error: (err) => {
+        this.error.set(mensajeError(err, 'No pudimos quitar el módulo.'));
+        this.quitandoCargando.set(false);
+      },
+    });
+  }
+
+  protected borrarProceso(): void {
+    const p = this.proceso();
+    if (!p) return;
+    this.borrando.set(true);
+    this.procesos.eliminarTodo(p.id).subscribe({
       next: () =>
         this.procesos.refrescar().subscribe(() => {
-          this.cancelando.set(false);
-          this.confirmandoCancelacion.set(false);
-          this.llenarFormulario();
+          this.borrando.set(false);
+          void this.router.navigate(['/onboarding']);
         }),
       error: (err) => {
-        this.error.set(mensajeError(err, 'No pudimos cancelar el proceso programado.'));
-        this.cancelando.set(false);
+        this.error.set(mensajeError(err, 'No pudimos borrar el proceso.'));
+        this.borrando.set(false);
+        this.confirmandoBorrado.set(false);
       },
     });
   }

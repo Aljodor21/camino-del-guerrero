@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, computed, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, ChangeDetectionStrategy, inject, computed, OnDestroy, OnInit, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -8,6 +9,7 @@ import { ThemeService } from '../../core/services/theme';
 import { NotificacionService } from '../../core/services/notificaciones';
 import { ProcesoService } from '../../core/services/proceso';
 import { AgendaService } from '../../core/services/agenda';
+import { AvisosService } from '../../core/services/avisos';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
 interface Aviso {
@@ -26,16 +28,44 @@ interface Aviso {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule],
 })
-export class Layout implements OnInit {
+export class Layout implements OnInit, OnDestroy {
   protected authService = inject(AuthService);
   protected themeService = inject(ThemeService);
   protected notificaciones = inject(NotificacionService);
   private procesos = inject(ProcesoService);
   private agenda = inject(AgendaService);
+  protected avisos = inject(AvisosService);
+  private router = inject(Router);
+
+  private anterior = '/nutricion';
+  protected enAvisos = signal(false);
+
+  constructor() {
+    // Se recuerda dónde estaba la persona (con su pestaña) para devolverla al cerrar los avisos.
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (!(e instanceof NavigationEnd)) return;
+      const enAvisos = e.urlAfterRedirects.split('?')[0] === '/avisos';
+      this.enAvisos.set(enAvisos);
+      if (!enAvisos) this.anterior = e.urlAfterRedirects;
+    });
+  }
+
+  /** El botón de avisos abre la bandeja y, estando en ella, regresa a donde se estaba. */
+  protected alternarAvisos(evento: Event): void {
+    evento.preventDefault();
+    void this.router.navigateByUrl(this.enAvisos() ? this.anterior : '/avisos');
+  }
 
   ngOnInit(): void {
     this.notificaciones.verificar();
-    if (!this.authService.isAdmin()) this.agenda.cargar().subscribe({ error: () => {} });
+    if (!this.authService.isAdmin()) {
+      this.agenda.cargar().subscribe({ error: () => {} });
+      this.avisos.iniciar();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.avisos.detener();
   }
 
   /** Un solo aviso a la vez, el más importante primero. */
@@ -48,6 +78,14 @@ export class Layout implements OnInit {
         accion: 'Registrar',
         enlace: ['/progreso'],
         queryParams: { medicion: 'inicial' },
+      };
+    }
+    if (this.procesos.vigente()?.plan_terminado) {
+      return {
+        icono: 'pi pi-flag',
+        texto: 'Llegó tu control: ¿sigues con tu proceso o tienes cambios?',
+        accion: 'Responder',
+        enlace: ['/control'],
       };
     }
     const recordatorio = this.agenda.aviso();

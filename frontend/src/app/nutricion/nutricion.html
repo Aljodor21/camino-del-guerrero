@@ -1,391 +1,101 @@
-@if (mostrandoOverlay()) {
-  <div
-    class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
-  >
-    <p-progressspinner styleClass="w-14 h-14" strokeWidth="4" />
-    <p class="text-white text-sm font-medium px-8 text-center max-w-xs">
-      {{ mensajeOverlay() }}
-    </p>
-  </div>
-}
-
 <div class="p-4 max-w-2xl mx-auto space-y-4">
-  <!-- Header -->
-  <div class="flex items-center justify-between">
-    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Nutrición</h1>
-    @if (seccion() === 'plan' && plan()) {
-      <p-button
-        icon="pi pi-refresh"
-        label="Regenerar"
-        variant="outlined"
-        severity="secondary"
-        [loading]="loadingRegenerar()"
-        (onClick)="regenerar()"
-      />
-    }
-    @if (seccion() === 'mercado') {
-      <p-button
-        icon="pi pi-refresh"
-        label="Generar lista"
-        variant="outlined"
-        severity="secondary"
-        [loading]="loadingLista()"
-        (onClick)="generarLista()"
-      />
-    }
-  </div>
+  <app-portada
+    foto="plan"
+    titulo="Nutrición"
+    subtitulo="Tu menú de la semana, tu mercado y tu plan."
+  />
 
-  <!-- Tabs -->
-  <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1">
-    <button
-      [class]="
-        seccion() === 'plan'
-          ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
-          : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'
-      "
-      (click)="seccion.set('plan')"
-    >
-      <i class="pi pi-calendar mr-1"></i> Plan semanal
-    </button>
-    <button
-      [class]="
-        seccion() === 'mercado'
-          ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
-          : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'
-      "
-      (click)="seccion.set('mercado')"
-    >
-      <i class="pi pi-shopping-cart mr-1"></i> Lista de mercado
-    </button>
-  </div>
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
 
-  <!-- ====== PLAN SEMANAL ====== -->
-  @if (seccion() === 'plan') {
-    @if (loading()) {
-      <div class="flex justify-center py-16">
-        <p-progressspinner styleClass="w-10 h-10" />
-      </div>
-    } @else if (sinPlan()) {
-      <div class="text-center py-16 text-gray-400 dark:text-gray-600">
-        <i class="pi pi-heart text-5xl"></i>
-        <p class="mt-3 text-sm">No tienes plan nutricional aún.</p>
-        <p-button
-          label="Generar ahora"
-          icon="pi pi-refresh"
-          styleClass="mt-4"
-          [loading]="loadingRegenerar()"
-          (onClick)="regenerar()"
-        />
-      </div>
-    } @else if (plan()) {
-      <!-- Selector de días -->
-      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-        @for (dia of plan()!.dias; track dia.id; let i = $index) {
-          <button
-            [class]="
-              diaSeleccionado() === i
-                ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-guerrero-red text-white transition-all'
-                : esHoy(dia.dia_semana)
-                  ? 'shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border-2 border-guerrero-red text-guerrero-red dark:text-guerrero-red bg-transparent transition-all'
-                  : 'shrink-0 px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400 transition-all'
-            "
-            (click)="diaSeleccionado.set(i)"
+  @if (cargando()) {
+    <div class="flex justify-center py-16">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else if (minutas.minutas() !== null) {
+    @if (!minutas.vigente()) {
+      <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-5 space-y-4">
+        <div class="space-y-1">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Arma tu plan de comida</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Con la minuta de tu nutricionista o con la que calcula la IA armamos tu menú de cada
+            semana, la lista de mercado y los cambios cuando no puedas con una comida.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a
+            routerLink="/nutricion/plan"
+            [queryParams]="{ origen: 'nutricionista' }"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-guerrero-red text-white text-sm font-semibold hover:bg-guerrero-red-dark"
+            >Tengo nutricionista</a
           >
-            {{ dia.dia_nombre }}
+          <a
+            routerLink="/nutricion/plan"
+            [queryParams]="{ origen: 'ia' }"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-dark-700 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:border-guerrero-red"
+            >Que la IA lo arme</a
+          >
+        </div>
+      </section>
+    } @else {
+      <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1" role="tablist">
+        @for (p of pestanas; track p.id) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="seccion() === p.id"
+            (click)="seccion.set(p.id)"
+            [class]="
+              'flex-1 py-2 text-sm rounded-lg transition-all ' +
+              (seccion() === p.id
+                ? 'font-semibold bg-white dark:bg-dark-800 text-guerrero-red shadow-sm'
+                : 'font-medium text-gray-500 dark:text-gray-400')
+            "
+          >
+            <i [class]="p.icon + ' text-xs mr-1'" aria-hidden="true"></i>{{ p.label }}
           </button>
         }
       </div>
 
-      <!-- Contenido del día -->
-      @if (diaActual(); as dia) {
-        <div class="space-y-3">
-          @if (dia.calorias_aprox) {
-            <div
-              class="bg-guerrero-red/10 border border-guerrero-red/20 rounded-xl px-4 py-3 flex items-center gap-3"
-            >
-              <i class="pi pi-bolt text-guerrero-red text-lg"></i>
-              <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Calorías aproximadas</p>
-                <p class="text-lg font-bold text-guerrero-red">{{ dia.calorias_aprox }} kcal</p>
-              </div>
-            </div>
-          }
-          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-lg">🌅</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Desayuno</p>
-              <button
-                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
-                [disabled]="loadingRechazo() === 'desayuno'"
-                title="No me gusta, generar otra opción"
-                (click)="rechazarComida('desayuno')"
-              >
-                <i
-                  [class]="
-                    loadingRechazo() === 'desayuno' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
-                  "
-                ></i>
-              </button>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-              {{ dia.desayuno }}
-            </p>
-          </div>
-          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-lg">☀️</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Almuerzo</p>
-              <button
-                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
-                [disabled]="loadingRechazo() === 'almuerzo'"
-                title="No me gusta, generar otra opción"
-                (click)="rechazarComida('almuerzo')"
-              >
-                <i
-                  [class]="
-                    loadingRechazo() === 'almuerzo' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
-                  "
-                ></i>
-              </button>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-              {{ dia.almuerzo }}
-            </p>
-          </div>
-          <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-lg">🌙</span>
-              <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Cena</p>
-              <button
-                class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
-                [disabled]="loadingRechazo() === 'cena'"
-                title="No me gusta, generar otra opción"
-                (click)="rechazarComida('cena')"
-              >
-                <i
-                  [class]="
-                    loadingRechazo() === 'cena' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
-                  "
-                ></i>
-              </button>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-              {{ dia.cena }}
-            </p>
-          </div>
-          @if (dia.snacks) {
-            <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-lg">🍎</span>
-                <p class="text-sm font-bold text-gray-800 dark:text-white flex-1">Snacks</p>
-                <button
-                  class="text-gray-400 hover:text-guerrero-red transition-colors disabled:opacity-50"
-                  [disabled]="loadingRechazo() === 'snacks'"
-                  title="No me gusta, generar otra opción"
-                  (click)="rechazarComida('snacks')"
-                >
-                  <i
-                    [class]="
-                      loadingRechazo() === 'snacks' ? 'pi pi-spin pi-spinner' : 'pi pi-thumbs-down'
-                    "
-                  ></i>
-                </button>
-              </div>
-              <p
-                class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line"
-              >
-                {{ dia.snacks }}
-              </p>
-            </div>
-          }
-        </div>
-      }
-    }
-  }
+      <a
+        routerLink="/cumplimiento"
+        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
+      >
+        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
+          <i class="pi pi-chart-pie" aria-hidden="true"></i>
+        </span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-semibold text-gray-900 dark:text-white">¿Cuánto cumples de tu plan?</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Lo que cuentas de cada comida, frente a la minuta.</span>
+        </span>
+        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
+      </a>
 
-  <!-- ====== LISTA DE MERCADO ====== -->
-  @if (seccion() === 'mercado') {
-    <!-- Badge de personas -->
-    <div
-      class="bg-white dark:bg-dark-800 rounded-xl p-3 shadow-sm flex items-center justify-between gap-3"
-    >
-      <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-        <i class="pi pi-users text-guerrero-red"></i> Personas
-      </span>
-      <div class="flex items-center gap-3">
-        <button
-          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
-          [disabled]="numPersonas() <= 1"
-          (click)="ajustarPersonas(-1)"
-        >
-          -
-        </button>
-        <span class="text-base font-bold text-gray-800 dark:text-white w-6 text-center">{{
-          numPersonas()
-        }}</span>
-        <button
-          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
-          [disabled]="numPersonas() >= 20"
-          (click)="ajustarPersonas(1)"
-        >
-          +
-        </button>
-      </div>
-    </div>
+      <a
+        routerLink="/proyeccion"
+        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
+      >
+        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
+          <i class="pi pi-chart-line" aria-hidden="true"></i>
+        </span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-semibold text-gray-900 dark:text-white">¿Cuánto puedo cambiar?</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">Estimación hasta tu próximo control.</span>
+        </span>
+        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
+      </a>
 
-    @if (loadingLista()) {
-      <div class="flex justify-center py-16">
-        <p-progressspinner styleClass="w-10 h-10" />
-      </div>
-    } @else if (!lista()) {
-      <div class="text-center py-16 text-gray-400 dark:text-gray-600">
-        <i class="pi pi-shopping-cart text-5xl"></i>
-        <p class="mt-3 text-sm">No tienes lista de mercado aún.</p>
-        <p class="text-xs mt-1">Genera tu plan nutricional primero.</p>
-        <p-button
-          label="Generar lista"
-          icon="pi pi-refresh"
-          styleClass="mt-4"
-          [loading]="loadingLista()"
-          (onClick)="generarLista()"
-        />
-      </div>
-    } @else {
-      <!-- Progreso de compras -->
-      <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
-        <i class="pi pi-shopping-bag text-guerrero-red text-2xl"></i>
-        <div class="flex-1">
-          <p class="text-sm font-semibold text-gray-800 dark:text-white">
-            {{ itemsComprados() }} / {{ totalItems() }} productos
-          </p>
-          <div class="mt-1.5 h-2 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
-            <div
-              class="h-full bg-guerrero-red rounded-full transition-all"
-              [style.width.%]="totalItems() > 0 ? (itemsComprados() / totalItems()) * 100 : 0"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ya tienes esto (quincenales comprados recientemente) -->
-      @if (lista()!.items_ya_comprados.length) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
-          <div
-            class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
-          >
-            <i class="pi pi-verified text-green-500"></i>
-            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Ya tienes esto
-            </p>
-          </div>
-          <ul class="divide-y divide-gray-50 dark:divide-dark-700">
-            @for (yc of lista()!.items_ya_comprados; track yc.nombre) {
-              <li class="px-4 py-3 text-sm flex items-center justify-between gap-3">
-                <span class="text-gray-600 dark:text-gray-300">{{ yc.nombre }}</span>
-                <span class="text-xs text-gray-400 shrink-0">Comprado {{ yc.ultima_compra }}</span>
-              </li>
-            }
-          </ul>
-        </div>
-      }
-
-      <!-- Items por categoría -->
-      @for (cat of categorias(); track cat.nombre) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
-          <div
-            class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600"
-          >
-            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {{ cat.nombre }}
-            </p>
-          </div>
-          <div class="divide-y divide-gray-50 dark:divide-dark-700">
-            @for (item of cat.items; track item.id) {
-              <button
-                class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-dark-700"
-                (click)="toggleItem(item)"
-              >
-                <i
-                  [class]="
-                    item.comprado
-                      ? 'pi pi-check-circle text-green-500 text-lg'
-                      : 'pi pi-circle text-gray-300 dark:text-gray-600 text-lg'
-                  "
-                ></i>
-                <span
-                  class="flex-1 text-sm"
-                  [class]="
-                    item.comprado
-                      ? 'line-through text-gray-400 dark:text-gray-600'
-                      : 'text-gray-800 dark:text-white'
-                  "
-                  >{{ item.nombre }}</span
-                >
-                @if (item.frecuencia === 'quincenal') {
-                  <span
-                    class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0"
-                    title="Compra quincenal — te dura ~2 semanas"
-                    >Q</span
-                  >
-                }
-                @if (item.cantidad) {
-                  <span class="text-xs text-gray-400 shrink-0">{{ item.cantidad }}</span>
-                }
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Consejos de compra -->
-      @if (lista()!.consejos_compra.length) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
-          <div
-            class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
-          >
-            <i class="pi pi-tag text-guerrero-red"></i>
-            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Cómo mercar
-            </p>
-          </div>
-          <ul class="divide-y divide-gray-50 dark:divide-dark-700">
-            @for (tip of lista()!.consejos_compra; track $index) {
-              <li
-                class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed flex gap-2"
-              >
-                <span class="text-guerrero-red">•</span>
-                <span>{{ tip }}</span>
-              </li>
-            }
-          </ul>
-        </div>
-      }
-
-      <!-- Plan de preparación -->
-      @if (lista()!.plan_preparacion.length) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
-          <div
-            class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
-          >
-            <i class="pi pi-clock text-guerrero-red"></i>
-            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Plan de preparación
-            </p>
-          </div>
-          <ol class="divide-y divide-gray-50 dark:divide-dark-700">
-            @for (paso of lista()!.plan_preparacion; track $index; let i = $index) {
-              <li
-                class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed flex gap-3"
-              >
-                <span
-                  class="shrink-0 w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center"
-                  >{{ i + 1 }}</span
-                >
-                <span>{{ paso }}</span>
-              </li>
-            }
-          </ol>
-        </div>
+      @switch (seccion()) {
+        @case ('menu') {
+          <app-menu-semanal />
+        }
+        @case ('mercado') {
+          <app-mercado />
+        }
+        @case ('plan') {
+          <app-mi-minuta />
+        }
       }
     }
   }

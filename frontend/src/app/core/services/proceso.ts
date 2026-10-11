@@ -72,6 +72,25 @@ export class ProcesoService {
     return this.http.delete<void>(`${API}/${id}/`).pipe(tap(() => this.invalidar()));
   }
 
+  /** Borra el proceso y todo lo que armó con él; solo quedan sus datos personales. */
+  eliminarTodo(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/${id}/`).pipe(tap(() => this.invalidar()));
+  }
+
+  /** Quita la alimentación o el entrenamiento y borra lo que se armó con él. */
+  quitarModulo(id: number, modulo: Modulo): Observable<Proceso> {
+    return this.http
+      .post<Proceso>(`${API}/${id}/quitar-modulo/`, { modulo })
+      .pipe(tap((p) => this.reemplazar(p)));
+  }
+
+  /** Al llegar el control: sigue el proceso hasta otra fecha, o sin definir (null). */
+  renovar(id: number, fechaFinPlan: string | null): Observable<Proceso> {
+    return this.http
+      .post<Proceso>(`${API}/${id}/renovar/`, { fecha_fin_plan: fechaFinPlan })
+      .pipe(tap((p) => this.reemplazar(p)));
+  }
+
   registrarMedicionInicial(id: number, medicion: MedicionPayload): Observable<Proceso> {
     return this.http
       .post<Proceso>(`${API}/${id}/medicion-inicial/`, medicion)

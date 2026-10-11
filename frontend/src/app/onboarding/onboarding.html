@@ -50,19 +50,25 @@
           </div>
         }
       </div>
-    } @else if (procesos.programado(); as programado) {
-      <!-- Ya hay uno programado: hay que cancelarlo antes de crear otro -->
+    } @else if (!sumando() && procesos.vigente(); as vigente) {
+      <!-- Un solo proceso a la vez: alimentación y entrenamiento van juntos en él -->
       <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-6 space-y-4">
         <h1 class="text-lg font-bold text-gray-900 dark:text-white">
-          Ya tienes un proceso programado
+          Ya tienes un proceso {{ vigente.estado === 'programado' ? 'programado' : 'en curso' }}
         </h1>
         <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-          {{ programado.objetivo_nombre }}
-          @if (programado.fase_nombre) {
-            · {{ programado.fase_nombre }}
+          {{ vigente.objetivo_nombre }}
+          @if (vigente.fase_nombre) {
+            · {{ vigente.fase_nombre }}
           }
-          inicia el {{ formatearFecha(programado.fecha_inicio, 'larga') }}. Para crear otro, primero
-          cancélalo desde tu perfil.
+          {{ vigente.estado === 'programado' ? 'inicia' : 'empezó' }} el
+          {{ formatearFecha(vigente.fecha_inicio, 'larga') }}.
+          @if (!vigente.incluye_entrenamiento) {
+            Si te falta el entrenamiento, súmalo a este mismo proceso desde tu perfil.
+          } @else if (!vigente.incluye_alimentacion) {
+            Si te falta la alimentación, súmala a este mismo proceso desde tu perfil.
+          }
+          Para empezar uno distinto, primero bórralo desde tu perfil.
         </p>
         <p-button
           label="Ir a mi perfil"
@@ -115,6 +121,26 @@
                   [attr.aria-checked]="modulos() === op.value"
                   (click)="elegirModulos(op.value)"
                   [class]="clasesOpcion(modulos() === op.value) + ' !items-start !p-4'"
+                >
+                  <i [class]="op.icon + ' text-xl mt-0.5 shrink-0'" aria-hidden="true"></i>
+                  <span class="flex flex-col items-start gap-0.5">
+                    <span class="font-semibold leading-tight">{{ op.label }}</span>
+                    <span class="text-sm opacity-75 leading-snug">{{ op.desc }}</span>
+                  </span>
+                </button>
+              }
+            </div>
+          }
+
+          @case ('plan') {
+            <div role="radiogroup" aria-label="Quién arma el plan de comida" class="space-y-2">
+              @for (op of opcionesPlan; track op.value) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="origenPlan() === op.value"
+                  (click)="origenPlan.set(op.value)"
+                  [class]="clasesOpcion(origenPlan() === op.value) + ' !items-start !p-4'"
                 >
                   <i [class]="op.icon + ' text-xl mt-0.5 shrink-0'" aria-hidden="true"></i>
                   <span class="flex flex-col items-start gap-0.5">
@@ -282,7 +308,7 @@
                   id="ob-notas"
                   formControlName="notas"
                   rows="2"
-                  placeholder="Ej: volumen con hipercalórico, plan de la nutricionista"
+                  placeholder="Ej: volumen con proteína hipercalórica, plan de la nutricionista"
                   class="w-full resize-none"
                 ></textarea>
               </div>
@@ -406,7 +432,7 @@
               </div>
             }
 
-            @if (iniciaHoy()) {
+            @if (fechaInicio()) {
               <div class="space-y-3">
                 <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
                   Tu medición inicial
@@ -423,11 +449,6 @@
                   </p>
                 </div>
               </div>
-            } @else if (fechaInicio()) {
-              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                Ese día la app te pedirá tu medición inicial: peso y talla, y si los tienes,
-                perímetros y pliegues.
-              </p>
             }
 
             <p class="flex gap-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -507,13 +528,11 @@
           <!-- ── Suplementos ── -->
           @case ('suplementos') {
             <div class="space-y-3">
-              @for (s of suplementosIniciales(); track s.tipo; let i = $index) {
+              @for (s of suplementosIniciales(); track $index; let i = $index) {
                 <div
                   class="rounded-xl border-2 transition-colors"
                   [class]="
-                    s.activo
-                      ? 'border-guerrero-red'
-                      : 'border-gray-200 dark:border-dark-700'
+                    s.activo ? 'border-guerrero-red' : 'border-gray-200 dark:border-dark-700'
                   "
                 >
                   <button
@@ -536,19 +555,37 @@
                       }
                     </span>
                     <span class="flex-1">
-                      <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{
-                        nombreTipo(s.tipo)
-                      }}</span>
-                      @if (!s.activo) {
-                        <span class="block text-xs text-gray-500 dark:text-gray-400">
-                          Lo usual: {{ duracionEnPalabras(duracionUsual(s.tipo)) }}
-                        </span>
-                      }
+                      <span class="block text-sm font-semibold text-gray-900 dark:text-white"
+                        >Sí, voy a tomar proteína</span
+                      >
+                      <span class="block text-xs text-gray-500 dark:text-gray-400"
+                        >Cualquiera: whey, hipercalórica u otra.</span
+                      >
                     </span>
                   </button>
 
                   @if (s.activo) {
-                    <div class="px-3 pb-3 space-y-3">
+                    <div class="px-3 pb-3 space-y-4">
+                      <div class="flex flex-col gap-1">
+                        <label
+                          for="ob-sup-tipo"
+                          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                          >Tipo de proteína
+                          <span class="font-normal text-gray-500 dark:text-gray-400"
+                            >(opcional)</span
+                          ></label
+                        >
+                        <input
+                          pInputText
+                          id="ob-sup-tipo"
+                          maxlength="120"
+                          placeholder="Ej. whey, hipercalórica, caseína, vegetal…"
+                          [value]="s.nombre"
+                          (input)="cambiarSuplemento(i, { nombre: $any($event.target).value })"
+                          class="w-full"
+                        />
+                      </div>
+
                       <div class="space-y-2">
                         <p
                           [id]="'ob-sup-conf-' + s.tipo"
@@ -600,50 +637,198 @@
                         </div>
                       }
 
-                      <div class="grid grid-cols-2 gap-3">
+                      <app-etiqueta-suplemento
+                        [prefijo]="'ob-sup-' + s.tipo"
+                        [etiqueta]="s.etiqueta"
+                        (etiquetaChange)="cambiarSuplemento(i, { etiqueta: $event })"
+                      />
+
+                      <fieldset class="space-y-2">
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Foto de tu proteína
+                          <span class="text-xs font-normal text-gray-400">opcional</span>
+                        </legend>
+                        <div class="flex flex-wrap items-center gap-2">
+                          <label
+                            for="ob-foto"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+                          >
+                            <i class="pi pi-camera" aria-hidden="true"></i>
+                            {{ s.foto ? 'Cambiar foto' : 'Foto del pote' }}
+                          </label>
+                          <input
+                            id="ob-foto"
+                            type="file"
+                            accept="image/*"
+                            class="sr-only"
+                            (change)="elegirFoto(i, $event)"
+                          />
+                          @if (s.foto) {
+                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48">{{
+                              s.foto.name
+                            }}</span>
+                            <button
+                              type="button"
+                              (click)="cambiarSuplemento(i, { foto: null })"
+                              class="text-sm text-gray-500 dark:text-gray-400 underline"
+                            >
+                              Quitar
+                            </button>
+                          }
+                        </div>
+                      </fieldset>
+
+                      <fieldset class="space-y-3">
+                        <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Información nutricional
+                          <span class="text-xs font-normal text-gray-400">opcional</span>
+                        </legend>
                         <div class="flex flex-col gap-1">
                           <label
-                            [for]="'ob-sup-envase-' + s.tipo"
+                            for="ob-info-url"
                             class="text-xs font-medium text-gray-600 dark:text-gray-400"
-                            >Porciones del envase</label
+                            >Enlace</label
                           >
                           <input
                             pInputText
-                            [id]="'ob-sup-envase-' + s.tipo"
-                            inputmode="numeric"
-                            placeholder="Ej. 30"
-                            [value]="s.porcionesEnvase ?? ''"
-                            (change)="
-                              cambiarSuplemento(i, {
-                                porcionesEnvase: leerPorciones($any($event.target).value),
-                              })
-                            "
+                            id="ob-info-url"
+                            type="url"
+                            inputmode="url"
+                            maxlength="500"
+                            placeholder="https://…"
+                            [value]="s.infoUrl"
+                            [attr.aria-invalid]="!infoUrlValida(s.infoUrl)"
+                            (input)="cambiarSuplemento(i, { infoUrl: $any($event.target).value })"
                             class="w-full"
                           />
+                          @if (!infoUrlValida(s.infoUrl)) {
+                            <small class="text-xs text-red-600 dark:text-red-400"
+                              >Debe empezar por http:// o https://.</small
+                            >
+                          }
                         </div>
-                        <div class="flex flex-col gap-1">
+                        <div class="flex flex-wrap items-center gap-2">
                           <label
-                            [for]="'ob-sup-dia-' + s.tipo"
-                            class="text-xs font-medium text-gray-600 dark:text-gray-400"
-                            >Porciones al día</label
+                            for="ob-info-archivo"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
                           >
+                            <i class="pi pi-upload" aria-hidden="true"></i>
+                            {{ s.infoArchivo ? 'Cambiar foto o PDF' : 'Foto o PDF de la etiqueta' }}
+                          </label>
                           <input
-                            pInputText
-                            [id]="'ob-sup-dia-' + s.tipo"
-                            inputmode="decimal"
-                            [value]="s.porcionesDia ?? ''"
-                            (change)="
-                              cambiarSuplemento(i, {
-                                porcionesDia: leerPorciones($any($event.target).value),
-                              })
-                            "
-                            class="w-full"
+                            id="ob-info-archivo"
+                            type="file"
+                            accept="image/*,application/pdf"
+                            class="sr-only"
+                            (change)="elegirInfo(i, $event)"
                           />
+                          @if (s.infoArchivo) {
+                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48">{{
+                              s.infoArchivo.name
+                            }}</span>
+                            <button
+                              type="button"
+                              (click)="cambiarSuplemento(i, { infoArchivo: null })"
+                              class="text-sm text-gray-500 dark:text-gray-400 underline"
+                            >
+                              Quitar
+                            </button>
+                          }
                         </div>
-                      </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                          Solo tú lo ves. Hasta 10 MB. Después lo cambias desde Progreso › Agenda.
+                        </p>
+                      </fieldset>
                     </div>
                   }
                 </div>
+              }
+            </div>
+          }
+
+          <!-- ── Agua y descanso ── -->
+          @case ('habitos') {
+            <div class="space-y-5">
+              <div class="space-y-2">
+                <label for="ob-agua" class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >¿Cuánta agua te indicaron tomar al día?</label
+                >
+                <div class="flex gap-2">
+                  <input
+                    pInputText
+                    id="ob-agua"
+                    inputmode="decimal"
+                    [placeholder]="aguaUnidad() === 'litros' ? 'Ej. 2,5' : 'Ej. 10'"
+                    [value]="aguaValor() === null ? '' : num(aguaValor())"
+                    (change)="leerAgua($any($event.target).value)"
+                    class="w-full min-w-0"
+                  />
+                  <div role="radiogroup" aria-label="Unidad" class="flex gap-1 shrink-0">
+                    @for (u of unidadesAgua; track u.value) {
+                      <button
+                        type="button"
+                        role="radio"
+                        [attr.aria-checked]="aguaUnidad() === u.value"
+                        (click)="aguaUnidad.set(u.value)"
+                        [class]="clasesChip(aguaUnidad() === u.value)"
+                      >
+                        {{ u.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+                @if (aguaValor() !== null && !habitosValidos()) {
+                  <small class="text-xs text-red-600 dark:text-red-400"
+                    >Revisa el valor: entre 250 ml y 8 litros.</small
+                  >
+                } @else if (vasosAgua(); as vasos) {
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Son {{ vasos }} vasos de 250 ml. Te avisamos a lo largo del día y quedan en tu
+                    bandeja hasta que marques cada uno.
+                  </p>
+                }
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="ob-levantarse"
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Me levanto a las</label
+                  >
+                  <input
+                    pInputText
+                    id="ob-levantarse"
+                    type="time"
+                    [value]="horaLevantarse()"
+                    (change)="horaLevantarse.set($any($event.target).value)"
+                    class="w-full"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label for="ob-dormir" class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Me acuesto a las</label
+                  >
+                  <input
+                    pInputText
+                    id="ob-dormir"
+                    type="time"
+                    [value]="horaDormir()"
+                    (change)="horaDormir.set($any($event.target).value)"
+                    [attr.aria-invalid]="mismaHora()"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+              @if (mismaHora()) {
+                <small class="block text-xs text-red-600 dark:text-red-400"
+                  >No puede ser la misma hora en que te levantas.</small
+                >
+              } @else {
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Si te recomendaron una hora para acostarte, te avisamos media hora antes. Déjalo
+                  vacío si no.
+                </p>
               }
             </div>
           }
@@ -658,6 +843,14 @@
                   {{ r.modulos }}
                 </dd>
               </div>
+              @if (origenPlan(); as o) {
+                <div class="flex justify-between gap-4 py-2.5">
+                  <dt class="text-gray-500 dark:text-gray-400">Plan de comida</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white text-right">
+                    {{ o === 'ia' ? 'Lo arma la IA' : 'Tu nutricionista' }}
+                  </dd>
+                </div>
+              }
               <div class="flex justify-between gap-4 py-2.5">
                 <dt class="text-gray-500 dark:text-gray-400">Objetivo</dt>
                 <dd class="font-medium text-gray-900 dark:text-white text-right">
@@ -708,9 +901,19 @@
                   }
                 </dd>
               </div>
+              @if (resumenHabitos().length) {
+                <div class="flex justify-between gap-4 py-2.5">
+                  <dt class="text-gray-500 dark:text-gray-400 shrink-0">Agua y descanso</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white text-right">
+                    @for (linea of resumenHabitos(); track linea) {
+                      <span class="block">{{ linea }}</span>
+                    }
+                  </dd>
+                </div>
+              }
               @if (resumenSuplementos().length) {
                 <div class="flex justify-between gap-4 py-2.5">
-                  <dt class="text-gray-500 dark:text-gray-400 shrink-0">Suplementos</dt>
+                  <dt class="text-gray-500 dark:text-gray-400 shrink-0">Proteína</dt>
                   <dd class="font-medium text-gray-900 dark:text-white text-right">
                     @for (linea of resumenSuplementos(); track linea) {
                       <span class="block">{{ linea }}</span>
@@ -723,7 +926,7 @@
                   <i class="pi pi-lock text-xs" aria-hidden="true"></i> Peso inicial
                 </dt>
                 <dd class="font-medium text-gray-900 dark:text-white tabular-nums">
-                  {{ iniciaHoy() ? num(pesoInicial()) + ' kg' : 'Se registra ese día' }}
+                  {{ num(pesoInicial()) }} kg
                 </dd>
               </div>
             </dl>
@@ -754,7 +957,17 @@
             />
           }
           <p-button
-            [label]="esUltimo() ? (iniciaHoy() ? 'Iniciar' : 'Programar') : 'Continuar'"
+            [label]="
+              esUltimo()
+                ? sumando()
+                  ? sumando() === 'entrenamiento'
+                    ? 'Activar entrenamiento'
+                    : 'Activar alimentación'
+                  : iniciaHoy()
+                    ? 'Iniciar'
+                    : 'Programar'
+                : 'Continuar'
+            "
             [icon]="esUltimo() ? 'pi pi-check' : 'pi pi-arrow-right'"
             iconPos="right"
             [disabled]="!pasoValido()"

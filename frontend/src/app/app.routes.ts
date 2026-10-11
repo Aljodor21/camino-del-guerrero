@@ -27,6 +27,12 @@ export const routes: Routes = [
       { path: 'rutinas',          canActivate: [userGuard, moduloGuard('entrenamiento')], loadComponent: () => import('./rutinas/rutinas').then(m => m.Rutinas) },
       { path: 'progreso',         canActivate: [userGuard], loadComponent: () => import('./progreso/progreso').then(m => m.Progreso) },
       { path: 'nutricion',        canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/nutricion').then(m => m.Nutricion) },
+      { path: 'nutricion/plan',   canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/cargar-minuta/cargar-minuta').then(m => m.CargarMinuta) },
+      { path: 'comidas/contar',   canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./comidas/contar/contar').then(m => m.ContarComida) },
+      { path: 'cumplimiento',     canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./comidas/cumplimiento/cumplimiento').then(m => m.CumplimientoPlan) },
+      { path: 'control',          canActivate: [userGuard], loadComponent: () => import('./control/control').then(m => m.Control) },
+      { path: 'proyeccion',       canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/proyeccion/proyeccion').then(m => m.Proyeccion) },
+      { path: 'avisos',           canActivate: [userGuard], loadComponent: () => import('./avisos/avisos').then(m => m.Avisos) },
       { path: 'recomendaciones',  canActivate: [userGuard], loadComponent: () => import('./recomendaciones/recomendaciones').then(m => m.Recomendaciones) },
       { path: 'perfil',           canActivate: [userGuard], loadComponent: () => import('./perfil/perfil').then(m => m.Perfil) },
       {

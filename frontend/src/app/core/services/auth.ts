@@ -10,6 +10,7 @@ import { environment } from '../../../environments/environment';
 const API = `${environment.apiUrl}/usuarios`;
 const ACCESS_KEY = 'cdg_access';
 const REFRESH_KEY = 'cdg_refresh';
+const RECUPERAR_KEY = 'cdg_recuperar';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -31,6 +32,38 @@ export class AuthService {
     return this.http
       .post<AuthResponse>(`${API}/login/`, payload)
       .pipe(tap((res) => this._guardarSesion(res)));
+  }
+
+  /**
+   * Manda al correo el usuario y un enlace para crear una clave nueva. El enlace solo sirve en
+   * este navegador: se guarda aquí un código y el servidor lo compara al abrirlo.
+   */
+  recuperarClave(email: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${API}/recuperar-clave/`, {
+      email,
+      dispositivo: this.codigoDelNavegador(true),
+    });
+  }
+
+  restablecerClave(token: string, password: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${API}/restablecer-clave/`, {
+      token,
+      password,
+      dispositivo: this.codigoDelNavegador(false),
+    });
+  }
+
+  private codigoDelNavegador(crear: boolean): string {
+    try {
+      let codigo = localStorage.getItem(RECUPERAR_KEY);
+      if (!codigo && crear) {
+        codigo = crypto.randomUUID();
+        localStorage.setItem(RECUPERAR_KEY, codigo);
+      }
+      return codigo ?? '';
+    } catch {
+      return '';
+    }
   }
 
   logout(): void {

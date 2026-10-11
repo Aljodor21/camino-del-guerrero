@@ -1,0 +1,109 @@
+@if (estado(); as e) {
+  @if (e.disponible) {
+    <section
+      class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4"
+      aria-labelledby="il-titulo"
+    >
+      <h2 id="il-titulo" class="font-semibold text-gray-900 dark:text-white">
+        ¿Cómo podría verse?
+      </h2>
+      <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        Una imagen orientativa de tu cambio estimado, hecha a partir de tu foto de frente. Es un
+        cambio suave y nunca más de 3 kg, aunque la estimación diera más. No es una promesa.
+      </p>
+
+      @if (!pidiendo()) {
+        <p-button
+          label="Ver cómo podría verse"
+          icon="pi pi-image"
+          [disabled]="e.restantes_hoy === 0"
+          (onClick)="pidiendo.set(true)"
+        />
+        @if (e.restantes_hoy === 0) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Ya generaste las imágenes de hoy. Vuelve mañana.
+          </p>
+        }
+      } @else {
+        <div
+          class="rounded-xl border border-gray-200 dark:border-dark-700 p-4 space-y-3"
+          role="group"
+          aria-label="Permiso para enviar tu foto"
+        >
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            Para hacerla enviamos tu foto de frente más reciente a <strong>OpenAI</strong>, un
+            tercero, solo para generar esta imagen. La imagen que vuelve queda privada en tu cuenta
+            y la puedes borrar cuando quieras.
+          </p>
+          <label class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer">
+            <input
+              type="checkbox"
+              class="mt-1 accent-[var(--color-guerrero-red)]"
+              [checked]="acepta()"
+              (change)="acepta.set($any($event.target).checked)"
+            />
+            <span>Acepto que mi foto se envíe a OpenAI para generar la imagen.</span>
+          </label>
+          @if (error()) {
+            <p-message severity="error" [text]="error()" styleClass="w-full" />
+          }
+          <div class="flex flex-wrap gap-2">
+            <p-button
+              label="Generar imagen"
+              icon="pi pi-check"
+              [loading]="generando()"
+              [disabled]="!acepta()"
+              (onClick)="generar()"
+            />
+            <p-button
+              label="Cancelar"
+              variant="text"
+              severity="secondary"
+              [disabled]="generando()"
+              (onClick)="pidiendo.set(false); error.set('')"
+            />
+          </div>
+          @if (generando()) {
+            <p class="text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+              Esto puede tardar hasta un minuto.
+            </p>
+          }
+        </div>
+      }
+
+      @if (e.ilustraciones.length) {
+        <ul class="grid gap-4">
+          @for (i of e.ilustraciones; track i.id) {
+            <li class="space-y-2">
+              @if (imagenes()[i.id]; as src) {
+                <img
+                  [src]="src"
+                  [alt]="'Ilustración orientativa de un cambio de ' + cambio(i.cambio_kg)"
+                  class="w-full max-w-xs mx-auto rounded-xl"
+                />
+              }
+              <div class="flex items-start justify-between gap-3">
+                <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span class="font-semibold tabular-nums">{{ cambio(i.cambio_kg) }}</span>
+                  en {{ i.dias }} días · de {{ num(i.peso_base, 1) }} a {{ num(i.peso_final, 1) }} kg ·
+                  {{ fecha(i.creada, 'corta') }}
+                  @if (i.limitado) {
+                    <br />La estimación daba más; la imagen muestra un cambio moderado.
+                  }
+                  <br />Ilustración orientativa, no es una promesa.
+                </p>
+                <button
+                  type="button"
+                  (click)="borrar(i.id)"
+                  class="shrink-0 text-xs text-gray-500 dark:text-gray-400 underline"
+                >
+                  Borrar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}

@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-warm-bg dark:bg-dark-900 text-gray-900 dark:text-white">
   <!-- Navbar superior -->
   <header
-    class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4 bg-warm-card dark:bg-dark-800 border-b border-gray-300 dark:border-dark-700 shadow-sm"
+    class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4 bg-warm-card/85 dark:bg-dark-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-white/5"
   >
     <a [routerLink]="['/']">
       <img
@@ -11,9 +11,27 @@
       />
     </a>
     <div class="flex items-center gap-1">
-      <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-1">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-2">
         {{ authService.usuario()?.nombre }}
       </span>
+      @if (!authService.isAdmin()) {
+        <a
+          href="/avisos"
+          (click)="alternarAvisos($event)"
+          class="relative w-10 h-10 flex items-center justify-center rounded-full text-guerrero-red hover:bg-guerrero-red/10 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          [attr.aria-label]="
+            avisos.pendientes() ? 'Avisos: ' + avisos.pendientes() + ' pendientes' : 'Avisos'
+          "
+        >
+          <i class="pi pi-bell" aria-hidden="true"></i>
+          @if (avisos.pendientes()) {
+            <span
+              class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-guerrero-red text-white text-[10px] font-bold leading-4 text-center tabular-nums"
+              >{{ avisos.pendientes() > 9 ? '9+' : avisos.pendientes() }}</span
+            >
+          }
+        </a>
+      }
       <p-button
         [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
         variant="text"
@@ -72,16 +90,17 @@
 
   <!-- Navegación inferior -->
   <nav
-    class="fixed bottom-0 inset-x-0 z-50 h-16 flex bg-warm-card dark:bg-dark-800 border-t border-gray-300 dark:border-dark-700"
+    class="fixed bottom-0 inset-x-0 z-50 h-16 flex bg-warm-card/90 dark:bg-dark-900/85 backdrop-blur-md border-t border-gray-200/80 dark:border-white/5"
+    aria-label="Secciones"
   >
     @for (item of navItems(); track item.path) {
       <a
         [routerLink]="item.path"
-        routerLinkActive="!text-guerrero-red"
-        class="flex-1 flex flex-col items-center justify-center gap-0.5 text-gray-400 dark:text-gray-500 hover:text-guerrero-red transition-colors"
+        routerLinkActive="nav-activa"
+        class="nav-item relative flex-1 flex flex-col items-center justify-center gap-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
       >
-        <i [class]="item.icon + ' text-xl'"></i>
-        <span class="text-xs font-medium">{{ item.label }}</span>
+        <i [class]="item.icon + ' text-xl'" aria-hidden="true"></i>
+        <span class="text-xs font-medium tracking-wide">{{ item.label }}</span>
       </a>
     }
   </nav>

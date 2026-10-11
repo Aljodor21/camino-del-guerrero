@@ -1,10 +1,11 @@
 <div class="p-4 space-y-4 max-w-2xl mx-auto">
 
   <!-- Header -->
-  <div>
-    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Recomendaciones</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Videos y consejos para mejorar tu entrenamiento.</p>
-  </div>
+  <app-portada
+    foto="entreno-casa"
+    titulo="Consejos"
+    subtitulo="Videos y consejos para mejorar tu entrenamiento."
+  />
 
   @if (loading()) {
     <div class="flex justify-center py-12">

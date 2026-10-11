@@ -128,7 +128,11 @@
             aria-describedby="mp-fin-ayuda"
           />
           <small id="mp-fin-ayuda" class="text-xs text-gray-500 dark:text-gray-400">
-            Por ejemplo, el día de tu próximo control. Puedes ajustarlo.
+            @if (finPlanFijo()) {
+              La fecha que pusiste al empezar. No se puede cambiar.
+            } @else {
+              Por ejemplo, el día de tu próximo control. Una vez la pones, queda fija.
+            }
           </small>
         </div>
       </div>
@@ -146,35 +150,75 @@
         ></textarea>
       </div>
 
-      <fieldset class="space-y-3">
+      <fieldset class="space-y-4">
         <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Módulos</legend>
-        <label class="flex items-center justify-between gap-3 cursor-pointer">
-          <span class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-            <i class="pi pi-heart text-gray-400" aria-hidden="true"></i> Alimentación
-          </span>
-          <p-toggleswitch formControlName="incluye_alimentacion" />
-        </label>
-        <label class="flex items-center justify-between gap-3 cursor-pointer">
-          <span class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
-            <i class="pi pi-bolt text-gray-400" aria-hidden="true"></i> Entrenamiento
-          </span>
-          <p-toggleswitch formControlName="incluye_entrenamiento" />
-        </label>
-        @if (sinModulos()) {
-          <p class="text-xs text-red-600 dark:text-red-400">
-            El proceso necesita al menos un módulo.
+        @for (m of modulos; track m.id) {
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-3">
+              <span class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+                <i [class]="m.icono + ' text-gray-400'" aria-hidden="true"></i> {{ m.nombre }}
+              </span>
+              @if (m.id === 'alimentacion' ? p.incluye_alimentacion : p.incluye_entrenamiento) {
+                <span class="flex items-center gap-3">
+                  <span class="text-xs font-medium text-guerrero-red">Activo</span>
+                  @if (m.id === 'alimentacion' ? p.incluye_entrenamiento : p.incluye_alimentacion) {
+                    <p-button
+                      label="Quitar"
+                      size="small"
+                      variant="text"
+                      severity="danger"
+                      (onClick)="quitando.set(m.id)"
+                    />
+                  }
+                </span>
+              } @else {
+                <p-button
+                  [label]="'Activar ' + m.nombre.toLowerCase()"
+                  icon="pi pi-plus"
+                  size="small"
+                  variant="outlined"
+                  routerLink="/onboarding"
+                  [queryParams]="{ agregar: m.id }"
+                />
+              }
+            </div>
+            @if (quitando() === m.id) {
+              <div
+                class="rounded-xl border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-3 space-y-2"
+                role="alertdialog"
+                [attr.aria-label]="'Quitar ' + m.nombre.toLowerCase()"
+              >
+                <p class="text-sm text-gray-800 dark:text-gray-200">{{ m.aviso }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <p-button
+                    label="Sí, quitar"
+                    severity="danger"
+                    size="small"
+                    [loading]="quitandoCargando()"
+                    (onClick)="quitarModulo(m.id)"
+                  />
+                  <p-button
+                    label="No"
+                    variant="text"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="quitando.set(null)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!(p.incluye_alimentacion && p.incluye_entrenamiento)) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Un proceso necesita al menos un módulo. Para empezar de cero, bórralo.
           </p>
         }
       </fieldset>
 
-      @if (form.controls.incluye_entrenamiento.value) {
+      @if (p.incluye_entrenamiento) {
         <div class="rounded-xl border border-gray-200 dark:border-dark-700 p-4">
           <app-entrenamiento-form [form]="entrenamientoForm" />
-          @if (!p.incluye_entrenamiento) {
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">
-              Al guardar, genera tu rutina desde la sección Rutinas.
-            </p>
-          }
         </div>
       }
 
@@ -190,95 +234,56 @@
         label="Guardar cambios"
         icon="pi pi-check"
         [loading]="guardando()"
-        [disabled]="form.invalid || sinModulos() || (form.pristine && entrenamientoForm.pristine)"
+        [disabled]="form.invalid || (form.pristine && entrenamientoForm.pristine)"
         styleClass="w-full"
       />
     </form>
   </section>
 
-  <!-- Proceso programado (cuando ya hay uno en curso) -->
-  @if (procesos.actual() && procesos.programado(); as prog) {
-    <section
-      class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3"
-      aria-labelledby="mp-prog"
-    >
-      <h2 id="mp-prog" class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-        <i class="pi pi-calendar text-guerrero-red" aria-hidden="true"></i> Próximo proceso
-      </h2>
-      <p class="text-sm text-gray-700 dark:text-gray-300">
-        <span class="font-semibold"
-          >{{ prog.objetivo_nombre }}
-          @if (prog.fase_nombre) {
-            · {{ prog.fase_nombre }}
-          }
-        </span>
-        inicia el {{ formatearFecha(prog.fecha_inicio, 'larga') }}. Ese día se cierra el actual.
-      </p>
-      @if (confirmandoCancelacion()) {
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-sm text-gray-700 dark:text-gray-300">¿Cancelar este proceso?</span>
-          <p-button
-            label="Sí, cancelar"
-            severity="danger"
-            size="small"
-            [loading]="cancelando()"
-            (onClick)="cancelarProgramado()"
-          />
-          <p-button
-            label="No"
-            variant="text"
-            severity="secondary"
-            size="small"
-            (onClick)="confirmandoCancelacion.set(false)"
-          />
-        </div>
-      } @else {
+  <!-- Borrar el proceso -->
+  <section
+    class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3"
+    aria-labelledby="mp-borrar"
+  >
+    <h2 id="mp-borrar" class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <i class="pi pi-trash text-guerrero-red" aria-hidden="true"></i> Borrar mi proceso
+    </h2>
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+      Se borra todo lo de este proceso: medidas y fotos, plan, menús, suplementos, registros y
+      avisos. Solo quedan tus datos personales y puedes empezar otro proceso, con alimentación o
+      entrenamiento.
+    </p>
+    @if (confirmandoBorrado()) {
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm font-medium text-gray-800 dark:text-gray-200"
+          >¿Seguro? No se puede deshacer.</span
+        >
         <p-button
-          label="Cancelar proceso programado"
-          variant="outlined"
+          label="Sí, borrar todo"
+          severity="danger"
+          size="small"
+          [loading]="borrando()"
+          (onClick)="borrarProceso()"
+        />
+        <p-button
+          label="No"
+          variant="text"
           severity="secondary"
           size="small"
-          (onClick)="confirmandoCancelacion.set(true)"
+          (onClick)="confirmandoBorrado.set(false)"
         />
-      }
-    </section>
-  } @else if (!procesos.programado()) {
-    <p-button
-      label="Iniciar nuevo proceso"
-      icon="pi pi-plus"
-      variant="outlined"
-      routerLink="/onboarding"
-      styleClass="w-full"
-    />
-  } @else if (confirmandoCancelacion()) {
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="text-sm text-gray-700 dark:text-gray-300"
-        >¿Cancelar este proceso programado?</span
-      >
+      </div>
+    } @else {
       <p-button
-        label="Sí, cancelar"
+        label="Borrar mi proceso"
+        icon="pi pi-trash"
+        variant="outlined"
         severity="danger"
         size="small"
-        [loading]="cancelando()"
-        (onClick)="cancelarProgramado()"
+        (onClick)="confirmandoBorrado.set(true)"
       />
-      <p-button
-        label="No"
-        variant="text"
-        severity="secondary"
-        size="small"
-        (onClick)="confirmandoCancelacion.set(false)"
-      />
-    </div>
-  } @else {
-    <p-button
-      label="Cancelar proceso programado"
-      variant="outlined"
-      severity="secondary"
-      (onClick)="confirmandoCancelacion.set(true)"
-      styleClass="w-full"
-    />
-  }
+    }
+  </section>
 
   <!-- Historial -->
   @if (anteriores().length > 0) {

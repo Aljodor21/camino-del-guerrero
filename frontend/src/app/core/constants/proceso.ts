@@ -111,16 +111,41 @@ export const AVISOS_RECORDATORIO: Opcion<number>[] = [
 
 /**
  * Duración que se asume si el usuario no la sabe. La proteína suele ir 3 meses;
- * el hipercalórico va con la meta de volumen, es decir, todo el proceso (null).
+ * la hipercalórica (el "gainer" del volumen) va con la meta, es decir, todo el proceso (null).
  */
 export const TIPOS_SUPLEMENTO: (Opcion<TipoSuplemento> & {
   articulo: 'el' | 'la';
   duracionUsual: number | null;
+  descripcion: string;
 })[] = [
-  { label: 'Hipercalórico', value: 'hipercalorico', articulo: 'el', duracionUsual: null },
-  { label: 'Proteína', value: 'proteina', articulo: 'la', duracionUsual: 90 },
-  { label: 'Creatina', value: 'creatina', articulo: 'la', duracionUsual: null },
-  { label: 'Otro', value: 'otro', articulo: 'el', duracionUsual: null },
+  {
+    label: 'Proteína hipercalórica',
+    value: 'hipercalorico',
+    articulo: 'la',
+    duracionUsual: null,
+    descripcion: 'Proteína con calorías extra para subir de peso (gainer).',
+  },
+  {
+    label: 'Proteína',
+    value: 'proteina',
+    articulo: 'la',
+    duracionUsual: 90,
+    descripcion: 'Solo proteína (whey o similar), sin calorías extra.',
+  },
+  {
+    label: 'Creatina',
+    value: 'creatina',
+    articulo: 'la',
+    duracionUsual: null,
+    descripcion: 'Polvo sin sabor, casi siempre 5 g al día.',
+  },
+  { label: 'Otro', value: 'otro', articulo: 'el', duracionUsual: null, descripcion: '' },
+];
+
+export const UNIDADES_PESO: Opcion<'kg' | 'lb' | 'g'>[] = [
+  { label: 'kg', value: 'kg' },
+  { label: 'lb', value: 'lb' },
+  { label: 'g', value: 'g' },
 ];
 
 export const DURACIONES_SUPLEMENTO: Opcion<number | null>[] = [

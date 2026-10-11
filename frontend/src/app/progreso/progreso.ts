@@ -17,6 +17,8 @@ import { ResumenProceso } from './resumen-proceso/resumen-proceso';
 import { AgendaService } from '../core/services/agenda';
 import { Rutina, DiaRutina } from '../core/models/rutina.model';
 import { environment } from '../../environments/environment';
+import { Portada } from '../shared/portada/portada';
+import { guardarSeccionEnUrl } from '../shared/seccion-en-url';
 
 const API = environment.apiUrl;
 const LOCAL_KEY = 'cdg_sesion';
@@ -46,7 +48,7 @@ interface SesionGuardada {
   selector: 'app-progreso',
   templateUrl: './progreso.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [Portada, 
     ButtonModule, ChartModule, DialogModule, ProgressSpinnerModule, Medidas, Agenda, ResumenProceso,
   ],
 })
@@ -67,6 +69,10 @@ export class Progreso implements OnInit, OnDestroy {
     { id: 'agenda' as const, label: 'Agenda', icon: 'pi pi-calendar' },
     ...(this.tieneEntrenamiento() ? [{ id: 'entrenamiento' as const, label: 'Sesiones', icon: 'pi pi-bolt' }] : []),
   ]);
+
+  constructor() {
+    guardarSeccionEnUrl(this.seccion);
+  }
 
   private seccionInicial(): Seccion {
     const pedida = this.route.snapshot.queryParamMap.get('seccion');
@@ -245,7 +251,7 @@ export class Progreso implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.limpiarTimer();
-    this.limpiarDescanso();
+    this.limpiarDescanso(true);
     this.limpiarTimerSesion();
   }
 
@@ -492,11 +498,13 @@ export class Progreso implements OnInit, OnDestroy {
     this.limpiarDescanso();
   }
 
+  /** El tono de fin de descanso suena solo si de verdad había un descanso en curso. */
   private limpiarDescanso(silencioso = false): void {
+    const habiaDescanso = this.enDescanso();
     if (this.descansoInterval) { clearInterval(this.descansoInterval); this.descansoInterval = null; }
     this.descansoSeg.set(0);
     this.enDescanso.set(false);
-    if (!silencioso) this.audio.finDescanso();
+    if (!silencioso && habiaDescanso) this.audio.finDescanso();
   }
 
   private limpiarTimer(): void {

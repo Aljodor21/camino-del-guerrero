@@ -1,4 +1,7 @@
 <div class="p-4 max-w-2xl mx-auto space-y-4">
+  @if (vistaEntrenamiento() === 'lista' || seccion() !== 'entrenamiento') {
+    <app-portada foto="progreso" titulo="Progreso" subtitulo="Tus medidas, tu agenda y tus sesiones." />
+  }
 
   @if (vistaEntrenamiento() === 'lista' || seccion() !== 'entrenamiento') {
     <app-resumen-proceso (verAgenda)="seccion.set('agenda')" />
@@ -32,7 +35,7 @@
     <!-- LISTA -->
     @if (vistaEntrenamiento() === 'lista') {
       <div class="flex items-center justify-between">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Entrenamientos</h1>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Entrenamientos</h2>
         @if (!sinRutina() && rutina()) {
           <p-button icon="pi pi-plus" label="Nueva sesión" (onClick)="vistaEntrenamiento.set('elegir_dia')" />
         }
@@ -150,7 +153,7 @@
       <div class="flex items-center gap-2">
         <p-button icon="pi pi-arrow-left" variant="text" [rounded]="true" severity="secondary"
                   (onClick)="vistaEntrenamiento.set('lista')" />
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">¿Qué día entrenas hoy?</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">¿Qué día entrenas hoy?</h1>
       </div>
 
       <!-- Barra de progreso de la rutina -->

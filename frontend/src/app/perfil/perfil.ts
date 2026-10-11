@@ -17,13 +17,14 @@ import { MiProceso } from './mi-proceso/mi-proceso';
 import { PAISES } from '../core/constants/paises';
 
 import { environment } from '../../environments/environment';
+import { Portada } from '../shared/portada/portada';
 const API = environment.apiUrl;
 
 @Component({
   selector: 'app-perfil',
   templateUrl: './perfil.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [Portada, 
     ReactiveFormsModule,
     InputNumberModule,
     InputTextModule,
@@ -82,6 +83,19 @@ export class Perfil implements OnInit {
       preferencias_alimentarias: u.preferencias_alimentarias,
       frecuencia_peso: u.frecuencia_peso,
     });
+    // Lo que ya se dijo al empezar queda fijo; si algo falta, se puede completar una vez.
+    const datos: Record<string, unknown> = {
+      nombre: u.nombre,
+      sexo_id: u.sexo?.id ?? null,
+      fecha_nacimiento: u.fecha_nacimiento,
+      estatura: u.estatura,
+      nacionalidad: u.nacionalidad,
+      region: u.region,
+    };
+    for (const [campo, valor] of Object.entries(datos)) {
+      const control = this.formPerfil.get(campo);
+      if (valor !== null && valor !== '') control?.disable({ emitEvent: false });
+    }
   }
 
   protected filtrarPaises(query: string): void {
@@ -96,7 +110,7 @@ export class Perfil implements OnInit {
     this.okPerfil.set(false);
     try {
       const usuario = await firstValueFrom(
-        this.http.patch<Usuario>(`${API}/usuarios/perfil/`, this.formPerfil.getRawValue()),
+        this.http.patch<Usuario>(`${API}/usuarios/perfil/`, this.formPerfil.value),
       );
       this.auth.actualizarUsuario(usuario);
       this.okPerfil.set(true);

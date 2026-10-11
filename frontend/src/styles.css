@@ -9,13 +9,30 @@
   --color-guerrero-red-dark: #a83224;
   --color-guerrero-gold:     #D4AF37;
   --color-guerrero-gold-dark:#b8960f;
-  --color-dark-900:          #121212;
-  --color-dark-800:          #1e1e1e;
-  --color-dark-700:          #2d2d2d;
+  /* Noche cálida: la misma del home */
+  --color-dark-900:          #100d0b;
+  --color-dark-800:          #1b1511;
+  --color-dark-700:          #2b221c;
   --color-success:           #27AE60;
   --color-warning:           #F39C12;
-  --color-warm-bg:           #f0ede8;
-  --color-warm-card:         #faf9f7;
+  --color-warm-bg:           #f1ece5;
+  --color-warm-card:         #fbf8f4;
+
+  /* Grises cálidos en toda la app (antes eran grises fríos) */
+  --color-gray-50:  #faf8f5;
+  --color-gray-100: #f2ede7;
+  --color-gray-200: #e5ddd4;
+  --color-gray-300: #d2c8bd;
+  --color-gray-400: #a3988d;
+  --color-gray-500: #7b7067;
+  --color-gray-600: #5b524a;
+  --color-gray-700: #433b34;
+  --color-gray-800: #2c2621;
+  --color-gray-900: #1c1814;
+  --color-gray-950: #110e0c;
+
+  --font-sans: 'Barlow', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
 }
 
 /* Botones secondary (text + outlined) visibles en dark mode */
@@ -36,6 +53,19 @@ html.dark {
   --p-button-outlined-secondary-active-border-color: #9ca3af;
 }
 
+/* Letra: Barlow en todo, Barlow Condensed en los títulos (como el home) */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.005em;
+}
+h1 {
+  font-weight: 700;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -52,4 +82,52 @@ html:not(.dark) .bg-white {
 html:not(.dark) .shadow-sm {
   border: 1px solid #d6d0c8;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
+
+/* Navegación de abajo: la sección activa en rojo, con una rayita arriba */
+.nav-item.nav-activa {
+  color: var(--color-guerrero-red);
+}
+.nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--color-guerrero-red);
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-item.nav-activa::before {
+  transform: translateX(-50%) scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-item::before {
+    transition: none;
+  }
+}
+
+/* Datos bloqueados (por ejemplo los de inicio en el perfil): se leen bien y se nota que no se editan. */
+.p-inputtext:disabled,
+.p-inputnumber-input:disabled,
+.p-autocomplete-input:disabled,
+.p-select.p-disabled .p-select-label {
+  opacity: 1;
+  color: var(--color-gray-700);
+  -webkit-text-fill-color: var(--color-gray-700);
+  background: var(--color-gray-100);
+  cursor: not-allowed;
+}
+html.dark .p-inputtext:disabled,
+html.dark .p-inputnumber-input:disabled,
+html.dark .p-autocomplete-input:disabled,
+html.dark .p-select.p-disabled .p-select-label {
+  color: var(--color-gray-200);
+  -webkit-text-fill-color: var(--color-gray-200);
+  background: var(--color-dark-700);
+}
+.p-select.p-disabled {
+  opacity: 1;
 }

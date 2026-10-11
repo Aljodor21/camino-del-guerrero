@@ -1,0 +1,120 @@
+<div class="p-4 max-w-2xl mx-auto space-y-6 pb-8">
+  <app-portada foto="agenda" titulo="Tu control" subtitulo="Cierra este periodo y decide cómo sigues." />
+
+  @if (proceso(); as p) {
+    @if (!p.plan_terminado) {
+      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3">
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          @if (p.fecha_fin_plan) {
+            Tu control es el {{ formatearFecha(p.fecha_fin_plan, 'larga') }}. Ese día te preguntamos
+            cómo sigues.
+          } @else {
+            Tu proceso no tiene fecha de control: va sin definir.
+          }
+        </p>
+        <p-button label="Volver" icon="pi pi-arrow-left" variant="outlined" routerLink="/inicio" />
+      </div>
+    } @else {
+      @switch (paso()) {
+        @case ('pregunta') {
+          <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4">
+            <h2 class="font-semibold text-gray-900 dark:text-white">
+              Llegó tu control del {{ formatearFecha(p.fecha_fin_plan!, 'larga') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              ¿Quieres seguir con el proceso tal como va, o tienes cambios?
+            </p>
+            <div class="grid gap-3">
+              <button
+                type="button"
+                class="text-left rounded-xl border-2 border-gray-200 dark:border-dark-700 p-4 hover:border-guerrero-red transition-colors focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                (click)="paso.set('seguir')"
+              >
+                <span class="block font-semibold text-gray-900 dark:text-white">Sigo igual</span>
+                <span class="block text-sm text-gray-500 dark:text-gray-400"
+                  >Mismo plan y mismo proceso, en un nuevo periodo.</span
+                >
+              </button>
+              <button
+                type="button"
+                class="text-left rounded-xl border-2 border-gray-200 dark:border-dark-700 p-4 hover:border-guerrero-red transition-colors focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                (click)="paso.set('cambios')"
+              >
+                <span class="block font-semibold text-gray-900 dark:text-white">Tengo cambios</span>
+                <span class="block text-sm text-gray-500 dark:text-gray-400"
+                  >Un plan nuevo, otro entrenamiento o empezar de cero.</span
+                >
+              </button>
+            </div>
+          </section>
+        }
+        @case ('seguir') {
+          <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4">
+            <h2 class="font-semibold text-gray-900 dark:text-white">¿Hasta cuándo seguimos?</h2>
+            <app-periodo-plan [sugerida]="sugerida()" [(fecha)]="fecha" />
+            @if (error()) {
+              <p-message severity="error" [text]="error()" styleClass="w-full" />
+            }
+            <div class="flex gap-3">
+              <p-button
+                label="Atrás"
+                icon="pi pi-arrow-left"
+                variant="outlined"
+                severity="secondary"
+                (onClick)="paso.set('pregunta')"
+              />
+              <p-button
+                label="Seguir con mi proceso"
+                icon="pi pi-check"
+                [loading]="guardando()"
+                [disabled]="fecha() === undefined"
+                (onClick)="seguir()"
+                class="flex-1"
+                styleClass="w-full"
+              />
+            </div>
+          </section>
+        }
+        @case ('cambios') {
+          <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3">
+            <h2 class="font-semibold text-gray-900 dark:text-white">¿Qué cambió?</h2>
+            <ul class="divide-y divide-gray-200 dark:divide-dark-700">
+              @if (p.incluye_alimentacion) {
+                <li>
+                  <a
+                    routerLink="/nutricion/plan"
+                    class="flex items-center justify-between gap-3 py-3 text-sm text-gray-800 dark:text-gray-200 hover:text-guerrero-red"
+                  >
+                    <span>Me dieron un plan de comida nuevo</span>
+                    <i class="pi pi-angle-right" aria-hidden="true"></i>
+                  </a>
+                </li>
+              }
+              <li>
+                <a
+                  routerLink="/perfil"
+                  class="flex items-center justify-between gap-3 py-3 text-sm text-gray-800 dark:text-gray-200 hover:text-guerrero-red"
+                >
+                  <span>Cambió mi entrenamiento, quiero sumar o quitar un módulo, o empezar de cero</span>
+                  <i class="pi pi-angle-right" aria-hidden="true"></i>
+                </a>
+              </li>
+            </ul>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Al guardar el plan nuevo eliges hasta cuándo va; ahí se cierra este control.
+            </p>
+            <p-button
+              label="Atrás"
+              icon="pi pi-arrow-left"
+              variant="outlined"
+              severity="secondary"
+              (onClick)="paso.set('pregunta')"
+            />
+          </section>
+        }
+      }
+    }
+  } @else {
+    <p class="text-sm text-gray-500 dark:text-gray-400">Todavía no tienes un proceso.</p>
+  }
+</div>

@@ -12,13 +12,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Implemento, Rutina } from '../core/models/rutina.model';
 
 import { environment } from '../../environments/environment';
+import { Portada } from '../shared/portada/portada';
 const API = environment.apiUrl;
 
 @Component({
   selector: 'app-rutinas',
   templateUrl: './rutinas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule, InputTextModule],
+  imports: [Portada, DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule, InputTextModule],
 })
 export class Rutinas implements OnInit {
   private http      = inject(HttpClient);

@@ -1,4 +1,10 @@
-<div class="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-dark-900">
+<div class="relative isolate min-h-screen flex items-center justify-center px-4 py-10">
+  <!-- Fondo: los guantes del home -->
+  <picture class="fixed inset-0 -z-10" aria-hidden="true">
+    <source media="(max-width: 767px)" srcset="/home/guantes-movil.webp" />
+    <img src="/home/guantes.webp" alt="" class="w-full h-full object-cover" />
+  </picture>
+  <div class="fixed inset-0 -z-10 bg-dark-900/70" aria-hidden="true"></div>
   <div class="w-full max-w-sm">
 
     <!-- Volver al home -->
@@ -14,7 +20,7 @@
     <div class="flex justify-center mb-8">
       <a [routerLink]="['/']">
         <img
-          [src]="theme.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+          src="/Logo oscuro-sf.png"
           alt="Camino del Guerrero"
           class="h-32 w-auto"
         />
@@ -56,6 +62,14 @@
             inputStyleClass="w-full"
             autocomplete="current-password"
           />
+        </div>
+
+        <div class="text-right -mt-2">
+          <a
+            routerLink="/auth/recuperar"
+            class="text-sm text-guerrero-red font-medium hover:underline"
+            >¿Olvidaste tu clave?</a
+          >
         </div>
 
         <p-button

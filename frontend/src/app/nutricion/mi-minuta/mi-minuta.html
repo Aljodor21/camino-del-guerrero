@@ -1,0 +1,168 @@
+@if (servicio.vigente(); as m) {
+  <div class="space-y-4">
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full" />
+    }
+
+    <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4">
+      <div class="flex items-start gap-3">
+        <i class="pi pi-lock text-gray-400 mt-1" aria-hidden="true"></i>
+        <div class="flex-1 min-w-0">
+          <h2 class="font-semibold text-gray-900 dark:text-white">
+            {{
+              m.origen === 'nutricionista'
+                ? 'Minuta de tu nutricionista'
+                : 'Minuta calculada por la IA'
+            }}
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Desde el {{ formatearFecha(m.fecha_creacion.slice(0, 10)) }}. No se edita: si cambia,
+            guarda una nueva.
+          </p>
+        </div>
+      </div>
+
+      @if (m.kcal || m.proteina_g_kg) {
+        <dl class="grid grid-cols-2 gap-3">
+          @if (m.kcal) {
+            <div class="rounded-lg bg-gray-50 dark:bg-dark-700/60 px-3 py-2">
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Calorías al día</dt>
+              <dd class="text-lg font-bold text-gray-900 dark:text-white tabular-nums">
+                {{ m.kcal }} kcal
+              </dd>
+            </div>
+          }
+          @if (m.proteina_g_kg) {
+            <div class="rounded-lg bg-gray-50 dark:bg-dark-700/60 px-3 py-2">
+              <dt class="text-xs text-gray-500 dark:text-gray-400">Proteína</dt>
+              <dd class="text-lg font-bold text-gray-900 dark:text-white tabular-nums">
+                {{ num(m.proteina_g_kg) }} g por kilo
+              </dd>
+            </div>
+          }
+        </dl>
+      }
+
+      <app-tabla-minuta [porciones]="m.porciones" />
+
+      <div class="flex flex-wrap gap-2 pt-1">
+        @if (m.tiene_archivo) {
+          <p-button
+            label="Ver original"
+            icon="pi pi-paperclip"
+            size="small"
+            variant="outlined"
+            severity="secondary"
+            [loading]="abriendo()"
+            (onClick)="verOriginal(m)"
+          />
+        }
+        <a
+          routerLink="/nutricion/plan"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold text-guerrero-red hover:bg-red-50 dark:hover:bg-guerrero-red/10"
+        >
+          <i class="pi pi-plus text-xs" aria-hidden="true"></i>Guardar una nueva
+        </a>
+      </div>
+    </section>
+
+    <section
+      class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3"
+      aria-labelledby="mm-fuera"
+    >
+      <div>
+        <h2 id="mm-fuera" class="font-semibold text-gray-900 dark:text-white">Comidas por fuera</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Esas no entran al mercado; te decimos qué pedir para cumplir la minuta.
+          @if (guardado()) {
+            <span class="text-green-700 dark:text-green-400">Guardado.</span>
+          }
+        </p>
+      </div>
+      @for (t of m.tiempos; track t) {
+        <div class="space-y-1.5">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ tiempos[t].label }}</p>
+          <div class="flex flex-wrap gap-2" role="radiogroup" [attr.aria-label]="tiempos[t].label">
+            @for (o of opcionesPorFuera; track o.label) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="reglaDe(t) === o.value"
+                [disabled]="guardando()"
+                [class]="clasesChip(reglaDe(t) === o.value)"
+                (click)="cambiarPorFuera(t, o.value)"
+              >
+                {{ o.label }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    @if (ejemplo().length || m.recomendaciones) {
+      <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        @if (m.recomendaciones) {
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white mb-1">Recomendaciones</h2>
+            <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+              {{ m.recomendaciones }}
+            </p>
+          </div>
+        }
+        @if (ejemplo().length) {
+          <details class="group">
+            <summary
+              class="cursor-pointer text-sm font-semibold text-gray-900 dark:text-white list-none flex items-center gap-2"
+            >
+              <i
+                class="pi pi-chevron-right text-xs transition-transform group-open:rotate-90"
+                aria-hidden="true"
+              ></i>
+              Menú de ejemplo
+            </summary>
+            <dl class="mt-2 space-y-2">
+              @for (e of ejemplo(); track e.t) {
+                <div>
+                  <dt
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    {{ tiempos[e.t].label }}
+                  </dt>
+                  <dd class="text-sm text-gray-700 dark:text-gray-200">{{ e.texto }}</dd>
+                </div>
+              }
+            </dl>
+          </details>
+        }
+      </section>
+    }
+
+    @if (servicio.anteriores().length) {
+      <details class="text-sm text-gray-500 dark:text-gray-400">
+        <summary class="cursor-pointer">
+          Minutas anteriores ({{ servicio.anteriores().length }})
+        </summary>
+        <ul class="mt-2 space-y-1">
+          @for (a of servicio.anteriores(); track a.id) {
+            <li class="flex items-center justify-between gap-2">
+              <span
+                >{{ a.origen === 'nutricionista' ? 'Nutricionista' : 'IA' }} · desde el
+                {{ formatearFecha(a.fecha_creacion.slice(0, 10)) }}</span
+              >
+              @if (a.tiene_archivo) {
+                <button
+                  type="button"
+                  class="text-guerrero-red font-semibold"
+                  (click)="verOriginal(a)"
+                >
+                  Ver original
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  </div>
+}
