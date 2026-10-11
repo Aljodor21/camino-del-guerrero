@@ -17,7 +17,11 @@ Real versions come from `backend/requirements.txt` and `frontend/package.json`, 
 - Custom management commands: `python manage.py crear_admin`, `python manage.py limpiar_db`.
 - Fixtures at `backend/fixtures/initial_data.json` are loaded automatically on Docker startup.
 - `TIME_ZONE = 'America/Bogota'`. Date fields use `default=timezone.localdate` (never `auto_now_add`) to respect the timezone — do the same in new models.
-- All AI calls go through `core/ai_service.py` (`AIService`), which abstracts the provider: `AI_PROVIDER=ollama` hits `/api/generate`; anything else hits an OpenAI-compatible `/v1/chat/completions`. Prompts return JSON parsed leniently by `_chat_json` (tolerates markdown fences and `<think>` blocks, retries on 429). Switch models via env only — don't hardcode a provider or model.
+- All AI calls go through `core/ai_service.py` (`AIService`), which abstracts the provider: `AI_PROVIDER=anthropic` calls Claude through the official `anthropic` SDK; `AI_PROVIDER=ollama` hits `/api/generate`; anything else hits an OpenAI-compatible `/v1/chat/completions`. Prompts return JSON parsed leniently by `_chat_json` (tolerates markdown fences and `<think>` blocks, retries on 429). Switch models via env only — don't hardcode a provider or model.
+
+## Avisos y notificaciones
+
+Los avisos (agua, tomas de proteína, dormir, entreno, recordatorios) los arma `agenda/notificaciones.py`: se crean a su hora, quedan pendientes en la app **hasta que el usuario confirma** y al confirmar se guarda el dato en `RegistroHabito` (inmutable). El envío al celular (web push) lo hace `python manage.py enviar_avisos --cada 60` (servicio `avisos` en `docker-compose.yml`) y necesita `VAPID_*` en `.env.docker` (se generan con `python manage.py llaves_push`). El service worker es `frontend/public/sw.js`. Los avisos de comida (`tipo='comida'`) no se confirman a ciegas: se resuelven al contar lo que se comió (`nutricion/comidas.py`, `RegistroComida`), que se compara con la minuta para el porcentaje de cumplimiento; la foto es opcional, privada y de apoyo (el porcentaje sale de lo que el usuario marca).
 
 ## Domain language
 

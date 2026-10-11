@@ -1,262 +1,156 @@
 # Camino del Guerrero
 
-Aplicación web mobile-first para boxeadores y atletas de combate. Genera rutinas de entrenamiento y planes nutricionales personalizados mediante IA, adaptados al nivel, objetivos y cultura culinaria del usuario. Incluye seguimiento de progreso, timers de sesión y lista de mercado semanal.
+Aplicación web mobile-first para llevar un proceso de cuerpo y comida de principio a fin: subir de peso, bajarlo o mantenerlo, con o sin entrenamiento. Sirve igual a quien entrena boxeo, yoga o en casa, y a quien solo quiere comer mejor.
+
+La app **no inventa el plan de comida**: la minuta es la de la nutricionista y cada menú, cambio y lista de mercado sale de esa minuta y de su lista de intercambios. La IA propone, el servidor valida.
 
 ---
 
-## Stack tecnológico
+## Qué hace
+
+| Módulo | Descripción |
+|---|---|
+| **Cuenta** | Registro, ingreso y recuperación de clave por correo. Los datos de inicio (nombre, sexo, nacimiento, estatura, nacionalidad, región) no se editan; solo el administrador los corrige. |
+| **Procesos** | Un solo proceso a la vez, con objetivo, fase (volumen, definición, mantenimiento), fechas y qué incluye (alimentación y/o entrenamiento). Si empieza con uno solo, el otro módulo se suma después al mismo proceso desde el perfil. Para empezar otro proceso se borra el actual. Los datos de inicio y la fecha meta no se editan. |
+| **Control** | Al llegar la fecha de control (`fecha_fin_plan`) la app pregunta si se sigue con el proceso o hay cambios. Seguir pide un nuevo periodo (el mismo tiempo, otro o sin definir); un plan nuevo de comida pregunta lo mismo. La fecha anterior queda en el historial. Un módulo (alimentación o entrenamiento) se puede quitar mientras quede el otro, y borra lo que se armó con él. |
+| **Proyección** | Estima cuánto podría cambiar el peso hasta el control: compara las calorías de la minuta con el gasto (Mifflin-St Jeor, estatura, edad, sexo, entrenos) y muestra el escenario cumpliendo todo y con el cumplimiento real. Es orientativa. Con una key de OpenAI (`OPENAI_API_KEY`) y el permiso expreso de la persona, genera una imagen orientativa del cambio a partir de su foto de frente: nunca muestra más de 3 kg, máximo 3 imágenes al día, y quedan privadas. |
+| **Medidas** | Peso, talla y medidas del cuerpo con fotos (frente, perfil, espalda). Las hace la persona a mano; son inmutables. Las fotos se reducen y se les quitan los metadatos del celular. |
+| **Minuta** | Se carga desde el PDF de la nutricionista (se lee y se confirma), se escribe a mano o la calcula la IA. Una vez guardada no se edita; una nueva pasa al historial. |
+| **Menú semanal** | Desayuno, onces, almuerzo, algo, cena y merienda de cada día, con las porciones exactas de la minuta. Usa solo los alimentos que la minuta nombra en su menú de ejemplo; la IA únicamente completa lo que la minuta no nombra (por ejemplo "1 porción de fruta") con alimentos de la lista de intercambios y lo que ya se sabe de la persona. Antes del día de inicio del proceso no hay menú. |
+| **Cambios** | Cambiar un alimento por otro del mismo grupo, o pedir otra comida cuando no se puede con la actual. Siempre validado contra la minuta. |
+| **Comer por fuera** | Una comida (por ejemplo el almuerzo) se marca como "fuera" entre semana o siempre: sigue en el menú pero no entra a la lista de mercado. |
+| **Lista de mercado** | Solo lo que se cocina en casa, con cantidades exactas de las porciones y sin IA. Se arma para una semana, 15 días o un mes: lo fresco se compra cada semana (el menú cambia) y lo que dura (arroz, avena, aceite, semillas, leguminosas) sale para todo el periodo. Incluye la leche de la proteína, consejos de Ara y D1 y la promoción de Colanta del 15 y el 30. |
+| **Suplementos** | Proteína (cualquier tipo), creatina y otros. Se guarda lo que dice la etiqueta (peso del envase, gramos y scoops de la porción del día) y en qué comidas se toma, repartida en scoops, y qué reemplaza de la minuta en cada una. Calcula cuánto dura el envase y guarda su foto (la del pote) y su información nutricional (un enlace y/o la foto o el PDF de la etiqueta). Los archivos son privados. |
+| **Avisos** | Agua, tomas de proteína, hora de dormir, entreno, recordatorios y contar la comida. Llegan al celular y a la app, y solo salen de la bandeja cuando se confirma la acción. |
+| **Cumplimiento** | Al llegar el aviso de una comida se cuenta cuánto se comió de cada grupo (con nota y foto opcionales). La app lo compara con la minuta y muestra una torta con el porcentaje y lo que hizo falta. |
+| **Agenda** | Recordatorios propios y los que la app sugiere según los suplementos. |
+| **Rutinas** | Rutinas por implementos disponibles, con videos y sesiones con temporizadores. |
+
+### Reglas que se cumplen en el servidor
+
+- Los datos de inicio y la minuta guardada **no se editan** (`DatoInmutableError` → 409).
+- Los alimentos de un menú o de un cambio **solo salen de la lista de intercambios de la nutricionista**; si la IA propone algo fuera de ella o con porciones distintas, se descarta y se arma el menú con los intercambios.
+- Las grasas son solo aceites vegetales y aguacate, como dice la minuta.
+- Las fotos de medidas y de comidas son privadas: solo las entrega la API a su dueño.
+- Lo que la persona cuenta de una comida, una toma o un vaso de agua queda como registro inmutable.
+
+---
+
+## Stack
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Angular 21 · PrimeNG · Tailwind CSS v4 |
-| Backend | Django 5 · Django REST Framework |
-| Autenticación | JWT (djangorestframework-simplejwt) |
+| Frontend | Angular 21 (zoneless, signals, `OnPush`) · PrimeNG · Tailwind CSS v4 · PWA con service worker |
+| Backend | Django 6 · Django REST Framework · capa de servicios |
+| Autenticación | JWT (`djangorestframework-simplejwt`) |
 | Base de datos | PostgreSQL |
-| IA | Groq API — `llama-3.3-70b-versatile` (configurable) |
-| Infraestructura | Docker + CasaOS (Ubuntu home server) |
+| IA | `AIService`: Claude con el SDK de Anthropic, Ollama o cualquier API con formato OpenAI |
+| Notificaciones | Web Push con VAPID (`pywebpush`) |
+| PDF y fotos | `pypdf`, Pillow |
+| Infraestructura | Docker Compose en un servidor casero (CasaOS) |
+
+La IA se cambia solo con variables de entorno (`AI_PROVIDER`, `AI_MODEL`, `AI_API_KEY`, `AI_BASE_URL`).
 
 ---
 
-## Integración con IA
-
-El backend expone un `AIService` que abstrae el proveedor. Cambiar de modelo es solo cambiar variables de entorno.
-
-```env
-AI_PROVIDER=openai           # openai | ollama
-AI_BASE_URL=https://api.groq.com/openai
-AI_MODEL=llama-3.3-70b-versatile
-AI_API_KEY=tu_api_key
-```
-
-### Funciones de IA implementadas
-
-| Función | Descripción |
-|---|---|
-| `generar_rutina()` | Rutina semanal de boxeo: ejercicios técnicos con descripciones detalladas de ejecución, nivel, series y duración |
-| `generar_plan_nutricional()` | Plan alimentario de 7 días basado en la región y cultura culinaria del usuario |
-| `generar_lista_mercado()` | Extrae y consolida ingredientes del plan nutricional en una lista organizada por categorías |
-
-Los prompts siguen principios de prompt engineering: rol experto bien definido, instrucciones numeradas, ejemplos concretos, restricciones explícitas y paso de verificación antes de responder.
-
----
-
-## Estructura del proyecto
+## Estructura
 
 ```
 camino-del-guerrero/
 ├── backend/
-│   ├── core/              # Settings, urls base, AIService
-│   ├── users/             # Autenticación, roles, perfil, objetivo
-│   ├── routines/          # Rutinas, ejercicios, implementos
-│   ├── progress/          # Log de entrenamiento y registro de peso
-│   └── nutricion/         # Plan nutricional y lista de mercado
-├── frontend/
-│   └── src/app/
-│       ├── home/          # Landing page pública
-│       ├── auth/          # Login y registro
-│       ├── onboarding/    # Flujo de configuración inicial
-│       ├── rutinas/       # Vista semanal + videos
-│       ├── progreso/      # Sesión activa + historial de peso
-│       ├── nutricion/     # Plan alimentario + lista de mercado
-│       ├── admin/         # Gestión de implementos y ejercicios
-│       ├── core/          # Guards, servicios, modelos
-│       └── shared/        # Layout, componentes reutilizables
-└── README.md
+│   ├── core/         # Settings, urls, AIService, errores de dominio
+│   ├── users/        # Usuarios, perfil, procesos
+│   ├── progress/     # Medidas con fotos y sesiones de entrenamiento
+│   ├── routines/     # Rutinas, ejercicios, implementos
+│   ├── nutricion/    # Minuta, intercambios, menú, mercado, suplementos, comidas
+│   ├── agenda/       # Recordatorios, avisos, hábitos y notificaciones push
+│   └── timer/        # Temporizadores de sesión
+├── frontend/src/app/
+│   ├── home/         # Landing pública
+│   ├── auth/         # Ingreso y registro
+│   ├── onboarding/   # Primer ingreso: perfil, medidas, minuta, suplementos y hábitos
+│   ├── nutricion/    # Menú, mercado y plan
+│   ├── comidas/      # Contar lo que se comió y ver el cumplimiento
+│   ├── avisos/       # Bandeja de avisos y ajustes
+│   ├── progreso/     # Medidas, agenda, suplementos y sesiones
+│   ├── rutinas/      # Rutina semanal
+│   ├── perfil/       # Datos y proceso
+│   ├── admin/        # Catálogo de implementos y ejercicios
+│   ├── core/         # Guards, servicios, modelos, constantes
+│   └── shared/       # Layout y componentes reutilizables
+├── docker-compose.yml
+├── Makefile
+└── CLAUDE.md         # Guía para trabajar el código con Claude Code
 ```
-
----
-
-## Módulos del sistema
-
-### Landing page
-- Página pública en `/` con presentación de la app
-- Nav adaptativa: muestra login/registro o "Ir al dashboard" según estado de sesión
-- Soporte completo dark/light mode con logos reales de la marca
-- Toggle de tema accesible desde la nav
-
-### Autenticación
-- Registro con email, nombre, sexo y fecha de nacimiento
-- Login con JWT (access + refresh token)
-- `SafeTokenRefreshView`: devuelve 401 en vez de 500 si el usuario no existe
-- Logout redirige al home
-- Guards:
-  - `authGuard`: requiere sesión activa
-  - `userGuard`: requiere sesión y bloquea admin (redirige a `/admin/implementos`)
-  - `adminGuard`: requiere rol admin
-
-### Onboarding (primer ingreso)
-Flujo de 3 pasos que configura el perfil completo antes de generar los planes:
-
-**Paso 1 — Perfil:**
-- Peso inicial y peso meta
-- Estatura
-- Objetivo (bajar peso / ganar músculo / mantener / resistencia)
-- Nivel de actividad (principiante / intermedio / avanzado)
-- Días de entrenamiento por semana (3 / 4 / 5)
-- Duración de sesión (30 / 45 / 60 min)
-- Frecuencia de seguimiento de peso (15 días / 1 mes)
-- Nacionalidad (autocomplete con 195 países)
-- Región o zona (texto libre: paisa, costeño, bogotano, etc.)
-- Restricciones alimentarias (opcional)
-
-**Paso 2 — Implementos:** selección de equipamiento disponible
-
-**Paso 3 — Generación:** la IA crea rutina + plan nutricional en paralelo
-
-### Rutinas
-- Vista semanal con selector de días (punto rojo en el día actual)
-- Detalle de cada ejercicio: series, repeticiones, duración, descripción técnica
-- Videos de YouTube embebidos dentro de la app (iframe en dialog, sin salir)
-- Botón regenerar con IA en un clic
-
-### Progreso
-**Seguimiento de peso:**
-- Registro de peso con nota opcional
-- Historial con fecha y cálculo de cambio total
-
-**Sesión de entrenamiento:**
-- Elige el día de la rutina y arranca la sesión
-- Timer por serie: cuenta regresiva para ejercicios con duración fija, cronómetro para el resto
-- Auto-finaliza la serie al llegar a cero
-- Timer de descanso de 60 segundos entre series con opción "Omitir"
-- Videos de ejercicios visibles durante la sesión (in-app)
-- Al finalizar guarda el log con todos los ejercicios y duración total
-
-### Nutrición
-**Plan alimentario:**
-- Plan semanal de 7 días generado por IA
-- Desayuno, almuerzo, cena, snacks y calorías aproximadas por día
-- Adaptado a la región y cultura culinaria del usuario
-- Regenerable en un clic
-
-**Lista de mercado:**
-- Generada por IA a partir del plan nutricional activo
-- Ingredientes organizados por categoría (proteínas, verduras, frutas, lácteos, granos, condimentos)
-- Cantidades consolidadas para 7 días / 1 persona
-- Ítems chequeables con tachado visual y barra de progreso
-
-### Panel de administración
-- **Implementos:** CRUD del catálogo de implementos disponibles
-- **Ejercicios:** edición inline de URL de YouTube por ejercicio
-  - Búsqueda por nombre
-  - Filtro "solo sin video"
-  - Estadísticas: cuántos tienen video / sin video
-  - Ordenamiento: sin video primero
-
----
-
-## Modelo de datos
-
-```
-ROL ──< USUARIO >──< OBJETIVO_USUARIO
-                 ──< REGISTRO_PESO
-                 ──< USUARIO_IMPLEMENTO >── IMPLEMENTO
-                 ──< REGISTRO_ENTRENAMIENTO
-                 ──< RUTINA ──< DIA_RUTINA ──< EJERCICIO_DIA >── EJERCICIO
-                 ──< PLAN_NUTRICIONAL ──< DIA_NUTRICIONAL
-                 ──< LISTA_MERCADO ──< ITEM_MERCADO
-```
-
-### Campos clave del modelo `Usuario`
-| Campo | Descripción |
-|---|---|
-| `nacionalidad` | País del usuario para personalizar el plan nutricional |
-| `region` | Región/zona cultural (paisa, costeño, etc.) para recetas más específicas |
-| `preferencias_alimentarias` | Restricciones dietarias (vegetariano, sin gluten, etc.) |
-| `estatura` | En cm, usado en el perfil enviado a la IA |
-| `frecuencia_peso` | Cada 15 o 30 días |
-
-### Campos clave del modelo `ObjetivoUsuario`
-| Campo | Descripción |
-|---|---|
-| `nivel_actividad` | principiante / intermedio / avanzado |
-| `dias_entrenamiento` | 3 / 4 / 5 días por semana |
-| `duracion_sesion` | 30 / 45 / 60 minutos |
-| `fecha_inicio` | Usa `timezone.localdate` para respetar la zona horaria configurada |
-
----
-
-## Permisos por rol
-
-| Acción | Admin | Usuario |
-|---|---|---|
-| Gestionar catálogo de implementos | ✅ | ❌ |
-| Agregar / editar video YouTube de ejercicios | ✅ | ❌ |
-| Acceder a onboarding y rutas de usuario | ❌ | ✅ |
-| Generar / regenerar rutina con IA | ❌ | ✅ |
-| Generar / regenerar plan nutricional con IA | ❌ | ✅ |
-| Registrar sesiones y peso | ❌ | ✅ |
-| Ver su propio progreso | ❌ | ✅ |
-| Ver lista de mercado | ❌ | ✅ |
 
 ---
 
 ## Instalación local
 
 ### Backend
+
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
+Variables en `backend/.env` (ver `backend/.env.example`): `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DB_*` y las de IA (`AI_PROVIDER`, `AI_MODEL`, `AI_API_KEY`).
+
 ### Frontend
+
 ```bash
 cd frontend
 npm install
 ng serve
 ```
 
-### Variables de entorno (`backend/.env`)
-```env
-SECRET_KEY=tu_secret_key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
+### Pruebas
 
-DB_NAME=camino_db
-DB_USER=camino_user
-DB_PASSWORD=tu_password
-DB_HOST=localhost
-DB_PORT=5432
-
-AI_PROVIDER=openai
-AI_BASE_URL=https://api.groq.com/openai
-AI_MODEL=llama-3.3-70b-versatile
-AI_API_KEY=tu_groq_api_key
+```bash
+cd backend
+python manage.py test
 ```
 
-### Zona horaria (`backend/core/settings.py`)
-```python
-TIME_ZONE = 'America/Bogota'
-```
-Los modelos con fecha usan `default=timezone.localdate` (no `auto_now_add`) para respetar esta zona.
+Necesitan una base PostgreSQL (la misma configuración de `DB_*`).
 
 ---
 
-## Roadmap
+## Recuperar la clave
 
-### Completado
-- [x] Landing page con dark/light mode y nav adaptativa por sesión
-- [x] Auth completa: registro, login, JWT, guards por rol
-- [x] Onboarding extendido: perfil completo + implementos + generación de planes
-- [x] Rutinas: vista semanal, videos in-app, regeneración con IA
-- [x] Progreso: timer countdown/countup, descanso automático, log de sesión
-- [x] Nutrición: plan semanal + lista de mercado con checklist
-- [x] Admin: implementos CRUD + ejercicios con edición inline y filtros
-- [x] IA: prompts con prompt engineering para rutinas, nutrición y lista de mercado
-- [x] Deduplicación de ejercicios (`get_or_create` por nombre)
-- [x] Corrección de zona horaria en fechas
-- [x] Protección de rutas por rol (`userGuard` + `adminGuard`)
+Desde el login, "¿Olvidaste tu clave?" manda al correo el usuario y un enlace con el logo de la app. El enlace dura 30 minutos, sirve una sola vez, solo se abre en el navegador donde se pidió y pedir otro anula el anterior (se guarda su hash, nunca el enlace). Configura en el entorno `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` y `FRONTEND_URL` (la dirección desde la que se abre la app). Sin `EMAIL_HOST` el correo sale en el log del backend, útil para probar.
 
-### Próximos pasos
-- [ ] Perfil editable: el usuario puede actualizar su región, peso, objetivo sin pasar por onboarding
-- [ ] Gráfica de evolución de peso (histórico visual)
-- [ ] Estadísticas de entrenamiento: sesiones por semana, tiempo total, ejercicios más frecuentes
-- [ ] Notificaciones / recordatorios de registro de peso
-- [ ] PWA: funcionalidad offline para el timer de sesión
-- [ ] Docker Compose para deploy en CasaOS
-- [ ] Compartir progreso (imagen o link público de resumen)
+## Notificaciones al celular
+
+1. Generar las llaves: `python manage.py llaves_push` y poner `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_EMAIL` en el entorno.
+2. Dejar corriendo `python manage.py enviar_avisos --cada 60` (en Docker es el servicio `avisos`).
+3. En la app, Avisos → "Activar notificaciones". En iPhone hay que agregar la app a la pantalla de inicio desde Compartir.
+
+Sin llaves la app funciona igual: los avisos llegan a la bandeja dentro de la app.
+
+---
+
+## Docker
+
+Copiar `.env.docker.example` a `.env.docker` y rellenarlo (ese archivo no se sube a git). Luego:
+
+```bash
+make build     # construir y levantar
+make up        # levantar sin reconstruir
+make logs      # ver logs
+make down      # apagar
+```
+
+Antes de actualizar una instalación con datos reales, hacer copia de la base de datos: algunas migraciones reemplazan estructuras viejas de suplementos y planes.
+
+---
+
+## Pendientes
+
+- Probar las notificaciones en un celular real con llaves VAPID de producción.
+- Lista de intercambios propia por nutricionista (hoy es la de Comfama).
+- Más de una porción de suplemento al día.
+- Reducir el tamaño del bundle inicial (hoy supera el presupuesto de 500 kB).
