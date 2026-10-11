@@ -53,9 +53,15 @@ class CrearProcesoTest(ProcesoBaseTest):
         r = self.crear(medicion_inicial=None)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_proceso_programado_no_recibe_medicion(self):
+    def test_proceso_programado_guarda_la_medicion_del_onboarding(self):
         lunes = (HOY() + timedelta(days=5)).isoformat()
-        self.assertEqual(self.crear(fecha_inicio=lunes).status_code, status.HTTP_400_BAD_REQUEST)
+        r = self.crear(fecha_inicio=lunes)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual(r.data['estado'], 'programado')
+        self.assertEqual(r.data['medicion_inicial']['peso_kg'], 63.2)
+
+    def test_proceso_programado_puede_no_traer_medicion(self):
+        lunes = (HOY() + timedelta(days=5)).isoformat()
         r = self.crear(fecha_inicio=lunes, medicion_inicial=None)
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
         self.assertEqual(r.data['estado'], 'programado')
@@ -83,44 +89,37 @@ class CrearProcesoTest(ProcesoBaseTest):
         self.assertIsNone(r.data['entrenamiento'])
 
 
-class ProcesosEncadenadosTest(ProcesoBaseTest):
+class UnSoloProcesoTest(ProcesoBaseTest):
     def setUp(self):
         super().setUp()
         self.actual = Proceso.objects.create(usuario=self.usuario, objetivo='mantener',
                                              fecha_inicio=HOY() - timedelta(days=30))
 
-    def test_nuevo_proceso_cierra_el_actual_el_dia_anterior(self):
-        lunes = HOY() + timedelta(days=5)
-        r = self.crear(fecha_inicio=lunes.isoformat(), medicion_inicial=None)
-        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
-        self.actual.refresh_from_db()
-        self.assertEqual(self.actual.fecha_fin, lunes - timedelta(days=1))
-        estado = self.client.get(reverse('procesos-estado')).data
-        self.assertEqual(estado['actual']['id'], self.actual.id)
-        self.assertEqual(estado['programado']['id'], r.data['id'])
-
-    def test_no_se_crea_otro_si_ya_hay_uno_programado(self):
+    def test_no_se_crea_otro_si_hay_uno_en_curso(self):
         lunes = (HOY() + timedelta(days=5)).isoformat()
-        self.crear(fecha_inicio=lunes, medicion_inicial=None)
-        r = self.crear(fecha_inicio=(HOY() + timedelta(days=9)).isoformat(), medicion_inicial=None)
+        r = self.crear(fecha_inicio=lunes, medicion_inicial=None)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_no_puede_iniciar_el_mismo_dia_que_el_actual(self):
-        Proceso.objects.filter(pk=self.actual.pk).update(fecha_inicio=HOY())
-        self.assertEqual(self.crear().status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_cancelar_programado_reabre_el_actual(self):
-        lunes = (HOY() + timedelta(days=5)).isoformat()
-        nuevo = self.crear(fecha_inicio=lunes, medicion_inicial=None).data
-        r = self.client.delete(reverse('proceso-detail', args=[nuevo['id']]))
-        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertIn('en curso', str(r.data))
         self.actual.refresh_from_db()
         self.assertIsNone(self.actual.fecha_fin)
 
-    def test_un_proceso_en_curso_no_se_puede_cancelar(self):
-        r = self.client.delete(reverse('proceso-detail', args=[self.actual.id]))
+    def test_no_se_crea_otro_si_hay_uno_programado(self):
+        Proceso.objects.filter(pk=self.actual.pk).delete()
+        Proceso.objects.create(usuario=self.usuario, objetivo='mantener', fecha_inicio=HOY() + timedelta(days=5))
+        r = self.crear(fecha_inicio=(HOY() + timedelta(days=9)).isoformat(), medicion_inicial=None)
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue(Proceso.objects.filter(pk=self.actual.pk).exists())
+        self.assertIn('programado', str(r.data))
+
+    def test_sin_proceso_se_puede_empezar_uno(self):
+        Proceso.objects.filter(pk=self.actual.pk).delete()
+        self.assertEqual(self.crear().status_code, status.HTTP_201_CREATED)
+
+    def test_borrar_un_proceso_en_curso_lo_reinicia_todo(self):
+        r = self.client.delete(reverse('proceso-detail', args=[self.actual.id]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Proceso.objects.filter(pk=self.actual.pk).exists())
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.nombre, 'Guerrero')
 
 
 class DatosSagradosTest(ProcesoBaseTest):
@@ -188,7 +187,7 @@ class MedicionInicialPendienteTest(ProcesoBaseTest):
 
 
 class DuracionPlanTest(ProcesoBaseTest):
-    def test_se_planea_al_crear_y_se_ajusta_despues(self):
+    def test_se_planea_al_crear_y_ya_no_se_mueve(self):
         fin = HOY() + timedelta(days=70)
         r = self.crear(fecha_fin_plan=fin.isoformat())
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
@@ -197,11 +196,244 @@ class DuracionPlanTest(ProcesoBaseTest):
         url = reverse('proceso-detail', args=[r.data['id']])
         nuevo = fin + timedelta(days=14)
         r = self.client.patch(url, {'fecha_fin_plan': nuevo.isoformat()}, format='json')
-        self.assertEqual(r.data['fecha_fin_plan'], nuevo.isoformat())
+        self.assertEqual(r.status_code, status.HTTP_409_CONFLICT, r.data)
         r = self.client.patch(url, {'fecha_fin_plan': None}, format='json')
-        self.assertIsNone(r.data['fecha_fin_plan'])
+        self.assertEqual(r.status_code, status.HTTP_409_CONFLICT, r.data)
+
+    def test_sin_fecha_meta_se_puede_poner_una_vez(self):
+        r = self.crear()
+        url = reverse('proceso-detail', args=[r.data['id']])
+        fin = HOY() + timedelta(days=40)
+        r = self.client.patch(url, {'fecha_fin_plan': fin.isoformat()}, format='json')
+        self.assertEqual(r.data['fecha_fin_plan'], fin.isoformat())
 
     def test_fin_del_plan_coherente(self):
         self.assertEqual(self.crear(fecha_fin_plan=HOY().isoformat()).status_code, status.HTTP_400_BAD_REQUEST)
         lejos = HOY() + timedelta(days=800)
         self.assertEqual(self.crear(fecha_fin_plan=lejos.isoformat()).status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class DatosSagradosTest(APITestCase):
+    """Los datos de inicio no se editan; solo las restricciones alimentarias. Borrar el proceso
+    deja únicamente los datos personales."""
+
+    def setUp(self):
+        self.usuario = Usuario.objects.create_user(
+            username='s@x.co', email='s@x.co', nombre='Sara', password='clave-segura-123',
+            estatura=165, nacionalidad='Colombia', region='Paisa')
+        self.client.force_authenticate(self.usuario)
+
+    def perfil(self, **datos):
+        return self.client.patch(reverse('perfil'), datos, format='json')
+
+    def test_datos_de_inicio_no_se_cambian(self):
+        for campo, valor in (('nombre', 'Otra'), ('estatura', 170), ('nacionalidad', 'Perú'), ('region', 'Costa')):
+            r = self.perfil(**{campo: valor})
+            self.assertEqual(r.status_code, status.HTTP_409_CONFLICT, (campo, r.data))
+        self.usuario.refresh_from_db()
+        self.assertEqual((self.usuario.nombre, self.usuario.estatura), ('Sara', 165))
+
+    def test_repetir_el_mismo_valor_y_restricciones_si_se_guardan(self):
+        r = self.perfil(nombre='Sara', preferencias_alimentarias='sin gluten')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertEqual(r.data['preferencias_alimentarias'], 'sin gluten')
+
+    def test_lo_que_falta_se_puede_completar_una_vez(self):
+        Usuario.objects.filter(pk=self.usuario.pk).update(fecha_nacimiento=None)
+        self.assertEqual(self.perfil(fecha_nacimiento='1995-04-02').status_code, status.HTTP_200_OK)
+        self.assertEqual(self.perfil(fecha_nacimiento='1996-04-02').status_code, status.HTTP_409_CONFLICT)
+
+    def test_fecha_meta_no_se_mueve_una_vez_puesta(self):
+        proceso = Proceso.objects.create(usuario=self.usuario, objetivo='mantener',
+                                         fecha_inicio=HOY(), fecha_fin_plan=HOY() + timedelta(days=60))
+        url = reverse('proceso-detail', args=[proceso.id])
+        r = self.client.patch(url, {'fecha_fin_plan': (HOY() + timedelta(days=90)).isoformat()}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_409_CONFLICT, r.data)
+
+    def test_borrar_el_proceso_deja_solo_los_datos_personales(self):
+        proceso = Proceso.objects.create(usuario=self.usuario, objetivo='mantener', fecha_inicio=HOY())
+        r = self.client.delete(reverse('proceso-detail', args=[proceso.id]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT, r.data)
+        self.assertFalse(self.usuario.procesos.exists())
+        self.usuario.refresh_from_db()
+        self.assertEqual((self.usuario.nombre, self.usuario.region), ('Sara', 'Paisa'))
+
+
+class RecuperarClaveTest(APITestCase):
+    NAVEGADOR = 'navegador-de-prueba-0123456789'
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.usuario = Usuario.objects.create_user(username='r@x.co', email='r@x.co', nombre='Rosa',
+                                                   password='clave-vieja-123')
+
+    def pedir(self, email='r@x.co', navegador=None):
+        return self.client.post(reverse('recuperar-clave'),
+                                {'email': email, 'dispositivo': navegador or self.NAVEGADOR}, format='json')
+
+    def token_del_ultimo_correo(self):
+        from django.core import mail
+        enlace = next(l for l in mail.outbox[-1].body.splitlines() if '/auth/restablecer?' in l)
+        return enlace.split('token=')[1]
+
+    def cambiar(self, token, clave='clave-nueva-456', navegador=None):
+        return self.client.post(reverse('restablecer-clave'), {
+            'token': token, 'dispositivo': navegador or self.NAVEGADOR, 'password': clave}, format='json')
+
+    def test_llega_el_usuario_con_logo_y_el_enlace_sirve_una_vez(self):
+        from django.core import mail
+        self.assertEqual(self.pedir('R@x.co').status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        correo = mail.outbox[0]
+        self.assertIn('Tu usuario es: r@x.co', correo.body)
+        html = correo.html
+        self.assertIn('Crear clave nueva', html)
+        self.assertIn('cid:logo', html)
+        self.assertTrue(any(p.get('Content-ID') == '<logo>' for p in correo.message().walk()))
+        token = self.token_del_ultimo_correo()
+
+        self.assertEqual(self.cambiar(token, '123').status_code, status.HTTP_400_BAD_REQUEST)
+        ok = self.cambiar(token)
+        self.assertEqual(ok.status_code, status.HTTP_200_OK, ok.data)
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('clave-nueva-456'))
+        # Ya se usó: no sirve otra vez.
+        self.assertEqual(self.cambiar(token, 'otra-clave-789').status_code, status.HTTP_400_BAD_REQUEST)
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('clave-nueva-456'))
+
+    def test_solo_sirve_en_el_navegador_donde_se_pidio(self):
+        self.pedir()
+        token = self.token_del_ultimo_correo()
+        r = self.cambiar(token, navegador='otro-navegador-distinto-987654')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('mismo navegador', str(r.data))
+        # Intentarlo desde otro lado no gasta el enlace.
+        self.assertEqual(self.cambiar(token).status_code, status.HTTP_200_OK)
+
+    def test_el_enlace_vence(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import SolicitudRecuperacion
+        self.pedir()
+        token = self.token_del_ultimo_correo()
+        SolicitudRecuperacion.objects.update(creada=timezone.now() - timedelta(minutes=31))
+        self.assertEqual(self.cambiar(token).status_code, status.HTTP_400_BAD_REQUEST)
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password('clave-vieja-123'))
+
+    def test_pedir_otro_enlace_anula_el_anterior(self):
+        self.pedir()
+        primero = self.token_del_ultimo_correo()
+        self.pedir()
+        segundo = self.token_del_ultimo_correo()
+        self.assertEqual(self.cambiar(primero).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.cambiar(segundo).status_code, status.HTTP_200_OK)
+
+    def test_no_se_sabe_si_el_correo_existe(self):
+        from django.core import mail
+        self.assertEqual(self.pedir('nadie@x.co').status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_enlace_falso_o_sin_navegador_no_cambia_nada(self):
+        self.assertEqual(self.cambiar('falso').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.pedir(navegador='corto').status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_se_limitan_los_intentos(self):
+        for _ in range(5):
+            self.pedir()
+        self.assertEqual(self.pedir().status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class BienvenidaTest(APITestCase):
+    def test_al_registrarse_llega_un_correo_de_bienvenida(self):
+        from django.core import mail
+        from .models import Sexo
+        sexo = Sexo.objects.create(nombre='Femenino')
+        r = self.client.post(reverse('registro'), {
+            'nombre': 'Lucía <b>', 'email': 'lucia@x.co', 'password': 'clave-segura-123',
+            'sexo': sexo.id, 'fecha_nacimiento': '1999-05-05'}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual(len(mail.outbox), 1)
+        correo = mail.outbox[0]
+        self.assertEqual(correo.to, ['lucia@x.co'])
+        self.assertIn('Bienvenido', correo.subject)
+        html = correo.html
+        self.assertIn('Entrar a la app', html)
+        self.assertNotIn('<b>', html)  # el nombre se escapa
+
+
+class ModulosYControlTest(ProcesoBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.proceso = Proceso.objects.create(
+            usuario=self.usuario, objetivo='ganar_musculo', incluye_alimentacion=True, incluye_entrenamiento=True,
+            fecha_inicio=HOY() - timedelta(days=10), fecha_fin_plan=HOY() + timedelta(days=20))
+        from .models import ConfiguracionEntrenamiento
+        ConfiguracionEntrenamiento.objects.create(proceso=self.proceso)
+
+    def quitar(self, modulo):
+        return self.client.post(reverse('proceso-quitar-modulo', args=[self.proceso.id]), {'modulo': modulo}, format='json')
+
+    def test_se_quita_el_entrenamiento_y_sigue_la_alimentacion(self):
+        from .models import ConfiguracionEntrenamiento
+        r = self.quitar('entrenamiento')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertFalse(r.data['incluye_entrenamiento'])
+        self.assertTrue(r.data['incluye_alimentacion'])
+        self.assertFalse(ConfiguracionEntrenamiento.objects.filter(proceso=self.proceso).exists())
+        # Ya no se puede quitar el último módulo.
+        self.assertEqual(self.quitar('alimentacion').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.quitar('entrenamiento').status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_se_quita_la_alimentacion_y_se_borra_su_plan(self):
+        from nutricion.models import Minuta
+        Minuta.objects.create(usuario=self.usuario, proceso=self.proceso, origen='nutricionista',
+                              porciones={'cereales': {'dia': 1, 'desayuno': 1}})
+        r = self.quitar('alimentacion')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertFalse(Minuta.objects.filter(proceso=self.proceso).exists())
+        self.assertTrue(r.data['incluye_entrenamiento'])
+
+    def test_patch_no_quita_modulos(self):
+        url = reverse('proceso-detail', args=[self.proceso.id])
+        r = self.client.patch(url, {'incluye_entrenamiento': False}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_la_fecha_meta_solo_se_mueve_al_llegar_el_control(self):
+        url = reverse('proceso-renovar', args=[self.proceso.id])
+        nueva = (HOY() + timedelta(days=60)).isoformat()
+        self.assertEqual(self.client.post(url, {'fecha_fin_plan': nueva}, format='json').status_code,
+                         status.HTTP_409_CONFLICT)
+        vieja = HOY() - timedelta(days=1)
+        Proceso.objects.filter(pk=self.proceso.pk).update(fecha_fin_plan=vieja)
+        self.assertTrue(self.client.get(reverse('proceso-detail', args=[self.proceso.id])).data['plan_terminado'])
+        self.assertEqual(self.client.post(url, {'fecha_fin_plan': vieja.isoformat()}, format='json').status_code,
+                         status.HTTP_400_BAD_REQUEST)
+        r = self.client.post(url, {'fecha_fin_plan': nueva}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertEqual(r.data['fecha_fin_plan'], nueva)
+        self.assertEqual(r.data['renovaciones'][0]['hasta'], vieja.isoformat())
+        self.assertFalse(r.data['plan_terminado'])
+
+    def test_se_puede_seguir_sin_fecha(self):
+        Proceso.objects.filter(pk=self.proceso.pk).update(fecha_fin_plan=HOY() - timedelta(days=1))
+        r = self.client.post(reverse('proceso-renovar', args=[self.proceso.id]), {'fecha_fin_plan': None}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.assertIsNone(r.data['fecha_fin_plan'])
+
+    def test_al_llegar_el_control_sale_un_aviso_que_se_resuelve_al_renovar(self):
+        from agenda import notificaciones
+        from agenda.models import Notificacion
+        Usuario.objects.filter(pk=self.usuario.pk).update(date_joined=timezone.now() - timedelta(days=40))
+        self.usuario.refresh_from_db()
+        Proceso.objects.filter(pk=self.proceso.pk).update(fecha_fin_plan=HOY())
+        notificaciones.generar(self.usuario)
+        aviso = Notificacion.objects.get(usuario=self.usuario, tipo='proceso')
+        self.assertEqual(notificaciones.url_de(aviso), '/control')
+        self.client.post(reverse('proceso-renovar', args=[self.proceso.id]),
+                         {'fecha_fin_plan': (HOY() + timedelta(days=30)).isoformat()}, format='json')
+        notificaciones.generar(self.usuario)
+        aviso.refresh_from_db()
+        self.assertIsNotNone(aviso.resuelta_en)

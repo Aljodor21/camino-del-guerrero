@@ -41,7 +41,7 @@ def admite_fotos(medicion):
     return limite is None or timezone.localdate() <= limite
 
 
-def _jpeg(imagen, lado, calidad):
+def a_jpeg(imagen, lado, calidad):
     copia = imagen.copy()
     copia.thumbnail((lado, lado), Image.Resampling.LANCZOS)
     salida = BytesIO()
@@ -49,7 +49,7 @@ def _jpeg(imagen, lado, calidad):
     return ContentFile(salida.getvalue(), name='foto.jpg')
 
 
-def _leer_imagen(archivo):
+def leer_imagen(archivo):
     if archivo.size > MAX_BYTES:
         raise ReglaNegocioError('La foto pesa más de 15 MB.')
     try:
@@ -69,14 +69,14 @@ def agregar_foto(medicion, pose, archivo):
     if medicion.fotos.filter(pose=pose).exists():
         raise ReglaNegocioError('Esta medición ya tiene foto en esa pose.')
 
-    imagen = _leer_imagen(archivo)
+    imagen = leer_imagen(archivo)
     try:
         with transaction.atomic():
             return FotoProgreso.objects.create(
                 medicion=medicion,
                 pose=pose,
-                imagen=_jpeg(imagen, LADO_ORIGINAL, 85),
-                miniatura=_jpeg(imagen, LADO_MINIATURA, 80),
+                imagen=a_jpeg(imagen, LADO_ORIGINAL, 85),
+                miniatura=a_jpeg(imagen, LADO_MINIATURA, 80),
             )
     except IntegrityError:
         raise ReglaNegocioError('Esta medición ya tiene foto en esa pose.')

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from nutricion.models import DiaNutricional, ItemMercado, ListaMercado, PlanNutricional
+from nutricion.models import ItemMercado, ListaMercado
 from progress.models import Medicion, RegistroEntrenamiento
 from routines.models import DiaRutina, EjercicioDia, EjercicioImplemento, Ejercicio, Rutina, UsuarioImplemento
 from users.models import Proceso, Usuario
@@ -13,8 +13,6 @@ class Command(BaseCommand):
         # Nutricion
         ItemMercado.objects.all().delete()
         ListaMercado.objects.all().delete()
-        DiaNutricional.objects.all().delete()
-        PlanNutricional.objects.all().delete()
         self.stdout.write('Nutricion eliminada.')
 
         # Progress

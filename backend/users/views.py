@@ -1,13 +1,16 @@
+from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
+from core.exceptions import ReglaNegocioError
 from progress.serializers import MedicionSerializer
 
-from . import procesos
+from . import correos, procesos, recuperacion
 from .models import Proceso, Sexo, Usuario
 from .serializers import (CustomTokenSerializer, ProcesoActualizarSerializer,
                           ProcesoCrearSerializer, ProcesoSerializer,
@@ -28,12 +31,39 @@ class RegistroView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        correos.enviar_bienvenida(user)
         refresh = RefreshToken.for_user(user)
         return Response({
             'access':   str(refresh.access_token),
             'refresh':  str(refresh),
             'usuario':  UsuarioSerializer(user).data,
         }, status=201)
+
+
+class RecuperarClaveView(APIView):
+    """Pide recuperar la clave: llega un correo con el usuario y un enlace. Siempre responde igual."""
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'recuperar'
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not isinstance(email, str) or '@' not in email:
+            raise ReglaNegocioError('Escribe el correo con el que te registraste.')
+        recuperacion.enviar(email, request.data.get('dispositivo'))
+        return Response({'detail': 'Si ese correo tiene cuenta, te enviamos tu usuario y un enlace para crear una clave nueva.'})
+
+
+class RestablecerClaveView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'recuperar'
+
+    def post(self, request):
+        datos = request.data
+        recuperacion.restablecer(str(datos.get('token', '')), datos.get('dispositivo'),
+                                 str(datos.get('password', '')))
+        return Response({'detail': 'Listo, ya puedes entrar con tu clave nueva.'})
 
 
 class LoginView(TokenObtainPairView):
@@ -106,7 +136,35 @@ class ProcesoDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Response(ProcesoSerializer(proceso).data)
 
     def perform_destroy(self, instance):
-        procesos.cancelar_programado(instance)
+        """Un proceso programado detrás de uno en curso se cancela. Si es el único (en curso o
+        programado), se borra todo lo de la persona menos sus datos personales."""
+        if instance.estado == 'programado' and procesos.proceso_actual(instance.usuario):
+            procesos.cancelar_programado(instance)
+        else:
+            procesos.reiniciar(instance.usuario)
+
+
+class ProcesoQuitarModuloView(APIView):
+    """Quita la alimentación o el entrenamiento y borra lo que se armó con él."""
+
+    def post(self, request, pk):
+        proceso = generics.get_object_or_404(Proceso, pk=pk, usuario=request.user)
+        procesos.quitar_modulo(proceso, request.data.get('modulo'))
+        proceso.refresh_from_db()
+        return Response(ProcesoSerializer(proceso).data)
+
+
+class ProcesoRenovarView(APIView):
+    """Al llegar el control: seguir con el proceso en otro periodo (otra fecha o sin definir)."""
+
+    def post(self, request, pk):
+        proceso = generics.get_object_or_404(Proceso, pk=pk, usuario=request.user)
+        valor = request.data.get('fecha_fin_plan')
+        fecha = parse_date(valor) if valor else None
+        if valor and fecha is None:
+            raise ReglaNegocioError('La fecha no es válida.')
+        proceso = procesos.renovar(proceso, fecha)
+        return Response(ProcesoSerializer(proceso).data)
 
 
 class ProcesoMedicionInicialView(APIView):
@@ -134,8 +192,14 @@ class AdminUsuariosView(generics.ListAPIView):
         return Usuario.objects.exclude(rol__nombre='admin').select_related('rol', 'sexo').order_by('-date_joined')
 
 
-class AdminUsuarioDeleteView(generics.DestroyAPIView):
+class AdminUsuarioDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """El administrador es el único que corrige los datos de inicio de una persona."""
     permission_classes = [EsAdmin]
+    serializer_class   = UsuarioSerializer
+    http_method_names  = ['get', 'patch', 'delete']
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'es_admin': True}
 
     def get_queryset(self):
         return Usuario.objects.exclude(rol__nombre='admin')

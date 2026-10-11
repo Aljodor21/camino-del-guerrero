@@ -105,6 +105,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'EXCEPTION_HANDLER': 'core.exceptions.manejar_excepciones',
+    'DEFAULT_THROTTLE_RATES': {'recuperar': '5/hour'},
 }
 
 # Simple JWT
@@ -115,6 +116,20 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Correo (recuperar la clave). Sin EMAIL_HOST los correos salen en el log del backend.
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_BACKEND = ('django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST
+                 else 'django.core.mail.backends.console.EmailBackend')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_TIMEOUT = 10
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'no-responder@camino-del-guerrero.local')
+# Desde dónde se abre la app: el enlace del correo apunta aquí.
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
+RECUPERACION_MINUTOS = 30  # cuánto dura el enlace para recuperar la clave
 
 # CORS
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:4200').split(',')
@@ -131,6 +146,18 @@ YOUTUBE_API_KEY = config('YOUTUBE_API_KEY', default='')
 
 # Giphy API
 GIPHY_API_KEY = config('GIPHY_API_KEY', default='')
+
+# Ilustración orientativa del cambio (OpenAI). Sin OPENAI_API_KEY la función no aparece.
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+OPENAI_IMAGE_MODEL = config('OPENAI_IMAGE_MODEL', default='gpt-image-2.5-sunburst')
+OPENAI_IMAGE_QUALITY = config('OPENAI_IMAGE_QUALITY', default='medium')
+ILUSTRACIONES_POR_DIA = config('ILUSTRACIONES_POR_DIA', default=3, cast=int)
+
+# Notificaciones al celular (web push). Sin llaves, los avisos quedan solo en la app.
+# Se generan con: python manage.py llaves_push
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+VAPID_EMAIL = config('VAPID_EMAIL', default='')
 
 
 AUTH_USER_MODEL = 'users.Usuario'

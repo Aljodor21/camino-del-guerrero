@@ -90,6 +90,9 @@ class Proceso(models.Model):
     # Hasta cuándo está pensado el proceso (ej. hasta el control con la nutricionista).
     # Es un plan, no un dato de inicio: se puede ajustar mientras el proceso no termine.
     fecha_fin_plan        = models.DateField(null=True, blank=True)
+    # Fechas meta anteriores, cuando al llegar el control se siguió con otro periodo:
+    # [{'hasta': '2026-12-01', 'cambiada_el': '2026-12-01'}]
+    renovaciones          = models.JSONField(default=list, blank=True)
     medicion_inicial      = models.OneToOneField(
         'progress.Medicion', on_delete=models.PROTECT, null=True, blank=True,
         related_name='proceso_iniciado',
@@ -175,3 +178,16 @@ class ConfiguracionEntrenamiento(models.Model):
 
     def __str__(self):
         return f'Entrenamiento de {self.proceso}'
+
+
+class SolicitudRecuperacion(models.Model):
+    """Un enlace para crear una clave nueva. Sirve una sola vez, caduca y solo se puede abrir
+    desde el navegador donde se pidió. Se guarda el hash, nunca el enlace."""
+    usuario          = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='solicitudes_recuperacion')
+    token_hash       = models.CharField(max_length=64, unique=True)
+    dispositivo_hash = models.CharField(max_length=64)
+    creada           = models.DateTimeField(default=timezone.now)
+    usada_en         = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['usuario', 'usada_en'])]

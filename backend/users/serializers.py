@@ -1,5 +1,8 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
+
+from core.exceptions import DatoInmutableError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from progress.serializers import MedicionSerializer
@@ -56,6 +59,20 @@ class UsuarioSerializer(serializers.ModelSerializer):
                   'frecuencia_peso', 'nacionalidad', 'region', 'preferencias_alimentarias',
                   'implementos_adicionales', 'date_joined']
 
+    # Lo que se dice al empezar no se cambia: solo lo mueve un administrador.
+    DATOS_DE_INICIO = ('nombre', 'sexo', 'fecha_nacimiento', 'estatura', 'nacionalidad', 'region')
+
+    def validate(self, attrs):
+        if self.instance is not None and not self.context.get('es_admin'):
+            cambiados = [campo for campo in self.DATOS_DE_INICIO
+                         if campo in attrs and getattr(self.instance, campo) not in (None, '')
+                         and attrs[campo] != getattr(self.instance, campo)]
+            if cambiados:
+                raise DatoInmutableError(
+                    f'Tus datos de inicio no se pueden cambiar ({", ".join(cambiados)}). '
+                    'Si hay un error, pídele al administrador que lo corrija.')
+        return attrs
+
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -77,12 +94,18 @@ class ProcesoSerializer(serializers.ModelSerializer):
     estado           = serializers.CharField(read_only=True)
     medicion_inicial = MedicionSerializer(read_only=True)
     entrenamiento    = serializers.SerializerMethodField()
+    plan_terminado   = serializers.SerializerMethodField()
+
+    def get_plan_terminado(self, obj):
+        """Llegó la fecha de control: toca preguntar si sigue o cambia."""
+        return bool(obj.fecha_fin_plan and obj.fecha_fin_plan <= timezone.localdate())
 
     class Meta:
         model  = Proceso
         fields = ['id', 'objetivo', 'objetivo_nombre', 'fase', 'fase_nombre', 'peso_objetivo',
                   'incluye_alimentacion', 'incluye_entrenamiento', 'fecha_inicio', 'fecha_fin',
-                  'fecha_fin_plan', 'estado', 'medicion_inicial', 'entrenamiento', 'notas', 'fecha_creacion']
+                  'fecha_fin_plan', 'plan_terminado', 'renovaciones', 'estado', 'medicion_inicial',
+                  'entrenamiento', 'notas', 'fecha_creacion']
 
     def get_entrenamiento(self, obj):
         config = getattr(obj, 'entrenamiento', None)
