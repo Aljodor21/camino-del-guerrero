@@ -1,16 +1,35 @@
 from django.urls import path
 
-from .views import (GenerarRutinaView, ItemMercadoToggleView, ListaMercadoView,
-                    MiPlanNutricionalView, RechazarComidaView, SuplementoAccionView,
-                    SuplementoDetailView, SuplementoListCreateView)
+from .views import (CalcularMinutaView, CumplimientoView, IlustracionImagenView, IlustracionView, PedidoComidaView, ProyeccionView, RegistroComidaFotoView,
+                    RegistroComidaListCreateView, ComidaAccionView, ComidaOpcionesView, GenerarRutinaView, IntercambiosView,
+                    ItemMercadoToggleView, LeerPdfView, ListaMercadoView, MenuView, MinutaArchivoView,
+                    MinutaDetailView, MinutaListCreateView, PreferenciasComidaView, SuplementoAccionView,
+                    SuplementoDetailView, SuplementoFotoView, SuplementoInfoView, SuplementoListCreateView)
 
 urlpatterns = [
-    path('mi-plan/',          MiPlanNutricionalView.as_view(), name='mi-plan-nutricional'),
-    path('mi-plan/dias/<int:pk>/rechazar/', RechazarComidaView.as_view(), name='rechazar-comida'),
     path('generar-rutina/',   GenerarRutinaView.as_view(),     name='generar-rutina'),
     path('lista-mercado/',    ListaMercadoView.as_view(),      name='lista-mercado'),
+    path('ilustraciones/',    IlustracionView.as_view(),       name='ilustraciones'),
+    path('ilustraciones/<int:pk>/imagen/', IlustracionImagenView.as_view(), name='ilustracion-imagen'),
+    path('proyeccion/',       ProyeccionView.as_view(),        name='proyeccion'),
     path('lista-mercado/items/<int:pk>/toggle/', ItemMercadoToggleView.as_view(), name='item-mercado-toggle'),
     path('suplementos/',          SuplementoListCreateView.as_view(), name='suplementos'),
     path('suplementos/<int:pk>/', SuplementoDetailView.as_view(),     name='suplemento-detail'),
+    path('suplementos/<int:pk>/info/', SuplementoInfoView.as_view(), name='suplemento-info'),
+    path('suplementos/<int:pk>/foto/', SuplementoFotoView.as_view(), name='suplemento-foto'),
     path('suplementos/<int:pk>/<slug:accion>/', SuplementoAccionView.as_view(), name='suplemento-accion'),
+    path('intercambios/',                   IntercambiosView.as_view(),     name='intercambios'),
+    path('minutas/',                        MinutaListCreateView.as_view(), name='minutas'),
+    path('minutas/<int:pk>/',               MinutaDetailView.as_view(),     name='minuta-detail'),
+    path('minutas/leer-pdf/',               LeerPdfView.as_view(),          name='minuta-leer-pdf'),
+    path('minutas/calcular/',               CalcularMinutaView.as_view(),   name='minuta-calcular'),
+    path('minutas/<int:pk>/archivo/',       MinutaArchivoView.as_view(),    name='minuta-archivo'),
+    path('preferencias/',                   PreferenciasComidaView.as_view(), name='preferencias-comida'),
+    path('comidas/registros/',              RegistroComidaListCreateView.as_view(), name='registros-comida'),
+    path('comidas/registros/<int:pk>/foto/', RegistroComidaFotoView.as_view(), name='registro-comida-foto'),
+    path('comidas/pedido/',                 PedidoComidaView.as_view(),     name='pedido-comida'),
+    path('comidas/cumplimiento/',           CumplimientoView.as_view(),     name='cumplimiento'),
+    path('menu/',                           MenuView.as_view(),             name='menu'),
+    path('menu/comidas/<int:pk>/opciones/', ComidaOpcionesView.as_view(),   name='comida-opciones'),
+    path('menu/comidas/<int:pk>/<slug:accion>/', ComidaAccionView.as_view(), name='comida-accion'),
 ]
