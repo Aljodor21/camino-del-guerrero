@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Recordatorio
+from . import notificaciones
+from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 MAX_DIAS_ADELANTE = 730
 
@@ -52,3 +53,63 @@ class RecordatorioSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, self._aplicar_completado(validated_data))
+
+
+class HabitosSerializer(serializers.ModelSerializer):
+    vasos_meta = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = Habitos
+        fields = ['agua_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno', 'avisos_apagados']
+        extra_kwargs = {'agua_ml': {'min_value': 250, 'max_value': 8000}}
+
+    def get_vasos_meta(self, habitos):
+        return notificaciones.vasos_meta(habitos)
+
+    def validate_avisos_apagados(self, apagados):
+        tipos = dict(Notificacion.TIPOS)
+        if not isinstance(apagados, list) or any(t not in tipos for t in apagados):
+            raise serializers.ValidationError('Tipo de aviso desconocido.')
+        return sorted(set(apagados))
+
+    def validate(self, datos):
+        levantarse = datos.get('hora_levantarse', getattr(self.instance, 'hora_levantarse', None))
+        dormir = datos.get('hora_dormir', getattr(self.instance, 'hora_dormir', None))
+        if levantarse and dormir and levantarse == dormir:
+            raise serializers.ValidationError({'hora_dormir': 'No puede ser la misma hora en que te levantas.'})
+        return datos
+
+
+class NotificacionSerializer(serializers.ModelSerializer):
+    accion = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = Notificacion
+        fields = ['id', 'tipo', 'fecha', 'programada_para', 'titulo', 'cuerpo', 'accion', 'suplemento',
+                  'recordatorio', 'datos']
+        read_only_fields = fields
+
+    def get_accion(self, n):
+        return notificaciones.accion_de(n)
+
+
+class RegistroHabitoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = RegistroHabito
+        fields = ['id', 'tipo', 'fecha', 'momento', 'cantidad', 'suplemento', 'tiempo']
+        read_only_fields = fields
+
+
+class SuscripcionPushSerializer(serializers.Serializer):
+    endpoint = serializers.URLField(max_length=600)
+    keys     = serializers.DictField(child=serializers.CharField(max_length=200))
+
+    def validate_endpoint(self, endpoint):
+        if not endpoint.startswith('https://'):
+            raise serializers.ValidationError('La suscripción debe ser https.')
+        return endpoint
+
+    def validate_keys(self, keys):
+        if not keys.get('p256dh') or not keys.get('auth'):
+            raise serializers.ValidationError('Faltan las llaves de la suscripción.')
+        return keys
