@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-const REPO = 'Aljodor21/camino-del-guerrero';
-const ARCHIVO = 'camino-del-guerrero.apk';
-
-/** Siempre apunta al APK del último release: no hay que actualizarlo al sacar versiones. */
-export const APK_URL = `https://github.com/${REPO}/releases/latest/download/${ARCHIVO}`;
+/**
+ * Siempre baja el APK de la última versión: no hay que actualizarlo al sacar versiones. Sale de
+ * nuestro propio dominio (el servidor guarda una copia) y no de GitHub: así el celular lo descarga
+ * en el acto, sin saltar a otra página.
+ */
+export const APK_URL = `${environment.apiUrl}/app/descargar/`;
 
 export interface VersionApk {
   version: string;

@@ -133,6 +133,10 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'no
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
 # Repositorio de GitHub donde se publica la app de Android (releases con camino-del-guerrero.apk).
 APK_REPO = config('APK_REPO', default='Aljodor21/camino-del-guerrero')
+# Copia local de la última versión de la app: nginx la entrega con X-Accel-Redirect (APK_ACCEL_NGINX=False
+# sirve el archivo desde Django, para desarrollo y pruebas).
+APK_DIR = config('APK_DIR', default=str(BASE_DIR / 'apk_cache'))
+APK_ACCEL_NGINX = config('APK_ACCEL_NGINX', default=True, cast=bool)
 RECUPERACION_MINUTOS = 30  # cuánto dura el enlace para recuperar la clave
 
 # CORS
