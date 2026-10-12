@@ -2,7 +2,9 @@
   <app-portada
     foto="plan"
     [titulo]="titulo()"
-    [subtitulo]="cuando() ? cuando() + ' · Cuéntanos qué comiste para ver cómo vas con tu plan.' : ''"
+    [subtitulo]="
+      cuando() ? cuando() + ' · Cuéntanos qué comiste para ver cómo vas con tu plan.' : ''
+    "
   />
 
   @if (error()) {
@@ -53,7 +55,11 @@
                 >· {{ g.porciones }} {{ g.porciones === 1 ? 'porción' : 'porciones' }}</span
               >
             </legend>
-            <div role="radiogroup" [attr.aria-label]="'Cuánto comiste de ' + grupos[g.grupo]" class="flex flex-wrap gap-2">
+            <div
+              role="radiogroup"
+              [attr.aria-label]="'Cuánto comiste de ' + grupos[g.grupo]"
+              class="flex flex-wrap gap-2"
+            >
               @for (o of opciones; track o.valor) {
                 <button
                   type="button"
@@ -73,7 +79,8 @@
       <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
         <div class="flex flex-col gap-1">
           <label for="co-nota" class="text-sm font-medium text-gray-800 dark:text-gray-100"
-            >¿Qué fue? <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span></label
+            >¿Qué fue?
+            <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span></label
           >
           <textarea
             pTextarea

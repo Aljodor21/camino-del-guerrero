@@ -45,7 +45,14 @@ import { Ayuda } from '../../shared/ayuda/ayuda';
   selector: 'app-menu-semanal',
   templateUrl: './menu-semanal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, ButtonModule, DialogModule, InputTextModule, MessageModule, ProgressSpinnerModule],
+  imports: [
+    Ayuda,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    MessageModule,
+    ProgressSpinnerModule,
+  ],
 })
 export class MenuSemanal implements OnInit {
   protected servicio = inject(MenuService);
@@ -157,7 +164,9 @@ export class MenuSemanal implements OnInit {
     const partes = ORDEN_GRUPOS.filter((g) => s.reemplaza[g]).map((g) =>
       porcionesDe(g, s.reemplaza[g]!),
     );
-    const scoops = s.scoops ? `${s.scoops.toLocaleString('es-CO')} ${s.scoops === 1 ? 'scoop' : 'scoops'}, ` : '';
+    const scoops = s.scoops
+      ? `${s.scoops.toLocaleString('es-CO')} ${s.scoops === 1 ? 'scoop' : 'scoops'}, `
+      : '';
     return scoops + (partes.length ? `en lugar de ${partes.join(' y ')}` : 'además de la comida');
   }
 

@@ -85,6 +85,21 @@ Dentro de la app (Android) la pantalla de descarga lee la versión instalada (pl
 - **Una versión atrás:** alerta ámbar "Hay una versión nueva · Tienes la 1.0.5 y la última es la 1.0.7" y el botón "Actualizar a la 1.0.7"; además un punto rojo en el icono del celular de la barra de arriba y, cuando no haya otro aviso más importante, la tarjeta flotante "Hay una versión nueva de la app" (se cierra y no vuelve hasta que salga otra versión).
 - **Sin saber la versión** (sin red, o en la web): el botón de siempre. En la web de un celular Android se ofrece "Descargar para Android"; en el computador, copiar el enlace.
 
+## Los avisos se ven como notificaciones
+
+- **Aviso de arriba:** una tarjeta flotante (redondeada, con sombra, ícono a la izquierda y botón de acción), no una barra a todo lo ancho. Solo uno a la vez, el más importante.
+- **Bandeja de Pendientes:** una sola lista (lo más nuevo arriba), cada aviso con el color y el ícono de su tipo (agua celeste, proteína ámbar, dormir índigo, entreno rojo, comida verde, agenda violeta), un punto rojo de "sin atender" y cuándo llegó ("Ahora", "Hace 12 min", "Hace 2 h"). Un contador rojo en el título y en la campana; la campana se sacude un instante cada tanto mientras haya algo pendiente. Vacía dice "Estás al día".
+- **En el celular (push):** ícono de estado de una sola silueta (`badge.png`), vibración, la hora a la que tocaba el aviso y el botón de confirmar en la propia notificación.
+
+## Cómo se ordenan las secciones
+
+Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pestañas de arriba, no en tarjetas sueltas:
+
+- **Nutrición:** Menú · Mercado · Mi plan · Cumplimiento · Alimentos (la lista de intercambios).
+- **Progreso:** Medidas · Agenda · Proyección ("¿cuánto puedo cambiar?", solo si el proceso incluye alimentación) · Sesiones (solo con entrenamiento). La proteína vive en la Agenda.
+- La barra (`app-pestanas`) se desplaza hacia el lado si no caben todas y deja la activa a la vista; la sección elegida queda en la URL (`?seccion=`).
+- Los enlaces viejos (`/cumplimiento`, `/lista-alimentos`, `/proyeccion`) redirigen a su pestaña conservando los parámetros (`?listo=desayuno`).
+
 ## Navegación y ventanas
 
 - **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
