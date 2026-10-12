@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from django.urls import reverse
 from django.utils import timezone
@@ -313,7 +313,7 @@ class RecuperarClaveTest(APITestCase):
         self.assertEqual(self.cambiar(token).status_code, status.HTTP_200_OK)
 
     def test_el_enlace_vence(self):
-        from datetime import timedelta
+        from datetime import datetime, time, timedelta
         from django.utils import timezone
         from .models import SolicitudRecuperacion
         self.pedir()
@@ -455,12 +455,14 @@ class ModulosYControlTest(ProcesoBaseTest):
         Usuario.objects.filter(pk=self.usuario.pk).update(date_joined=timezone.now() - timedelta(days=40))
         self.usuario.refresh_from_db()
         Proceso.objects.filter(pk=self.proceso.pk).update(fecha_fin_plan=HOY())
-        notificaciones.generar(self.usuario)
+        # El aviso sale a las 8 a. m.: se fija la hora para que la prueba no dependa de cuándo corre.
+        mediodia = timezone.make_aware(datetime.combine(HOY(), time(12, 0)))
+        notificaciones.generar(self.usuario, mediodia)
         aviso = Notificacion.objects.get(usuario=self.usuario, tipo='proceso')
         self.assertEqual(notificaciones.url_de(aviso), '/control')
         self.client.post(reverse('proceso-renovar', args=[self.proceso.id]),
                          {'fecha_fin_plan': (HOY() + timedelta(days=30)).isoformat()}, format='json')
-        notificaciones.generar(self.usuario)
+        notificaciones.generar(self.usuario, mediodia)
         aviso.refresh_from_db()
         self.assertIsNotNone(aviso.resuelta_en)
 
