@@ -50,9 +50,9 @@ export class AvisosService {
       .pipe(tap(() => this._avisos.update((lista) => lista.filter((a) => a.id !== aviso.id))));
   }
 
-  /** Un vaso anotado a mano. */
-  registrarAgua(): Observable<unknown> {
-    return this.http.post(`${API}/registros/agua/`, {});
+  /** Un vaso anotado a mano; devuelve cuántos ml fueron y la hora exacta en que se anotó. */
+  registrarAgua(): Observable<{ momento: string; ml: number }> {
+    return this.http.post<{ momento: string; ml: number }>(`${API}/registros/agua/`, {});
   }
 
   /** Revisa los avisos mientras la app está abierta y se detiene con `detener`. */

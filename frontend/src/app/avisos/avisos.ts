@@ -17,6 +17,7 @@ import { PushService } from '../core/services/push';
 import { TIEMPOS_COMIDA } from '../core/constants/nutricion';
 import { TiempoComida } from '../core/models/minuta.model';
 import { clasesChip } from '../shared/chip';
+import { TamanoVaso, vasoValido } from '../shared/tamano-vaso';
 import { parsearDecimal } from '../shared/decimal-input';
 import { mensajeError } from '../shared/errores';
 import { formatearHora, formatearNumero } from '../shared/fechas';
@@ -49,7 +50,7 @@ import { Ayuda } from '../shared/ayuda/ayuda';
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, Portada, RouterLink, ButtonModule, InputTextModule, MessageModule],
+  imports: [Ayuda, Portada, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
 })
 export class Avisos implements OnInit {
   protected servicio = inject(AvisosService);
@@ -69,6 +70,9 @@ export class Avisos implements OnInit {
 
   // ── Ajustes (agua, horas y qué avisos llegan) ─────────────────────
   protected litros = signal<number | null>(null);
+  protected vasoMl = signal<number | null>(250);
+  /** Qué se anotó con el último clic ("Vaso anotado a las 8:15 a. m."). */
+  protected anotado = signal('');
   protected levantarse = signal('');
   protected dormir = signal('');
   protected entreno = signal('');
@@ -76,12 +80,18 @@ export class Avisos implements OnInit {
 
   protected vasosMeta = computed(() => {
     const l = this.litros();
-    return l === null || Number.isNaN(l) ? null : Math.ceil((l * 1000) / (this.servicio.hoy()?.agua.ml_vaso ?? 250));
+    return l === null || Number.isNaN(l) || !vasoValido(this.vasoMl())
+      ? null
+      : Math.ceil((l * 1000) / (this.vasoMl() as number));
   });
   protected ajustesValidos = computed(() => {
     const l = this.litros();
     const aguaBien = l === null || (!Number.isNaN(l) && l >= 0.25 && l <= 8);
-    return aguaBien && !(this.dormir() && this.dormir() === this.levantarse());
+    return (
+      aguaBien &&
+      vasoValido(this.vasoMl()) &&
+      !(this.dormir() && this.dormir() === this.levantarse())
+    );
   });
 
   protected pendientes = this.servicio.avisos;
@@ -92,11 +102,14 @@ export class Avisos implements OnInit {
   });
 
   ngOnInit(): void {
-    this.servicio.cargar().subscribe({ error: (e) => this.error.set(mensajeError(e, 'No pudimos cargar tus avisos.')) });
+    this.servicio.cargar().subscribe({
+      error: (e) => this.error.set(mensajeError(e, 'No pudimos cargar tus avisos.')),
+    });
     this.servicio.cargarHoy().subscribe({ error: () => undefined });
     this.servicio.cargarHabitos().subscribe({
       next: (h) => {
         this.litros.set(h.agua_ml === null ? null : h.agua_ml / 1000);
+        this.vasoMl.set(h.vaso_ml);
         this.levantarse.set(h.hora_levantarse?.slice(0, 5) ?? '');
         this.dormir.set(h.hora_dormir?.slice(0, 5) ?? '');
         this.entreno.set(h.hora_entreno?.slice(0, 5) ?? '');
@@ -138,12 +151,18 @@ export class Avisos implements OnInit {
   protected unVaso(): void {
     this.error.set('');
     this.servicio.registrarAgua().subscribe({
-      next: () => {
+      next: (r) => {
+        this.anotado.set(`Vaso de ${r.ml} ml anotado a las ${this.horaDe(r.momento)}`);
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
         this.servicio.cargar().subscribe({ error: () => undefined });
       },
       error: (e) => this.error.set(mensajeError(e, 'No pudimos anotar el vaso.')),
     });
+  }
+
+  /** Hora local de un instante ("8:15 a. m."). */
+  protected horaDe(instante: string): string {
+    return new Date(instante).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
   }
 
   protected leerLitros(texto: string): void {
@@ -163,6 +182,7 @@ export class Avisos implements OnInit {
     this.servicio
       .guardarHabitos({
         agua_ml: l === null ? null : Math.round(l * 1000),
+        vaso_ml: this.vasoMl() ?? 250,
         hora_levantarse: this.levantarse() || null,
         hora_dormir: this.dormir() || null,
         hora_entreno: this.entreno() || null,

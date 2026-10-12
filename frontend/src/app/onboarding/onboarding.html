@@ -664,9 +664,10 @@
                             (change)="elegirFoto(i, $event)"
                           />
                           @if (s.foto) {
-                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48">{{
-                              s.foto.name
-                            }}</span>
+                            <span
+                              class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48"
+                              >{{ s.foto.name }}</span
+                            >
                             <button
                               type="button"
                               (click)="cambiarSuplemento(i, { foto: null })"
@@ -723,9 +724,10 @@
                             (change)="elegirInfo(i, $event)"
                           />
                           @if (s.infoArchivo) {
-                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48">{{
-                              s.infoArchivo.name
-                            }}</span>
+                            <span
+                              class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-48"
+                              >{{ s.infoArchivo.name }}</span
+                            >
                             <button
                               type="button"
                               (click)="cambiarSuplemento(i, { infoArchivo: null })"
@@ -783,11 +785,13 @@
                   >
                 } @else if (vasosAgua(); as vasos) {
                   <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Son {{ vasos }} vasos de 250 ml. Te avisamos a lo largo del día y quedan en tu
-                    bandeja hasta que marques cada uno.
+                    Son {{ vasos }} vasos de {{ vasoMl() }} ml. Te avisamos a lo largo del día y
+                    quedan en tu bandeja hasta que marques cada uno.
                   </p>
                 }
               </div>
+
+              <app-tamano-vaso [(valor)]="vasoMl" id="ob-vaso" />
 
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1">
@@ -806,7 +810,9 @@
                   />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label for="ob-dormir" class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  <label
+                    for="ob-dormir"
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
                     >Me acuesto a las</label
                   >
                   <input

@@ -119,6 +119,39 @@ class AvisosTest(APITestCase):
         r = self.client.post(reverse('aviso-confirmar', args=[n.id]))
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT, getattr(r, 'data', None))
 
+    def test_el_tamano_del_vaso_define_las_porciones_y_cada_vaso_guarda_su_hora(self):
+        # 2 litros en vasos de 500 ml son 4 porciones (con el vaso de 250 serían 8).
+        datos = self.habitos(agua_ml=2000, vaso_ml=500, hora_levantarse='06:00', hora_dormir='22:00')
+        self.assertEqual((datos['vasos_meta'], datos['vaso_ml']), (4, 500))
+        notificaciones.generar(self.usuario, self.a_las(23))
+        agua = self.pendientes('agua')
+        self.assertEqual(len(agua), 4)
+        self.assertIn('500 ml', agua[0].cuerpo)
+
+        # Un vaso anotado a mano guarda cuántos ml fueron y la hora exacta del clic.
+        antes = timezone.now()
+        r = self.client.post(reverse('registrar-agua'))
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(r.data['ml'], 500)
+        registro = RegistroHabito.objects.get(usuario=self.usuario, tipo='agua')
+        self.assertTrue(antes <= registro.momento <= timezone.now())
+
+        # Si después cambia el tamaño del vaso, lo ya tomado conserva el suyo.
+        self.habitos(vaso_ml=250)
+        self.client.post(reverse('registrar-agua'))
+        agua_hoy = self.client.get(reverse('hoy')).data['agua']
+        self.assertEqual((agua_hoy['ml_vaso'], agua_hoy['vasos'], agua_hoy['ml_total'], agua_hoy['meta_ml']),
+                         (250, 2, 750, 2000))
+        self.assertEqual([v['ml'] for v in agua_hoy['registros']], [500, 250])
+        self.assertTrue(all(v['momento'] for v in agua_hoy['registros']))
+
+    def test_el_tamano_del_vaso_tiene_limites(self):
+        for malo in (49, 1501, 0):
+            r = self.client.patch(reverse('habitos'), {'agua_ml': 2000, 'vaso_ml': malo}, format='json')
+            self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST, malo)
+        self.assertEqual(self.client.patch(reverse('habitos'), {'agua_ml': 2000, 'vaso_ml': 330},
+                                         format='json').status_code, status.HTTP_200_OK)
+
     def test_el_agua_se_reparte_en_el_dia_y_queda_hasta_confirmarla(self):
         datos = self.habitos(agua_ml=2000, hora_levantarse='06:00', hora_dormir='22:00')
         self.assertEqual(datos['vasos_meta'], 8)

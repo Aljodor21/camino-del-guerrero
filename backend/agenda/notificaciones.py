@@ -23,7 +23,7 @@ from routines.models import DiaRutina
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 ARTICULO_TIEMPO = {'desayuno': 'el', 'onces': 'las', 'almuerzo': 'el', 'algo': 'el', 'cena': 'la', 'merienda': 'la'}
-VASO_ML = 250
+VASO_ML = 250  # tamaño por defecto; cada persona puede indicar el suyo (Habitos.vaso_ml)
 HORA_LEVANTARSE = time(6, 0)
 HORA_DORMIR = time(22, 0)
 HORA_ENTRENO = time(7, 0)
@@ -48,8 +48,12 @@ def habitos_de(usuario):
     return Habitos.objects.filter(usuario=usuario).first() or Habitos(usuario=usuario)
 
 
+def vaso_ml(habitos):
+    return habitos.vaso_ml or VASO_ML
+
+
 def vasos_meta(habitos):
-    return math.ceil(habitos.agua_ml / VASO_ML) if habitos.agua_ml else 0
+    return math.ceil(habitos.agua_ml / vaso_ml(habitos)) if habitos.agua_ml else 0
 
 
 def _horas_agua(habitos, fecha):
@@ -88,7 +92,7 @@ def programados(usuario, fecha):
             avisos.append({
                 'tipo': 'agua', 'clave': f'agua:{fecha}:{i}', 'programada_para': cuando,
                 'titulo': 'Toma un vaso de agua',
-                'cuerpo': f'Vaso {i} de {len(horas)} de hoy.',
+                'cuerpo': f'Vaso {i} de {len(horas)} de hoy ({vaso_ml(habitos)} ml).',
                 'datos': {'vaso': i},
             })
 
@@ -234,7 +238,8 @@ def confirmar(notificacion):
         datos = n.datos
         RegistroHabito.objects.create(
             usuario=n.usuario, tipo=n.tipo, fecha=n.fecha, momento=ahora, notificacion=n,
-            cantidad=datos.get('scoops') or 1, suplemento=n.suplemento, tiempo=datos.get('tiempo', ''))
+            cantidad=datos.get('scoops') or 1, suplemento=n.suplemento, tiempo=datos.get('tiempo', ''),
+            ml=vaso_ml(habitos_de(n.usuario)) if n.tipo == 'agua' else None)
     elif n.tipo == 'entreno':
         if not RegistroEntrenamiento.objects.filter(usuario=n.usuario, fecha=n.fecha).exists():
             RegistroEntrenamiento.objects.create(
@@ -265,7 +270,8 @@ def registrar_agua(usuario):
          .filter(usuario=usuario, tipo='agua', fecha=hoy, resuelta_en__isnull=True).first())
     if n:
         return confirmar(n).registro
-    return RegistroHabito.objects.create(usuario=usuario, tipo='agua', fecha=hoy)
+    return RegistroHabito.objects.create(usuario=usuario, tipo='agua', fecha=hoy,
+                                         ml=vaso_ml(habitos_de(usuario)))
 
 
 def resumen_de_hoy(usuario):
@@ -281,10 +287,14 @@ def resumen_de_hoy(usuario):
     toca_entreno = DiaRutina.objects.filter(rutina__usuario=usuario, rutina__activa=True,
                                             dia_semana=hoy.isoweekday()).exists()
     acostado = registros.filter(tipo='dormir').first()
+    vasos = sorted((r for r in registros if r.tipo == 'agua'), key=lambda r: r.momento)
     return {
         'fecha': hoy,
-        'agua': {'meta': vasos_meta(habitos), 'vasos': sum(r.cantidad for r in registros if r.tipo == 'agua'),
-                 'ml_vaso': VASO_ML},
+        'agua': {'meta': vasos_meta(habitos), 'vasos': sum(r.cantidad for r in vasos),
+                 'ml_vaso': vaso_ml(habitos), 'meta_ml': habitos.agua_ml,
+                 # Lo que se tomó de verdad: cada vaso con su tamaño de entonces y la hora del clic.
+                 'ml_total': sum(r.ml or VASO_ML for r in vasos),
+                 'registros': [{'momento': r.momento, 'ml': r.ml or VASO_ML} for r in vasos]},
         'tomas': tomas,
         'entreno': {'toca': toca_entreno,
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},

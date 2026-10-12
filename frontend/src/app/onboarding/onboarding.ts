@@ -59,13 +59,13 @@ import {
 import { EtiquetaSuplemento } from '../shared/etiqueta-suplemento/etiqueta-suplemento';
 import { fechaLocal, formatearFecha, formatearNumero, hoyISO, sumarDias } from '../shared/fechas';
 import { clasesChip } from '../shared/chip';
+import { TamanoVaso, vasoValido } from '../shared/tamano-vaso';
 import { mensajeError } from '../shared/errores';
 
 import { environment } from '../../environments/environment';
 import { DecimalInput, parsearDecimal } from '../shared/decimal-input';
 const API = environment.apiUrl;
 const MAX_DIAS_PROGRAMACION = 60;
-const VASO_ML = 250;
 
 type Modulos = 'alimentacion' | 'entrenamiento' | 'ambos';
 type PasoId =
@@ -146,6 +146,7 @@ const PASOS: Record<PasoId, { titulo: string; descripcion: string }> = {
   templateUrl: './onboarding.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    TamanoVaso,
     DecimalInput,
     EtiquetaSuplemento,
     ReactiveFormsModule,
@@ -416,8 +417,7 @@ export class Onboarding implements OnInit {
   }
 
   protected nombreTipo = (tipo: SuplementoInicial['tipo']) => tipoSuplemento(tipo).label;
-  protected descripcionTipo = (tipo: SuplementoInicial['tipo']) =>
-    tipoSuplemento(tipo).descripcion;
+  protected descripcionTipo = (tipo: SuplementoInicial['tipo']) => tipoSuplemento(tipo).descripcion;
   protected duracionUsual = (tipo: SuplementoInicial['tipo']) => tipoSuplemento(tipo).duracionUsual;
   protected duracionEnPalabras = duracionEnPalabras;
 
@@ -454,24 +454,32 @@ export class Onboarding implements OnInit {
   ];
   protected aguaValor = signal<number | null>(null);
   protected aguaUnidad = signal<'litros' | 'vasos'>('litros');
+  protected vasoMl = signal<number | null>(250);
   protected horaLevantarse = signal('');
   protected horaDormir = signal('');
 
   private aguaMl = computed(() => {
     const v = this.aguaValor();
     if (v === null || Number.isNaN(v)) return null;
-    return Math.round(v * (this.aguaUnidad() === 'litros' ? 1000 : VASO_ML));
+    if (this.aguaUnidad() === 'litros') return Math.round(v * 1000);
+    return Math.round(v * (this.vasoMl() ?? 250));
   });
 
   protected vasosAgua = computed(() => {
     const ml = this.aguaMl();
-    return ml === null ? null : Math.ceil(ml / VASO_ML);
+    return ml === null || !vasoValido(this.vasoMl())
+      ? null
+      : Math.ceil(ml / (this.vasoMl() as number));
   });
 
   protected habitosValidos(): boolean {
     const v = this.aguaValor();
     const ml = this.aguaMl();
-    return (v === null || (ml !== null && ml >= 250 && ml <= 8000)) && !this.mismaHora();
+    return (
+      (v === null || (ml !== null && ml >= 250 && ml <= 8000)) &&
+      vasoValido(this.vasoMl()) &&
+      !this.mismaHora()
+    );
   }
 
   /** Dormir a la hora de levantarse no tiene sentido. */
@@ -486,6 +494,7 @@ export class Onboarding implements OnInit {
   private payloadHabitos(): HabitosPayload {
     return {
       agua_ml: this.aguaMl(),
+      vaso_ml: this.vasoMl() ?? 250,
       hora_levantarse: this.horaLevantarse() || null,
       hora_dormir: this.horaDormir() || null,
     };
@@ -496,7 +505,7 @@ export class Onboarding implements OnInit {
     const vasos = this.vasosAgua();
     if (vasos !== null) {
       const litros = formatearNumero((this.aguaMl() ?? 0) / 1000, 2);
-      lineas.push(`Agua: ${litros} L (${vasos} vasos)`);
+      lineas.push(`Agua: ${litros} L (${vasos} vasos de ${this.vasoMl()} ml)`);
     }
     if (this.horaDormir()) lineas.push(`Acostarte: ${this.horaDormir()}`);
     return lineas;
@@ -577,7 +586,8 @@ export class Onboarding implements OnInit {
     const pedido = this.route.snapshot.queryParamMap.get('agregar');
     if (pedido !== 'entrenamiento' && pedido !== 'alimentacion') return;
     const vigente = this.procesos.vigente();
-    const yaLoTiene = pedido === 'entrenamiento' ? vigente?.incluye_entrenamiento : vigente?.incluye_alimentacion;
+    const yaLoTiene =
+      pedido === 'entrenamiento' ? vigente?.incluye_entrenamiento : vigente?.incluye_alimentacion;
     if (!vigente || yaLoTiene) {
       void this.router.navigate(['/perfil']);
       return;
