@@ -66,15 +66,7 @@ const SECCIONES: Seccion[] = ['pendientes', 'dia', 'ajustes'];
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    Ayuda,
-    Pestanas,
-    RouterLink,
-    ButtonModule,
-    InputTextModule,
-    MessageModule,
-    TamanoVaso,
-  ],
+  imports: [Ayuda, Pestanas, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
 })
 export class Avisos implements OnInit {
   private destroyRef = inject(DestroyRef);
@@ -84,7 +76,12 @@ export class Avisos implements OnInit {
     SECCIONES.find((x) => x === this.ruta.snapshot.queryParamMap.get('seccion')) ?? 'pendientes',
   );
   protected pestanas = computed((): Pestana<Seccion>[] => [
-    { id: 'pendientes', label: 'Pendientes', icon: 'pi pi-inbox', contador: this.pendientes().length },
+    {
+      id: 'pendientes',
+      label: 'Pendientes',
+      icon: 'pi pi-inbox',
+      contador: this.pendientes().length,
+    },
     { id: 'dia', label: 'Tu día', icon: 'pi pi-sun' },
     { id: 'ajustes', label: 'Ajustes', icon: 'pi pi-sliders-h' },
   ]);
