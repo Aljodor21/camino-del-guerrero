@@ -62,6 +62,16 @@ class NotificacionListView(generics.ListAPIView):
         return notificaciones.pendientes(self.request.user)
 
 
+class ProximosAvisosView(APIView):
+    """Lo que viene en los próximos días (máx. 14), para programarlo en el celular."""
+
+    def get(self, request):
+        dias = request.query_params.get('dias') or '7'
+        if not dias.isdigit() or not 1 <= int(dias) <= 14:
+            raise ReglaNegocioError('Pide entre 1 y 14 días.')
+        return Response(notificaciones.proximos(request.user, int(dias)))
+
+
 class ConfirmarNotificacionView(APIView):
     def post(self, request, pk):
         n = get_object_or_404(Notificacion, pk=pk, usuario=request.user)

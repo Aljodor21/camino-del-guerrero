@@ -199,6 +199,23 @@ def generar(usuario, ahora=None):
     return nuevas
 
 
+def proximos(usuario, dias=7, ahora=None):
+    """Los avisos que vienen en los próximos días, para que el celular los programe él mismo
+    y suenen aunque la app esté cerrada. Solo los que aún no llegan a su hora: los que ya
+    pasaron están en la bandeja."""
+    ahora = ahora or timezone.now()
+    hoy = timezone.localdate(ahora)
+    ya_creados = set(Notificacion.objects.filter(usuario=usuario, fecha__gte=hoy).values_list('clave', flat=True))
+    lista = []
+    for i in range(dias):
+        for aviso in programados(usuario, hoy + timedelta(days=i)):
+            if aviso['programada_para'] <= ahora or aviso['clave'] in ya_creados:
+                continue
+            lista.append({'clave': aviso['clave'], 'tipo': aviso['tipo'], 'titulo': aviso['titulo'],
+                          'cuerpo': aviso['cuerpo'], 'programada_para': aviso['programada_para']})
+    return sorted(lista, key=lambda a: a['programada_para'])
+
+
 def resolver_automaticas(usuario):
     """Lo que ya pasó por otro lado: entrenó, completó o movió el recordatorio."""
     ahora = timezone.now()

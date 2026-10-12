@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (ConfirmarNotificacionFirmadaView, ConfirmarNotificacionView, HabitosView, HoyView,
-                    NotificacionListView, PushView, RecordatorioDetailView, RecordatorioListCreateView,
+                    NotificacionListView, ProximosAvisosView, PushView, RecordatorioDetailView, RecordatorioListCreateView,
                     RegistrarAguaView, RegistroHabitoListView)
 
 urlpatterns = [
@@ -10,6 +10,7 @@ urlpatterns = [
     path('habitos/', HabitosView.as_view(), name='habitos'),
     path('hoy/', HoyView.as_view(), name='hoy'),
     path('avisos/', NotificacionListView.as_view(), name='avisos'),
+    path('avisos/proximos/', ProximosAvisosView.as_view(), name='avisos-proximos'),
     path('avisos/<int:pk>/confirmar/', ConfirmarNotificacionView.as_view(), name='aviso-confirmar'),
     path('avisos/confirmar-firmado/', ConfirmarNotificacionFirmadaView.as_view(), name='aviso-confirmar-firmado'),
     path('avisos/push/', PushView.as_view(), name='avisos-push'),

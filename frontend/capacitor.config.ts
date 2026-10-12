@@ -6,6 +6,9 @@ const config: CapacitorConfig = {
   webDir: 'dist/frontend/browser',
   android: { backgroundColor: '#100d0b' },
   server: { androidScheme: 'https' },
+  plugins: {
+    LocalNotifications: { smallIcon: 'ic_stat_camino', iconColor: '#C0392B' },
+  },
 };
 
 export default config;

@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 
 import { AuthResponse, LoginPayload, RegistroPayload, Usuario } from '../models/usuario.model';
 
+import { NotificacionesLocalesService } from './notificaciones-locales';
 import { environment } from '../../../environments/environment';
 const API = `${environment.apiUrl}/usuarios`;
 const ACCESS_KEY = 'cdg_access';
@@ -17,6 +18,7 @@ export class AuthService {
   private _usuario = signal<Usuario | null>(this._cargarUsuario());
   private http = inject(HttpClient);
   private router = inject(Router);
+  private celular = inject(NotificacionesLocalesService);
 
   readonly usuario = this._usuario.asReadonly();
   readonly isLoggedIn = computed(() => this._usuario() !== null);
@@ -71,6 +73,7 @@ export class AuthService {
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem('cdg_usuario');
     this._usuario.set(null);
+    void this.celular.limpiar();
     this.router.navigate(['/']);
   }
 
