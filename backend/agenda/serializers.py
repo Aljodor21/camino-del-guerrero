@@ -40,6 +40,11 @@ class RecordatorioSerializer(serializers.ModelSerializer):
         # Los sugeridos se resuelven con las acciones de su suplemento, que los recalculan.
         if self.instance is not None and self.instance.automatico:
             raise serializers.ValidationError('Este recordatorio se resuelve desde su suplemento.')
+        # Se marca como hecho cuando llega su fecha, no antes.
+        if attrs.get('completado'):
+            fecha = attrs.get('fecha') or getattr(self.instance, 'fecha', None)
+            if fecha and fecha > timezone.localdate():
+                raise serializers.ValidationError('Todavía no llega la fecha: se puede marcar como hecho ese día.')
         return attrs
 
     def _aplicar_completado(self, validated_data):

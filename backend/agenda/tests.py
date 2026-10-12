@@ -47,8 +47,18 @@ class RecordatorioTest(APITestCase):
         self.assertEqual(self.crear(titulo='   ').status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(self.crear(avisar_dias_antes=31).status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_completar_reprogramar_y_borrar(self):
+    def test_se_marca_como_hecho_cuando_llega_su_fecha_no_antes(self):
         url = reverse('recordatorio-detail', args=[self.crear().data['id']])
+        r = self.client.patch(url, {'completado': True}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Todavía no llega la fecha', str(r.data))
+        hoy = self.crear(fecha=HOY().isoformat()).data['id']
+        r = self.client.patch(reverse('recordatorio-detail', args=[hoy]), {'completado': True}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+    def test_completar_reprogramar_y_borrar(self):
+        r = self.crear(fecha=HOY().isoformat())
+        url = reverse('recordatorio-detail', args=[r.data['id']])
         r = self.client.patch(url, {'completado': True}, format='json')
         self.assertIsNotNone(r.data['completado_en'])
         r = self.client.patch(url, {'completado': False}, format='json')
@@ -152,6 +162,36 @@ class AvisosTest(APITestCase):
         self.assertEqual((toma.tiempo, toma.cantidad), ('onces', 3))
         hoy = self.client.get(reverse('hoy')).data
         self.assertEqual([(t['tiempo'], t['hecha']) for t in hoy['tomas']], [('onces', True), ('algo', False)])
+
+    def test_una_toma_con_hora_avisa_a_esa_hora_y_dice_como(self):
+        r = self.client.post(reverse('suplementos'), {
+            'tipo': 'hipercalorico', 'duracion_confirmada': True, 'scoops_porcion': 6,
+            'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}, 'hora': '08:45', 'nota': 'Con el desayuno'},
+                      {'tiempo': 'algo', 'scoops': 3, 'reemplaza': {}}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        # Las onces son a las 10:00 por defecto: a las 9 ya avisó por la hora que dijo (08:45).
+        notificaciones.generar(self.usuario, self.a_las(9))
+        tomas = self.pendientes('toma')
+        self.assertEqual(len(tomas), 1)
+        self.assertEqual(tomas[0].programada_para, self.a_las(8, 45))
+        self.assertIn('Con el desayuno', tomas[0].cuerpo)
+
+    def test_otra_toma_avisa_a_su_hora_y_se_confirma_con_su_propia_clave(self):
+        r = self.client.post(reverse('suplementos'), {
+            'tipo': 'hipercalorico', 'duracion_confirmada': True, 'scoops_porcion': 6,
+            'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}},
+                      {'tiempo': 'otro', 'scoops': 3, 'hora': '21:30', 'nota': 'Antes de dormir'}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        notificaciones.generar(self.usuario, self.a_las(22))
+        tomas = self.pendientes('toma')
+        otra = next(n for n in tomas if n.datos['tiempo'] == 'otro-2130')
+        self.assertEqual(otra.programada_para, self.a_las(21, 30))
+        self.assertIn('A las 9:30 p. m.', otra.cuerpo)
+        self.assertIn('Antes de dormir', otra.cuerpo)
+        self.confirmar(otra)
+        hoy = self.client.get(reverse('hoy')).data
+        hechas = {t['tiempo']: t['hecha'] for t in hoy['tomas']}
+        self.assertEqual(hechas, {'onces': False, 'otro-2130': True})
 
     def test_dormir_es_opcional_y_avisa_media_hora_antes(self):
         notificaciones.generar(self.usuario, self.a_las(23))

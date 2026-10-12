@@ -346,6 +346,32 @@ class RecuperarClaveTest(APITestCase):
         self.assertEqual(self.pedir().status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
 
+class SesionesAlCambiarLaClaveTest(APITestCase):
+    def test_al_cambiar_la_clave_las_sesiones_viejas_dejan_de_servir(self):
+        Usuario.objects.create_user(username='s@x.co', email='s@x.co', nombre='S', password='clave-vieja-123')
+        sesion = self.client.post(reverse('login'), {'email': 's@x.co', 'password': 'clave-vieja-123'}, format='json').data
+        usar = lambda acceso: self.client.get(reverse('perfil'), HTTP_AUTHORIZATION=f'Bearer {acceso}').status_code
+        self.assertEqual(usar(sesion['access']), status.HTTP_200_OK)
+
+        # Se recupera la clave desde otro navegador de la misma persona.
+        dispositivo = 'navegador-de-prueba-0123456789'
+        self.client.post(reverse('recuperar-clave'), {'email': 's@x.co', 'dispositivo': dispositivo}, format='json')
+        from django.core import mail
+        token = next(l for l in mail.outbox[-1].body.splitlines() if 'token=' in l).split('token=')[1]
+        r = self.client.post(reverse('restablecer-clave'),
+                             {'token': token, 'dispositivo': dispositivo, 'password': 'clave-nueva-456'}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+
+        # El pase de acceso viejo y el que se pida con el pase de renovación viejo ya no sirven.
+        self.assertEqual(usar(sesion['access']), status.HTTP_401_UNAUTHORIZED)
+        renovado = self.client.post(reverse('token_refresh'), {'refresh': sesion['refresh']}, format='json')
+        if renovado.status_code == status.HTTP_200_OK:
+            self.assertEqual(usar(renovado.data['access']), status.HTTP_401_UNAUTHORIZED)
+        # Con la clave nueva se entra normal.
+        nueva = self.client.post(reverse('login'), {'email': 's@x.co', 'password': 'clave-nueva-456'}, format='json').data
+        self.assertEqual(usar(nueva['access']), status.HTTP_200_OK)
+
+
 class BienvenidaTest(APITestCase):
     def test_al_registrarse_llega_un_correo_de_bienvenida(self):
         from django.core import mail
@@ -437,3 +463,28 @@ class ModulosYControlTest(ProcesoBaseTest):
         notificaciones.generar(self.usuario)
         aviso.refresh_from_db()
         self.assertIsNotNone(aviso.resuelta_en)
+
+
+class AdminCorrigeDatosTest(APITestCase):
+    def setUp(self):
+        from .models import Rol
+        admin_rol, _ = Rol.objects.get_or_create(nombre='admin')
+        self.admin = Usuario.objects.create_user(username='ad@x.co', email='ad@x.co', nombre='Admin',
+                                                 password='clave-segura-123', rol=admin_rol)
+        self.persona = Usuario.objects.create_user(username='p@x.co', email='p@x.co', nombre='Pablo',
+                                                   password='clave-segura-123', estatura=170, nacionalidad='Colombia')
+
+    def test_solo_el_administrador_corrige_los_datos_de_inicio(self):
+        url = reverse('admin-usuario-delete', args=[self.persona.id])
+        # La persona no puede cambiar su estatura ni entrar a la ruta del administrador.
+        self.client.force_authenticate(self.persona)
+        self.assertEqual(self.client.patch(reverse('perfil'), {'estatura': 175}, format='json').status_code,
+                         status.HTTP_409_CONFLICT)
+        self.assertEqual(self.client.patch(url, {'estatura': 175}, format='json').status_code,
+                         status.HTTP_403_FORBIDDEN)
+        # El administrador sí.
+        self.client.force_authenticate(self.admin)
+        r = self.client.patch(url, {'estatura': 175, 'nombre': 'Pablo Pérez', 'region': 'Costa'}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+        self.persona.refresh_from_db()
+        self.assertEqual((self.persona.estatura, self.persona.nombre, self.persona.region), (175, 'Pablo Pérez', 'Costa'))

@@ -95,15 +95,20 @@ def programados(usuario, fecha):
     if 'toma' not in apagados:
         for s in _suplementos_del_dia(usuario, fecha):
             for toma in s.tomas:
-                tiempo = toma['tiempo']
+                tiempo = Suplemento.clave_toma(toma)
                 scoops = toma.get('scoops')
                 cantidad = f'{scoops:g} {"scoop" if scoops == 1 else "scoops"} de ' if scoops else ''
-                cuerpo = f'En {NOMBRE_TIEMPO[tiempo].lower()}.'
+                cuerpo = (f'A las {hora_en_palabras(time.fromisoformat(toma["hora"]))}.' if toma['tiempo'] == 'otro'
+                          else f'En {NOMBRE_TIEMPO[tiempo].lower()}.')
                 if toma['reemplaza']:
                     cuerpo += f' Va en lugar de {_reemplaza_en_palabras(toma["reemplaza"])}.'
+                if toma.get('nota'):
+                    cuerpo += f' {toma["nota"]}'
+                # Si la persona dijo a qué hora la toma, avisa a esa hora; si no, a la de la comida.
+                hora_toma = time.fromisoformat(toma['hora']) if toma.get('hora') else time(*HORA_TIEMPO[toma['tiempo']])
                 avisos.append({
                     'tipo': 'toma', 'clave': f'toma:{s.id}:{fecha}:{tiempo}',
-                    'programada_para': _momento(fecha, time(*HORA_TIEMPO[tiempo])),
+                    'programada_para': _momento(fecha, hora_toma),
                     'titulo': f'Tómate {cantidad}{s.nombre_visible}'[:120],
                     'cuerpo': cuerpo, 'suplemento': s,
                     'datos': {'tiempo': tiempo, 'scoops': scoops},
@@ -269,8 +274,9 @@ def resumen_de_hoy(usuario):
     habitos = habitos_de(usuario)
     registros = RegistroHabito.objects.filter(usuario=usuario, fecha=hoy)
     hechas = {(r.suplemento_id, r.tiempo) for r in registros if r.tipo == 'toma'}
-    tomas = [{'suplemento': s.id, 'nombre': s.nombre_visible, 'tiempo': t['tiempo'], 'scoops': t.get('scoops'),
-              'hecha': (s.id, t['tiempo']) in hechas}
+    tomas = [{'suplemento': s.id, 'nombre': s.nombre_visible, 'tiempo': Suplemento.clave_toma(t),
+              'hora': t.get('hora'), 'scoops': t.get('scoops'),
+              'hecha': (s.id, Suplemento.clave_toma(t)) in hechas}
              for s in _suplementos_del_dia(usuario, hoy) for t in s.tomas]
     toca_entreno = DiaRutina.objects.filter(rutina__usuario=usuario, rutina__activa=True,
                                             dia_semana=hoy.isoweekday()).exists()

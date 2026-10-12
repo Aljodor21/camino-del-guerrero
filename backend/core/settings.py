@@ -115,6 +115,8 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
+    # Al cambiar la clave, las sesiones abiertas dejan de servir: el pase guarda una huella de la clave.
+    'CHECK_REVOKE_TOKEN': True,
 }
 
 # Correo (recuperar la clave). Sin EMAIL_HOST los correos salen en el log del backend.
