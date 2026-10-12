@@ -1,25 +1,25 @@
-@import "tailwindcss";
-@import "tailwindcss-primeui";
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
 @import 'primeicons/primeicons.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-guerrero-red:      #C0392B;
+  --color-guerrero-red: #c0392b;
   --color-guerrero-red-dark: #a83224;
-  --color-guerrero-gold:     #D4AF37;
-  --color-guerrero-gold-dark:#b8960f;
+  --color-guerrero-gold: #d4af37;
+  --color-guerrero-gold-dark: #b8960f;
   /* Noche cálida: la misma del home */
-  --color-dark-900:          #100d0b;
-  --color-dark-800:          #1b1511;
-  --color-dark-700:          #2b221c;
-  --color-success:           #27AE60;
-  --color-warning:           #F39C12;
-  --color-warm-bg:           #f1ece5;
-  --color-warm-card:         #fbf8f4;
+  --color-dark-900: #100d0b;
+  --color-dark-800: #1b1511;
+  --color-dark-700: #2b221c;
+  --color-success: #27ae60;
+  --color-warning: #f39c12;
+  --color-warm-bg: #f1ece5;
+  --color-warm-card: #fbf8f4;
 
   /* Grises cálidos en toda la app (antes eran grises fríos) */
-  --color-gray-50:  #faf8f5;
+  --color-gray-50: #faf8f5;
   --color-gray-100: #f2ede7;
   --color-gray-200: #e5ddd4;
   --color-gray-300: #d2c8bd;
@@ -58,7 +58,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
   letter-spacing: -0.005em;
 }
@@ -67,12 +69,24 @@ h1 {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #C0392B; border-radius: 3px; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0392b;
+  border-radius: 3px;
+}
 
 /* Transición suave entre temas */
-* { transition: background-color 0.2s ease, border-color 0.2s ease; }
+* {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
 
 /* Light mode: tarjetas con borde visible y fondo cálido */
 html:not(.dark) .bg-white {
@@ -139,17 +153,51 @@ html.dark .p-select.p-disabled .p-select-label {
  * utilidades de cada componente (flex, grid, w-14…) sigan mandando.
  */
 @layer base {
-  app-admin-recomendaciones, app-agenda, app-avisos, app-cargar-minuta, app-comparar-fotos,
-  app-contar-comida, app-control, app-cumplimiento, app-editor-minuta, app-ejercicios,
-  app-entrenamiento-form, app-etiqueta-suplemento, app-ilustracion, app-implementos,
-  app-medicion-form, app-medidas, app-menu-semanal, app-mercado, app-mi-minuta, app-mi-proceso,
-  app-nutricion, app-perfil, app-periodo-plan, app-portada, app-progreso, app-proyeccion,
-  app-recomendaciones, app-resumen-proceso, app-rutinas, app-selector-fotos, app-suplementos,
-  app-tabla-minuta, app-tomas-suplemento, app-usuarios, p-message, p-selectbutton {
+  app-admin-recomendaciones,
+  app-agenda,
+  app-avisos,
+  app-cargar-minuta,
+  app-comparar-fotos,
+  app-contar-comida,
+  app-control,
+  app-cumplimiento,
+  app-editor-minuta,
+  app-ejercicios,
+  app-entrenamiento-form,
+  app-etiqueta-suplemento,
+  app-ilustracion,
+  app-implementos,
+  app-medicion-form,
+  app-medidas,
+  app-menu-semanal,
+  app-mercado,
+  app-mi-minuta,
+  app-mi-proceso,
+  app-nutricion,
+  app-perfil,
+  app-periodo-plan,
+  app-portada,
+  app-progreso,
+  app-proyeccion,
+  app-recomendaciones,
+  app-resumen-proceso,
+  app-rutinas,
+  app-selector-fotos,
+  app-suplementos,
+  app-tabla-minuta,
+  app-tomas-suplemento,
+  app-usuarios,
+  p-message,
+  p-selectbutton {
     display: block;
   }
-  p-button { display: inline-block; vertical-align: top; }
-  p-button:has(> button.w-full) { display: block; }
+  p-button {
+    display: inline-block;
+    vertical-align: top;
+  }
+  p-button:has(> button.w-full) {
+    display: block;
+  }
 }
 
 /*
@@ -194,6 +242,36 @@ app-agenda,
 app-suplementos {
   animation: entrada 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+/* Cada aviso llega con un pequeño deslizamiento, como una notificación nueva. */
+.aviso-entra {
+  animation: entrada 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+/* La campana se sacude un instante cada tanto mientras haya algo pendiente. */
+@keyframes campana {
+  0%,
+  86%,
+  100% {
+    rotate: 0deg;
+  }
+  89% {
+    rotate: 16deg;
+  }
+  92% {
+    rotate: -13deg;
+  }
+  95% {
+    rotate: 8deg;
+  }
+  98% {
+    rotate: -4deg;
+  }
+}
+.campana-viva {
+  display: inline-block;
+  transform-origin: 50% 12%;
+  animation: campana 5s ease-in-out infinite;
+}
+
 /* Un botón se hunde un poco al tocarlo. */
 .p-button:not(:disabled):active {
   transform: scale(0.97);
@@ -210,5 +288,9 @@ app-suplementos {
   }
   .p-button:not(:disabled):active {
     transform: none;
+  }
+  .aviso-entra,
+  .campana-viva {
+    animation: none;
   }
 }

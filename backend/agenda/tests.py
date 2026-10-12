@@ -281,3 +281,5 @@ class AvisosTest(APITestCase):
         self.assertEqual(SuscripcionPush.objects.count(), 1)
         enviado = json.loads(webpush.call_args.kwargs['data'])
         self.assertEqual((enviado['titulo'], enviado['accion']), ('Toma un vaso de agua', 'Ya lo tomé'))
+        # El celular muestra la hora a la que tocaba el aviso.
+        self.assertEqual(enviado['momento'], Notificacion.objects.get(usuario=self.usuario).programada_para.isoformat())

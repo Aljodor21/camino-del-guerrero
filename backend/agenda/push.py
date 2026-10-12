@@ -19,6 +19,7 @@ def contenido(n):
     return {
         'id': n.id,
         'tipo': n.tipo,
+        'momento': n.programada_para.isoformat(),
         'titulo': n.titulo,
         'cuerpo': n.cuerpo,
         'accion': notificaciones.accion_de(n),

@@ -15,8 +15,13 @@ self.addEventListener('push', (evento) => {
   }
   const opciones = {
     body: aviso.cuerpo,
+    lang: 'es',
     icon: '/icono-192.png',
-    badge: '/icono-192.png',
+    // Android pinta este ícono en la barra de estado: tiene que ser una silueta de un solo color.
+    badge: '/badge.png',
+    // La hora en que tocaba el aviso (no la de cuando el celular lo recibió).
+    timestamp: aviso.momento ? Date.parse(aviso.momento) : Date.now(),
+    vibrate: [140, 70, 140],
     // Un aviso nuevo del mismo tipo no apila: reemplaza al anterior sin confirmar.
     tag: `${aviso.tipo}-${aviso.id}`,
     renotify: true,
