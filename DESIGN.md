@@ -83,3 +83,9 @@ El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enla
 - **Aviso de arriba:** una tarjeta flotante (redondeada, con sombra, ícono a la izquierda y botón de acción), no una barra a todo lo ancho. Solo uno a la vez, el más importante.
 - **Bandeja de Pendientes:** una sola lista (lo más nuevo arriba), cada aviso con el color y el ícono de su tipo (agua celeste, proteína ámbar, dormir índigo, entreno rojo, comida verde, agenda violeta), un punto rojo de "sin atender" y cuándo llegó ("Ahora", "Hace 12 min", "Hace 2 h"). Un contador rojo en el título y en la campana; la campana se sacude un instante cada tanto mientras haya algo pendiente. Vacía dice "Estás al día".
 - **En el celular (push):** ícono de estado de una sola silueta (`badge.png`), vibración, la hora a la que tocaba el aviso y el botón de confirmar en la propia notificación.
+
+## Navegación y ventanas
+
+- **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
+- **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
+- **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).

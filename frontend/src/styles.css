@@ -240,7 +240,10 @@ app-mi-minuta,
 app-medidas,
 app-agenda,
 app-suplementos {
-  animation: entrada 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Solo "backwards": al terminar no queda ningún transform puesto. Un transform (aunque sea el de
+     cero) vuelve a esa pantalla la referencia de los elementos fijos y las ventanas (p-dialog)
+     se miden contra ella y no contra el celular: salían cortadas. */
+  animation: entrada 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 /* Cada aviso llega con un pequeño deslizamiento, como una notificación nueva. */
 .aviso-entra {

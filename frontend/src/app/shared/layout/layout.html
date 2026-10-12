@@ -3,13 +3,25 @@
   <header
     class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4 bg-warm-card/85 dark:bg-dark-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-white/5"
   >
-    <a [routerLink]="['/']">
-      <img
-        [src]="themeService.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
-        alt="Camino del Guerrero"
-        class="h-12 w-auto"
-      />
-    </a>
+    <div class="flex items-center gap-1 -ml-2">
+      @if (puedeVolver()) {
+        <button
+          type="button"
+          (click)="volver()"
+          aria-label="Volver"
+          class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+        >
+          <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        </button>
+      }
+      <a [routerLink]="['/']" [class.ml-2]="!puedeVolver()">
+        <img
+          [src]="themeService.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
+          alt="Camino del Guerrero"
+          class="h-12 w-auto"
+        />
+      </a>
+    </div>
     <div class="flex items-center gap-1">
       <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-2">
         {{ authService.usuario()?.nombre }}
