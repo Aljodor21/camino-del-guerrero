@@ -105,3 +105,10 @@ Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pesta�
 - **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
 - **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
 - **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).
+
+## Cuando el servidor no responde
+
+- **Una sola tarjeta para toda la app** (`app-servidor-caido`), sobre la barra de abajo y sin tapar lo que se lee: "No podemos conectar con el servidor" o "Sin internet", la tranquilidad de que los datos están a salvo, un botón "Reintentar" y "Reintentando solos". Cuando vuelve la conexión se retira sola y deja 3 segundos una tarjeta verde "Conexión recuperada".
+- **Cómo lo sabe:** el interceptor `servidorInterceptor` cuenta las respuestas de nuestra API. Dos fallos seguidos (sin respuesta, 502, 503 o 504) la marcan como caída; cualquier respuesta (incluso un 400 o 401: el servidor contestó) la recupera. Mientras está caída se sondea cada 8 segundos `/api/app/version/` con `fetch`.
+- **nginx:** si el backend está apagado, `/api/` contesta un JSON claro (`503 {"detail": ...}`) en vez de una página HTML de error.
+- **404:** una ruta que no existe muestra la página 404 (video del guerrero). Si no carga ni el sitio (el túnel o uburoom apagados), lo que se ve es la página de error de Cloudflare: eso no lo controla la app; la app instalada, en cambio, sí carga (va empaquetada) y muestra esta tarjeta.
