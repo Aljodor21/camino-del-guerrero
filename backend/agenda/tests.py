@@ -145,6 +145,16 @@ class AvisosTest(APITestCase):
         self.assertEqual([v['ml'] for v in agua_hoy['registros']], [500, 250])
         self.assertTrue(all(v['momento'] for v in agua_hoy['registros']))
 
+    def test_el_aviso_del_agua_dice_cuanto_llevas_no_el_numero_del_recordatorio(self):
+        self.habitos(agua_ml=2000, vaso_ml=500, hora_levantarse='06:00', hora_dormir='22:00')
+        notificaciones.generar(self.usuario, self.a_las(23))
+        self.client.post(reverse('registrar-agua'))  # un solo vaso, aunque ya "tocaban" varios recordatorios
+        cuerpos = {a['cuerpo'] for a in self.client.get(reverse('avisos')).data if a['tipo'] == 'agua'}
+        self.assertEqual(cuerpos, {'Llevas 1 de 4 vasos de hoy (500 ml cada uno).'})
+        self.client.post(reverse('registrar-agua'))
+        cuerpos = {a['cuerpo'] for a in self.client.get(reverse('avisos')).data if a['tipo'] == 'agua'}
+        self.assertEqual(cuerpos, {'Llevas 2 de 4 vasos de hoy (500 ml cada uno).'})
+
     def test_el_tamano_del_vaso_tiene_limites(self):
         for malo in (49, 1501, 0):
             r = self.client.patch(reverse('habitos'), {'agua_ml': 2000, 'vaso_ml': malo}, format='json')

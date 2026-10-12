@@ -60,8 +60,10 @@ export class Layout implements OnInit, OnDestroy {
     // Se recuerda dónde estaba la persona (con su pestaña) para devolverla al cerrar los avisos.
     this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (!(e instanceof NavigationEnd)) return;
-      this.pantallas++;
-      this.ruta.set(e.urlAfterRedirects.split(/[?#]/)[0]);
+      const ruta = e.urlAfterRedirects.split(/[?#]/)[0];
+      // Cambiar de pestaña o reescribir la URL no abre una pantalla nueva: no cuenta para "atrás".
+      if (ruta !== this.ruta()) this.pantallas++;
+      this.ruta.set(ruta);
       const enAvisos = e.urlAfterRedirects.split('?')[0] === '/avisos';
       this.enAvisos.set(enAvisos);
       if (!enAvisos) this.anterior = e.urlAfterRedirects;

@@ -21,7 +21,7 @@ def contenido(n):
         'tipo': n.tipo,
         'momento': n.programada_para.isoformat(),
         'titulo': n.titulo,
-        'cuerpo': n.cuerpo,
+        'cuerpo': notificaciones.cuerpo_de(n),
         'accion': notificaciones.accion_de(n),
         'firma': notificaciones.firmar(n),
         'url': notificaciones.url_de(n),

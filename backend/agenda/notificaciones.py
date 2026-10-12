@@ -92,7 +92,7 @@ def programados(usuario, fecha):
             avisos.append({
                 'tipo': 'agua', 'clave': f'agua:{fecha}:{i}', 'programada_para': cuando,
                 'titulo': 'Toma un vaso de agua',
-                'cuerpo': f'Vaso {i} de {len(horas)} de hoy ({vaso_ml(habitos)} ml).',
+                'cuerpo': f'Un vaso de {vaso_ml(habitos)} ml.',
                 'datos': {'vaso': i},
             })
 
@@ -318,6 +318,20 @@ def desde_firma(token):
     if n is None:
         raise ReglaNegocioError('El aviso ya no existe.')
     return n
+
+
+def cuerpo_de(n):
+    """El texto del aviso. El del agua se arma al mostrarlo y dice cuánto llevas hoy: el número del
+    recordatorio (el 3 de 4) no es lo que la persona ha tomado y la confundía."""
+    if n.tipo != 'agua':
+        return n.cuerpo
+    habitos = habitos_de(n.usuario)
+    meta = vasos_meta(habitos)
+    if not meta:
+        return n.cuerpo
+    tomados = sum(r.cantidad for r in RegistroHabito.objects.filter(usuario=n.usuario, tipo='agua', fecha=n.fecha))
+    llevas = int(tomados) if tomados == int(tomados) else float(tomados)
+    return f'Llevas {llevas} de {meta} vasos de hoy ({vaso_ml(habitos)} ml cada uno).'
 
 
 def accion_de(notificacion):
