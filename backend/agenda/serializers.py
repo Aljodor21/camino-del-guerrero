@@ -65,8 +65,9 @@ class HabitosSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Habitos
-        fields = ['agua_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno', 'avisos_apagados']
-        extra_kwargs = {'agua_ml': {'min_value': 250, 'max_value': 8000}}
+        fields = ['agua_ml', 'vaso_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno', 'avisos_apagados']
+        extra_kwargs = {'agua_ml': {'min_value': 250, 'max_value': 8000},
+                        'vaso_ml': {'min_value': 50, 'max_value': 1500}}
 
     def get_vasos_meta(self, habitos):
         return notificaciones.vasos_meta(habitos)
@@ -101,7 +102,7 @@ class NotificacionSerializer(serializers.ModelSerializer):
 class RegistroHabitoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = RegistroHabito
-        fields = ['id', 'tipo', 'fecha', 'momento', 'cantidad', 'suplemento', 'tiempo']
+        fields = ['id', 'tipo', 'fecha', 'momento', 'cantidad', 'ml', 'suplemento', 'tiempo']
         read_only_fields = fields
 
 

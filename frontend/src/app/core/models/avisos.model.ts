@@ -1,4 +1,5 @@
-export type TipoAviso = 'agua' | 'toma' | 'dormir' | 'entreno' | 'recordatorio' | 'comida' | 'proceso';
+export type TipoAviso =
+  'agua' | 'toma' | 'dormir' | 'entreno' | 'recordatorio' | 'comida' | 'proceso';
 
 /** Un aviso pendiente: sale de la bandeja solo cuando se confirma lo que pide. */
 export interface Aviso {
@@ -18,6 +19,8 @@ export interface Aviso {
 /** Lo que indicó la nutricionista para el día a día. Todo es opcional. */
 export interface Habitos {
   agua_ml: number | null;
+  /** De cuántos ml es el vaso de la persona. */
+  vaso_ml: number;
   vasos_meta: number;
   /** "HH:MM:SS" desde la API. */
   hora_levantarse: string | null;
@@ -38,9 +41,22 @@ export interface TomaDeHoy {
   hecha: boolean;
 }
 
+export interface VasoTomado {
+  momento: string;
+  ml: number;
+}
+
 export interface ResumenHoy {
   fecha: string;
-  agua: { meta: number; vasos: number; ml_vaso: number };
+  agua: {
+    meta: number;
+    vasos: number;
+    ml_vaso: number;
+    meta_ml: number | null;
+    ml_total: number;
+    /** Cada vaso tomado hoy, con su tamaño y la hora exacta en que se anotó. */
+    registros: VasoTomado[];
+  };
   tomas: TomaDeHoy[];
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };

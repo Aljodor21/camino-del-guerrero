@@ -12,7 +12,7 @@
     [pasos]="[
       'Cuando llegue la hora, toca el botón del aviso para confirmarlo.',
       'En las comidas, cuenta cuánto comiste de cada grupo.',
-      'Apaga los que no quieras en los ajustes de más abajo.'
+      'Apaga los que no quieras en los ajustes de más abajo.',
     ]"
     demo="avisos"
   />
@@ -26,16 +26,14 @@
     <h2 id="av-pendientes" class="font-semibold text-gray-900 dark:text-white">
       Pendientes
       @if (pendientes().length) {
-        <span class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400"
-          >{{ pendientes().length }}</span
-        >
+        <span class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">{{
+          pendientes().length
+        }}</span>
       }
     </h2>
 
     @for (a of pendientes(); track a.id) {
-      <article
-        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 flex items-start gap-3"
-      >
+      <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 flex items-start gap-3">
         <span
           class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
         >
@@ -71,9 +69,7 @@
               >Responder en Tu control</a
             >
           } @else {
-            <a
-              routerLink="/progreso"
-              class="text-sm font-semibold text-guerrero-red underline"
+            <a routerLink="/progreso" class="text-sm font-semibold text-guerrero-red underline"
               >Resolverlo en Progreso</a
             >
           }
@@ -117,13 +113,38 @@
               [style.width.%]="h.agua.meta ? (h.agua.vasos / h.agua.meta) * 100 : 0"
             ></div>
           </div>
+          <p class="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+            Vasos de {{ h.agua.ml_vaso }} ml
+            @if (h.agua.meta_ml) {
+              · {{ num(h.agua.ml_total / 1000, 2) }} de {{ num(h.agua.meta_ml / 1000, 2) }} litros
+            }
+          </p>
           <p-button
-            label="Me tomé un vaso"
+            [label]="'Me tomé un vaso (' + h.agua.ml_vaso + ' ml)'"
             icon="pi pi-plus"
             size="small"
             variant="outlined"
             (onClick)="unVaso()"
           />
+          @if (anotado()) {
+            <p role="status" class="text-xs font-medium text-green-700 dark:text-green-400">
+              {{ anotado() }}
+            </p>
+          }
+          @if (h.agua.registros.length) {
+            <ul
+              class="flex flex-wrap gap-1.5 pt-1"
+              aria-label="Vasos que has tomado hoy, con su hora"
+            >
+              @for (v of h.agua.registros; track v.momento) {
+                <li
+                  class="text-xs tabular-nums rounded-full bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 px-2.5 py-1"
+                >
+                  {{ horaDe(v.momento) }} · {{ v.ml }} ml
+                </li>
+              }
+            </ul>
+          }
         </div>
       }
 
@@ -134,7 +155,9 @@
             @for (t of h.tomas; track t.suplemento + t.tiempo) {
               <li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <i
-                  [class]="t.hecha ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'"
+                  [class]="
+                    t.hecha ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'
+                  "
                   aria-hidden="true"
                 ></i>
                 <span class="flex-1">
@@ -153,7 +176,9 @@
       @if (h.entreno.toca) {
         <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <i
-            [class]="h.entreno.hecho ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'"
+            [class]="
+              h.entreno.hecho ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'
+            "
             aria-hidden="true"
           ></i>
           {{ h.entreno.hecho ? 'Entrenaste hoy' : 'Hoy toca entreno' }}
@@ -163,7 +188,9 @@
       @if (h.dormir.hora) {
         <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <i
-            [class]="h.dormir.acostado ? 'pi pi-check-circle text-green-600' : 'pi pi-moon text-gray-400'"
+            [class]="
+              h.dormir.acostado ? 'pi pi-check-circle text-green-600' : 'pi pi-moon text-gray-400'
+            "
             aria-hidden="true"
           ></i>
           Acostarte a las {{ hora(h.dormir.hora) }}
@@ -199,9 +226,13 @@
         class="w-full"
       />
       @if (vasosMeta(); as v) {
-        <p class="text-xs text-gray-500 dark:text-gray-400">Son {{ v }} vasos de 250 ml.</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Son {{ v }} vasos de {{ vasoMl() }} ml.
+        </p>
       }
     </div>
+
+    <app-tamano-vaso [(valor)]="vasoMl" id="av-vaso" />
 
     <div class="grid grid-cols-3 gap-3">
       <div class="flex flex-col gap-1">
@@ -265,7 +296,8 @@
 
     @if (!ajustesValidos()) {
       <p class="text-xs text-red-600 dark:text-red-400">
-        Revisa el agua (entre 0,25 y 8 litros) y que la hora de acostarte no sea la de levantarte.
+        Revisa el agua (entre 0,25 y 8 litros), el tamaño del vaso (50 a 1.500 ml) y que la hora de
+        acostarte no sea la de levantarte.
       </p>
     }
 
@@ -308,7 +340,12 @@
         <p class="text-sm text-gray-600 dark:text-gray-300">
           Actívalas para que el aviso te llegue al celular a su hora.
         </p>
-        <p-button label="Activar notificaciones" icon="pi pi-bell" size="small" (onClick)="alternarPush()" />
+        <p-button
+          label="Activar notificaciones"
+          icon="pi pi-bell"
+          size="small"
+          (onClick)="alternarPush()"
+        />
       }
       @case ('denegado') {
         <p class="text-sm text-gray-600 dark:text-gray-300">

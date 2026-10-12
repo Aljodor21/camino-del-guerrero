@@ -71,6 +71,7 @@ class Habitos(models.Model):
 
     usuario         = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='habitos')
     agua_ml         = models.PositiveIntegerField(null=True, blank=True, help_text='Agua indicada al día')
+    vaso_ml         = models.PositiveIntegerField(default=250, help_text='De cuántos ml es el vaso (o porción) de la persona')
     hora_levantarse = models.TimeField(null=True, blank=True)
     hora_dormir     = models.TimeField(null=True, blank=True, help_text='Hora de acostarse recomendada')
     hora_entreno    = models.TimeField(null=True, blank=True)
@@ -80,6 +81,7 @@ class Habitos(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(condition=models.Q(agua_ml__lte=8000), name='habitos_agua_maxima'),
+            models.CheckConstraint(condition=models.Q(vaso_ml__gte=50, vaso_ml__lte=1500), name='habitos_vaso_rango'),
         ]
 
     def __str__(self):
@@ -151,6 +153,8 @@ class RegistroHabito(models.Model):
     momento      = models.DateTimeField(default=timezone.now)
     cantidad     = models.DecimalField(max_digits=5, decimal_places=1, default=1,
                                        help_text='Vasos o scoops')
+    ml           = models.PositiveIntegerField(null=True, blank=True,
+                                               help_text='Tamaño del vaso en ese momento (solo agua)')
     suplemento   = models.ForeignKey('nutricion.Suplemento', on_delete=models.SET_NULL, null=True, blank=True,
                                      related_name='registros')
     tiempo       = models.CharField(max_length=20, blank=True, help_text='Comida de la toma')
