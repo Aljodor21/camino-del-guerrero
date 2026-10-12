@@ -18,19 +18,20 @@
       <picture class="hero-foto">
         <source
           media="(max-width: 767px)"
-          srcset="/home/guantes-movil.webp"
-          width="940"
-          height="1672"
+          srcset="/home/secuencia/m-000.webp"
+          width="810"
+          height="1440"
         />
         <img
-          src="/home/guantes.webp"
-          width="1672"
-          height="941"
-          alt="Unos guantes de boxeo rojos cuelgan de un gancho bajo un haz de luz"
+          src="/home/secuencia/d-000.webp"
+          width="1280"
+          height="720"
+          alt="Unos guantes de boxeo rojos flotan sobre fondo negro"
           fetchpriority="high"
           decoding="async"
         />
       </picture>
+      <canvas class="hero-secuencia" data-secuencia aria-hidden="true"></canvas>
       <div class="hero-sombra" aria-hidden="true"></div>
 
       <div class="hero-texto">
@@ -53,15 +54,15 @@
       <h2 id="empezar-titulo" class="titular titular-medio">¿No sabes por dónde empezar?</h2>
       <p class="empezar-intro">Nadie lo sabe el primer día. Te preguntamos lo justo:</p>
       <ol class="preguntas">
-        <li>
+        <li data-item>
           <span class="pregunta">Qué quieres manejar</span>
           <span class="respuesta">Tu comida, tu entreno o los dos.</span>
         </li>
-        <li>
+        <li data-item>
           <span class="pregunta">Quién arma tu plan</span>
           <span class="respuesta">Tu nutricionista, o la app si no tienes.</span>
         </li>
-        <li>
+        <li data-item>
           <span class="pregunta">A dónde vas</span>
           <span class="respuesta">Tu meta, el día que empiezas y hasta cuándo.</span>
         </li>
@@ -171,6 +172,20 @@
                 </div>
               }
               @case ('entreno') {
+                <div
+                  class="serie"
+                  role="img"
+                  aria-label="Ejemplo del temporizador de una serie: serie 2 de 4, 30 segundos"
+                >
+                  <svg class="serie-anillo" viewBox="0 0 44 44" aria-hidden="true">
+                    <circle class="pista" cx="22" cy="22" r="18" />
+                    <circle class="avance" cx="22" cy="22" r="18" />
+                  </svg>
+                  <p class="serie-texto">
+                    <span class="serie-nombre">Serie 2 de 4</span>
+                    <span class="serie-tiempo"></span>
+                  </p>
+                </div>
                 <ul class="enfoques" aria-label="Enfoques de entreno">
                   @for (f of enfoques; track f) {
                     <li [class.actual]="f === enfoqueActual()">{{ f }}</li>
@@ -181,6 +196,15 @@
                 <div class="muestra">
                   <p class="muestra-etiqueta">Día uno, guardado</p>
                   <p class="poses"><span>Frente</span><span>Perfil</span><span>Espalda</span></p>
+                  <div
+                    class="comparar"
+                    role="img"
+                    aria-label="Ejemplo de comparar el día uno con hoy"
+                  >
+                    <span class="comparar-dia">Día 1</span>
+                    <span class="comparar-hoy">Hoy</span>
+                    <span class="comparar-barra"></span>
+                  </div>
                   <p class="muestra-nota">Peso, cintura, abdomen y pliegues, como te los tomen.</p>
                 </div>
               }
@@ -205,10 +229,10 @@
         No tienes que ser atleta.<br /><span class="oro">Tienes que empezar.</span>
       </h2>
       <ul class="para-quien">
-        <li>Para quien nunca ha entrenado.</li>
-        <li>Para quien boxea, levanta pesas o hace yoga.</li>
-        <li>Para quien solo quiere comer mejor.</li>
-        <li>Para quien tiene un plan de su nutricionista y no sabe cómo seguirlo.</li>
+        <li data-item>Para quien nunca ha entrenado.</li>
+        <li data-item>Para quien boxea, levanta pesas o hace yoga.</li>
+        <li data-item>Para quien solo quiere comer mejor.</li>
+        <li data-item>Para quien tiene un plan de su nutricionista y no sabe cómo seguirlo.</li>
       </ul>
       <p class="aclaracion">
         Sin nutricionista, la app calcula tus porciones con tu peso, estatura, edad y meta. Es una
@@ -217,7 +241,7 @@
     </div>
   </section>
 
-  <section class="cierre" aria-labelledby="cierre-titulo">
+  <section class="cierre" data-cierre aria-labelledby="cierre-titulo">
     <img
       class="cierre-foto"
       src="/home/cierre.webp"

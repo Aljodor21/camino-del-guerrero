@@ -130,7 +130,7 @@
 /* ── Hero ───────────────────────────────────────────────────────── */
 .hero {
   position: relative;
-  height: 170svh;
+  height: 135svh;
 }
 .hero-escena {
   position: sticky;
@@ -149,6 +149,13 @@
   object-fit: cover;
   object-position: 50% 50%;
   z-index: -2;
+}
+.hero-secuencia {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
 }
 .hero-sombra {
   position: absolute;
@@ -202,9 +209,49 @@
   gap: 18px 32px;
 }
 
+@media (min-width: 768px) {
+  /* La animación ocupa el centro; el texto va al costado, sobre el negro. */
+  .hero-texto {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    left: 4.5%;
+    width: min(26vw, 30rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+  }
+  .hero-titulo {
+    font-size: clamp(52px, 5vw, 88px);
+  }
+  .hero-texto p {
+    margin: 1.1rem 0 0;
+    max-width: 26ch;
+    font-size: clamp(18px, 1.45vw, 23px);
+  }
+  .hero-pie {
+    left: 4.5%;
+    right: auto;
+    justify-content: flex-start;
+    bottom: auto;
+    top: calc(50% + clamp(6.5rem, 15vw, 11rem));
+  }
+}
+
 /* ── ¿No sabes por dónde empezar? ───────────────────────────────── */
 .empezar {
-  padding-block: clamp(6rem, 16vh, 10rem) clamp(5rem, 12vh, 8rem);
+  position: relative;
+  z-index: 3;
+  /* Sube sobre el final del hero: la foto se oscurece pero no se apaga, y no queda un hueco. */
+  margin-top: -40svh;
+  padding-block: clamp(11rem, 44svh, 22rem) clamp(5rem, 12vh, 8rem);
+  background: linear-gradient(
+    180deg,
+    transparent 0,
+    rgb(16 13 11 / 0.88) clamp(8rem, 30svh, 18rem),
+    var(--noche) clamp(12rem, 44svh, 24rem)
+  );
 }
 .empezar-intro {
   margin: 1.75rem 0 0;
@@ -212,18 +259,51 @@
   color: var(--bruma);
 }
 .preguntas {
+  position: relative;
   list-style: none;
   margin: 2.5rem 0 0;
-  padding: 0;
-  border-top: 1px solid var(--tenue);
+  padding: 0 0 0 2.25rem;
   max-width: 52rem;
 }
+/* La línea del camino: gris de fondo y dorada hasta donde se ha bajado. */
+.preguntas::before,
+.preguntas::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 1.1rem;
+  bottom: 1.1rem;
+  width: 2px;
+}
+.preguntas::before {
+  background: var(--tenue);
+}
+.preguntas::after {
+  background: var(--oro);
+  transform-origin: top;
+  transform: scaleY(var(--preguntas, 1));
+}
 .preguntas li {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
   gap: 0.25rem 2rem;
   padding: 1.35rem 0;
   border-bottom: 1px solid var(--tenue);
+}
+.preguntas li::before {
+  content: '';
+  position: absolute;
+  left: -2.25rem;
+  top: 1.55rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 2px solid var(--oro);
+  background: var(--noche);
+}
+.preguntas li.visible::before {
+  background: var(--oro);
 }
 .pregunta {
   font-family: var(--display);
@@ -452,7 +532,7 @@
 .poses span {
   flex: 1;
   text-align: center;
-  padding: 1.5rem 0.25rem 0.5rem;
+  padding: 0.85rem 0.25rem 1.6rem;
   border: 1px dashed rgb(212 175 55 / 0.55);
   border-radius: 6px;
   font-size: 0.9rem;
@@ -491,10 +571,145 @@
 .avisos li:last-child {
   border-bottom: 0;
 }
+.avisos li {
+  position: relative;
+}
+.avisos li::after {
+  content: '';
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  width: 0.55rem;
+  height: 0.9rem;
+  margin-top: -0.6rem;
+  border: solid var(--oro);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transform-origin: 30% 70%;
+}
 .aviso-cuando {
   color: var(--oro);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+/* Demos vivas de cada estación (solo se mueven con .con-movimiento y estación activa) */
+@property --seg {
+  syntax: '<integer>';
+  inherits: false;
+  initial-value: 30;
+}
+@property --corte {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+.serie {
+  margin: 1.75rem 0 0;
+  max-width: 26rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.15rem;
+  border: 1px solid var(--tenue);
+  border-radius: 8px;
+  background: rgb(27 21 17 / 0.88);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.8);
+}
+.serie-anillo {
+  width: 3.4rem;
+  height: 3.4rem;
+  flex: none;
+  transform: rotate(-90deg);
+}
+.serie-anillo circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.serie-anillo .pista {
+  stroke: var(--tenue);
+}
+.serie-anillo .avance {
+  stroke: var(--oro);
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 28;
+}
+.serie-texto {
+  margin: 0;
+  display: grid;
+  line-height: 1.15;
+}
+.serie-nombre {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bruma);
+}
+.serie-tiempo {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  counter-reset: seg var(--seg);
+}
+.serie-tiempo::after {
+  content: '00:' counter(seg, decimal-leading-zero);
+}
+.serie-nota {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bruma);
+}
+.comparar {
+  position: relative;
+  display: flex;
+  height: 3.4rem;
+  margin-top: 0.7rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgb(212 175 55 / 0.4);
+  font-weight: 500;
+  --corte: 50%;
+}
+.comparar-dia,
+.comparar-hoy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 1rem;
+}
+.comparar-dia {
+  background: rgb(246 241 234 / 0.06);
+  justify-content: flex-start;
+}
+.comparar-hoy {
+  background: rgb(212 175 55 / 0.22);
+  justify-content: flex-end;
+  clip-path: inset(0 0 0 var(--corte));
+}
+.comparar-barra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--corte);
+  width: 2px;
+  background: var(--oro);
+}
+.poses span {
+  position: relative;
+}
+.poses span::after {
+  content: 'guardada';
+  position: absolute;
+  inset: auto 0 0.4rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--oro);
+  text-align: center;
+  opacity: 0.85;
 }
 
 /* ── Para todos ─────────────────────────────────────────────────── */
@@ -599,7 +814,7 @@
     object-position: 50% 45%;
   }
   .hero-texto {
-    top: 6.25rem;
+    top: 5.25rem;
   }
   .hero-titulo {
     font-size: clamp(2.6rem, 10.8vw, 3.6rem);
@@ -690,7 +905,8 @@
   opacity: calc(1 - var(--hero) * 0.7);
 }
 :host(.con-movimiento) .hero-escena::after {
-  opacity: clamp(0, calc((var(--hero) - 0.6) * 2.5), 1);
+  /* La foto se oscurece pero no se apaga: el siguiente bloque sube por encima de ella. */
+  opacity: clamp(0, calc(var(--hero) * 0.85), 0.85);
 }
 :host(.con-movimiento) .estacion-foto {
   transition: clip-path 1.15s var(--salida);
@@ -765,6 +981,168 @@
 :host(.con-movimiento) [data-aparece]:not(.visible) {
   opacity: 0;
   transform: translateY(24px);
+}
+
+:host(.con-movimiento) .hero-texto {
+  opacity: clamp(0, calc(1 - var(--hero) * 2.4), 1);
+}
+:host(.con-movimiento) .preguntas li:not(.visible) {
+  opacity: 0;
+  transform: translateX(-14px);
+}
+:host(.con-movimiento) .preguntas li {
+  transition:
+    opacity 700ms var(--salida),
+    transform 700ms var(--salida);
+}
+:host(.con-movimiento) .preguntas li::before {
+  transition:
+    background-color 300ms,
+    transform 400ms var(--salida);
+}
+:host(.con-movimiento) .preguntas li.visible::before {
+  animation: nodo 600ms var(--salida);
+}
+:host(.con-movimiento) .para-quien li:not(.visible) {
+  opacity: 0;
+  transform: translateY(18px);
+}
+:host(.con-movimiento) .para-quien li {
+  transition:
+    opacity 800ms var(--salida),
+    transform 800ms var(--salida);
+}
+:host(.con-movimiento) .para-quien li:nth-child(2) {
+  transition-delay: 90ms;
+}
+:host(.con-movimiento) .para-quien li:nth-child(3) {
+  transition-delay: 180ms;
+}
+:host(.con-movimiento) .para-quien li:nth-child(4) {
+  transition-delay: 270ms;
+}
+:host(.con-movimiento) .cierre-foto {
+  transform: scale(1.14);
+  transition: transform 3.4s var(--salida);
+}
+:host(.con-movimiento) .cierre.entra .cierre-foto {
+  transform: none;
+}
+:host(.con-movimiento) .parada.activa .serie-anillo .avance {
+  animation: serie 6s linear 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .serie-tiempo {
+  animation: segundos 6s linear 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .comparar {
+  animation: corte 7s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .poses span::after {
+  animation: guardada 7s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .poses span:nth-child(2)::after {
+  animation-delay: 1.2s;
+}
+:host(.con-movimiento) .parada.activa .poses span:nth-child(3)::after {
+  animation-delay: 1.5s;
+}
+:host(.con-movimiento) .parada.activa .avisos li {
+  animation: aviso-llega 8s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .avisos li:nth-child(2) {
+  animation-delay: 2.2s;
+}
+:host(.con-movimiento) .parada.activa .avisos li::after {
+  animation: aviso-hecho 8s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .avisos li:nth-child(2)::after {
+  animation-delay: 2.2s;
+}
+
+@keyframes nodo {
+  0% {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes serie {
+  0% {
+    stroke-dashoffset: 113.1;
+  }
+  92%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes segundos {
+  0% {
+    --seg: 30;
+  }
+  92%,
+  100% {
+    --seg: 0;
+  }
+}
+@keyframes corte {
+  0%,
+  12% {
+    --corte: 100%;
+  }
+  45%,
+  62% {
+    --corte: 8%;
+  }
+  100% {
+    --corte: 100%;
+  }
+}
+@keyframes guardada {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  18%,
+  88% {
+    opacity: 0.85;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes aviso-llega {
+  0%,
+  4% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  14%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes aviso-hecho {
+  0%,
+  38% {
+    transform: rotate(45deg) scale(0);
+  }
+  50%,
+  90% {
+    transform: rotate(45deg) scale(1);
+  }
+  100% {
+    transform: rotate(45deg) scale(0);
+  }
 }
 
 @keyframes tachar {
