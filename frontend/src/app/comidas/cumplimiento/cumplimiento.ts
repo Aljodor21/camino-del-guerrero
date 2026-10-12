@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  input,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MessageModule } from 'primeng/message';
@@ -41,6 +42,9 @@ import { animarProgreso } from '../../shared/animar-numero';
   imports: [Ayuda, Portada, RouterLink, MessageModule, FotoComida],
 })
 export class CumplimientoPlan implements OnInit {
+  /** Dentro de las pestañas de otra sección: sin portada ni margen propios. */
+  readonly embebido = input(false);
+
   private comidas = inject(ComidasService);
   private ruta = inject(ActivatedRoute);
   private visor = inject(VisorService);
@@ -91,7 +95,11 @@ export class CumplimientoPlan implements OnInit {
   protected tono = computed(() => {
     const p = this.datos()?.porcentaje ?? null;
     if (p === null) return 'text-gray-400';
-    return p >= 90 ? 'text-green-600 dark:text-green-400' : p >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-guerrero-red';
+    return p >= 90
+      ? 'text-green-600 dark:text-green-400'
+      : p >= 60
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-guerrero-red';
   });
 
   ngOnInit(): void {

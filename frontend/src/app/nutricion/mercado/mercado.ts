@@ -83,18 +83,20 @@ export class Mercado implements OnInit {
   protected generar(): void {
     this.generando.set(true);
     this.error.set('');
-    this.http.post<ListaMercado>(`${API}/`, { num_personas: this.numPersonas(), periodo: this.periodo() }).subscribe({
-      next: (lista) => {
-        this.lista.set(lista);
-        this.numPersonas.set(lista.num_personas);
-        this.periodo.set(lista.periodo);
-        this.generando.set(false);
-      },
-      error: (err) => {
-        this.error.set(mensajeError(err, 'No pudimos armar la lista. Intenta de nuevo.'));
-        this.generando.set(false);
-      },
-    });
+    this.http
+      .post<ListaMercado>(`${API}/`, { num_personas: this.numPersonas(), periodo: this.periodo() })
+      .subscribe({
+        next: (lista) => {
+          this.lista.set(lista);
+          this.numPersonas.set(lista.num_personas);
+          this.periodo.set(lista.periodo);
+          this.generando.set(false);
+        },
+        error: (err) => {
+          this.error.set(mensajeError(err, 'No pudimos armar la lista. Intenta de nuevo.'));
+          this.generando.set(false);
+        },
+      });
   }
 
   protected toggleItem(item: ItemMercado): void {

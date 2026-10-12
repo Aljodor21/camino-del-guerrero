@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal, input } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { MessageModule } from 'primeng/message';
@@ -50,6 +50,9 @@ import { Ayuda } from '../../shared/ayuda/ayuda';
   imports: [Ayuda, Portada, RouterLink, MessageModule, ProgressSpinnerModule, IlustracionCambio],
 })
 export class Proyeccion implements OnInit {
+  /** Dentro de las pestañas de otra sección: sin portada ni margen propios. */
+  readonly embebido = input(false);
+
   private http = inject(HttpClient);
 
   protected datos = signal<ProyeccionPeso | null>(null);

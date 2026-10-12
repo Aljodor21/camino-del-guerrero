@@ -78,6 +78,15 @@ La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/
 
 El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enlace a GitHub salta de página en el celular. En la app instalada, el enlace abre el navegador del sistema (el WebView no maneja descargas), que baja el archivo y la app se actualiza al instalarlo.
 
+## Cómo se ordenan las secciones
+
+Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pestañas de arriba, no en tarjetas sueltas:
+
+- **Nutrición:** Menú · Mercado · Mi plan · Cumplimiento · Alimentos (la lista de intercambios).
+- **Progreso:** Medidas · Agenda · Proyección ("¿cuánto puedo cambiar?", solo si el proceso incluye alimentación) · Sesiones (solo con entrenamiento). La proteína vive en la Agenda.
+- La barra (`app-pestanas`) se desplaza hacia el lado si no caben todas y deja la activa a la vista; la sección elegida queda en la URL (`?seccion=`).
+- Los enlaces viejos (`/cumplimiento`, `/lista-alimentos`, `/proyeccion`) redirigen a su pestaña conservando los parámetros (`?listo=desayuno`).
+
 ## Navegación y ventanas
 
 - **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
