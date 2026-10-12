@@ -144,3 +144,9 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Semana, mes y trimestre:** racha, mejor racha y días que llegaron a la meta; un calendario de casillas de color por día (tocar una muestra su detalle); y "Dónde se te fue", la lista de lo que faltó en los días ya cerrados.
 - **Antes de empezar el proceso** solo cuentan el agua y dormir; así se puede abrir la app desde el primer día y llegar al 100 %. Con el proceso en marcha entran las comidas (40 %), el entreno (20 %), la proteína (15 %), el agua (15 %) y dormir (10 %); lo que no aplica ese día no pesa.
 
+## Notificaciones por Firebase
+
+- **Ajustes de Avisos** dice por dónde llegan: «cada aviso te llega a su hora desde el servidor, aunque pasen los días sin abrir la app» (Firebase) o «tu celular las programa y suenan a su hora…, ahora hay N programadas» (respaldo). Con Firebase activo aparece «Enviar una de prueba» y un mensaje de si se entregó.
+- **Una sola vía a la vez:** con Firebase no se programa nada local, para que un aviso no suene dos veces. Con la app abierta Android no muestra la notificación: la bandeja se actualiza sola.
+- Aún sin botón «Ya lo tomé» dentro de la notificación: al tocarla se abre Avisos.
+

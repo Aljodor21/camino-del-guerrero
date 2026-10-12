@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "455132206769",
+    "project_id": "camino-del-guerrero-dae6b",
+    "storage_bucket": "camino-del-guerrero-dae6b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:455132206769:android:3701479bc0412b231ff490",
+        "android_client_info": {
+          "package_name": "site.servelejo.caminodelguerrero"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8fJbp9bNXTLBTxuoWG_1H2FhVxGTqkwU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

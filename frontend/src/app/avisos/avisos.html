@@ -377,25 +377,48 @@
         @if (celular.soportado) {
           @switch (celular.estado()) {
             @case ('activo') {
-              <p class="text-sm text-gray-600 dark:text-gray-300">
-                Activas: tu celular las programa y suenan a su hora aunque la app esté cerrada. Se
-                renuevan cada vez que abres la app
-                @if (celular.programados()) {
-                  (ahora hay {{ celular.programados() }} programadas para los próximos 7 días)
-                }
-                .
-              </p>
+              @if (celular.modo() === 'firebase') {
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Activas: cada aviso te llega a su hora desde el servidor, aunque la app esté
+                  cerrada y pasen los días sin abrirla.
+                </p>
+              } @else {
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Activas: tu celular las programa y suenan a su hora aunque la app esté cerrada. Se
+                  renuevan cada vez que abres la app
+                  @if (celular.programados()) {
+                    (ahora hay {{ celular.programados() }} programadas para los próximos 7 días)
+                  }
+                  .
+                </p>
+              }
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 Si alguna no llega, en los ajustes del celular quita el ahorro de batería a Camino
                 del Guerrero.
               </p>
-              <p-button
-                label="Desactivar"
-                severity="secondary"
-                variant="outlined"
-                size="small"
-                (onClick)="alternarCelular()"
-              />
+              <div class="flex flex-wrap items-center gap-2">
+                @if (celular.modo() === 'firebase') {
+                  <p-button
+                    label="Enviar una de prueba"
+                    icon="pi pi-send"
+                    size="small"
+                    [loading]="probandoCelular()"
+                    (onClick)="probarCelular()"
+                  />
+                }
+                <p-button
+                  label="Desactivar"
+                  severity="secondary"
+                  variant="outlined"
+                  size="small"
+                  (onClick)="alternarCelular()"
+                />
+              </div>
+              @if (resultadoPrueba()) {
+                <p class="text-sm text-gray-600 dark:text-gray-300" role="status">
+                  {{ resultadoPrueba() }}
+                </p>
+              }
             }
             @case ('denegado') {
               <p class="text-sm text-gray-600 dark:text-gray-300">

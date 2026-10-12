@@ -9,11 +9,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, notificaciones, push
-from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush
+from . import cumplimiento, fcm, notificaciones, push
+from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
 from .serializers import (HabitosSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
 
@@ -145,3 +146,35 @@ class PushView(APIView):
     def delete(self, request):
         SuscripcionPush.objects.filter(usuario=request.user, endpoint=request.data.get('endpoint')).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PushCelularView(APIView):
+    """La app instalada. GET: si el servidor manda por Firebase. POST/DELETE: registrar o quitar este celular."""
+
+    def get(self, request):
+        return Response({'disponible': fcm.configurado()})
+
+    def post(self, request):
+        token = request.data.get('token')
+        if not isinstance(token, str) or not 20 <= len(token) <= 400:
+            raise ReglaNegocioError('Falta el identificador de este celular.')
+        cliente = datos_del_cliente(request._request)
+        TokenCelular.objects.update_or_create(
+            token=token, defaults={'usuario': request.user, 'dispositivo': cliente['dispositivo'],
+                                   'version_app': cliente['version_app'], 'ultimo_uso': timezone.now()})
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request):
+        TokenCelular.objects.filter(usuario=request.user, token=request.data.get('token')).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PushCelularPruebaView(APIView):
+    """Manda una notificación de prueba a los celulares de la persona."""
+
+    def post(self, request):
+        if not fcm.configurado():
+            raise ReglaNegocioError('El servidor aún no tiene activado Firebase.')
+        if not request.user.tokens_celular.exists():
+            raise ReglaNegocioError('Este celular aún no está registrado. Activa las notificaciones primero.')
+        return Response({'enviadas': fcm.enviar_prueba(request.user)})

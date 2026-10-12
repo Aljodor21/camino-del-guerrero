@@ -20,7 +20,7 @@ import { ProcesoService } from '../../core/services/proceso';
 import { AgendaService } from '../../core/services/agenda';
 import { AvisosService } from '../../core/services/avisos';
 import { ApkService } from '../../core/services/apk';
-import { NotificacionesLocalesService } from '../../core/services/notificaciones-locales';
+import { NotificacionesCelularService } from '../../core/services/notificaciones-celular';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
@@ -48,7 +48,7 @@ export class Layout implements OnInit, OnDestroy {
   private agenda = inject(AgendaService);
   protected avisos = inject(AvisosService);
   protected apk = inject(ApkService);
-  private celular = inject(NotificacionesLocalesService);
+  private celular = inject(NotificacionesCelularService);
   private router = inject(Router);
   private location = inject(Location);
 

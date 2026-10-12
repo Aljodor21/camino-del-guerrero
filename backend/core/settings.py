@@ -175,6 +175,8 @@ ILUSTRACIONES_POR_DIA = config('ILUSTRACIONES_POR_DIA', default=3, cast=int)
 VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
 VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
 VAPID_EMAIL = config('VAPID_EMAIL', default='')
+# Firebase (avisos a la app instalada): la clave de la cuenta de servicio, su .json en base64.
+FIREBASE_CREDENCIALES_B64 = config('FIREBASE_CREDENCIALES_B64', default='')
 
 
 AUTH_USER_MODEL = 'users.Usuario'
