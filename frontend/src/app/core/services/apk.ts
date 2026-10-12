@@ -1,5 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
+import { firstValueFrom } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
 
 const REPO = 'Aljodor21/camino-del-guerrero';
 const ARCHIVO = 'camino-del-guerrero.apk';
@@ -43,6 +47,7 @@ export class ApkService {
   readonly version = signal<VersionApk | null>(null);
   private cerrada = signal(invitacionYaCerrada());
   private pedida = false;
+  private http = inject(HttpClient);
 
   /** El aviso de arriba solo sale donde se puede instalar y mientras no se haya cerrado. */
   readonly invitacion = computed(
@@ -60,35 +65,37 @@ export class ApkService {
   }
 
   /**
-   * Pregunta a GitHub por el último release. Va con fetch y no con HttpClient a propósito:
-   * el interceptor del JWT le pondría el token de la sesión a cualquier petición.
+   * Pide la última versión a nuestro servidor, que a su vez la lee de GitHub. No se le pregunta a
+   * GitHub desde el navegador: Cloudflare le pone al sitio una regla (`connect-src 'self'`) que lo
+   * prohíbe. Si no hay datos pero sí enlace, el botón de descarga se muestra igual, sin versión.
    */
   async cargar(forzar = false): Promise<void> {
     if (this.pedida && !forzar) return;
     this.pedida = true;
     this.estado.set('cargando');
     try {
-      const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-        headers: { Accept: 'application/vnd.github+json' },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!r.ok) throw new Error(String(r.status));
-      const json = (await r.json()) as {
-        tag_name: string;
-        published_at: string;
-        assets: { name: string; size: number }[];
-      };
-      const apk = json.assets.find((a) => a.name === ARCHIVO);
-      if (!apk) throw new Error('sin apk');
-      this.version.set({
-        version: json.tag_name.replace(/^v/, ''),
-        publicada: new Date(json.published_at),
-        bytes: apk.size,
-      });
-      this.estado.set('lista');
+      const r = await firstValueFrom(
+        this.http.get<{
+          disponible: boolean | null;
+          version?: string;
+          publicada?: string;
+          bytes?: number;
+        }>(`${environment.apiUrl}/app/version/`),
+      );
+      if (r.disponible === false) {
+        this.version.set(null);
+        this.estado.set('no-disponible');
+        return;
+      }
+      this.version.set(
+        r.disponible && r.version && r.publicada && r.bytes
+          ? { version: r.version, publicada: new Date(r.publicada), bytes: r.bytes }
+          : null,
+      );
     } catch {
       this.version.set(null);
-      this.estado.set('no-disponible');
     }
+    // Sin datos (servidor o GitHub sin responder) el enlace sigue sirviendo: se ofrece igual.
+    this.estado.set('lista');
   }
 }

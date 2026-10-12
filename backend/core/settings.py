@@ -131,6 +131,8 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'no-responder@camino-del-guerrero.local')
 # Desde dónde se abre la app: el enlace del correo apunta aquí.
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
+# Repositorio de GitHub donde se publica la app de Android (releases con camino-del-guerrero.apk).
+APK_REPO = config('APK_REPO', default='Aljodor21/camino-del-guerrero')
 RECUPERACION_MINUTOS = 30  # cuánto dura el enlace para recuperar la clave
 
 # CORS

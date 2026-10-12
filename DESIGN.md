@@ -73,3 +73,5 @@ Pantalla dentro de la app (`/descargar-app`, también un aviso arriba y un acces
 ### Dónde se ve la descarga
 
 La tarjeta de descarga es un componente compartido (`app-descarga-apk`) que se usa en tres lugares: la pantalla `/descargar-app` (con los tres pasos), una sección del home **solo con la sesión iniciada, cualquiera sea el rol** (antes del cierre; el visitante no la ve), y el acceso de arriba (icono de celular en la barra, para todos los roles; en iPhone no se ofrece). El aviso de arriba y la tarjeta de Perfil también aparecen para el admin. Dentro de la app instalada sirve para actualizar ("Mantén tu app al día", botón "Descargar la última versión"): la app no se actualiza sola.
+
+La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/app/version/`, con caché de 10 minutos) y no el navegador: Cloudflare le pone al sitio un `Content-Security-Policy: connect-src 'self'` que le prohíbe hablar con GitHub. Si no hay datos pero sí enlace, el botón de descarga se muestra igual, sin versión. En celular la tarjeta es compacta: botón de ancho completo en una sola línea y el celular de muestra asomando por abajo, con los guantes visibles.

@@ -199,6 +199,42 @@
   font-size: 0.85rem;
 }
 
+/* ── Celular: todo a la vista, con el celular asomándose por abajo ─── */
+@media (max-width: 767px) {
+  .portada {
+    gap: 1.25rem;
+    padding: 1.6rem 1.25rem 0;
+  }
+  .titular {
+    font-size: clamp(2.6rem, 12.5vw, 3.5rem);
+  }
+  .bajada {
+    font-size: 1.05rem;
+  }
+  .boton {
+    width: 100%;
+    padding: 0 1.25rem;
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+  .portada-celular {
+    min-height: 0;
+    height: 12rem;
+    overflow: hidden;
+    align-items: flex-start;
+  }
+  .celular {
+    width: 12.5rem;
+  }
+  /* Solo asoma la parte de arriba del celular: se sube la foto para que se vean los guantes. */
+  .pantalla img {
+    translate: 0 -24%;
+  }
+  .aviso-demo {
+    display: none;
+  }
+}
+
 /* ── Escritorio ───────────────────────────────────────────── */
 @media (min-width: 768px) {
   .portada {
