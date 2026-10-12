@@ -818,6 +818,14 @@
   color: var(--hueso);
 }
 
+/* ── Descarga de la app (solo con sesión iniciada) ───────────────── */
+.descarga {
+  position: relative;
+  z-index: 3;
+  padding-block: clamp(3rem, 8vw, 6rem);
+  background: var(--noche);
+}
+
 /* ── Celular ────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
   .barra {

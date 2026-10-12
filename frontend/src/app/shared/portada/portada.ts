@@ -56,7 +56,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       inset: 0;
       z-index: -1;
       background:
-        linear-gradient(0deg, rgb(16 13 11 / 0.88) 0%, rgb(16 13 11 / 0.35) 55%, rgb(16 13 11 / 0.1) 100%),
+        linear-gradient(
+          0deg,
+          rgb(16 13 11 / 0.88) 0%,
+          rgb(16 13 11 / 0.35) 55%,
+          rgb(16 13 11 / 0.1) 100%
+        ),
         linear-gradient(90deg, rgb(16 13 11 / 0.55) 0%, transparent 60%);
     }
     .portada-texto {

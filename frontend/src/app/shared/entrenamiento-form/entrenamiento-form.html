@@ -1,6 +1,8 @@
 <div [formGroup]="form()" class="space-y-5">
   <div class="flex flex-col gap-2">
-    <span id="ent-enfoque" class="text-sm font-medium text-gray-600 dark:text-gray-400">Enfoque</span>
+    <span id="ent-enfoque" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+      >Enfoque</span
+    >
     <div role="radiogroup" aria-labelledby="ent-enfoque" class="grid grid-cols-1 gap-2">
       @for (op of enfoques; track op.value) {
         <button
@@ -21,7 +23,9 @@
   </div>
 
   <div class="flex flex-col gap-2">
-    <span id="ent-nivel" class="text-sm font-medium text-gray-600 dark:text-gray-400">Nivel de actividad física</span>
+    <span id="ent-nivel" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+      >Nivel de actividad física</span
+    >
     <p-selectbutton
       ariaLabelledBy="ent-nivel"
       formControlName="nivel_actividad"
@@ -35,7 +39,9 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div class="flex flex-col gap-2">
-      <span id="ent-dias" class="text-sm font-medium text-gray-600 dark:text-gray-400">Días por semana</span>
+      <span id="ent-dias" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Días por semana</span
+      >
       <p-selectbutton
         ariaLabelledBy="ent-dias"
         formControlName="dias_entrenamiento"
@@ -47,7 +53,9 @@
       />
     </div>
     <div class="flex flex-col gap-2">
-      <span id="ent-duracion" class="text-sm font-medium text-gray-600 dark:text-gray-400">Duración por sesión</span>
+      <span id="ent-duracion" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Duración por sesión</span
+      >
       <p-selectbutton
         ariaLabelledBy="ent-duracion"
         formControlName="duracion_sesion"

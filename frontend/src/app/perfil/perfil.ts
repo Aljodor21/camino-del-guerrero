@@ -26,7 +26,9 @@ const API = environment.apiUrl;
   selector: 'app-perfil',
   templateUrl: './perfil.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, RouterLink, 
+  imports: [
+    Portada,
+    RouterLink,
     ReactiveFormsModule,
     InputNumberModule,
     InputTextModule,

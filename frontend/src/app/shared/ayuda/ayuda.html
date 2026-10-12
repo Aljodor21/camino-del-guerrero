@@ -9,7 +9,9 @@
     [attr.aria-controls]="id"
     (click)="alternar()"
   >
-    <span class="w-8 h-8 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
+    <span
+      class="w-8 h-8 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+    >
       <i class="pi pi-question text-sm" aria-hidden="true"></i>
     </span>
     <span class="flex-1 min-w-0">
@@ -52,13 +54,20 @@
             }
             @case ('avisos') {
               <div class="d-avisos">
-                <svg class="campana" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0" /></svg>
+                <svg class="campana" viewBox="0 0 24 24">
+                  <path
+                    d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0"
+                  />
+                </svg>
                 <p class="tarjeta"><span>Toma tu proteína</span><i></i></p>
               </div>
             }
             @case ('cumplimiento') {
               <div class="d-cump">
-                <svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18" /><circle class="arco" cx="22" cy="22" r="18" /></svg>
+                <svg viewBox="0 0 44 44">
+                  <circle class="pista" cx="22" cy="22" r="18" />
+                  <circle class="arco" cx="22" cy="22" r="18" />
+                </svg>
                 <span class="num"></span>
               </div>
             }
@@ -73,12 +82,14 @@
             @case ('proteina') {
               <div class="d-prot">
                 <div class="vaso"><span class="agua"></span><span class="leche"></span></div>
-                <span class="scoop s1"></span><span class="scoop s2"></span><span class="scoop s3"></span>
+                <span class="scoop s1"></span><span class="scoop s2"></span
+                ><span class="scoop s3"></span>
               </div>
             }
             @case ('medidas') {
               <div class="d-med">
-                <span class="dia">Día 1</span><span class="hoy">Hoy</span><span class="barra"></span>
+                <span class="dia">Día 1</span><span class="hoy">Hoy</span
+                ><span class="barra"></span>
               </div>
             }
             @case ('agenda') {
@@ -95,7 +106,10 @@
           <ol class="space-y-1.5">
             @for (p of pasos(); track p; let i = $index) {
               <li class="flex gap-2.5 text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                <span class="w-5 h-5 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center tabular-nums">{{ i + 1 }}</span>
+                <span
+                  class="w-5 h-5 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center tabular-nums"
+                  >{{ i + 1 }}</span
+                >
                 <span>{{ p }}</span>
               </li>
             }

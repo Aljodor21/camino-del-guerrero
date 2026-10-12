@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, model, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -41,7 +50,8 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
             <input
               id="pp-fecha"
               type="date"
-              pInputText class="w-full"
+              pInputText
+              class="w-full"
               [min]="minima"
               [max]="maxima"
               [value]="otra()"

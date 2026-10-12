@@ -1,5 +1,11 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
@@ -40,13 +46,20 @@ export type MedicionFormGroup = FormGroup<
   } & Record<CampoOpcional, FormControl<number | null>>
 >;
 
-export function crearMedicionForm(fb: NonNullableFormBuilder, talla: number | null): MedicionFormGroup {
+export function crearMedicionForm(
+  fb: NonNullableFormBuilder,
+  talla: number | null,
+): MedicionFormGroup {
   const opcional = (min: number, max: number) =>
     fb.control<number | null>(null, [Validators.min(min), Validators.max(max)]);
   return fb.group({
     fecha: fb.control(hoyISO(), Validators.required),
     origen: fb.control<OrigenMedicion>('propia'),
-    peso_kg: fb.control<number | null>(null, [Validators.required, Validators.min(20), Validators.max(300)]),
+    peso_kg: fb.control<number | null>(null, [
+      Validators.required,
+      Validators.min(20),
+      Validators.max(300),
+    ]),
     talla_cm: fb.control<number | null>(talla, [Validators.min(100), Validators.max(250)]),
     nota: fb.control(''),
     ...Object.fromEntries(PERIMETROS.map((p) => [p.campo, opcional(10, 250)])),
@@ -57,7 +70,9 @@ export function crearMedicionForm(fb: NonNullableFormBuilder, talla: number | nu
 /** Convierte el formulario en el payload de la API, sin los campos vacíos. */
 export function leerMedicion(form: MedicionFormGroup, conFecha: boolean): MedicionPayload {
   const { fecha, ...resto } = form.getRawValue();
-  const limpio = Object.fromEntries(Object.entries(resto).filter(([, v]) => v !== null && v !== ''));
+  const limpio = Object.fromEntries(
+    Object.entries(resto).filter(([, v]) => v !== null && v !== ''),
+  );
   return { ...(conFecha ? { fecha } : {}), ...limpio } as MedicionPayload;
 }
 
@@ -66,8 +81,7 @@ export function leerMedicion(form: MedicionFormGroup, conFecha: boolean): Medici
   selector: 'app-medicion-form',
   templateUrl: './medicion-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    DecimalInput, ReactiveFormsModule, InputTextModule, SelectButtonModule],
+  imports: [DecimalInput, ReactiveFormsModule, InputTextModule, SelectButtonModule],
 })
 export class MedicionForm {
   readonly form = input.required<MedicionFormGroup>();

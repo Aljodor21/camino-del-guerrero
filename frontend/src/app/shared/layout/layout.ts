@@ -45,7 +45,7 @@ export class Layout implements OnInit, OnDestroy {
   private procesos = inject(ProcesoService);
   private agenda = inject(AgendaService);
   protected avisos = inject(AvisosService);
-  private apk = inject(ApkService);
+  protected apk = inject(ApkService);
   private router = inject(Router);
 
   private anterior = '/nutricion';
@@ -69,8 +69,8 @@ export class Layout implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.notificaciones.verificar();
+    void this.apk.cargar();
     if (!this.authService.isAdmin()) {
-      void this.apk.cargar();
       this.agenda.cargar().subscribe({ error: () => {} });
       this.avisos.iniciar();
     }
@@ -82,7 +82,7 @@ export class Layout implements OnInit, OnDestroy {
 
   /** Un solo aviso a la vez, el más importante primero. */
   protected aviso = computed((): Aviso | null => {
-    if (this.authService.isAdmin()) return null;
+    if (this.authService.isAdmin()) return this.invitacionApp();
     if (this.procesos.medicionInicialPendiente()) {
       return {
         icono: 'pi pi-flag',
@@ -131,17 +131,19 @@ export class Layout implements OnInit, OnDestroy {
       };
     }
     // Lo último en la fila: la invitación a instalar la app, que se puede cerrar para siempre.
-    if (this.apk.invitacion()) {
-      return {
-        icono: 'pi pi-mobile',
-        texto: 'Llévate el camino en el celular: descarga la app de Android.',
-        accion: 'Descargar',
-        enlace: ['/descargar-app'],
-        descartar: () => this.apk.cerrarInvitacion(),
-      };
-    }
-    return null;
+    return this.invitacionApp();
   });
+
+  private invitacionApp(): Aviso | null {
+    if (!this.apk.invitacion()) return null;
+    return {
+      icono: 'pi pi-mobile',
+      texto: 'Llévate el camino en el celular: descarga la app de Android.',
+      accion: 'Descargar',
+      enlace: ['/descargar-app'],
+      descartar: () => this.apk.cerrarInvitacion(),
+    };
+  }
 
   protected navItems = computed(() => {
     if (this.authService.isAdmin()) {

@@ -25,7 +25,9 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
       </p>
 
       <div class="flex flex-col gap-1">
-        <label [for]="prefijo() + '-peso'" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+        <label
+          [for]="prefijo() + '-peso'"
+          class="text-xs font-medium text-gray-600 dark:text-gray-400"
           >Peso del envase</label
         >
         <div class="flex gap-2">
@@ -138,8 +140,13 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
             } @else if (e().liquidoMl === null && sugerencia(); as sug) {
               <small class="text-xs text-gray-500 dark:text-gray-400">
                 Un punto de partida: unos 200 ml por scoop, o sea
-                {{ sug }} ml para tus {{ n(e().scoops ?? 0) }} scoops. Tu etiqueta puede decir otra cosa.
-                <button type="button" class="font-semibold text-guerrero-red underline ml-1" (click)="cambiar({ liquidoMl: sug })">
+                {{ sug }} ml para tus {{ n(e().scoops ?? 0) }} scoops. Tu etiqueta puede decir otra
+                cosa.
+                <button
+                  type="button"
+                  class="font-semibold text-guerrero-red underline ml-1"
+                  (click)="cambiar({ liquidoMl: sug })"
+                >
                   Usar {{ sug }} ml
                 </button>
               </small>
@@ -167,7 +174,9 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
             @if (errores().lecheMl; as error) {
               <small class="text-xs text-red-600 dark:text-red-400">{{ error }}</small>
             } @else if (agua() !== null) {
-              <small class="text-xs text-gray-500 dark:text-gray-400">El resto, {{ agua() }} ml, es agua.</small>
+              <small class="text-xs text-gray-500 dark:text-gray-400"
+                >El resto, {{ agua() }} ml, es agua.</small
+              >
             }
           </div>
         }
@@ -179,7 +188,11 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
             </legend>
             <div class="grid grid-cols-3 gap-2">
               <div class="flex flex-col gap-1">
-                <label [for]="prefijo() + '-lt-ml'" class="text-[11px] text-gray-500 dark:text-gray-400">Porción (ml)</label>
+                <label
+                  [for]="prefijo() + '-lt-ml'"
+                  class="text-[11px] text-gray-500 dark:text-gray-400"
+                  >Porción (ml)</label
+                >
                 <input
                   pInputText
                   [id]="prefijo() + '-lt-ml'"
@@ -191,7 +204,11 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
                 />
               </div>
               <div class="flex flex-col gap-1">
-                <label [for]="prefijo() + '-lt-kcal'" class="text-[11px] text-gray-500 dark:text-gray-400">Calorías</label>
+                <label
+                  [for]="prefijo() + '-lt-kcal'"
+                  class="text-[11px] text-gray-500 dark:text-gray-400"
+                  >Calorías</label
+                >
                 <input
                   pInputText
                   [id]="prefijo() + '-lt-kcal'"
@@ -203,7 +220,11 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
                 />
               </div>
               <div class="flex flex-col gap-1">
-                <label [for]="prefijo() + '-lt-prot'" class="text-[11px] text-gray-500 dark:text-gray-400">Proteína (g)</label>
+                <label
+                  [for]="prefijo() + '-lt-prot'"
+                  class="text-[11px] text-gray-500 dark:text-gray-400"
+                  >Proteína (g)</label
+                >
                 <input
                   pInputText
                   [id]="prefijo() + '-lt-prot'"
@@ -307,7 +328,8 @@ export class EtiquetaSuplemento {
     }
     const leche = e.liquido === 'leche' ? e.liquidoMl : e.liquido === 'mezcla' ? e.lecheMl : null;
     if (leche && !this.errores().liquidoMl && !this.errores().lecheMl) {
-      const agua = e.liquido === 'mezcla' && this.agua() !== null ? ` y ${this.agua()} ml de agua` : '';
+      const agua =
+        e.liquido === 'mezcla' && this.agua() !== null ? ` y ${this.agua()} ml de agua` : '';
       partes.push(
         `Al día: ${leche} ml de leche${agua}. Por semana son ${n((leche * 7) / 1000)} L de leche: van a tu lista de mercado.`,
       );

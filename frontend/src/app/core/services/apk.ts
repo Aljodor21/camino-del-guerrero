@@ -64,7 +64,7 @@ export class ApkService {
    * el interceptor del JWT le pondría el token de la sesión a cualquier petición.
    */
   async cargar(forzar = false): Promise<void> {
-    if (this.enLaApp || (this.pedida && !forzar)) return;
+    if (this.pedida && !forzar) return;
     this.pedida = true;
     this.estado.set('cargando');
     try {
