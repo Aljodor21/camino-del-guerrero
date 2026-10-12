@@ -13,8 +13,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # El .env.docker real vive solo en el servidor, nunca en git.
-  ENV_FILE: /home/alejo/camino/.env.docker
+  # El .env.docker real vive solo en el servidor, nunca en git: se edita en el panel de Warden
+  # (Catálogo → Camino del Guerrero → Variables (.env)) y queda en site/env/<tag>.env.
+  ENV_FILE: /home/alejo/warden/site/env/camino-del-guerrero.env
   RESPALDOS: /home/alejo/camino/respaldos
   DB_CONTAINER: camino-del-guerrero-db-1
 
@@ -32,7 +33,7 @@ jobs:
       - name: Revisar el entorno del servidor
         run: |
           if [ ! -f "$ENV_FILE" ]; then
-            echo "::error::Falta $ENV_FILE en el servidor. Ver DEPLOY.md, paso 3."
+            echo "::error::Falta $ENV_FILE. Créalo en el panel de Warden: Catálogo → Camino del Guerrero → Variables (.env). Ver DEPLOY.md."
             exit 1
           fi
 

@@ -18,7 +18,7 @@ PR → ci.yml (GitHub) → merge a main → deploy.yml (runner de Warden en ubur
 - Compose: que `docker-compose.yml` sea válido.
 
 **`.github/workflows/deploy.yml`** (al llegar algo a `main`, en el runner de uburoom):
-1. Revisa que exista el `.env.docker` del servidor.
+1. Revisa que exista el `.env` de la app en el servidor (el de Variables (.env) del panel de Warden).
 2. Hace `pg_dump` de la base a `/home/alejo/camino/respaldos/` (guarda los últimos 10) antes de tocar nada.
 3. Copia el `.env.docker` y ejecuta `docker compose up -d --build`. El backend corre `migrate` al arrancar.
 4. Espera a que la web y la API respondan (hasta ~2 minutos). Si no, falla y muestra los logs.
@@ -31,15 +31,11 @@ Un despliegue a la vez: si llega otro merge, espera al anterior.
 1. **Dar de alta la app en Warden** (panel → Catálogo → Nueva app, o copiando a `~/warden/site/catalog/`):
    - `deploy/warden/camino.component`: la app, con su subdominio y puerto.
    - `deploy/warden/camino-datos.component`: respaldo de la base `camino_db` y las fotos. Warden deja fuera del backup a las apps de CI/CD (las que tienen URL git), por eso los datos van en un componente aparte.
-2. **Registrar el runner** con el token de GitHub (repo → Settings → Actions → Runners → New self-hosted runner), desde el panel (Catálogo → Registrar runner) o:
+2. **Registrar el runner** con el token de GitHub (repo → Settings → Actions → Runners → New self-hosted runner), desde el panel (Catálogo → Camino del Guerrero → **Runner y pasos**) o:
    ```bash
    sudo warden runner https://github.com/Aljodor21/camino-del-guerrero <TOKEN>
    ```
-3. **Crear el `.env.docker` de producción** en el servidor (nunca va a git), partiendo de `.env.docker.example`:
-   ```bash
-   mkdir -p ~/camino && cp .env.docker.example ~/camino/.env.docker && chmod 600 ~/camino/.env.docker
-   ```
-   Poner valores reales en `SECRET_KEY`, `DB_PASSWORD` / `POSTGRES_PASSWORD` (el mismo), `ADMIN_PASSWORD`, las llaves `VAPID_*` (se generan con `python manage.py llaves_push`), el correo, `AI_*` y `OPENAI_API_KEY`. Dejar `DEBUG=False`.
+3. **Crear el `.env.docker` de producción** desde el panel de Warden: Catálogo → Camino del Guerrero → **Variables (.env)**. Si todavía no existe, trae el `.env.docker.example` del repo para que cambies los valores por los reales y guardes (nunca va a git; queda en `~/warden/site/env/camino-del-guerrero.env`, solo legible por tu usuario). Hace falta el modo admin. Valores reales en `SECRET_KEY`, `DB_PASSWORD` / `POSTGRES_PASSWORD` (el mismo), `ADMIN_PASSWORD`, las llaves `VAPID_*` (se generan con `python manage.py llaves_push`), el correo, `AI_*` y `OPENAI_API_KEY`. Dejar `DEBUG=False`.
 4. **Permitir `warden publish` al runner** (una vez, con sudo):
    ```bash
    echo 'alejo ALL=(root) NOPASSWD: /usr/local/bin/warden publish' | sudo tee /etc/sudoers.d/warden-runner
