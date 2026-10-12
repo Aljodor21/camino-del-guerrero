@@ -8,7 +8,7 @@
  * FIRST VIEWPORT: los guantes flotando en el negro, el titular a un lado y el botón
  * "Empieza tu camino"; al bajar, vendas y cuerdas estallan alrededor de los guantes.
  * FORM: hero cinematográfico con la animación atada al scroll (96 cuadros WebP dibujados
- * en un canvas) + recorrido de estaciones fijas; nada de partículas ni destellos.
+ * en un video) + recorrido de estaciones fijas; nada de partículas ni destellos.
  */
 import {
   ChangeDetectionStrategy,
@@ -21,6 +21,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 
 import { AuthService } from '../core/services/auth';
 
@@ -88,10 +89,6 @@ const ENTRENOS: (Imagen & { enfoque: string })[] = [
 
 const ENFOQUES = ['Boxeo', 'Fuerza', 'Funcional', 'Cardio en casa', 'Yoga'];
 
-const FOTOGRAMAS = 96;
-/** Cuadros por segundo de la animación del hero (96 cuadros: unos 5 segundos por vuelta). */
-const CUADROS_POR_SEGUNDO = 20;
-
 /** Avance de 0 a 1 de una sección alta con un escenario fijo adentro. */
 function avance(seccion: HTMLElement, alto: number): number {
   const caja = seccion.getBoundingClientRect();
@@ -138,9 +135,8 @@ export class Home {
     aplicarPreferencia();
     sinMovimiento.addEventListener('change', aplicarPreferencia);
 
-    const canvas = raiz.querySelector<HTMLCanvasElement>('[data-secuencia]');
-    const secuencia = canvas && this.puedeAnimarSecuencia() ? this.secuencia(canvas) : null;
-    raiz.classList.toggle('con-secuencia', secuencia !== null);
+    const elVideo = raiz.querySelector<HTMLVideoElement>('[data-video]');
+    const secuencia = elVideo && this.puedeAnimar() ? this.video(elVideo) : null;
 
     let pendiente = false;
     const medir = () => {
@@ -222,129 +218,76 @@ export class Home {
     });
   }
 
-  /** Sin "reducir movimiento" ni ahorro de datos: si no, el hero se queda en su primer cuadro. */
-  private puedeAnimarSecuencia(): boolean {
+  /**
+   * El video del hero se reproduce si la persona no pidió reducir el movimiento y hay con qué
+   * bajarlo: dentro de la app instalada va empaquetado, en la web no se baja con ahorro de
+   * datos ni con una conexión lenta (queda el primer cuadro).
+   */
+  private puedeAnimar(): boolean {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-    const conexion = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    return !conexion?.saveData;
+    if (Capacitor.isNativePlatform()) return true;
+    const conexion = (
+      navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+    ).connection;
+    return !conexion?.saveData && !['slow-2g', '2g', '3g'].includes(conexion?.effectiveType ?? '');
   }
 
   /**
-   * Dibuja en el canvas el cuadro que toca según el scroll. Los cuadros se bajan en orden y,
-   * mientras llega el que se pide, se muestra el más cercano que ya esté listo.
+   * Video del hero (H.264, sin audio) decodificado por el chip del celular: mucho más fluido que
+   * dibujar cuadros con JavaScript. Arranca con el primer scroll, sigue en bucle y se pausa cuando
+   * el hero no se ve o la pestaña está oculta. Hay una versión horizontal y una vertical.
    */
-  private secuencia(canvas: HTMLCanvasElement): { reproducir(): void; detener(): void } | null {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+  private video(el: HTMLVideoElement): { reproducir(): void; detener(): void } {
+    el.muted = true;
     const movil = matchMedia('(max-width: 767px)');
-    let cuadros: (HTMLImageElement | undefined)[] = [];
-    let objetivo = 0;
-    let dibujado = -1;
-    let generacion = 0;
-
-    const dibujar = () => {
-      let i = objetivo;
-      while (i >= 0 && !cuadros[i]) i--;
-      if (i < 0) {
-        i = objetivo;
-        while (i < FOTOGRAMAS && !cuadros[i]) i++;
-      }
-      const img = cuadros[i];
-      if (!img || i === dibujado) return;
-      dibujado = i;
-      const { width: cw, height: ch } = canvas;
-      const escala = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-      const w = img.naturalWidth * escala;
-      const h = img.naturalHeight * escala;
-      ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
-    };
-
-    const ajustar = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(canvas.clientWidth * dpr);
-      canvas.height = Math.round(canvas.clientHeight * dpr);
-      dibujado = -1;
-      dibujar();
-    };
-
-    const cargar = () => {
-      const mia = ++generacion;
-      const prefijo = movil.matches ? 'm' : 'd';
-      cuadros = [];
-      dibujado = -1;
-      let siguiente = 0;
-      const traer = async (): Promise<void> => {
-        while (mia === generacion && siguiente < FOTOGRAMAS) {
-          const i = siguiente++;
-          const img = new Image();
-          img.src = `/home/secuencia/${prefijo}-${String(i).padStart(3, '0')}.webp`;
-          try {
-            await img.decode();
-          } catch {
-            continue;
-          }
-          if (mia !== generacion) return;
-          cuadros[i] = img;
-          if (Math.abs(i - objetivo) <= 1 || dibujado < 0) dibujar();
-        }
-      };
-      // Pocos a la vez: el primer cuadro ya está en pantalla y el resto llega por detrás.
-      for (let n = 0; n < 4; n++) void traer();
-    };
-
-    ajustar();
-    cargar();
-    window.addEventListener('resize', ajustar);
-    movil.addEventListener('change', cargar);
-
-    // Reproducción en bucle: avanza un cuadro cada 1/CUADROS_POR_SEGUNDO s, espera si el
-    // siguiente aún no llegó, y se detiene mientras el hero no se ve o la pestaña está oculta.
-    let corriendo = false;
-    let visible = true;
-    let ultimo = 0;
-    const paso = (ahora: number) => {
-      if (!corriendo) return;
-      if (!visible || document.hidden) {
-        corriendo = false;
-        return;
-      }
-      if (ahora - ultimo >= 1000 / CUADROS_POR_SEGUNDO) {
-        const sig = (objetivo + 1) % FOTOGRAMAS;
-        if (cuadros[sig]) {
-          objetivo = sig;
-          ultimo = ahora;
-          dibujar();
-        }
-      }
-      requestAnimationFrame(paso);
-    };
-    const arrancar = () => {
-      if (corriendo || !visible || document.hidden) return;
-      corriendo = true;
-      ultimo = performance.now();
-      requestAnimationFrame(paso);
-    };
     let iniciada = false;
+    let visible = true;
+
+    const intentar = () => {
+      if (!iniciada || !visible || document.hidden) return;
+      void el.play().catch(() => undefined);
+    };
+    const poner = () => {
+      // En la app instalada solo va empaquetada la versión vertical (la otra pesa 10 MB de más).
+      const vertical = movil.matches || Capacitor.isNativePlatform();
+      const fuente = vertical ? '/home/hero-movil.mp4' : '/home/hero.mp4';
+      if (el.getAttribute('src') === fuente) return;
+      el.setAttribute('src', fuente);
+      el.load();
+      intentar();
+    };
+    const alReproducir = () => el.classList.add('reproduciendo');
+    el.addEventListener('playing', alReproducir);
+
     const vigia = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
-      if (visible && iniciada) arrancar();
+      if (visible) intentar();
+      else el.pause();
     });
-    vigia.observe(canvas);
-    const alVolver = () => iniciada && arrancar();
-    document.addEventListener('visibilitychange', alVolver);
+    vigia.observe(el);
+    const alCambiarPestana = () => (document.hidden ? el.pause() : intentar());
+    document.addEventListener('visibilitychange', alCambiarPestana);
+    movil.addEventListener('change', poner);
+
+    // Se empieza a bajar cuando el navegador está libre, para no competir con la foto del hero.
+    const cuandoLibre = (fn: () => void) =>
+      'requestIdleCallback' in window
+        ? window.requestIdleCallback(fn, { timeout: 1500 })
+        : setTimeout(fn, 800);
+    cuandoLibre(poner);
 
     return {
       reproducir: () => {
         iniciada = true;
-        arrancar();
+        poner();
+        intentar();
       },
       detener: () => {
-        corriendo = false;
+        el.pause();
         vigia.disconnect();
-        document.removeEventListener('visibilitychange', alVolver);
-        generacion++;
-        window.removeEventListener('resize', ajustar);
-        movil.removeEventListener('change', cargar);
+        el.removeEventListener('playing', alReproducir);
+        document.removeEventListener('visibilitychange', alCambiarPestana);
+        movil.removeEventListener('change', poner);
       },
     };
   }

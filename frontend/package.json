@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build:movil": "ng build --configuration movil && cap sync android",
+    "build:movil": "ng build --configuration movil && rm -f dist/frontend/browser/home/hero.mp4 dist/frontend/browser/home/404.mp4 && cap sync android",
     "apk": "npm run build:movil && cd android && ./gradlew assembleDebug"
   },
   "prettier": {
