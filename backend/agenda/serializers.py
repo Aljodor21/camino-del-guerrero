@@ -88,6 +88,7 @@ class HabitosSerializer(serializers.ModelSerializer):
 
 class NotificacionSerializer(serializers.ModelSerializer):
     accion = serializers.SerializerMethodField()
+    cuerpo = serializers.SerializerMethodField()
 
     class Meta:
         model  = Notificacion
@@ -97,6 +98,9 @@ class NotificacionSerializer(serializers.ModelSerializer):
 
     def get_accion(self, n):
         return notificaciones.accion_de(n)
+
+    def get_cuerpo(self, n):
+        return notificaciones.cuerpo_de(n)
 
 
 class RegistroHabitoSerializer(serializers.ModelSerializer):
