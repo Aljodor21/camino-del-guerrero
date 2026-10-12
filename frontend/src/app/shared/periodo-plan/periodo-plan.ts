@@ -45,7 +45,7 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
         @case ('otra') {
           <div class="flex flex-col gap-1">
             <label for="pp-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-              >Fecha</label
+              >Fecha en que termina el plan</label
             >
             <input
               id="pp-fecha"
@@ -61,7 +61,7 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
         }
         @case ('sin') {
           <p class="text-xs text-gray-500 dark:text-gray-400">
-            Sin fecha de control: lo defines cuando quieras, al llegar el siguiente.
+            Sin fecha de fin por ahora: la defines cuando quieras, o al llegar tu siguiente control.
           </p>
         }
         @default {
@@ -76,7 +76,7 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
 export class PeriodoPlan {
   /** Lo que se sugiere (el mismo tiempo que ya había); si no hay, solo las otras opciones. */
   readonly sugerida = input<{ titulo: string; fecha: string } | null>(null);
-  readonly etiqueta = input('¿Hasta cuándo va?');
+  readonly etiqueta = input('Hasta cuándo dura este plan');
   /** La elegida: fecha, null (sin definir) o undefined (falta algo). */
   readonly fecha = model<string | null | undefined>(undefined);
 
@@ -90,13 +90,13 @@ export class PeriodoPlan {
     ...(this.sugerida() ? [{ id: 'sugerida' as const, titulo: this.sugerida()!.titulo }] : []),
     { id: 'semanas8' as const, titulo: '8 semanas' },
     { id: 'semanas12' as const, titulo: '12 semanas' },
-    { id: 'otra' as const, titulo: 'Otra fecha' },
-    { id: 'sin' as const, titulo: 'Sin definir' },
+    { id: 'otra' as const, titulo: 'Elegir otra fecha' },
+    { id: 'sin' as const, titulo: 'Sin fecha por ahora' },
   ]);
 
   protected detalle = computed(() => {
     const f = this.fecha();
-    return f ? `Hasta el ${formatearFecha(f, 'larga')}.` : '';
+    return f ? `Este plan termina el ${formatearFecha(f, 'larga')}.` : '';
   });
 
   constructor() {

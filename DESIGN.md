@@ -77,3 +77,9 @@ La tarjeta de descarga es un componente compartido (`app-descarga-apk`) que se u
 La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/app/version/`, con caché de 10 minutos) y no el navegador: Cloudflare le pone al sitio un `Content-Security-Policy: connect-src 'self'` que le prohíbe hablar con GitHub. Si no hay datos pero sí enlace, el botón de descarga se muestra igual, sin versión. En celular la tarjeta es compacta: botón de ancho completo en una sola línea y el celular de muestra asomando por abajo, con los guantes visibles.
 
 El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enlace a GitHub salta de página en el celular. En la app instalada, el enlace abre el navegador del sistema (el WebView no maneja descargas), que baja el archivo y la app se actualiza al instalarlo.
+
+## Navegación y ventanas
+
+- **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
+- **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
+- **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).
