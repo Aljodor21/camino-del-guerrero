@@ -105,3 +105,11 @@ Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pesta�
 - **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
 - **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
 - **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).
+
+## Avisos, una sección propia
+
+- **Cabecera propia, no la foto de las demás pantallas:** el icono de la campana en rojo, "Avisos" y una línea que dice cuántos faltan ("2 sin atender") o "Estás al día". Fondo con un tinte cálido arriba y llega desde la derecha (sin dejar un `transform` puesto).
+- **Tres pestañas:** Pendientes (con su contador rojo; la ayuda y la bandeja), Tu día (el agua, la proteína, el entreno y la hora de dormir) y Ajustes (agua, horas, qué avisos llegan y las notificaciones del celular). La pestaña queda en la URL.
+- **El aviso del agua dice cuánto llevas hoy** ("Llevas 1 de 4 vasos de hoy (600 ml cada uno)"), no el número del recordatorio: el texto se arma al mostrarlo, tanto en la app como en el push.
+- **El aviso de arriba (el que sale en todas las pantallas):** va dentro de la página, nunca flota ni tapa el título. Si pide algo es una tarjeta tranquila con un botón de texto (Registrar, Actualizar…); si solo informa ("Tu proceso inicia el martes") es una línea discreta, sin caja ni botón.
+- **Barra de pestañas:** flecha "›" mientras queden pestañas a la derecha y "‹" cuando se pueda volver a la izquierda; tocarlas desplaza la barra.

@@ -1,10 +1,32 @@
-<div class="p-4 max-w-2xl mx-auto space-y-4">
-  <app-portada
-    foto="agenda"
-    titulo="Avisos"
-    subtitulo="Lo pendiente del día. Sale de aquí cuando lo confirmas."
-  />
+<div class="avisos-pagina p-4 max-w-2xl mx-auto space-y-4">
+  <!-- Cabecera propia: esto no es una pantalla más, es la bandeja de avisos -->
+  <header class="flex items-center gap-4 pt-1">
+    <span
+      class="relative w-14 h-14 shrink-0 rounded-2xl bg-guerrero-red text-white flex items-center justify-center shadow-lg shadow-guerrero-red/25"
+      aria-hidden="true"
+    >
+      <i class="pi pi-bell text-2xl"></i>
+    </span>
+    <div class="min-w-0">
+      <h1 class="text-3xl font-bold leading-none text-gray-900 dark:text-white">Avisos</h1>
+      <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+        @if (pendientes().length) {
+          {{ pendientes().length }} sin atender · salen de aquí cuando los confirmas
+        } @else {
+          Estás al día. Lo que toque hoy aparece aquí.
+        }
+      </p>
+    </div>
+  </header>
 
+  <app-pestanas [items]="pestanas()" [(activa)]="seccion" etiqueta="Secciones de avisos" />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @switch (seccion()) {
+    @case ('pendientes') {
   <app-ayuda
     clave="avisos"
     titulo="Tus avisos"
@@ -17,25 +39,9 @@
     demo="avisos"
   />
 
-  @if (error()) {
-    <p-message severity="error" [text]="error()" styleClass="w-full" />
-  }
-
   <!-- Pendientes: una bandeja de notificaciones -->
   <section aria-labelledby="av-pendientes" class="space-y-3">
-    <h2
-      id="av-pendientes"
-      class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white"
-    >
-      Pendientes
-      @if (pendientes().length) {
-        <span
-          class="min-w-6 h-6 px-2 rounded-full bg-guerrero-red text-white text-xs font-bold leading-6 text-center tabular-nums"
-          [attr.aria-label]="pendientes().length + ' sin atender'"
-          >{{ pendientes().length }}</span
-        >
-      }
-    </h2>
+    <h2 id="av-pendientes" class="sr-only">Pendientes</h2>
 
     @if (pendientes().length) {
       <ul
@@ -114,7 +120,8 @@
       </div>
     }
   </section>
-
+    }
+    @case ('dia') {
   <!-- Tu día -->
   @if (hoy(); as h) {
     <section
@@ -235,7 +242,8 @@
       }
     </section>
   }
-
+    }
+    @case ('ajustes') {
   <!-- Ajustes -->
   <section
     aria-labelledby="av-ajustes"
@@ -397,4 +405,6 @@
       }
     }
   </section>
+    }
+  }
 </div>
