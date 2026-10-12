@@ -59,15 +59,25 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
 
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
 import { Ayuda } from '../shared/ayuda/ayuda';
+import { CumplimientoGlobalVista } from './cumplimiento-global/cumplimiento-global';
 
-type Seccion = 'pendientes' | 'dia' | 'ajustes';
-const SECCIONES: Seccion[] = ['pendientes', 'dia', 'ajustes'];
+type Seccion = 'pendientes' | 'dia' | 'cumplimiento' | 'ajustes';
+const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'ajustes'];
 
 @Component({
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, Pestanas, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
+  imports: [
+    Ayuda,
+    CumplimientoGlobalVista,
+    Pestanas,
+    RouterLink,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    TamanoVaso,
+  ],
 })
 export class Avisos implements OnInit {
   private destroyRef = inject(DestroyRef);
@@ -84,6 +94,7 @@ export class Avisos implements OnInit {
       contador: this.pendientes().length,
     },
     { id: 'dia', label: 'Tu día', icon: 'pi pi-sun' },
+    { id: 'cumplimiento', label: 'Cumplimiento', icon: 'pi pi-chart-pie' },
     { id: 'ajustes', label: 'Ajustes', icon: 'pi pi-sliders-h' },
   ]);
 

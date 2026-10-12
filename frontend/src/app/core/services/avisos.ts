@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-import { Aviso, Habitos, HabitosPayload, ResumenHoy } from '../models/avisos.model';
+import {
+  Aviso,
+  CumplimientoGlobal,
+  Habitos,
+  HabitosPayload,
+  ResumenHoy,
+} from '../models/avisos.model';
 import { environment } from '../../../environments/environment';
 
 const API = `${environment.apiUrl}/agenda`;
@@ -31,6 +37,11 @@ export class AvisosService {
 
   cargarHoy(): Observable<ResumenHoy> {
     return this.http.get<ResumenHoy>(`${API}/hoy/`).pipe(tap((h) => this._hoy.set(h)));
+  }
+
+  /** Cuánto se cumplió entre dos fechas (YYYY-MM-DD): agua, dormir y, con proceso, todo lo demás. */
+  cumplimiento(desde: string, hasta: string): Observable<CumplimientoGlobal> {
+    return this.http.get<CumplimientoGlobal>(`${API}/cumplimiento/`, { params: { desde, hasta } });
   }
 
   cargarHabitos(): Observable<Habitos> {
