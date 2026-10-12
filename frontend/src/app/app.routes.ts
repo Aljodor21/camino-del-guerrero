@@ -45,5 +45,5 @@ export const routes: Routes = [
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '**', loadComponent: () => import('./no-encontrada/no-encontrada').then(m => m.NoEncontrada) },
 ];
