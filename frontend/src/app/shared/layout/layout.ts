@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   Component,
@@ -47,18 +48,33 @@ export class Layout implements OnInit, OnDestroy {
   protected avisos = inject(AvisosService);
   protected apk = inject(ApkService);
   private router = inject(Router);
+  private location = inject(Location);
 
   private anterior = '/nutricion';
+  /** Cuántas pantallas se han abierto en esta sesión: con más de una hay a dónde volver. */
+  private pantallas = 0;
+  private ruta = signal(this.router.url.split(/[?#]/)[0]);
   protected enAvisos = signal(false);
 
   constructor() {
     // Se recuerda dónde estaba la persona (con su pestaña) para devolverla al cerrar los avisos.
     this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (!(e instanceof NavigationEnd)) return;
+      this.pantallas++;
+      this.ruta.set(e.urlAfterRedirects.split(/[?#]/)[0]);
       const enAvisos = e.urlAfterRedirects.split('?')[0] === '/avisos';
       this.enAvisos.set(enAvisos);
       if (!enAvisos) this.anterior = e.urlAfterRedirects;
     });
+  }
+
+  /** Las pantallas de las pestañas de abajo son el inicio de cada sección: ahí no hay atrás. */
+  protected puedeVolver = computed(() => !this.navItems().some((i) => i.path === this.ruta()));
+
+  /** Atrás: a la pantalla de donde se venía, o al inicio de la primera sección si se entró directo. */
+  protected volver(): void {
+    if (this.pantallas > 1) this.location.back();
+    else void this.router.navigateByUrl(this.navItems()[0]?.path ?? '/');
   }
 
   /** El botón de avisos abre la bandeja y, estando en ella, regresa a donde se estaba. */

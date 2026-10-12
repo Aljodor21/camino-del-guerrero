@@ -84,3 +84,9 @@ Dentro de la app (Android) la pantalla de descarga lee la versión instalada (pl
 - **Al día:** barra verde con un check: "Estás actualizado · Tienes la versión 1.0.5, que es la última", y un enlace discreto para descargar de nuevo.
 - **Una versión atrás:** alerta ámbar "Hay una versión nueva · Tienes la 1.0.5 y la última es la 1.0.7" y el botón "Actualizar a la 1.0.7"; además un punto rojo en el icono del celular de la barra de arriba y, cuando no haya otro aviso más importante, la tarjeta flotante "Hay una versión nueva de la app" (se cierra y no vuelve hasta que salga otra versión).
 - **Sin saber la versión** (sin red, o en la web): el botón de siempre. En la web de un celular Android se ofrece "Descargar para Android"; en el computador, copiar el enlace.
+
+## Navegación y ventanas
+
+- **Atrás:** en toda pantalla que no sea el inicio de una pestaña de abajo (Nutrición, Rutinas, Progreso, Consejos, Perfil; en admin, sus cuatro pestañas) aparece una flecha a la izquierda del logo. Vuelve a la pantalla de donde se venía, con su pestaña (`/progreso?seccion=agenda`); si se entró directo a esa pantalla, lleva al inicio de la primera sección.
+- **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
+- **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).
