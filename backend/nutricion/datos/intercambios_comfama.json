@@ -1,0 +1,2214 @@
+[
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Almojábana",
+  "gramos": 31,
+  "medida": "1 unidad grande"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Arepa delgada de maíz blanco trillado",
+  "gramos": 56,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Arepa redonda de maíz blanco trillado",
+  "gramos": 52,
+  "medida": "1 unidad grande"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Arroz blanco, cocido",
+  "gramos": 80,
+  "medida": "6 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Arroz integral, cocido",
+  "gramos": 81,
+  "medida": "8 cucharadas soperas o 2/3 de pocillo"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Arroz parbolizado cocido",
+  "gramos": 75,
+  "medida": "5 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Avena en hojuelas",
+  "gramos": 24,
+  "medida": "4 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Cebada perlada cocida",
+  "gramos": 72,
+  "medida": "5 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Choco Krispis",
+  "gramos": 23,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Hojuelas de maíz",
+  "gramos": 25,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Hojuelas de maíz azucaradas",
+  "gramos": 22,
+  "medida": "1/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Crispetas - Maíz pira cocido",
+  "gramos": 27,
+  "medida": "3 pocillos chocolateros"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Cuchuco de cebada",
+  "gramos": 27,
+  "medida": "4 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Espaguetis de arroz hidratados",
+  "gramos": 75,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Espaguetis de trigo cocidos",
+  "gramos": 65,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Froot loops",
+  "gramos": 20,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas integrales",
+  "gramos": 20,
+  "medida": "2 unidades (tablas)"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas con sabor a queso",
+  "gramos": 18,
+  "medida": "5 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas de soda",
+  "gramos": 24,
+  "medida": "3 unidades (tablas)"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas sandwich de chocolate",
+  "gramos": 18,
+  "medida": "2 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas tipo wafer",
+  "gramos": 17,
+  "medida": "3 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Galletas cucas",
+  "gramos": 19,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Harina de arroz blanco",
+  "gramos": 25,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Harina de maíz blanco trillado",
+  "gramos": 25,
+  "medida": "2 cucharadas soperas rasas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Harina de trigo refinada fortificada",
+  "gramos": 25,
+  "medida": "4 cucharadas soperas rasas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Maicena (Almidón de maíz)",
+  "gramos": 25,
+  "medida": "4 cucharadas soperas rasas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Maíz tierno o choclo, amarillo enlatado",
+  "gramos": 110,
+  "medida": "8 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Maíz tostado",
+  "gramos": 21,
+  "medida": "3 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Mazamorra (maíz cocido)",
+  "gramos": 100,
+  "medida": "5 cucharadas soperas altas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Palitos o palitroques",
+  "gramos": 22,
+  "medida": "2 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pan blanco",
+  "gramos": 22,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pan centeno",
+  "gramos": 35,
+  "medida": "1 tajada mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pan de salvado de avena",
+  "gramos": 38,
+  "medida": "1 tajada mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pan integral",
+  "gramos": 32,
+  "medida": "1 tajada mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pan pita o árabe",
+  "gramos": 25,
+  "medida": "1/2 unidad pequeña"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pancake (mezcla preparada con leche)",
+  "gramos": 40,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pandequeso",
+  "gramos": 28,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pandeyuca",
+  "gramos": 20,
+  "medida": "2 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Pasta corta, cocida",
+  "gramos": 64,
+  "medida": "2/3 de pocillo chocolatero"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Taco vacío",
+  "gramos": 26,
+  "medida": "2 unidades"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Tortilla de maíz",
+  "gramos": 30,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Tostada integral",
+  "gramos": 37,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Cereales",
+  "nombre": "Tostada o calado",
+  "gramos": 32,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Raíces",
+  "nombre": "Arracacha sin cáscara cruda",
+  "gramos": 96,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Raíces",
+  "nombre": "Ñame sin cáscara cocido",
+  "gramos": 78,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Raíces",
+  "nombre": "Yuca blanca cruda",
+  "gramos": 62,
+  "medida": "1 trozo mediano"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Tubérculos",
+  "nombre": "Batata cocida sin cáscara",
+  "gramos": 100,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Tubérculos",
+  "nombre": "Cubios",
+  "gramos": 155,
+  "medida": "2 unidades grandes"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Tubérculos",
+  "nombre": "Chuguas o ullucos",
+  "gramos": 155,
+  "medida": "9 unidades grandes"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Tubérculos",
+  "nombre": "Papa común cocida",
+  "gramos": 83,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Tubérculos",
+  "nombre": "Papa criolla cocida",
+  "gramos": 108,
+  "medida": "3 unidades medianas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Plátanos",
+  "nombre": "Harina de plátano",
+  "gramos": 24,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Plátanos",
+  "nombre": "Plátano verde sin cáscara",
+  "gramos": 78,
+  "medida": "1/2 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Plátanos",
+  "nombre": "Plátano colí o guineo crudo",
+  "gramos": 88,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "cereales",
+  "subgrupo": "Plátanos",
+  "nombre": "Plátano hartón maduro sin cáscara cocido",
+  "gramos": 66,
+  "medida": "1/4 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Arándano fresco",
+  "gramos": 81,
+  "medida": "1 pocillo chocolatero"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Banano común",
+  "gramos": 65,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Borojó",
+  "gramos": 54,
+  "medida": "2/3 pocillo chocolatero"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Chirimoya",
+  "gramos": 92,
+  "medida": "1/2 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Chontaduro",
+  "gramos": 27,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Ciruela claudia",
+  "gramos": 108,
+  "medida": "2 unidades pequeñas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Ciruela común",
+  "gramos": 60,
+  "medida": "12 unidades"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Curuba",
+  "gramos": 200,
+  "medida": "6 unidades grandes"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Durazno",
+  "gramos": 118,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Feijoa",
+  "gramos": 117,
+  "medida": "3 unidades pequeñas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Fresas",
+  "gramos": 161,
+  "medida": "9 unidades medianas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Granadilla",
+  "gramos": 100,
+  "medida": "1 unidad grande"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Guanábana",
+  "gramos": 100,
+  "medida": "4 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Guayaba común",
+  "gramos": 105,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Guayaba manzana",
+  "gramos": 169,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Higo",
+  "gramos": 113,
+  "medida": "2 unidades pequeñas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Kiwi",
+  "gramos": 82,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Lulo",
+  "gramos": 196,
+  "medida": "2 unidades pequeñas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Mandarina",
+  "gramos": 125,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Mango",
+  "gramos": 112,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Manzana",
+  "gramos": 112,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Maracuyá",
+  "gramos": 66,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Melón",
+  "gramos": 126,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Mora",
+  "gramos": 96,
+  "medida": "½ pocillo chocolatero"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Murrapo",
+  "gramos": 49,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Naranja",
+  "gramos": 147,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Naranja Orlando",
+  "gramos": 144,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Naranja Tangelo",
+  "gramos": 131,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Naranja Valencia",
+  "gramos": 126,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Papaya",
+  "gramos": 128,
+  "medida": "1 trozo mediano"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Papayuela",
+  "gramos": 308,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Pera",
+  "gramos": 85,
+  "medida": "1/2 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Piña",
+  "gramos": 110,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Pitahaya",
+  "gramos": 110,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Sandia baby",
+  "gramos": 156,
+  "medida": "¼ unidad pequeña"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Tomate de árbol común",
+  "gramos": 174,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Uchuvas",
+  "gramos": 68,
+  "medida": "17 unidades medianas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Uva blanca",
+  "gramos": 135,
+  "medida": "20 unidades pequeñas"
+ },
+ {
+  "grupo": "frutas",
+  "subgrupo": "Frutas",
+  "nombre": "Zapote sin semilla",
+  "gramos": 118,
+  "medida": "2 unidades pequeñas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Arveja verde",
+  "gramos": 42,
+  "medida": "3 cucharadas soperas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Ahuyama o Zapallo",
+  "gramos": 68,
+  "medida": "1 trozo mediano"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Zanahorias Baby",
+  "gramos": 52,
+  "medida": "10 unidades medianas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Brócoli crudo sin hojas ni tallos",
+  "gramos": 89,
+  "medida": "1 pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Cebolla puerro",
+  "gramos": 50,
+  "medida": "1 tallo grueso"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Cebolla blanca",
+  "gramos": 74,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Cebolla roja",
+  "gramos": 66,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Champiñones",
+  "gramos": 93,
+  "medida": "1/2 pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Champiñón tajado",
+  "gramos": 100,
+  "medida": "1 pocillo chocolatero alto"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Champiñones enlatados",
+  "gramos": 83,
+  "medida": "½ pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Chócolo desgranado",
+  "gramos": 30,
+  "medida": "3 cdas soperas colmadas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Cidrayota",
+  "gramos": 177,
+  "medida": "1/2 unidad mediana"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Coliflor",
+  "gramos": 86,
+  "medida": "3 gajos pequeños"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Espárragos enlatados",
+  "gramos": 105,
+  "medida": "19 tallos delgados"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Habichuela",
+  "gramos": 81,
+  "medida": "½ pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Habichuelas enlatadas",
+  "gramos": 100,
+  "medida": "¾ de pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Pepinillos agridulces",
+  "gramos": 21,
+  "medida": "6 unidades pequeñas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Pimentón rojo",
+  "gramos": 111,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Rábano con cáscara",
+  "gramos": 125,
+  "medida": "7 unidades medianas"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Remolacha cocida",
+  "gramos": 57,
+  "medida": "1/2 unidad pequeña"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Repollo morado",
+  "gramos": 120,
+  "medida": "2 pocillos chocolateros"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Tomate rojo",
+  "gramos": 118,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Tomate verde (riñón)",
+  "gramos": 104,
+  "medida": "½ unidad grande"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Tomate larga vida",
+  "gramos": 132,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Tomate rojo enlatado",
+  "gramos": 105,
+  "medida": "½ pocillo chocolatero"
+ },
+ {
+  "grupo": "verduras",
+  "subgrupo": "Verduras",
+  "nombre": "Zanahoria",
+  "gramos": 58,
+  "medida": "1/2 pocillo chocolatero"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Kumis",
+  "gramos": 200,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Yogur",
+  "gramos": 200,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Yogurt Cuchareable",
+  "gramos": 140,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Quesito",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Cuajada de leche de vaca",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso americano",
+  "gramos": 24,
+  "medida": "1 lonchita"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso búfala tipo mozzarella fresco graso de pasta hilada",
+  "gramos": 30,
+  "medida": "1 tajada gruesa"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso campesino",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso cheddar",
+  "gramos": 20,
+  "medida": "1 lonchita"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso costeño rallado",
+  "gramos": 20,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso de cabra",
+  "gramos": 20,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso gouda",
+  "gramos": 20,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso sabana (Edam)",
+  "gramos": 22,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso mozzarella de leche entera, semiduro, semigrasa",
+  "gramos": 34,
+  "medida": "2 lonchitas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso parmesano rallado",
+  "gramos": 14,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso ricotta de leche entera",
+  "gramos": 50,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos grasa entera",
+  "nombre": "Queso tipo pera",
+  "gramos": 36,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Leche entera",
+  "nombre": "Leche de cabra cruda",
+  "gramos": 200,
+  "medida": "1 vaso mediano"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Leche entera",
+  "nombre": "Leche de vaca en polvo entera",
+  "gramos": 26,
+  "medida": "3 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Leche entera",
+  "nombre": "Leche de vaca entera cruda",
+  "gramos": 200,
+  "medida": "1 vaso mediano"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Leche entera",
+  "nombre": "Leche de vaca líquida entera pasteurizada",
+  "gramos": 200,
+  "medida": "1 vaso mediano"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Leche baja en grasa",
+  "gramos": 200,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Leche en polvo semidescremada",
+  "gramos": 25,
+  "medida": "3 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Leche en polvo descremada",
+  "gramos": 21,
+  "medida": "4 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Yogur dietético",
+  "gramos": 200,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Yogurt griego natural descremado",
+  "gramos": 100,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "lacteos",
+  "subgrupo": "Lácteos con reducción de grasa",
+  "nombre": "Kumis dietético",
+  "gramos": 200,
+  "medida": "1 vaso pequeño"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Atún enlatado en agua",
+  "gramos": 120,
+  "medida": "1 lata"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de cabra o chivo",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de cerdo",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de conejo",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de cordero",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de res",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Carne de ternera",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Contramuslo carne sin piel cruda sin hueso",
+  "gramos": 86,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Muslo de pollo sin hueso y sin piel",
+  "gramos": 75,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Pargo, especies mezcladas",
+  "gramos": 100,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Pavo todas las carnes sin piel",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Pechuga de pollo sin hueso sin piel",
+  "gramos": 80,
+  "medida": "1/4 de unidad mediana"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Proteína de soya texturizada hidratada",
+  "gramos": 60,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Proteína de trigo texturizada hidratada",
+  "gramos": 75,
+  "medida": "3 cucharadas colmadas"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Salmón rosado",
+  "gramos": 73,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Carnes magras",
+  "nombre": "Trucha arco iris",
+  "gramos": 60,
+  "medida": "1/2 unidad pequeña"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Bagre carne y piel",
+  "gramos": 76,
+  "medida": "1 medallón grueso"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Contramuslo de pollo sin hueso y con piel",
+  "gramos": 105,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Camarón, especies mezcladas",
+  "gramos": 73,
+  "medida": "6 unidades grandes"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Alas de pollo",
+  "gramos": 84,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Hígado de pollo",
+  "gramos": 72,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Hígado de res",
+  "gramos": 100,
+  "medida": "1/5 libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Lengua de res",
+  "gramos": 100,
+  "medida": "1/5 de libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Langostinos especies mezcladas",
+  "gramos": 96,
+  "medida": "6 unidades medianas"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Callo o panza o mondongo",
+  "gramos": 100,
+  "medida": "1/5 de libra"
+ },
+ {
+  "grupo": "carnes",
+  "subgrupo": "Altas en grasa saturada",
+  "nombre": "Sardina enlatada en salsa de tomate",
+  "gramos": 100,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Huevo de codorniz crudo",
+  "gramos": 50,
+  "medida": "5 unidades pequeñas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Huevo de gallina crudo",
+  "gramos": 50,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Quesito",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Cuajada de leche de vaca",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso americano",
+  "gramos": 24,
+  "medida": "1 lonchita"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso búfala tipo mozzarella fresco graso de pasta hilada",
+  "gramos": 30,
+  "medida": "1 tajada gruesa"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso campesino",
+  "gramos": 30,
+  "medida": "1 tajada pequeña semigruesa"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso cheddar",
+  "gramos": 20,
+  "medida": "1 lonchita"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso costeño rallado",
+  "gramos": 20,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso de cabra",
+  "gramos": 20,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso gouda",
+  "gramos": 20,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso sabana (Edam)",
+  "gramos": 22,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso mozzarella de leche entera, semiduro, semigrasa",
+  "gramos": 34,
+  "medida": "2 lonchitas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso parmesano rallado",
+  "gramos": 14,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso ricotta de leche entera",
+  "gramos": 50,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Queso tipo pera",
+  "gramos": 36,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Jamón",
+  "gramos": 42,
+  "medida": "2 tajadas"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Morcilla",
+  "gramos": 45,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "sustitutos",
+  "subgrupo": "Sustitutos",
+  "nombre": "Pepperoni",
+  "gramos": 16,
+  "medida": "4 rodajas delgadas"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Arveja seca cocida",
+  "gramos": 157,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol cargamanto rosado con plátano verde",
+  "gramos": 110,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol verde con plátano verde",
+  "gramos": 100,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol cargamanto blanco con plátano verde",
+  "gramos": 110,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol bola roja con plátano verde",
+  "gramos": 120,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol nima con guiso",
+  "gramos": 130,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol blanquillo con guiso",
+  "gramos": 110,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol caraota con guiso",
+  "gramos": 130,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol zaragoza con guiso",
+  "gramos": 100,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Frijol cabecita negra con guiso",
+  "gramos": 130,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Garbanzo con guiso",
+  "gramos": 100,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Soya con guiso",
+  "gramos": 90,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "leguminosas",
+  "subgrupo": "Leguminosas cocidas",
+  "nombre": "Lenteja con guiso",
+  "gramos": 130,
+  "medida": "1 cucharón colmado"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Pistacho crudo sin cáscara",
+  "gramos": 9,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Pistacho tostado y salado sin cáscara",
+  "gramos": 9,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Almendras tostadas sin sal",
+  "gramos": 9,
+  "medida": "3 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Pecanas tostadas sin sal",
+  "gramos": 8,
+  "medida": "3 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Avellanas tostadas sin sal",
+  "gramos": 7,
+  "medida": "5 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Nuez del Brasil",
+  "gramos": 8,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Marañón tostado sin sal",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Maní crudo con cáscara",
+  "gramos": 14,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Maní sin sal",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Macadamia tostada sin sal",
+  "gramos": 6,
+  "medida": "3 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Mezcla de nueces",
+  "gramos": 11,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Nuez del nogal",
+  "gramos": 8,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Coco deshidratado",
+  "gramos": 9,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Coco fresco rallado",
+  "gramos": 14,
+  "medida": "2 cucharadas sopera colmadas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Linaza",
+  "gramos": 12,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Semillas de ajonjolí tostado",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Semillas de amapola",
+  "gramos": 11,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Semillas de calabaza",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Semillas de chía",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "semillas",
+  "subgrupo": "Frutos secos y semillas",
+  "nombre": "Semillas de girasol",
+  "gramos": null,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Salsa ranch",
+  "gramos": 11,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Vinagreta con grasa",
+  "gramos": 10,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Aceite de girasol",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Aceite de maíz",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Aceite de soya",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Aceite de ajonjolí",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Poliinsaturadas",
+  "nombre": "Mayonesa comercial",
+  "gramos": 6,
+  "medida": "1 cucharadita dulcera rasa"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aceite de aguacate",
+  "gramos": 5,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aceitunas deshuesadas",
+  "gramos": 40,
+  "medida": "12 unidades medianas"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aceite de oliva",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aceite de canola",
+  "gramos": 5,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aguacate común",
+  "gramos": 30,
+  "medida": "1/8 unidad"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Aguacate Hass",
+  "gramos": 30,
+  "medida": "¼ unidad mediana"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Mantequilla de maní",
+  "gramos": 8,
+  "medida": "1 cucharada dulcera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Margarinas suaves sin sal",
+  "gramos": 6,
+  "medida": "2 cucharas dulceras rasas"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Monoinsaturadas",
+  "nombre": "Salsa Pesto",
+  "gramos": 10,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Crema de leche líquida entera",
+  "gramos": 13,
+  "medida": "1 cucharada sopera alta"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Queso crema",
+  "gramos": 12,
+  "medida": "1 cucharada sopera rasa"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Mantequilla",
+  "gramos": 6,
+  "medida": "1 cucharadita dulcera rasa"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Aceite de palma",
+  "gramos": 5,
+  "medida": "1 cucharadita"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Crema agria (sour cream)",
+  "gramos": 13,
+  "medida": "1 cda sopera colmada"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Saturadas",
+  "nombre": "Manteca de cerdo",
+  "gramos": 5,
+  "medida": "1 cucharadita dulcera rasa"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Reducidas en grasa",
+  "nombre": "Crema de leche light",
+  "gramos": 27,
+  "medida": "4 cucharadas soperas altas"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Reducidas en grasa",
+  "nombre": "Queso crema light",
+  "gramos": 27,
+  "medida": "1 cucharada sopera alta"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Reducidas en grasa",
+  "nombre": "Margarina light",
+  "gramos": 22,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Reducidas en grasa",
+  "nombre": "Mayonesa light",
+  "gramos": 22,
+  "medida": "2 cucharadas soperas altas"
+ },
+ {
+  "grupo": "grasas",
+  "subgrupo": "Reducidas en grasa",
+  "nombre": "Salsa de queso Cheddar",
+  "gramos": 26,
+  "medida": "1 cda sopera alta"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Azúcares simples",
+  "nombre": "Azúcar granulada",
+  "gramos": 23,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Azúcares simples",
+  "nombre": "Miel de abejas",
+  "gramos": 21,
+  "medida": "1 cucharada sopera"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Azúcares simples",
+  "nombre": "Panela en polvo",
+  "gramos": 26,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Arándanos deshidratados",
+  "gramos": 23,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Arequipe",
+  "gramos": 27,
+  "medida": "1 cucharada sopera colmada"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Bocadillo de guayaba",
+  "gramos": 30,
+  "medida": "1 tajada delgada"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Brevas en almíbar",
+  "gramos": 47,
+  "medida": "2 unidades medianas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Confites duros",
+  "gramos": 22,
+  "medida": "6 unidades"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Cerezas en almíbar",
+  "gramos": 90,
+  "medida": "1 frasco pequeño"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Ciruelas pasas",
+  "gramos": 41,
+  "medida": "8 unidades medianas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Cóctel de frutas",
+  "gramos": 157,
+  "medida": "3/4 pocillo chocolatero"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Cocada de panela",
+  "gramos": 25,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Cucas",
+  "gramos": 19,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Gelatina de pata",
+  "gramos": 23,
+  "medida": "1 unidad mediana"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Chocolatina de leche",
+  "gramos": 12,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Leche condensada",
+  "gramos": 28,
+  "medida": "2 cucharadas soperas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Helado de vainilla",
+  "gramos": 45,
+  "medida": "1 bola pequeña"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Helado de agua",
+  "gramos": 200,
+  "medida": "1 unidad"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Caramelos",
+  "gramos": 24,
+  "medida": "6 unidades"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Yogueta",
+  "gramos": 20,
+  "medida": "1 unidad"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Gelatina con azúcar preparada",
+  "gramos": 166,
+  "medida": "1 pocillo chocolatero"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Gomita tradicional",
+  "gramos": 24,
+  "medida": "5 unidades pequeñas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Jarabe de maple",
+  "gramos": 37,
+  "medida": "4 cucharadas soperas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Colombineta",
+  "gramos": 20,
+  "medida": "1 unidad"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Masmelos",
+  "gramos": 30,
+  "medida": "6 unidades pequeñas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Mermelada",
+  "gramos": 36,
+  "medida": "2 cucharadas soperas colmadas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Panelita de arequipe",
+  "gramos": 23,
+  "medida": "1 unidad pequeña"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Ponqué",
+  "gramos": 25,
+  "medida": "1 trozo pequeño"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Piña enlatada",
+  "gramos": 172,
+  "medida": "6 rodajas pequeñas"
+ },
+ {
+  "grupo": "azucares",
+  "subgrupo": "Dulces y postres",
+  "nombre": "Durazno enlatado",
+  "gramos": 173,
+  "medida": "3 mitades pequeñas"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Acelgas",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Alcachofa",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Apio",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Berro",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Brócoli",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Berenjena",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Calabaza",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Cebolla cabezona",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Cebolla larga",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Cohombro",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Col",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Coliflor",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Champiñón",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Chile",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Encurtidos",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Espárragos",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Espinacas",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Jitomate",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Lechuga",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Nabo",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Pepino cohombro",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Raíces chinas",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Repollo",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Verduras libres",
+  "nombre": "Zucchini o calabacín",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Agua de flor de Jamaica",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Agua de cáscara de piña",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Agua mineral",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Agua natural",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Aromática",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Café descafeinado",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Bebidas libres",
+  "nombre": "Limonada sin azúcar",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Endulzantes",
+  "nombre": "Stevia",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Endulzantes",
+  "nombre": "Alulosa",
+  "gramos": null,
+  "medida": "Libre"
+ },
+ {
+  "grupo": "libres",
+  "subgrupo": "Endulzantes",
+  "nombre": "Fruto del monje",
+  "gramos": null,
+  "medida": "Libre"
+ }
+]

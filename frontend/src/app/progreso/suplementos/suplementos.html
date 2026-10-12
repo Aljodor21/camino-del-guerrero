@@ -1,0 +1,696 @@
+<section id="suplementos" class="space-y-2 scroll-mt-20" aria-labelledby="sp-titulo">
+  <app-ayuda
+    clave="proteina"
+    titulo="Tu proteína"
+    para="Dice cuánto dura tu envase, en qué comidas la tomas y qué reemplaza de tu plan; con la tabla nutricional, la estimación es más real."
+    [pasos]="[
+      'Escribe lo que dice la etiqueta: peso, porción y scoops.',
+      'Elige en qué comidas la tomas, y a qué hora si quieres.',
+      'Sube la foto de la etiqueta y léela para sumar sus calorías.'
+    ]"
+    demo="proteina"
+  />
+  <div class="flex items-center justify-between gap-3">
+    <h2
+      id="sp-titulo"
+      class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+    >
+      Suplementos
+    </h2>
+    @if (servicio.activos().length) {
+      <button
+        type="button"
+        (click)="abrir('nuevo')"
+        class="text-xs font-semibold text-guerrero-red px-2 py-1 -mr-2 rounded hover:bg-red-50 dark:hover:bg-guerrero-red/10"
+      >
+        <i class="pi pi-plus text-[10px] mr-1" aria-hidden="true"></i>Agregar
+      </button>
+    }
+  </div>
+
+  @if (error() && modo() === null) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @for (s of servicio.activos(); track s.id) {
+    @let a = avance(s);
+    <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        @if (s.tiene_foto) {
+          <button
+            type="button"
+            (click)="verFoto(s)"
+            class="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-guerrero-red"
+            [attr.aria-label]="'Ver la foto de ' + nombre(s)"
+          >
+            <app-foto-suplemento
+              [suplemento]="s.id"
+              [version]="fotoVersion()"
+              class="w-14 h-14 rounded-lg"
+            />
+          </button>
+        }
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-gray-900 dark:text-white truncate">
+            {{ s.tipo_nombre }}
+            @if (s.nombre) {
+              <span class="font-normal text-gray-500 dark:text-gray-400">· {{ s.nombre }}</span>
+            }
+          </p>
+          <p class="text-sm text-gray-600 dark:text-gray-300 tabular-nums">
+            @if (a.diasRestantes === null) {
+              Día {{ a.dia }} · todo el proceso
+            } @else if (a.diasRestantes >= 0) {
+              Día {{ a.dia }}{{ a.total ? ' de ' + a.total : '' }} · hasta el
+              {{ formatearFecha(s.fin_estimado!, 'grafica') }}
+            } @else {
+              Terminó lo planeado el {{ formatearFecha(s.fin_estimado!, 'grafica') }}
+            }
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="abrir('editar', s)"
+          class="shrink-0 w-9 h-9 -mr-2 -mt-1 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-dark-700 dark:hover:text-gray-200"
+          [attr.aria-label]="'Editar ' + nombre(s)"
+        >
+          <i class="pi pi-pencil text-sm" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      @if (ubicacion(s); as u) {
+        <p class="text-sm text-gray-600 dark:text-gray-300 -mt-1">{{ u }}</p>
+      }
+
+      @if (s.info_url || s.info_archivo_tipo) {
+        <p class="flex flex-wrap gap-x-4 gap-y-1 text-sm -mt-1">
+          @if (s.info_url) {
+            <a
+              [href]="s.info_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-medium text-guerrero-red underline"
+              >Información nutricional</a
+            >
+          }
+          @if (s.info_archivo_tipo) {
+            <button
+              type="button"
+              (click)="verInfo(s)"
+              class="font-medium text-guerrero-red underline"
+            >
+              Ver {{ s.info_archivo_tipo === 'pdf' ? 'el PDF' : 'la foto' }} de la etiqueta
+            </button>
+          }
+        </p>
+      }
+      @if (s.tabla_nutricional; as t) {
+        <p class="text-sm text-gray-600 dark:text-gray-300 -mt-1 tabular-nums">
+          Por porción: {{ t.kcal }} kcal · {{ t.proteina_g }} g de proteína
+        </p>
+      } @else if (s.info_archivo_tipo) {
+        <button
+          type="button"
+          (click)="agregarInfo(s)"
+          class="self-start inline-flex items-center gap-1.5 text-sm font-medium text-guerrero-red hover:underline -mt-1"
+        >
+          <i class="pi pi-search text-xs" aria-hidden="true"></i>
+          Leer la tabla nutricional de la etiqueta
+        </button>
+      }
+
+      @if (faltaAdjunto(s); as texto) {
+        <button
+          type="button"
+          (click)="agregarInfo(s)"
+          class="self-start inline-flex items-center gap-1.5 text-sm font-medium text-guerrero-red hover:underline -mt-1"
+        >
+          <i class="pi pi-plus text-xs" aria-hidden="true"></i>
+          {{ texto }}
+        </button>
+      }
+
+      @if (a.porcentaje !== null) {
+        <div
+          class="h-1.5 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
+          role="progressbar"
+          [attr.aria-valuenow]="a.porcentaje"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-label]="'Avance de ' + nombre(s)"
+        >
+          <div class="h-full rounded-full bg-guerrero-red" [style.width.%]="a.porcentaje"></div>
+        </div>
+      }
+
+      @if (!s.duracion_confirmada) {
+        <div
+          class="rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2"
+        >
+          <p class="flex-1 min-w-48 text-sm text-amber-900 dark:text-amber-200">
+            Asumimos que va {{ duracionEnPalabras(s.duracion_dias) }}. ¿Así te lo indicó tu
+            nutricionista?
+          </p>
+          <button
+            type="button"
+            (click)="abrir('confirmar', s)"
+            class="text-sm font-semibold text-amber-900 dark:text-amber-200 underline underline-offset-2"
+          >
+            Confirmar
+          </button>
+        </div>
+      }
+
+      @if (a.diasRestantes !== null && a.diasRestantes <= 7) {
+        <div
+          class="rounded-lg bg-gray-50 dark:bg-dark-700/60 px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2"
+        >
+          <p class="flex-1 min-w-48 text-sm text-gray-700 dark:text-gray-200">
+            {{
+              a.diasRestantes < 0
+                ? 'Ya pasó lo planeado.'
+                : a.diasRestantes === 0
+                  ? 'Hoy termina lo planeado.'
+                  : 'Termina en ' + a.diasRestantes + (a.diasRestantes === 1 ? ' día.' : ' días.')
+            }}
+            Define si sigues, cambias o lo dejas.
+          </p>
+          <p-button label="¿Qué sigue?" size="small" (onClick)="abrir('revisar', s)" />
+        </div>
+      }
+
+      @if (s.se_acaba && a.diasEnvase !== null) {
+        <div
+          class="flex items-center gap-3 border-t border-gray-100 dark:border-dark-700 pt-3 -mb-1"
+        >
+          <i class="pi pi-box text-gray-400" aria-hidden="true"></i>
+          <p class="flex-1 min-w-0 text-sm text-gray-600 dark:text-gray-300">
+            @if (a.diasEnvase < 0) {
+              <span class="text-amber-700 dark:text-amber-400"
+                >El envase se acabó el {{ formatearFecha(s.se_acaba, 'grafica') }}</span
+              >
+            } @else {
+              Envase hasta el {{ formatearFecha(s.se_acaba, 'grafica') }}
+              <span class="text-gray-400 dark:text-gray-500">
+                ·
+                {{
+                  a.diasEnvase === 0 ? 'hoy' : a.diasEnvase === 1 ? '1 día' : a.diasEnvase + ' días'
+                }}
+              </span>
+            }
+          </p>
+          <button
+            type="button"
+            (click)="abrir('reponer', s)"
+            class="shrink-0 text-xs font-semibold text-guerrero-red px-2 py-1 -mr-2 rounded hover:bg-red-50 dark:hover:bg-guerrero-red/10"
+          >
+            Abrí uno nuevo
+          </button>
+        </div>
+      }
+    </article>
+  } @empty {
+    <button
+      type="button"
+      (click)="abrir('nuevo')"
+      class="w-full flex items-center gap-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-dark-700 px-4 py-3 text-left hover:border-gray-300 dark:hover:border-gray-600 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+    >
+      <i class="pi pi-plus-circle text-gray-400" aria-hidden="true"></i>
+      <span class="flex-1">
+        <span class="block text-sm font-medium text-gray-900 dark:text-white"
+          >Agrega tu hipercalórico o proteína</span
+        >
+        <span class="block text-xs text-gray-500 dark:text-gray-400"
+          >Te avisamos cuándo se acaba el envase y cuándo revisar qué sigue.</span
+        >
+      </span>
+    </button>
+  }
+
+  @if (servicio.terminados().length) {
+    <details class="group">
+      <summary
+        class="flex items-center gap-2 cursor-pointer list-none text-xs font-medium text-gray-500 dark:text-gray-400 py-1"
+      >
+        Anteriores ({{ servicio.terminados().length }})
+        <i
+          class="pi pi-chevron-down text-[10px] transition-transform group-open:rotate-180"
+          aria-hidden="true"
+        ></i>
+      </summary>
+      <ul class="mt-1 divide-y divide-gray-100 dark:divide-dark-700">
+        @for (s of servicio.terminados(); track s.id) {
+          <li class="flex justify-between gap-3 py-2 text-sm">
+            <span class="text-gray-600 dark:text-gray-300 truncate"
+              >{{ s.tipo_nombre }}{{ s.nombre ? ' · ' + s.nombre : '' }}</span
+            >
+            <span class="shrink-0 text-gray-400 dark:text-gray-500 tabular-nums">
+              {{ formatearFecha(s.fecha_inicio, 'grafica') }} –
+              {{ formatearFecha(s.fecha_fin!, 'grafica') }}
+            </span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</section>
+
+<p-dialog
+  [header]="titulo()"
+  [visible]="modo() !== null"
+  (visibleChange)="!$event && cerrar()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '92vw', maxWidth: '480px' }"
+>
+  @let s = actual();
+  @switch (modo()) {
+    @case ('confirmar') {
+      @if (s) {
+        <div class="space-y-4 pt-1">
+          <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+            Asumimos que {{ nombre(s) }} va
+            <strong>{{ duracionEnPalabras(s.duracion_dias) }}</strong
+            >{{ s.duracion_dias ? ', lo usual' : '' }}. ¿Así te lo indicó tu nutricionista?
+          </p>
+          <p-button
+            [label]="'Sí, ' + duracionEnPalabras(s.duracion_dias)"
+            icon="pi pi-check"
+            [loading]="guardando()"
+            (onClick)="confirmar(s.duracion_dias)"
+            styleClass="w-full"
+          />
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">No, me indicó:</p>
+            <div class="flex flex-wrap gap-2">
+              @for (d of duraciones; track d.label) {
+                @if (d.value !== s.duracion_dias) {
+                  <p-button
+                    [label]="d.label"
+                    variant="outlined"
+                    severity="secondary"
+                    size="small"
+                    [disabled]="guardando()"
+                    (onClick)="confirmar(d.value)"
+                  />
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    @case ('reponer') {
+      @if (s) {
+        <div class="space-y-4 pt-1">
+          <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+            ¿Abriste hoy un envase nuevo de {{ nombre(s) }}? Desde hoy calculamos cuándo se acaba,
+            {{ s.dias_envase === 1 ? '1 día' : s.dias_envase + ' días' }} según tu porción.
+          </p>
+          <div class="flex gap-3">
+            <p-button
+              label="Aún no"
+              variant="outlined"
+              severity="secondary"
+              (onClick)="cerrar()"
+              class="flex-1"
+              styleClass="w-full"
+            />
+            <p-button
+              label="Sí, lo abrí hoy"
+              icon="pi pi-check"
+              [loading]="guardando()"
+              (onClick)="abrirEnvase(s)"
+              class="flex-1"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    @case ('revisar') {
+      @if (s) {
+        <div class="space-y-5 pt-1">
+          <p
+            class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed first-letter:uppercase"
+          >
+            @if (s.duracion_dias) {
+              Los {{ duracionEnPalabras(s.duracion_dias) }} de {{ nombre(s) }}
+              {{ (avance(s).diasRestantes ?? 0) < 0 ? 'terminaron' : 'terminan' }} el
+              {{ formatearFecha(s.fin_estimado!, 'larga') }}.
+            }
+            Haz lo que te indicó tu nutricionista en el control.
+          </p>
+
+          <div class="space-y-2">
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">Sigo con el mismo</p>
+            <div role="radiogroup" aria-label="Cuánto tiempo más" class="flex flex-wrap gap-2">
+              @for (e of extensiones; track e.value) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="extension() === e.value"
+                  (click)="extension.set(e.value)"
+                  [class]="clasesChip(extension() === e.value)"
+                >
+                  {{ e.label }}
+                </button>
+              }
+            </div>
+            <p-button
+              label="Seguir"
+              [loading]="guardando()"
+              (onClick)="continuar()"
+              styleClass="w-full"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 border-t border-gray-100 dark:border-dark-700 pt-4">
+            <p-button
+              label="Cambio de producto"
+              variant="outlined"
+              severity="secondary"
+              [disabled]="guardando()"
+              (onClick)="abrir('reemplazar', s)"
+              styleClass="w-full"
+            />
+            <p-button
+              label="Lo dejo"
+              variant="outlined"
+              severity="secondary"
+              [disabled]="guardando()"
+              (onClick)="terminar()"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+      }
+    }
+
+    @default {
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4 pt-1">
+        @if (modo() === 'nuevo') {
+          <div class="flex flex-col gap-2">
+            <span id="sp-tipo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Qué es</span
+            >
+            <p-selectbutton
+              ariaLabelledBy="sp-tipo"
+              formControlName="tipo"
+              [options]="tipos"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              (onChange)="cambiarTipo($event.value)"
+              styleClass="w-full flex-wrap"
+            />
+          </div>
+        } @else if (modo() === 'reemplazar' && s) {
+          <p
+            class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed first-letter:uppercase"
+          >
+            {{ nombre(s) }} termina hoy y empieza el nuevo. Queda en tu historial.
+          </p>
+        }
+
+        <div class="flex flex-col gap-1">
+          <label for="sp-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+            Tipo o marca <span class="text-xs font-normal text-gray-400">opcional</span>
+          </label>
+          <input
+            pInputText
+            id="sp-nombre"
+            formControlName="nombre"
+            maxlength="120"
+            placeholder="Ej. whey, hipercalórica, Whey Gold"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span id="sp-duracion" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Cuánto tiempo</span
+          >
+          <div role="radiogroup" aria-labelledby="sp-duracion" class="flex flex-wrap gap-2">
+            @for (d of duraciones; track d.label) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="form.controls.duracion_dias.value === d.value"
+                (click)="form.controls.duracion_dias.setValue(d.value)"
+                [class]="clasesChip(form.controls.duracion_dias.value === d.value)"
+              >
+                {{ d.label }}
+              </button>
+            }
+          </div>
+          @if (form.controls.duracion_dias.value === null && finPlan(); as fin) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Hasta el {{ formatearFecha(fin, 'larga') }}, el fin de tu proceso.
+            </p>
+          }
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <span id="sp-confirmada" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >¿Te lo indicó tu nutricionista?</span
+          >
+          <p-selectbutton
+            ariaLabelledBy="sp-confirmada"
+            formControlName="duracion_confirmada"
+            [options]="confirmaciones"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            styleClass="w-full"
+          />
+          @if (!form.controls.duracion_confirmada.value) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Lo dejamos en tu agenda para que lo confirmes.
+            </p>
+          }
+        </div>
+
+        <app-etiqueta-suplemento prefijo="sp" [(etiqueta)]="etiqueta" />
+
+        @if (modo() === 'editar' && actual(); as sup) {
+          <fieldset id="sp-foto" class="space-y-3">
+            <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Foto de la proteína
+              <span class="text-xs font-normal text-gray-400">opcional</span>
+            </legend>
+            <div class="flex flex-wrap items-center gap-3">
+              @if (sup.tiene_foto) {
+                <app-foto-suplemento
+                  [suplemento]="sup.id"
+                  [version]="fotoVersion()"
+                  class="w-16 h-16 shrink-0 rounded-lg"
+                />
+              }
+              <label
+                for="sp-foto-archivo"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+              >
+                <i class="pi pi-camera" aria-hidden="true"></i>
+                {{ subiendoFoto() ? 'Subiendo…' : sup.tiene_foto ? 'Cambiar foto' : 'Subir foto' }}
+              </label>
+              <input
+                id="sp-foto-archivo"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                [disabled]="subiendoFoto()"
+                (change)="elegirFoto($event)"
+              />
+              @if (sup.tiene_foto) {
+                <button
+                  type="button"
+                  (click)="quitarFoto()"
+                  [disabled]="subiendoFoto()"
+                  class="text-sm text-gray-500 dark:text-gray-400 underline"
+                >
+                  Quitar
+                </button>
+              }
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Solo tú la ves. Hasta 10 MB.</p>
+          </fieldset>
+        }
+
+        <fieldset id="sp-info" class="space-y-3">
+          <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Información nutricional
+            <span class="text-xs font-normal text-gray-400">opcional</span>
+          </legend>
+          <div class="flex flex-col gap-1">
+            <label for="sp-info-url" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              >Enlace</label
+            >
+            <input
+              pInputText
+              id="sp-info-url"
+              type="url"
+              inputmode="url"
+              formControlName="info_url"
+              maxlength="500"
+              placeholder="https://…"
+              [attr.aria-invalid]="form.controls.info_url.invalid"
+              class="w-full"
+            />
+            @if (form.controls.info_url.invalid) {
+              <small class="text-xs text-red-600 dark:text-red-400"
+                >Debe empezar por http:// o https://.</small
+              >
+            }
+          </div>
+          @if (modo() === 'editar' && actual(); as sup) {
+            <div class="space-y-1.5">
+              <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Foto o PDF de la etiqueta
+              </p>
+              <div class="flex flex-wrap items-center gap-2">
+                <label
+                  for="sp-info-archivo"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+                >
+                  <i class="pi pi-upload" aria-hidden="true"></i>
+                  {{
+                    subiendoInfo()
+                      ? 'Subiendo…'
+                      : sup.info_archivo_tipo
+                        ? 'Cambiar archivo'
+                        : 'Subir archivo'
+                  }}
+                </label>
+                <input
+                  id="sp-info-archivo"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  class="sr-only"
+                  [disabled]="subiendoInfo()"
+                  (change)="elegirInfo($event)"
+                />
+                @if (sup.info_archivo_tipo) {
+                  <button
+                    type="button"
+                    (click)="verInfo(sup)"
+                    class="text-sm font-medium text-guerrero-red underline"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    type="button"
+                    (click)="quitarInfo()"
+                    [disabled]="subiendoInfo()"
+                    class="text-sm text-gray-500 dark:text-gray-400 underline"
+                  >
+                    Quitar
+                  </button>
+                }
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Solo tú lo ves. Hasta 10 MB.
+              </p>
+            </div>
+          }
+        </fieldset>
+
+        @if (modo() === 'editar' && actual(); as sup) {
+          <fieldset id="sp-tabla" class="space-y-3">
+            <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tabla nutricional por porción
+              <span class="text-xs font-normal text-gray-400">opcional</span>
+            </legend>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Con ella la estimación de tu cambio cuenta lo que de verdad aporta tu proteína. La
+              puedes escribir o leer de la foto o el PDF de la etiqueta.
+            </p>
+            @if (sup.info_archivo_tipo) {
+              <p-button
+                label="Leer de la etiqueta"
+                icon="pi pi-search"
+                size="small"
+                variant="outlined"
+                [loading]="leyendoTabla()"
+                (onClick)="leerTabla()"
+              />
+            } @else {
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Sube la foto o el PDF de la etiqueta, arriba, para poder leerla.
+              </p>
+            }
+            <div class="grid grid-cols-2 gap-3">
+              @for (c of camposTabla; track c.id) {
+                <div class="flex flex-col gap-1">
+                  <label [for]="'sp-t-' + c.id" class="text-xs font-medium text-gray-600 dark:text-gray-400">{{
+                    c.label
+                  }}</label>
+                  <input
+                    pInputText
+                    [id]="'sp-t-' + c.id"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [value]="tabla()[c.id]"
+                    (input)="escribirTabla(c.id, $any($event.target).value)"
+                    class="w-full"
+                  />
+                </div>
+              }
+            </div>
+            @if (errorTabla(); as e) {
+              <small class="text-xs text-red-600 dark:text-red-400">{{ e }}</small>
+            }
+            @if (notaTabla(); as nota) {
+              <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed" aria-live="polite">{{ nota }}</p>
+            }
+          </fieldset>
+        }
+
+        @if (minuta(); as m) {
+          <app-tomas-suplemento
+            [porciones]="m.porciones"
+            [scoopsPorcion]="etiqueta().scoops"
+            [liquidoMl]="etiqueta().liquido ? etiqueta().liquidoMl : null"
+            [lecheMl]="etiqueta().liquido === 'leche' ? etiqueta().liquidoMl : etiqueta().lecheMl"
+            [(tomas)]="tomas"
+          />
+        }
+
+        @if (error()) {
+          <p-message severity="error" [text]="error()" styleClass="w-full" />
+        }
+
+        <div class="flex items-center gap-3">
+          @if (modo() === 'editar') {
+            @if (confirmarEliminar()) {
+              <p-button label="Eliminar" severity="danger" (onClick)="eliminar()" />
+            } @else {
+              <p-button
+                icon="pi pi-trash"
+                variant="text"
+                severity="secondary"
+                ariaLabel="Eliminar suplemento"
+                (onClick)="confirmarEliminar.set(true)"
+              />
+            }
+          }
+          <div class="flex-1"></div>
+          <p-button label="Cancelar" variant="outlined" severity="secondary" (onClick)="cerrar()" />
+          <p-button
+            type="submit"
+            label="Guardar"
+            icon="pi pi-check"
+            [loading]="guardando()"
+            [disabled]="form.invalid || !etiquetaValida()"
+          />
+        </div>
+      </form>
+    }
+  }
+
+  @if (error() && esResolucion()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full mt-4" />
+  }
+</p-dialog>

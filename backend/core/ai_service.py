@@ -1,8 +1,12 @@
 import json
 from datetime import date
 
+import anthropic
 import requests
 from django.conf import settings
+
+# Modelos de Claude que aceptan el respaldo automático cuando el modelo declina responder.
+CLAUDE_CON_RESPALDO = ('claude-fable-5-1', 'claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5-5')
 
 
 class AIService:
@@ -12,16 +16,56 @@ class AIService:
         self.model = settings.AI_MODEL
         self.api_key = settings.AI_API_KEY
 
-    def _chat(self, prompt, max_tokens=4096):
+    @staticmethod
+    def _bloque_claude(adjunto):
+        """Una imagen o un PDF como bloque de contenido de Claude. `adjunto` = (bytes, mime)."""
+        import base64
+        datos, mime = adjunto
+        tipo = 'document' if mime == 'application/pdf' else 'image'
+        return {'type': tipo, 'source': {'type': 'base64', 'media_type': mime,
+                                         'data': base64.b64encode(datos).decode()}}
+
+    def _chat_claude(self, prompt, max_tokens, adjunto=None):
+        """Claude con el SDK oficial de Anthropic (AI_PROVIDER=anthropic)."""
+        cliente = anthropic.Anthropic(api_key=self.api_key, timeout=600)
+        opciones = {}
+        if self.model in CLAUDE_CON_RESPALDO:
+            opciones = {'betas': ['server-side-fallback-2026-07-01'], 'fallbacks': 'default'}
+        respuesta = cliente.beta.messages.create(
+            model=self.model,
+            # El razonamiento del modelo también cuenta en max_tokens: se deja holgura.
+            max_tokens=max(max_tokens, 16000),
+            messages=[{'role': 'user', 'content': [self._bloque_claude(adjunto), {'type': 'text', 'text': prompt}]
+                       if adjunto else prompt}],
+            **opciones,
+        )
+        if respuesta.stop_reason == 'refusal':
+            raise Exception('Claude no quiso responder esta solicitud.')
+        if respuesta.stop_reason == 'max_tokens':
+            raise Exception('La respuesta de Claude quedó cortada.')
+        return ''.join(b.text for b in respuesta.content if b.type == 'text')
+
+    def _chat(self, prompt, max_tokens=4096, adjunto=None):
+        if self.provider == 'anthropic':
+            return self._chat_claude(prompt, max_tokens, adjunto)
+        if adjunto and (self.provider == 'ollama' or adjunto[1] == 'application/pdf'):
+            raise Exception('Este proveedor de IA no puede leer ese tipo de archivo.')
         if self.provider == 'ollama':
             url = f'{self.base_url}/api/generate'
             payload = {'model': self.model, 'prompt': prompt, 'stream': False}
             headers = {}
         else:
             url = f'{self.base_url}/v1/chat/completions'
+            contenido = prompt
+            if adjunto:
+                import base64
+                datos, mime = adjunto
+                contenido = [{'type': 'text', 'text': prompt},
+                             {'type': 'image_url',
+                              'image_url': {'url': f'data:{mime};base64,{base64.b64encode(datos).decode()}'}}]
             payload = {
                 'model': self.model,
-                'messages': [{'role': 'user', 'content': prompt}],
+                'messages': [{'role': 'user', 'content': contenido}],
                 'max_tokens': max_tokens,
             }
             if 'deepseek.com' in self.base_url:
@@ -41,11 +85,11 @@ class AIService:
             return data.get('response', '')
         return data['choices'][0]['message']['content']
 
-    def _chat_json(self, prompt, max_tokens=8192, retries=3):
+    def _chat_json(self, prompt, max_tokens=8192, retries=3, adjunto=None):
         import re, time
         for attempt in range(retries + 1):
             try:
-                return self._parse_json(self._chat(prompt, max_tokens))
+                return self._parse_json(self._chat(prompt, max_tokens, adjunto))
             except json.JSONDecodeError:
                 if attempt == retries:
                     raise
@@ -92,160 +136,72 @@ class AIService:
             'estatura': f'{usuario.estatura} cm' if usuario.estatura else 'No especificada',
         }
 
-    def generar_plan_nutricional(self, usuario, objetivo):
+    def _proceso(self, usuario, proceso):
+        """Datos del proceso que comparten los prompts de nutrición y rutina."""
+        ultima = usuario.mediciones.first()
+        peso_actual = ultima.peso_kg if ultima else (
+            proceso.medicion_inicial.peso_kg if proceso.medicion_inicial else None)
+        entreno = getattr(proceso, 'entrenamiento', None) if proceso.incluye_entrenamiento else None
+        return {
+            'objetivo':      proceso.get_objetivo_display(),
+            'fase':          proceso.get_fase_display() or 'No definida',
+            'peso_actual':   f'{peso_actual} kg' if peso_actual else 'No registrado',
+            'peso_objetivo': f'{proceso.peso_objetivo} kg' if proceso.peso_objetivo else 'No definido',
+            'entrenamiento': entreno,
+        }
+
+    def leer_tabla_nutricional(self, adjunto):
+        """Lee la tabla nutricional de la etiqueta de un suplemento (foto o PDF). No estima nada:
+        solo copia lo impreso. `adjunto` = (bytes, mime)."""
+        prompt = """
+Lee la TABLA NUTRICIONAL de la etiqueta de este suplemento (el adjunto es una foto o un PDF). Copia solo lo que está impreso; no estimes, no calcules y no completes lo que no se ve.
+
+## QUÉ DEVOLVER
+Los valores POR PORCIÓN (la columna "por porción" o "por serving"), no por 100 g. Si la tabla solo trae la columna por 100 g, devuelve legible=false.
+
+## FORMATO DE SALIDA
+Responde ÚNICAMENTE con este JSON, sin markdown ni texto extra. Usa números (punto decimal) y null en lo que no aparezca:
+{"legible": true, "porcion_g": 30, "liquido_ml": 240, "kcal": 120, "proteina_g": 24, "carbohidratos_g": 3, "grasa_g": 1.5, "nota": "texto corto si algo es dudoso, o vacío"}
+
+"liquido_ml" es con cuántos ml de agua o líquido se prepara una porción, SOLO si la etiqueta lo dice (por ejemplo "mezclar con 240 ml"); si no lo dice, null.
+"""
+        return self._chat_json(prompt, max_tokens=1024, retries=1, adjunto=adjunto)
+
+    def calcular_minuta(self, usuario, proceso, kcal, proteina, kcal_porcion):
         p = self._perfil(usuario)
-        pref = usuario.preferencias_alimentarias or 'Ninguna'
-        nacionalidad = usuario.nacionalidad or 'No especificada'
-        region = usuario.region or 'No especificada'
-        es_dia_entreno = f"Los días de entrenamiento son {objetivo.dias_entrenamiento} por semana (distribuidos entre lunes y viernes preferiblemente)."
+        c = self._proceso(usuario, proceso)
         prompt = f"""
-Eres un nutricionista deportivo con 15 años de experiencia trabajando con boxeadores y atletas de combate en Latinoamérica. Tu especialidad es diseñar planes alimentarios basados en la gastronomía local de cada región, usando ingredientes reales que se consiguen en plazas de mercado y tiendas de barrio, no en supermercados de cadena ni restaurantes.
+Eres un nutricionista deportivo colombiano. Arma la MINUTA PATRÓN de un atleta: cuántas porciones de cada grupo de intercambio come en cada comida del día. No escribas platos: solo porciones. Luego el atleta elige los alimentos con su lista de intercambios.
 
-## PERFIL DEL ATLETA
-- Sexo: {p['sexo']}
-- Edad: {p['edad']}
-- Estatura: {p['estatura']}
-- Peso actual: {objetivo.peso_inicial} kg
-- Peso objetivo: {objetivo.peso_objetivo if objetivo.peso_objetivo else 'No definido'} kg
-- Objetivo principal: {objetivo.get_objetivo_display()}
-- Nacionalidad: {nacionalidad}
-- Región o zona cultural: {region}
-- Restricciones o preferencias alimentarias: {pref}
-- Frecuencia de entrenamiento: {objetivo.dias_entrenamiento} días por semana
+## ATLETA
+- Sexo: {p['sexo']} · Edad: {p['edad']} · Estatura: {p['estatura']}
+- Peso actual: {c['peso_actual']} · Peso objetivo: {c['peso_objetivo']}
+- Objetivo: {c['objetivo']} · Fase: {c['fase']}
+- Restricciones o preferencias: {usuario.preferencias_alimentarias or 'Ninguna'}
 
-## REGLAS OBLIGATORIAS
+## METAS DEL DÍA (ya calculadas, no las cambies)
+- Calorías: {kcal} kcal (la suma de tus porciones debe quedar a menos de 5 % de esto).
+- Proteína: {proteina} g por kilo de peso.
 
-### Cultura culinaria (MÁS IMPORTANTE)
-1. Usa EXCLUSIVAMENTE platos, ingredientes y preparaciones típicas de la región "{region}" dentro de {nacionalidad}.
-2. Si la región es reconocible, usa tanto sus platos de bandera como su comida casera de diario (sopas, comida de mamá) — no te quedes solo en los platos "famosos":
-   - Paisa: bandeja paisa, fríjoles con garra, arepa de chócolo, mazamorra, chicharrón, aguapanela, sancocho paisa, mondongo, sopa de arroz con costilla.
-   - Costeño: arroz con coco, patacones, sancocho de pescado o de guandú, bollo de yuca, fritos de maíz, mote de queso, arroz de lisa.
-   - Valluno / Caleño: sancocho de gallina, cholado, lulada, empanadas de pipián, pandebono, sopa de arroz con pollo, aborrajados.
-   - Bogotano / Cundiboyacense: ajiaco, changua, chocolate con pan y queso, papa criolla, calentado, cocido boyacense, sopa de arroz.
-   - Santandereano: pepitoria, cabro o carne oreada, mute santandereano, arepa de maíz pelado, sopa de fríjol con garra.
-   - Llanero: mamona o carne a la llanera, hayaca llanera, casabe, plátano asado, sopa de cuchuco con espinazo, arroz llanero.
-3. Si la región indicada NO está en esta lista o no la reconoces con certeza, NO inventes nombres de platos que no existen. Usa preparaciones caseras genéricas y reales de la cocina popular colombiana: sancocho, arroz con pollo, lentejas o fríjoles guisados, sopa de verduras con papa, huevos pericos, arepa con queso.
-4. Ingredientes que se encuentran en tiendas de barrio o plazas de mercado locales. NADA de ingredientes importados, nombres en inglés ni comida de restaurante gourmet.
-5. PROHIBIDO usar estas verduras que NO son típicas de la cocina popular colombiana: acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha. En su lugar usa: tomate, cebolla, zanahoria, habichuela, pepino, ahuyama, espinaca criolla, aguacate, cilantro, pimentón.
+## CALORÍAS DE UNA PORCIÓN POR GRUPO
+{kcal_porcion}
 
-### Calorías y macros según objetivo
-- Bajar peso: déficit de 300-400 kcal respecto al mantenimiento estimado.
-- Ganar músculo: superávit de 200-300 kcal, alto en proteína (1.8-2.2 g/kg).
-- Mantener peso: calorías de mantenimiento, balance de macros.
-- Mejorar resistencia: alto en carbohidratos complejos, proteína moderada.
-
-### Estructura diaria
-4. Cada día debe incluir: desayuno, almuerzo, cena y snacks.
-5. {es_dia_entreno} En días de entrenamiento: el almuerzo o desayuno previo al entreno debe ser más alto en carbohidratos complejos (arroz, papa, plátano, yuca). La cena post-entreno debe incluir proteína y vegetales.
-6. Snacks: 1 o 2 opciones proteicas simples y locales (yogur, huevo cocido, maní, arepa con queso, fruta con leche).
-7. Varía los platos cada día. No repitas el mismo menú en días consecutivos.
-
-### Formato de porciones
-8. Especifica cantidades concretas: "1 taza de arroz blanco", "2 muslos de pollo asado", "1 arepa mediana con 2 cucharadas de hogao". Nunca escribas solo el nombre del plato sin porciones.
-9. Medidas permitidas ÚNICAMENTE: taza, cucharada, cucharadita, unidad, gramos, porciones. PROHIBIDO usar: "chorrito", "poquito", "al gusto", "un poco", "a discreción", "cantidad suficiente".
-10. Máximo 25 palabras por campo (desayuno, almuerzo, cena, snacks). Directo y práctico.
-11. No uses palabras en inglés. No uses nombres de suplementos.
-
-### Restricciones alimentarias
-11. Respeta ESTRICTAMENTE las restricciones indicadas: "{pref}". Si dice vegetariano, elimina toda carne. Si dice sin gluten, elimina pan de trigo, etc.
-
-## VERIFICACIÓN ANTES DE RESPONDER
-Antes de generar el JSON, verifica mentalmente:
-- ¿Todos los platos son típicos de {region}?
-- ¿Todas las porciones están especificadas con cantidades (taza, cucharada, unidad, gramos)?
-- ¿Usé alguna palabra prohibida como "chorrito", "poquito", "al gusto"? Si sí, reemplázala.
-- ¿Usé alguna verdura prohibida como acelgas, kale, espárragos? Si sí, cámbiala por tomate, zanahoria o habichuela.
-- Si la región no está en la lista curada, ¿usé solo comida genérica colombiana real, sin inventar nombres de platos?
-- ¿Los 7 días tienen variedad (no se repite el mismo plato dos días seguidos)?
-- ¿Las calorías están ajustadas al objetivo "{objetivo.get_objetivo_display()}"?
+## REGLAS
+1. Comidas posibles: desayuno, onces (media mañana), almuerzo, algo (media tarde), cena, merienda. Usa 5 o 6 comidas; no dejes más de 4 horas sin comer.
+2. Porciones en múltiplos de 0.5.
+3. Proteína (carnes, sustitutos, lácteos, leguminosas) repartida en el día, no toda en una comida.
+4. Cereales, raíces, tubérculos y plátanos como base de energía, más en desayuno y almuerzo. En volumen, más cereales y grasas buenas.
+5. Verduras en almuerzo y cena; frutas en las comidas intermedias.
+6. "semillas" y "agua" van en "dia" (se comen o toman en cualquier momento). Agua: entre 8 y 10 vasos.
+7. Respeta las restricciones del atleta (si no come carne, usa leguminosas y sustitutos).
 
 ## FORMATO DE SALIDA
-Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
-{{
-  "nombre": "Plan [objetivo] para atleta de boxeo - [region]",
-  "dias": [
-    {{
-      "dia_semana": 1,
-      "desayuno": "Descripción con porciones exactas",
-      "almuerzo": "Descripción con porciones exactas",
-      "cena": "Descripción con porciones exactas",
-      "snacks": "1-2 opciones con porciones",
-      "calorias_aprox": 2100
-    }}
-  ]
-}}
-Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
+Responde ÚNICAMENTE con este JSON, sin markdown ni texto extra. Grupos válidos: sustitutos, lacteos, carnes, leguminosas, cereales, verduras, frutas, grasas, semillas, agua.
+{{"porciones": {{"cereales": {{"desayuno": 2, "almuerzo": 4, "cena": 2}}, "agua": {{"dia": 8}}}}, "recomendaciones": "2 o 3 recomendaciones cortas para este atleta."}}
 """
-        return self._chat_json(prompt)
+        return self._chat_json(prompt, max_tokens=1500)
 
-    def ajustar_plan_nutricional(self, usuario, objetivo, plan, dia_obj, campo_rechazado):
-        pref = usuario.preferencias_alimentarias or 'Ninguna'
-        region = usuario.region or 'No especificada'
-        texto_rechazado = getattr(dia_obj, campo_rechazado)
-
-        dias_texto = []
-        for dia in plan.dias.all():
-            dias_texto.append(
-                f"Día {dia.dia_semana} ({dia.get_dia_semana_display()}):\n"
-                f"  desayuno: {dia.desayuno}\n"
-                f"  almuerzo: {dia.almuerzo}\n"
-                f"  cena: {dia.cena}\n"
-                f"  snacks: {dia.snacks}\n"
-                f"  calorias_aprox: {dia.calorias_aprox}"
-            )
-        plan_actual = '\n\n'.join(dias_texto)
-
-        prompt = f"""
-Eres el mismo nutricionista deportivo experto en cocina colombiana regional que armó este plan. Tu tarea AHORA es AJUSTAR el plan existente porque el atleta rechazó un plato puntual — NO generes un plan nuevo desde cero.
-
-## PERFIL DEL ATLETA
-- Región o zona cultural: {region}
-- Restricciones o preferencias alimentarias: {pref}
-
-## PLAN ACTUAL (7 días)
-{plan_actual}
-
-## PLATO RECHAZADO
-- Día: {dia_obj.get_dia_semana_display()}
-- Campo: {campo_rechazado}
-- Texto exacto: "{texto_rechazado}"
-El atleta NO quiere volver a comer esto.
-
-## REGLAS OBLIGATORIAS
-1. Mantén EXACTAMENTE IGUAL, palabra por palabra, cualquier día/campo del plan actual que NO contenga el plato o ingrediente principal rechazado.
-2. Reemplaza el campo rechazado ({campo_rechazado} de {dia_obj.get_dia_semana_display()}) por una opción distinta, típica de la región "{region}", que no se parezca al plato rechazado.
-3. Si el mismo plato o ingrediente principal rechazado aparece en OTRO día o campo, reemplázalo también — no dejes ninguna repetición del plato rechazado en ningún día.
-4. El reemplazo debe seguir las mismas reglas del plan original: porciones exactas (taza, cucharada, unidad, gramos — nada de "al gusto" ni "poquito"), ingredientes de tienda de barrio o plaza de mercado, nada de verduras no típicas (acelgas, kale, espárragos, alcachofas, rúcula, berros, puerro, coliflor, coles de bruselas, remolacha), calorías ajustadas al objetivo "{objetivo.get_objetivo_display()}".
-5. Si la región no está entre las conocidas (paisa, costeño, valluno, bogotano, santandereano, llanero), no inventes platos — usa comida genérica colombiana real (sancocho, arroz con pollo, lentejas).
-
-## VERIFICACIÓN ANTES DE RESPONDER
-- ¿Los días/campos que no tenían el plato rechazado quedaron EXACTAMENTE iguales al texto original?
-- ¿El campo rechazado y cualquier repetición del mismo plato en otros días fueron reemplazados?
-- ¿El reemplazo tiene porciones exactas y es típico de la región?
-
-## FORMATO DE SALIDA
-Responde ÚNICAMENTE con el JSON completo de los 7 días, mismo formato del plan original, sin markdown, sin texto antes ni después:
-{{
-  "dias": [
-    {{
-      "dia_semana": 1,
-      "desayuno": "Descripción con porciones exactas",
-      "almuerzo": "Descripción con porciones exactas",
-      "cena": "Descripción con porciones exactas",
-      "snacks": "1-2 opciones con porciones",
-      "calorias_aprox": 2100
-    }}
-  ]
-}}
-Incluye exactamente 7 días (dia_semana: 1=lunes hasta 7=domingo).
-"""
-        return self._chat_json(prompt)
-
-    def generar_lista_mercado(self, plan, num_personas=1, excluir=None):
-        comidas = []
-        for dia in plan.dias.all():
-            comidas.append(f'{dia.get_dia_semana_display()}: {dia.desayuno} | {dia.almuerzo} | {dia.cena} | {dia.snacks}')
-        texto_plan = '\n'.join(comidas)
+    def generar_lista_mercado(self, texto_plan, num_personas=1, excluir=None):
         personas_txt = f'{num_personas} persona' if num_personas == 1 else f'{num_personas} personas'
 
         excluir = excluir or []
@@ -350,6 +306,81 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 }}
 """
         return self._chat_json(prompt)
+
+    def _minuta_texto(self, usuario, minuta):
+        ejemplo = '\n'.join(f'- {t}: {texto}' for t, texto in minuta.menu_ejemplo.items()) or 'No trae.'
+        autor = 'dado por su nutricionista' if minuta.origen == 'nutricionista' else 'calculado para él'
+        return f"""## PLAN DEL ATLETA ({autor})
+- Calorías: {minuta.kcal or 'no indica'} kcal al día. Proteína: {minuta.proteina_g_kg or 'no indica'} g por kilo.
+- Región o zona cultural del atleta: {usuario.region or 'No especificada'} ({usuario.nacionalidad or 'Colombia'})
+- Restricciones o preferencias: {usuario.preferencias_alimentarias or 'Ninguna'}
+- Recomendaciones: {minuta.recomendaciones or 'Ninguna'}
+
+## MENÚ DE EJEMPLO DEL PLAN (guía de estilo, no se copia igual todos los días)
+{ejemplo}"""
+
+    _REGLAS_INTERCAMBIO = """## REGLAS OBLIGATORIAS (si una comida no las cumple, se descarta)
+1. Usa ÚNICAMENTE alimentos de la LISTA DE INTERCAMBIOS de abajo, identificados por su número (id). No existe ningún otro alimento: nada que no esté en la lista.
+2. Cada comida debe cubrir EXACTAMENTE las porciones pedidas por grupo: la suma de porciones de los alimentos de un grupo es igual a lo pedido. Ni más ni menos, y ningún grupo que no se pida.
+3. Cada alimento solo cuenta para el grupo bajo el que aparece en la lista.
+4. Las porciones son múltiplos de 0.5. Una porción es la medida casera indicada (ej. "Arroz blanco = 6 cucharadas" → 2 porciones son 12 cucharadas).
+5. Usa máximo 2 alimentos por grupo en una comida (3 para cereales).
+6. Los alimentos "Libres" son opcionales para dar sabor o acompañar (ensalada, bebida): van con porciones 0.
+7. Arma platos reales y caseros de la cocina colombiana, que tengan sentido juntos y para ese momento del día. El nombre del plato es corto (máximo 6 palabras), en español, sin inventar preparaciones raras.
+8. Respeta las restricciones del atleta."""
+
+    def proponer_menu(self, usuario, minuta, catalogo, pedidos, evitar):
+        bloque_evitar = ''
+        if evitar:
+            bloque_evitar = f"\n## PLATOS DE LA SEMANA PASADA (no los repitas)\n{', '.join(evitar)}\n"
+        prompt = f"""
+Eres un nutricionista deportivo colombiano. Tu tarea es armar el menú de la semana de un atleta usando SOLO su lista de intercambios y cumpliendo exacto su minuta patrón. No eres tú quien decide las cantidades: la minuta ya las fijó.
+
+{self._minuta_texto(usuario, minuta)}
+{bloque_evitar}
+{self._REGLAS_INTERCAMBIO}
+9. Varía: no repitas el mismo plato en días seguidos ni el mismo alimento principal más de 3 veces en la semana en el mismo momento del día.
+10. Usa el mismo aceite de cocina toda la semana (es lo que se compra); varía las otras grasas.
+
+## COMIDAS A ARMAR (fecha, día, momento: grupo porciones)
+{pedidos}
+
+## LISTA DE INTERCAMBIOS (id: alimento = medida casera de 1 porción)
+{catalogo}
+
+## VERIFICACIÓN ANTES DE RESPONDER
+Para cada comida: ¿todos los id están en la lista bajo el grupo correcto? ¿La suma por grupo es exactamente la pedida? ¿Armaste todas las comidas pedidas?
+
+## FORMATO DE SALIDA
+Responde ÚNICAMENTE con este JSON, sin markdown ni texto extra. "componentes" es una lista de [id, porciones]:
+{{"comidas": [{{"fecha": "2026-10-05", "tiempo": "desayuno", "nombre": "Huevos pericos con arepa", "componentes": [[12, 3], [40, 2], [210, 1], [215, 1]]}}]}}
+"""
+        # Sin reintentos: si la IA se corta o falla, el menú se arma con los intercambios y no se hace esperar.
+        return self._chat_json(prompt, max_tokens=24000, retries=0)
+
+    def proponer_comida(self, usuario, minuta, tiempo, requerido, catalogo, actual, motivo):
+        prompt = f"""
+Eres un nutricionista deportivo colombiano. El atleta no puede hacer la comida que le tocaba y necesita otra opción para su {tiempo.lower()}, sin salirse de su minuta patrón.
+
+{self._minuta_texto(usuario, minuta)}
+
+## POR QUÉ LA CAMBIA
+{motivo}
+Comida actual: {actual or 'ninguna'}.
+
+{self._REGLAS_INTERCAMBIO}
+
+## PORCIONES QUE DEBE CUBRIR ESTA COMIDA
+{requerido}
+
+## LISTA DE INTERCAMBIOS (id: alimento = medida casera de 1 porción)
+{catalogo}
+
+## FORMATO DE SALIDA
+Responde ÚNICAMENTE con este JSON, sin markdown ni texto extra. "componentes" es una lista de [id, porciones]:
+{{"nombre": "Arroz con pollo y ensalada", "componentes": [[45, 2], [12, 2]]}}
+"""
+        return self._chat_json(prompt, max_tokens=1024)
 
     # ── Configuración por enfoque ─────────────────────────────────────
     _ENFOQUE_CONFIG = {
@@ -505,16 +536,18 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
         },
     }
 
-    def generar_rutina(self, usuario, implementos, objetivo):
+    def generar_rutina(self, usuario, implementos, proceso):
         p = self._perfil(usuario)
+        c = self._proceso(usuario, proceso)
+        config = proceso.entrenamiento
         nombres = [i.implemento.nombre for i in implementos] or ['Sin implemento']
         implementos_extra = (getattr(usuario, 'implementos_adicionales', '') or '').strip()
-        nivel = objetivo.get_nivel_actividad_display()
-        dias  = objetivo.dias_entrenamiento
-        duracion = objetivo.duracion_sesion
+        nivel = config.get_nivel_actividad_display()
+        dias  = config.dias_entrenamiento
+        duracion = config.duracion_sesion
         nacionalidad = usuario.nacionalidad or 'No especificada'
         region = usuario.region or 'No especificada'
-        enfoque = getattr(objetivo, 'enfoque_entrenamiento', 'boxeo') or 'boxeo'
+        enfoque = getattr(config, 'enfoque_entrenamiento', 'boxeo') or 'boxeo'
 
         cfg = self._ENFOQUE_CONFIG.get(enfoque, self._ENFOQUE_CONFIG['boxeo'])
 
@@ -536,8 +569,8 @@ Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:
 - Edad: {p['edad']}
 - Estatura: {p['estatura']}
 - Nacionalidad: {nacionalidad} | Región: {region}
-- Objetivo: {objetivo.get_objetivo_display()}
-- Enfoque de entrenamiento: {objetivo.get_enfoque_entrenamiento_display()}
+- Objetivo: {c['objetivo']} (fase: {c['fase']})
+- Enfoque de entrenamiento: {config.get_enfoque_entrenamiento_display()}
 - Nivel: {nivel}
 - Días de entrenamiento por semana: {dias}
 - Duración por sesión: {duracion} minutos
@@ -562,7 +595,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 6. Cada sesión: entre 6 y 8 ejercicios (incluyendo calentamiento y vuelta a la calma).
 7. Nivel {nivel}: {nivel_config}
 
-### Ejercicios permitidos para este enfoque ({objetivo.get_enfoque_entrenamiento_display()})
+### Ejercicios permitidos para este enfoque ({config.get_enfoque_entrenamiento_display()})
 {cfg['ejercicios_permitidos']}
 
 ### Tipos de ejercicio
@@ -589,7 +622,7 @@ Cada sesión de {duracion} minutos debe seguir este orden:
 - ¿Cada ejercicio tiene "busqueda_media" en inglés?
 - ¿Ningún ejercicio tiene duracion_segundos y repeticiones con valor al mismo tiempo?
 - ¿requiere_implemento es true solo cuando usa un implemento de la lista?
-- ¿El nivel y enfoque ({objetivo.get_enfoque_entrenamiento_display()}) corresponden al perfil?
+- ¿El nivel y enfoque ({config.get_enfoque_entrenamiento_display()}) corresponden al perfil?
 
 ## FORMATO DE SALIDA
 Responde ÚNICAMENTE con este JSON, sin markdown, sin texto antes ni después:

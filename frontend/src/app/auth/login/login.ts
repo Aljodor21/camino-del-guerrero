@@ -8,7 +8,6 @@ import { MessageModule } from 'primeng/message';
 
 
 import { AuthService } from '../../core/services/auth';
-import { ThemeService } from '../../core/services/theme';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +17,6 @@ import { ThemeService } from '../../core/services/theme';
 })
 export class Login {
   private auth = inject(AuthService);
-  protected theme = inject(ThemeService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
 
@@ -36,7 +34,7 @@ export class Login {
     this.error.set('');
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate([this.auth.isAdmin() ? '/admin/implementos' : '/rutinas']),
+      next: () => this.router.navigate(['/inicio']),
       error: () => {
         this.error.set('Correo o contraseña incorrectos.');
         this.loading.set(false);

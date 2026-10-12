@@ -8,7 +8,6 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../core/services/auth';
-import { ThemeService } from '../../core/services/theme';
 import { Sexo } from '../../core/models/usuario.model';
 import { environment } from '../../../environments/environment';
 
@@ -23,7 +22,6 @@ const API = environment.apiUrl;
 export class Registro implements OnInit {
   private auth   = inject(AuthService);
   private http   = inject(HttpClient);
-  protected theme = inject(ThemeService);
   private fb     = inject(FormBuilder);
   private router = inject(Router);
 

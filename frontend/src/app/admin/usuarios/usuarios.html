@@ -1,6 +1,10 @@
-<div class="p-4 space-y-4 max-w-2xl mx-auto">
-
-  <h1 class="text-xl font-bold text-gray-900 dark:text-white">Usuarios registrados</h1>
+<div class="p-4 space-y-5 max-w-2xl mx-auto">
+  <div class="space-y-1">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Usuarios registrados</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+      Los datos de inicio no los cambia la persona: si hay un error, se corrige aquí.
+    </p>
+  </div>
 
   @if (loading()) {
     <div class="flex justify-center py-12">
@@ -12,21 +16,108 @@
       <p class="mt-2 text-sm">No hay usuarios registrados.</p>
     </div>
   } @else {
-    <div class="space-y-2">
+    <ul class="space-y-3">
       @for (u of usuarios(); track u.id) {
-        <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3">
-          <div class="flex-1 min-w-0">
+        <li class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3">
+          <div class="flex-1 min-w-0 space-y-0.5">
             <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ u.nombre }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ u.email }}</p>
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              Registrado {{ u.date_joined | date:'dd/MM/yyyy' }}
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ u.sexo?.nombre ?? 'Sin sexo' }}
+              @if (u.estatura) {
+                · {{ u.estatura }} cm
+              }
+              @if (u.fecha_nacimiento) {
+                · nació el {{ u.fecha_nacimiento | date: 'dd/MM/yyyy' }}
+              }
+            </p>
+            <p class="text-xs text-gray-400 dark:text-gray-500">
+              Registrado {{ u.date_joined | date: 'dd/MM/yyyy' }}
             </p>
           </div>
-          <p-button icon="pi pi-trash" variant="text" [rounded]="true"
-                    severity="danger" (onClick)="eliminar(u)" />
-        </div>
+          <p-button
+            icon="pi pi-pencil"
+            variant="text"
+            [rounded]="true"
+            severity="secondary"
+            (onClick)="editar(u)"
+            [attr.aria-label]="'Corregir los datos de ' + u.nombre"
+          />
+          <p-button
+            icon="pi pi-trash"
+            variant="text"
+            [rounded]="true"
+            severity="danger"
+            (onClick)="eliminar(u)"
+            [attr.aria-label]="'Eliminar a ' + u.nombre"
+          />
+        </li>
       }
-    </div>
+    </ul>
   }
-
 </div>
+
+<p-dialog
+  header="Corregir datos de inicio"
+  [visible]="editando() !== null"
+  (visibleChange)="!$event && editando.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '92vw', maxWidth: '480px' }"
+>
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4 pt-1">
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      {{ editando()?.email }}. El correo no se cambia desde aquí.
+    </p>
+
+    <div class="flex flex-col gap-1">
+      <label for="au-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400">Nombre completo</label>
+      <input pInputText id="au-nombre" formControlName="nombre" class="w-full" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="au-sexo" class="text-sm font-medium text-gray-600 dark:text-gray-400">Sexo</label>
+        <p-select
+          inputId="au-sexo"
+          formControlName="sexo_id"
+          [options]="sexos()"
+          optionLabel="nombre"
+          optionValue="id"
+          placeholder="Selecciona"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="au-nac" class="text-sm font-medium text-gray-600 dark:text-gray-400">Nacimiento</label>
+        <input pInputText id="au-nac" type="date" formControlName="fecha_nacimiento" class="w-full" />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="au-estatura" class="text-sm font-medium text-gray-600 dark:text-gray-400">Estatura (cm)</label>
+      <input pInputText id="au-estatura" type="number" min="100" max="250" formControlName="estatura" class="w-full" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="au-nacionalidad" class="text-sm font-medium text-gray-600 dark:text-gray-400">Nacionalidad</label>
+        <input pInputText id="au-nacionalidad" formControlName="nacionalidad" class="w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="au-region" class="text-sm font-medium text-gray-600 dark:text-gray-400">Región o ciudad</label>
+        <input pInputText id="au-region" formControlName="region" class="w-full" />
+      </div>
+    </div>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full" />
+    }
+
+    <div class="flex justify-end gap-2 pt-1">
+      <p-button label="Cancelar" variant="text" severity="secondary" (onClick)="editando.set(null)" />
+      <p-button type="submit" label="Guardar" icon="pi pi-check" [loading]="guardando()" [disabled]="form.invalid" />
+    </div>
+  </form>
+</p-dialog>

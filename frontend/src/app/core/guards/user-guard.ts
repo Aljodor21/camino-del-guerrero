@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth';
 
 /** Permite el acceso solo a usuarios normales (no admin). */
 export const userGuard: CanActivateFn = () => {
-  const auth   = inject(AuthService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
   if (!auth.isLoggedIn()) {

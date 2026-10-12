@@ -24,7 +24,7 @@ export class AudioService {
     const ctx = this.getCtx();
     if (!ctx) return;
     try {
-      const osc  = ctx.createOscillator();
+      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -34,7 +34,9 @@ export class AudioService {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + inicio + duracion);
       osc.start(ctx.currentTime + inicio);
       osc.stop(ctx.currentTime + inicio + duracion + 0.05);
-    } catch { /* sin soporte */ }
+    } catch {
+      /* sin soporte */
+    }
   }
 
   /** Tick corto — últimos segundos del countdown */
@@ -44,14 +46,14 @@ export class AudioService {
 
   /** Al iniciar una serie — dos tonos ascendentes: ¡listo! */
   iniciarSerie(): void {
-    this.tono(440, 0.12, 0.00, 'sine', 0.3);
+    this.tono(440, 0.12, 0.0, 'sine', 0.3);
     this.tono(660, 0.18, 0.14, 'sine', 0.3);
   }
 
   /** Al completar una serie — dos beeps rápidos de éxito */
   completarSerie(): void {
-    this.tono(660, 0.10, 0.00, 'sine', 0.3);
-    this.tono(880, 0.20, 0.12, 'sine', 0.35);
+    this.tono(660, 0.1, 0.0, 'sine', 0.3);
+    this.tono(880, 0.2, 0.12, 'sine', 0.35);
   }
 
   /** Al empezar el descanso — tono grave y suave */
@@ -61,8 +63,8 @@ export class AudioService {
 
   /** Al terminar el descanso (o saltarlo) — tres tonos ascendentes: ¡a moverse! */
   finDescanso(): void {
-    this.tono(523, 0.10, 0.00, 'square', 0.18);
-    this.tono(659, 0.10, 0.11, 'square', 0.18);
+    this.tono(523, 0.1, 0.0, 'square', 0.18);
+    this.tono(659, 0.1, 0.11, 'square', 0.18);
     this.tono(784, 0.25, 0.22, 'square', 0.18);
   }
 

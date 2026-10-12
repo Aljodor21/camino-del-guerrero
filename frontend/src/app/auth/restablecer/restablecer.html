@@ -1,0 +1,79 @@
+<div class="relative isolate min-h-screen flex items-center justify-center px-4 py-10">
+  <picture class="fixed inset-0 -z-10" aria-hidden="true">
+    <source media="(max-width: 767px)" srcset="/home/guantes-movil.webp" />
+    <img src="/home/guantes.webp" alt="" class="w-full h-full object-cover" />
+  </picture>
+  <div class="fixed inset-0 -z-10 bg-dark-900/70" aria-hidden="true"></div>
+  <div class="w-full max-w-sm">
+    <div class="flex justify-start mb-4">
+      <a
+        routerLink="/auth/login"
+        class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-guerrero-red transition-colors"
+      >
+        <i class="pi pi-arrow-left text-xs" aria-hidden="true"></i>
+        Volver a iniciar sesión
+      </a>
+    </div>
+    <div class="flex justify-center mb-8">
+      <a routerLink="/">
+        <img src="/Logo oscuro-sf.png" alt="Camino del Guerrero" class="h-32 w-auto" />
+      </a>
+    </div>
+    <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-8 space-y-5">
+      <h1 class="text-xl font-bold text-center text-gray-900 dark:text-white">Crea tu clave nueva</h1>
+
+      @if (listo()) {
+        <p-message severity="success" text="Listo, ya puedes entrar con tu clave nueva." styleClass="w-full" />
+        <p-button label="Iniciar sesión" routerLink="/auth/login" styleClass="w-full" />
+      } @else if (!enlaceCompleto) {
+        <p-message severity="error" text="Este enlace no está completo. Pide uno nuevo." styleClass="w-full" />
+        <p-button label="Pedir otro enlace" routerLink="/auth/recuperar" styleClass="w-full" />
+      } @else {
+        @if (error()) {
+          <p-message severity="error" [text]="error()" styleClass="w-full" />
+        }
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4">
+          <div class="flex flex-col gap-1">
+            <label for="rs-clave" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Clave nueva</label
+            >
+            <p-password
+              inputId="rs-clave"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              autocomplete="new-password"
+            />
+            <small class="text-xs text-gray-500 dark:text-gray-400">Mínimo 8 caracteres.</small>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="rs-repetir" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Repítela</label
+            >
+            <p-password
+              inputId="rs-repetir"
+              formControlName="repetir"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              autocomplete="new-password"
+            />
+            @if (form.controls.repetir.dirty && !coinciden()) {
+              <small class="text-xs text-red-600 dark:text-red-400">No coinciden.</small>
+            }
+          </div>
+          <p-button
+            type="submit"
+            label="Guardar clave"
+            [loading]="guardando()"
+            [disabled]="form.invalid || !coinciden()"
+            styleClass="w-full"
+          />
+        </form>
+      }
+    </div>
+  </div>
+</div>

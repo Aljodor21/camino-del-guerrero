@@ -1,0 +1,288 @@
+<div class="space-y-4">
+  <div class="flex items-center justify-between gap-3">
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Agenda</h1>
+    <p-button icon="pi pi-plus" label="Agregar" (onClick)="nuevo()" />
+  </div>
+
+  <app-ayuda
+    clave="agenda"
+    titulo="Tu agenda"
+    para="Recordatorios tuyos y los que la app sugiere: controles, cuándo pesarte y cuándo se acaba la proteína."
+    [pasos]="[
+      'Agrega lo que no quieres olvidar, con su fecha.',
+      'El día de la fecha (o después) lo marcas como hecho.',
+      'Los sugeridos se resuelven desde la tarjeta de tu proteína.'
+    ]"
+    demo="agenda"
+  />
+
+  @if (error() && editando() === null) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12"><p-progressspinner styleClass="w-10 h-10" /></div>
+  } @else if (!agenda.recordatorios().length) {
+    <div class="text-center py-12 px-6 space-y-2">
+      <i class="pi pi-calendar text-4xl text-gray-300 dark:text-gray-600" aria-hidden="true"></i>
+      <p class="text-sm text-gray-600 dark:text-gray-300">Aún no tienes fechas en tu agenda.</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+        Agrega tu próximo control con la nutricionista o el día de tu siguiente medición, y la app
+        te avisa antes.
+      </p>
+    </div>
+  } @else {
+    @if (vencidos().length) {
+      <section class="space-y-2" aria-labelledby="ag-vencidos">
+        <h2
+          id="ag-vencidos"
+          class="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400"
+        >
+          Pasó la fecha
+        </h2>
+        <ul class="space-y-2">
+          @for (r of vencidos(); track r.id) {
+            <ng-container *ngTemplateOutlet="fila; context: { $implicit: r, vencido: true }" />
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="space-y-2" aria-labelledby="ag-proximos">
+      <h2
+        id="ag-proximos"
+        class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+      >
+        Próximos
+      </h2>
+      @if (proximos().length) {
+        <ul class="space-y-2">
+          @for (r of proximos(); track r.id) {
+            <ng-container *ngTemplateOutlet="fila; context: { $implicit: r, vencido: false }" />
+          }
+        </ul>
+      } @else {
+        <p class="text-sm text-gray-500 dark:text-gray-400">No tienes fechas próximas.</p>
+      }
+    </section>
+
+    @if (agenda.completados().length) {
+      <details class="group">
+        <summary
+          class="flex items-center gap-2 cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 py-1"
+        >
+          Hechos ({{ agenda.completados().length }})
+          <i
+            class="pi pi-chevron-down text-[10px] transition-transform group-open:rotate-180"
+            aria-hidden="true"
+          ></i>
+        </summary>
+        <ul class="space-y-2 mt-2">
+          @for (r of agenda.completados(); track r.id) {
+            <li class="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 dark:bg-dark-800/60">
+              <i
+                class="pi pi-check-circle text-green-600 dark:text-green-400"
+                aria-hidden="true"
+              ></i>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-gray-500 dark:text-gray-400 line-through truncate">
+                  {{ r.titulo }}
+                </p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">
+                  Era el {{ formatearFecha(r.fecha) }} · {{ cuandoSeHizo(r) }}
+                </p>
+              </div>
+              @if (!r.automatico) {
+                <button
+                  type="button"
+                  (click)="completar(r, false)"
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-dark-700"
+                >
+                  Deshacer
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  }
+
+  <app-suplementos />
+</div>
+
+<ng-template #fila let-r let-vencido="vencido">
+  <li class="flex items-stretch bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+    <button
+      type="button"
+      (click)="abrir(r)"
+      class="flex-1 min-w-0 flex items-center gap-3 p-3 text-left hover:bg-gray-50 dark:hover:bg-dark-700/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-guerrero-red"
+      [attr.aria-label]="(r.automatico ? 'Resolver ' : 'Editar ') + r.titulo"
+    >
+      <div
+        class="w-12 shrink-0 rounded-lg py-1.5 text-center"
+        [class]="
+          vencido ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-red-50 dark:bg-guerrero-red/15'
+        "
+      >
+        <p
+          class="text-lg font-bold leading-none tabular-nums"
+          [class]="vencido ? 'text-amber-800 dark:text-amber-300' : 'text-guerrero-red'"
+        >
+          {{ dia(r.fecha) }}
+        </p>
+        <p class="text-[10px] font-semibold uppercase mt-0.5 text-gray-500 dark:text-gray-400">
+          {{ mes(r.fecha) }}
+        </p>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2">
+          <i [class]="icono(r.tipo) + ' text-xs text-gray-400 mr-1'" aria-hidden="true"></i
+          >{{ r.titulo }}
+        </p>
+        <p
+          class="text-xs mt-0.5"
+          [class]="
+            vencido ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'
+          "
+        >
+          {{ cuandoEs(r.fecha) }}
+          @if (r.hora) {
+            · {{ formatearHora(r.hora) }}
+          }
+          @if (r.automatico) {
+            · <span class="text-gray-400 dark:text-gray-500">Sugerido</span>
+          }
+        </p>
+        @if (r.nota && !r.automatico) {
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ r.nota }}</p>
+        }
+      </div>
+    </button>
+    <!-- Se marca como hecho cuando llega su fecha, no antes. -->
+    @if (r.fecha <= hoy) {
+    <button
+      type="button"
+      (click)="completar(r)"
+      class="shrink-0 w-14 flex items-center justify-center border-l border-gray-100 dark:border-dark-700 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-guerrero-red"
+      [attr.aria-label]="'Marcar como hecho: ' + r.titulo"
+    >
+      <i class="pi pi-check text-base" aria-hidden="true"></i>
+    </button>
+    }
+  </li>
+</ng-template>
+
+<p-dialog
+  [header]="editando() === 'nuevo' ? 'Nuevo recordatorio' : 'Editar recordatorio'"
+  [visible]="editando() !== null"
+  (visibleChange)="!$event && cerrar()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '92vw', maxWidth: '480px' }"
+>
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4 pt-1">
+    <div class="flex flex-col gap-2">
+      <span id="ag-tipo" class="text-sm font-medium text-gray-600 dark:text-gray-400">Tipo</span>
+      <p-selectbutton
+        ariaLabelledBy="ag-tipo"
+        formControlName="tipo"
+        [options]="tipos"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        (onChange)="cambiarTipo($event.value)"
+        styleClass="w-full"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="ag-titulo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Qué</label
+      >
+      <input pInputText id="ag-titulo" formControlName="titulo" maxlength="120" class="w-full" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="ag-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Fecha</label
+        >
+        <input
+          pInputText
+          id="ag-fecha"
+          type="date"
+          formControlName="fecha"
+          [min]="hoy"
+          [max]="maximo"
+          class="w-full"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="ag-hora" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+          Hora <span class="text-xs font-normal text-gray-400">opcional</span>
+        </label>
+        <input pInputText id="ag-hora" type="time" formControlName="hora" class="w-full" />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <span id="ag-avisar" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Avisarme antes</span
+      >
+      <p-selectbutton
+        ariaLabelledBy="ag-avisar"
+        formControlName="avisar_dias_antes"
+        [options]="avisos"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        styleClass="w-full flex-wrap"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="ag-nota" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+        Nota <span class="text-xs font-normal text-gray-400">opcional</span>
+      </label>
+      <textarea
+        pTextarea
+        id="ag-nota"
+        formControlName="nota"
+        rows="2"
+        maxlength="300"
+        class="w-full"
+        placeholder="Ej. llevar el plan y las medidas"
+      ></textarea>
+    </div>
+
+    @if (error()) {
+      <p-message severity="error" [text]="error()" styleClass="w-full" />
+    }
+
+    <div class="flex items-center gap-3">
+      @if (editando() !== 'nuevo') {
+        @if (confirmarEliminar()) {
+          <p-button label="Eliminar" severity="danger" (onClick)="eliminar()" />
+        } @else {
+          <p-button
+            icon="pi pi-trash"
+            variant="text"
+            severity="secondary"
+            ariaLabel="Eliminar recordatorio"
+            (onClick)="confirmarEliminar.set(true)"
+          />
+        }
+      }
+      <div class="flex-1"></div>
+      <p-button label="Cancelar" variant="outlined" severity="secondary" (onClick)="cerrar()" />
+      <p-button
+        type="submit"
+        label="Guardar"
+        icon="pi pi-check"
+        [loading]="guardando()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
+</p-dialog>

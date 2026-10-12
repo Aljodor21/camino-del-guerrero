@@ -14,7 +14,7 @@ export class ThemeService {
   }
 
   toggle(): void {
-    this.isDark.update(v => !v);
+    this.isDark.update((v) => !v);
   }
 
   private _loadPreference(): boolean {

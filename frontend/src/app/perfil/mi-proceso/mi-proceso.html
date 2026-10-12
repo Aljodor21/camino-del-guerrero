@@ -1,0 +1,315 @@
+@if (proceso(); as p) {
+  <section
+    class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-6"
+    aria-labelledby="mp-titulo"
+  >
+    <!-- Encabezado -->
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h2
+          id="mp-titulo"
+          class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"
+        >
+          <i class="pi pi-flag text-guerrero-red" aria-hidden="true"></i> Mi proceso
+        </h2>
+        <p class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+          <span class="text-lg font-bold text-gray-900 dark:text-white leading-tight">{{
+            p.objetivo_nombre
+          }}</span>
+          @if (p.fase_nombre) {
+            <span
+              class="text-xs font-semibold text-guerrero-red bg-red-50 dark:bg-guerrero-red/15 rounded-full px-2.5 py-0.5"
+            >
+              {{ p.fase_nombre }}
+            </span>
+          }
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          @if (avance(); as a) {
+            Semana {{ a.semana }}{{ a.semanas ? ' de ' + a.semanas : '' }} · desde el
+            {{ formatearFecha(p.fecha_inicio) }}
+          } @else {
+            Inicia el {{ formatearFecha(p.fecha_inicio, 'larga') }}
+          }
+        </p>
+      </div>
+      <span
+        class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+        [class]="
+          p.estado === 'en_curso'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+        "
+      >
+        {{ p.estado === 'en_curso' ? 'En curso' : 'Programado' }}
+      </span>
+    </div>
+
+    <!-- Datos de inicio: solo lectura -->
+    <div class="space-y-2">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+        <i class="pi pi-lock text-xs" aria-hidden="true"></i> Punto de partida
+      </h3>
+      @if (p.medicion_inicial; as m) {
+        <dl class="grid grid-cols-3 gap-3 rounded-xl bg-gray-50 dark:bg-dark-700/60 p-3">
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Peso</dt>
+            <dd class="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {{ num(m.peso_kg) }} kg
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Talla</dt>
+            <dd class="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {{ m.talla_cm ? num(m.talla_cm, 1) + ' cm' : '—' }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">IMC</dt>
+            <dd class="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {{ num(m.imc) }}
+            </dd>
+          </div>
+        </dl>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Medido el {{ formatearFecha(m.fecha) }} ·
+          {{ m.origen === 'profesional' ? 'por un profesional' : 'por ti' }}. Estos datos no se
+          pueden modificar.
+        </p>
+      } @else if (p.estado === 'en_curso') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Falta tu medición inicial.
+          <a
+            routerLink="/progreso"
+            [queryParams]="{ medicion: 'inicial' }"
+            class="font-semibold text-guerrero-red underline"
+          >
+            Registrarla
+          </a>
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Tu medición inicial se registra el día de inicio.
+        </p>
+      }
+    </div>
+
+    <!-- Lo editable -->
+    <form
+      [formGroup]="form"
+      (ngSubmit)="guardar()"
+      class="space-y-5 border-t border-gray-200 dark:border-dark-700 pt-5"
+    >
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="mp-meta" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Peso meta (kg)</label
+          >
+          <input
+            pInputText
+            appDecimal
+            id="mp-meta"
+            formControlName="peso_objetivo"
+            placeholder="Sin definir"
+            class="w-full"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="mp-fin" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >Va hasta</label
+          >
+          <input
+            pInputText
+            id="mp-fin"
+            type="date"
+            formControlName="fecha_fin_plan"
+            [min]="minimoFinPlan()"
+            class="w-full"
+            aria-describedby="mp-fin-ayuda"
+          />
+          <small id="mp-fin-ayuda" class="text-xs text-gray-500 dark:text-gray-400">
+            @if (finPlanFijo()) {
+              La fecha que pusiste al empezar. No se puede cambiar.
+            } @else {
+              Por ejemplo, el día de tu próximo control. Una vez la pones, queda fija.
+            }
+          </small>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="mp-notas" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Notas</label
+        >
+        <textarea
+          pTextarea
+          id="mp-notas"
+          formControlName="notas"
+          rows="2"
+          class="w-full resize-none"
+        ></textarea>
+      </div>
+
+      <fieldset class="space-y-4">
+        <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Módulos</legend>
+        @for (m of modulos; track m.id) {
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-3">
+              <span class="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
+                <i [class]="m.icono + ' text-gray-400'" aria-hidden="true"></i> {{ m.nombre }}
+              </span>
+              @if (m.id === 'alimentacion' ? p.incluye_alimentacion : p.incluye_entrenamiento) {
+                <span class="flex items-center gap-3">
+                  <span class="text-xs font-medium text-guerrero-red">Activo</span>
+                  @if (m.id === 'alimentacion' ? p.incluye_entrenamiento : p.incluye_alimentacion) {
+                    <p-button
+                      label="Quitar"
+                      size="small"
+                      variant="text"
+                      severity="danger"
+                      (onClick)="quitando.set(m.id)"
+                    />
+                  }
+                </span>
+              } @else {
+                <p-button
+                  [label]="'Activar ' + m.nombre.toLowerCase()"
+                  icon="pi pi-plus"
+                  size="small"
+                  variant="outlined"
+                  routerLink="/onboarding"
+                  [queryParams]="{ agregar: m.id }"
+                />
+              }
+            </div>
+            @if (quitando() === m.id) {
+              <div
+                class="rounded-xl border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-3 space-y-2"
+                role="alertdialog"
+                [attr.aria-label]="'Quitar ' + m.nombre.toLowerCase()"
+              >
+                <p class="text-sm text-gray-800 dark:text-gray-200">{{ m.aviso }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <p-button
+                    label="Sí, quitar"
+                    severity="danger"
+                    size="small"
+                    [loading]="quitandoCargando()"
+                    (onClick)="quitarModulo(m.id)"
+                  />
+                  <p-button
+                    label="No"
+                    variant="text"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="quitando.set(null)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!(p.incluye_alimentacion && p.incluye_entrenamiento)) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Un proceso necesita al menos un módulo. Para empezar de cero, bórralo.
+          </p>
+        }
+      </fieldset>
+
+      @if (p.incluye_entrenamiento) {
+        <div class="rounded-xl border border-gray-200 dark:border-dark-700 p-4">
+          <app-entrenamiento-form [form]="entrenamientoForm" />
+        </div>
+      }
+
+      @if (error()) {
+        <p-message severity="error" [text]="error()" styleClass="w-full" />
+      }
+      @if (guardado()) {
+        <p-message severity="success" text="Cambios guardados." styleClass="w-full" />
+      }
+
+      <p-button
+        type="submit"
+        label="Guardar cambios"
+        icon="pi pi-check"
+        [loading]="guardando()"
+        [disabled]="form.invalid || (form.pristine && entrenamientoForm.pristine)"
+        styleClass="w-full"
+      />
+    </form>
+  </section>
+
+  <!-- Borrar el proceso -->
+  <section
+    class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3"
+    aria-labelledby="mp-borrar"
+  >
+    <h2 id="mp-borrar" class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <i class="pi pi-trash text-guerrero-red" aria-hidden="true"></i> Borrar mi proceso
+    </h2>
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+      Se borra todo lo de este proceso: medidas y fotos, plan, menús, suplementos, registros y
+      avisos. Solo quedan tus datos personales y puedes empezar otro proceso, con alimentación o
+      entrenamiento.
+    </p>
+    @if (confirmandoBorrado()) {
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm font-medium text-gray-800 dark:text-gray-200"
+          >¿Seguro? No se puede deshacer.</span
+        >
+        <p-button
+          label="Sí, borrar todo"
+          severity="danger"
+          size="small"
+          [loading]="borrando()"
+          (onClick)="borrarProceso()"
+        />
+        <p-button
+          label="No"
+          variant="text"
+          severity="secondary"
+          size="small"
+          (onClick)="confirmandoBorrado.set(false)"
+        />
+      </div>
+    } @else {
+      <p-button
+        label="Borrar mi proceso"
+        icon="pi pi-trash"
+        variant="outlined"
+        severity="danger"
+        size="small"
+        (onClick)="confirmandoBorrado.set(true)"
+      />
+    }
+  </section>
+
+  <!-- Historial -->
+  @if (anteriores().length > 0) {
+    <section
+      class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-3"
+      aria-labelledby="mp-hist"
+    >
+      <h2 id="mp-hist" class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="pi pi-history text-guerrero-red" aria-hidden="true"></i> Procesos anteriores
+      </h2>
+      <ul class="divide-y divide-gray-200 dark:divide-dark-700">
+        @for (h of anteriores(); track h.id) {
+          <li class="py-2.5 flex items-center justify-between gap-3 text-sm">
+            <span class="text-gray-800 dark:text-gray-200">
+              {{ h.objetivo_nombre }}
+              @if (h.fase_nombre) {
+                · {{ h.fase_nombre }}
+              }
+            </span>
+            <span class="text-gray-500 dark:text-gray-400 tabular-nums text-right">
+              {{ formatearFecha(h.fecha_inicio) }} –
+              {{ h.fecha_fin ? formatearFecha(h.fecha_fin) : 'hoy' }}
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

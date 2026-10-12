@@ -1,9 +1,9 @@
 from django.core.management.base import BaseCommand
 
-from nutricion.models import DiaNutricional, ItemMercado, ListaMercado, PlanNutricional
-from progress.models import RegistroEntrenamiento, RegistroPeso
+from nutricion.models import ItemMercado, ListaMercado
+from progress.models import Medicion, RegistroEntrenamiento
 from routines.models import DiaRutina, EjercicioDia, EjercicioImplemento, Ejercicio, Rutina, UsuarioImplemento
-from users.models import ObjetivoUsuario, Usuario
+from users.models import Proceso, Usuario
 
 
 class Command(BaseCommand):
@@ -13,14 +13,11 @@ class Command(BaseCommand):
         # Nutricion
         ItemMercado.objects.all().delete()
         ListaMercado.objects.all().delete()
-        DiaNutricional.objects.all().delete()
-        PlanNutricional.objects.all().delete()
         self.stdout.write('Nutricion eliminada.')
 
         # Progress
         RegistroEntrenamiento.objects.all().delete()
-        RegistroPeso.objects.all().delete()
-        self.stdout.write('Progress eliminado.')
+        self.stdout.write('Registros de entrenamiento eliminados.')
 
         # Routines (ejercicios incluidos)
         EjercicioDia.objects.all().delete()
@@ -31,9 +28,11 @@ class Command(BaseCommand):
         Ejercicio.objects.all().delete()
         self.stdout.write('Rutinas y ejercicios eliminados.')
 
-        # Objetivos
-        ObjetivoUsuario.objects.all().delete()
-        self.stdout.write('Objetivos eliminados.')
+        # Procesos (su configuración de entrenamiento cae en cascada) y mediciones.
+        # Los procesos van primero porque protegen su medición inicial.
+        Proceso.objects.all().delete()
+        Medicion.objects.all().delete()
+        self.stdout.write('Procesos y mediciones eliminados.')
 
         # Usuarios no-admin (conserva usuarios con rol admin)
         eliminados, _ = Usuario.objects.exclude(rol__nombre='admin').delete()

@@ -1,0 +1,375 @@
+<section class="space-y-4" aria-label="Menú de la semana">
+  <app-ayuda
+    clave="menu"
+    titulo="Tu menú de la semana"
+    para="Cada comida sale solo de tu minuta y de tu lista de intercambios. Si algo no te sirve, lo cambias por otro del mismo grupo y la porción no se mueve."
+    [pasos]="[
+        'Toca un día para ver sus comidas.',
+        'Si no puedes con una comida, toca «No puedo con esta comida» y elige qué hacer.',
+        'Marca como «por fuera» las que no cocinas en casa: no entran a tu lista de mercado.'
+      ]"
+    demo="menu"
+  />
+
+  <div class="flex items-center justify-between gap-2">
+    <button
+      type="button"
+      class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700"
+      aria-label="Semana anterior"
+      (click)="moverSemana(-1)"
+    >
+      <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    </button>
+    <div class="text-center">
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        {{ esSemanaActual() ? 'Esta semana' : esSiguiente() ? 'Próxima semana' : 'Semana' }}
+      </p>
+      <p class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ tituloSemana() }}</p>
+    </div>
+    <button
+      type="button"
+      class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-700 disabled:opacity-30 disabled:hover:bg-transparent"
+      aria-label="Semana siguiente"
+      [disabled]="esSiguiente()"
+      (click)="moverSemana(1)"
+    >
+      <i class="pi pi-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-7 gap-1" role="tablist" aria-label="Día">
+    @for (d of dias(); track d.iso) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="diaSeleccionado() === d.iso"
+        (click)="diaSeleccionado.set(d.iso)"
+        [class]="
+          'flex flex-col items-center rounded-xl py-1.5 transition-colors ' +
+          (diaSeleccionado() === d.iso
+            ? 'bg-guerrero-red text-white'
+            : d.hoy
+              ? 'ring-2 ring-inset ring-guerrero-red text-guerrero-red'
+              : 'bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300')
+        "
+      >
+        <span class="text-[11px] uppercase">{{ d.nombre }}</span>
+        <span class="text-base font-bold tabular-nums leading-tight">{{ d.numero }}</span>
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @if (cargando() || armando()) {
+    <div class="flex flex-col items-center gap-3 py-14 text-center">
+      <p-progressspinner styleClass="w-10 h-10" strokeWidth="4" />
+      @if (armando()) {
+        <p class="text-sm text-gray-600 dark:text-gray-300 max-w-64">
+          Armando tu menú con tu minuta y tu lista de intercambios…
+        </p>
+      }
+    </div>
+  } @else if (!servicio.menu()) {
+    <div class="text-center py-12 space-y-3">
+      <p class="text-sm text-gray-500 dark:text-gray-400">No hay menú de esa semana.</p>
+      @if (esSemanaActual() || esSiguiente()) {
+        <p-button label="Armar menú" (onClick)="armar()" />
+      }
+    </div>
+  } @else {
+    @if (delDia().length) {
+      <p
+        class="rounded-lg bg-gray-50 dark:bg-dark-700/60 px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
+      >
+        <span class="font-semibold">Durante el día:</span> {{ delDia().join(' · ') }}
+      </p>
+    }
+
+    @for (c of comidas(); track c.id) {
+      <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <header class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-guerrero-red">
+              {{ c.tiempo_nombre }}
+            </h3>
+            @if (c.nombre) {
+              <p class="font-semibold text-gray-900 dark:text-white">{{ c.nombre }}</p>
+            }
+          </div>
+          @if (c.por_fuera) {
+            <span
+              class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
+              >Por fuera</span
+            >
+          } @else if (c.cambiada) {
+            <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">Cambiada</span>
+          }
+        </header>
+
+        @if (c.por_fuera) {
+          <div class="space-y-1.5">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Pide algo que tenga:</p>
+            <ul class="space-y-1">
+              @for (r of c.requerido; track r.grupo) {
+                <li class="text-sm">
+                  <span class="font-medium text-gray-900 dark:text-white">{{
+                    porcionesDe(r.grupo, r.porciones)
+                  }}</span>
+                  @if (r.ejemplo) {
+                    <span class="text-gray-500 dark:text-gray-400"> · ej. {{ r.ejemplo }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <ul class="divide-y divide-gray-100 dark:divide-dark-700 -my-1">
+            @for (comp of c.componentes; track comp.id) {
+              <li class="flex items-baseline justify-between gap-3 py-1.5">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ comp.alimento }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ comp.cantidad }}</p>
+                </div>
+                @if (comp.gramos && !comp.cantidad.endsWith(' g')) {
+                  <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums"
+                    >{{ comp.gramos }} g</span
+                  >
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @for (s of c.suplementos; track s.id) {
+          <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+            <i class="pi pi-box text-gray-400" aria-hidden="true"></i>
+            <span
+              ><span class="font-medium">{{ s.nombre }}</span>
+              <span class="text-gray-500 dark:text-gray-400"> {{ reemplazoTexto(s) }}</span></span
+            >
+          </p>
+        }
+
+        <footer class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1">
+          <button
+            type="button"
+            class="text-sm font-semibold text-guerrero-red py-1 rounded hover:underline underline-offset-2"
+            (click)="abrirCambio(c)"
+          >
+            No puedo con esta comida
+          </button>
+        </footer>
+      </article>
+    }
+
+    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Todo sale de tu minuta y tu lista de intercambios.
+      </p>
+      @if (esSemanaActual() || esSiguiente()) {
+        @if (confirmarRearmar()) {
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-600 dark:text-gray-300"
+              >¿Rearmar? Se pierden tus cambios.</span
+            >
+            <p-button label="Sí" size="small" (onClick)="armar()" />
+            <p-button
+              label="No"
+              size="small"
+              variant="text"
+              severity="secondary"
+              (onClick)="confirmarRearmar.set(false)"
+            />
+          </div>
+        } @else {
+          <p-button
+            label="Rearmar semana"
+            icon="pi pi-refresh"
+            size="small"
+            variant="text"
+            severity="secondary"
+            (onClick)="confirmarRearmar.set(true)"
+          />
+        }
+      }
+    </div>
+  }
+</section>
+
+<p-dialog
+  [visible]="comida() !== null"
+  (visibleChange)="!$event && cerrarCambio()"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  header="No puedo con esta comida"
+  [style]="{ width: '30rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (comida(); as c) {
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600 dark:text-gray-300">
+        {{ c.tiempo_nombre }} del {{ formatearFecha(c.fecha, 'larga') }}. Todo lo que te proponemos
+        cumple tu minuta.
+      </p>
+
+      @switch (paso()) {
+        @case ('inicio') {
+          <div class="grid gap-2">
+            @if (!c.por_fuera && componentesCambiables().length) {
+              <button type="button" [class]="claseOpcion" (click)="paso.set('alimento')">
+                <span class="font-semibold text-gray-900 dark:text-white">Cambiar un alimento</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400"
+                  >Por otro de tu lista, del mismo grupo y en la cantidad que equivale.</span
+                >
+              </button>
+            }
+            <button type="button" [class]="claseOpcion" (click)="paso.set('otra')">
+              <span class="font-semibold text-gray-900 dark:text-white"
+                >Otra opción para esta comida</span
+              >
+              <span class="text-sm text-gray-500 dark:text-gray-400"
+                >Te proponemos otra combinación con las mismas porciones.</span
+              >
+            </button>
+            <button
+              type="button"
+              [class]="claseOpcion"
+              [disabled]="trabajando()"
+              (click)="alternarPorFuera()"
+            >
+              <span class="font-semibold text-gray-900 dark:text-white">{{
+                c.por_fuera ? 'Hoy la hago en casa' : 'Hoy la como por fuera'
+              }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{
+                c.por_fuera
+                  ? 'Vuelve a mostrar los alimentos para prepararla.'
+                  : 'Te decimos qué pedir para cumplir la minuta y no entra al mercado.'
+              }}</span>
+            </button>
+          </div>
+        }
+
+        @case ('alimento') {
+          <p class="text-sm font-semibold text-gray-900 dark:text-white">¿Cuál quieres cambiar?</p>
+          <div class="grid gap-2">
+            @for (comp of componentesCambiables(); track comp.id) {
+              <button type="button" [class]="claseOpcion" (click)="elegirComponente(comp)">
+                <span class="font-semibold text-gray-900 dark:text-white">{{ comp.alimento }}</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400"
+                  >{{ comp.cantidad }} · {{ grupo(comp.grupo) }}</span
+                >
+              </button>
+            }
+          </div>
+        }
+
+        @case ('intercambios') {
+          <div class="space-y-2">
+            <p class="text-sm text-gray-700 dark:text-gray-200">
+              En lugar de <span class="font-semibold">{{ componente()?.alimento }}</span> puedes
+              comer:
+            </p>
+            <input
+              pInputText
+              type="search"
+              class="w-full"
+              placeholder="Buscar en tu lista"
+              aria-label="Buscar alimento"
+              [value]="filtro()"
+              (input)="filtro.set($any($event.target).value)"
+            />
+            @if (trabajando() && !opciones().length) {
+              <div class="flex justify-center py-6">
+                <p-progressspinner styleClass="w-8 h-8" />
+              </div>
+            } @else {
+              <ul
+                class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-dark-700 -mx-1"
+              >
+                @for (o of opcionesFiltradas(); track o.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="w-full text-left px-1 py-2 flex items-baseline justify-between gap-3 rounded hover:bg-gray-50 dark:hover:bg-dark-700 disabled:opacity-50"
+                      [disabled]="trabajando()"
+                      (click)="usarIntercambio(o)"
+                    >
+                      <span class="min-w-0">
+                        <span class="block text-sm font-medium text-gray-900 dark:text-white">{{
+                          o.nombre
+                        }}</span>
+                        <span class="block text-xs text-gray-500 dark:text-gray-400">{{
+                          o.cantidad
+                        }}</span>
+                      </span>
+                      @if (o.gramos && !o.cantidad.endsWith(' g')) {
+                        <span class="shrink-0 text-xs text-gray-400 tabular-nums"
+                          >{{ o.gramos }} g</span
+                        >
+                      }
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="py-4 text-center text-sm text-gray-500">Nada con ese nombre.</li>
+                }
+              </ul>
+            }
+          </div>
+        }
+
+        @case ('otra') {
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+              ¿Por qué la cambias?
+            </legend>
+            <div class="flex flex-wrap gap-2" role="radiogroup">
+              @for (m of motivos; track m.value) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="motivo() === m.value"
+                  [class]="clasesChip(motivo() === m.value)"
+                  (click)="motivo.set(m.value)"
+                >
+                  {{ m.label }}
+                </button>
+              }
+            </div>
+          </fieldset>
+          <p-button
+            label="Proponer otra opción"
+            styleClass="w-full"
+            [disabled]="!motivo()"
+            [loading]="trabajando()"
+            (onClick)="pedirOtra()"
+          />
+          @if (trabajando()) {
+            <p class="text-xs text-center text-gray-500 dark:text-gray-400">
+              Buscando dentro de tu lista de intercambios…
+            </p>
+          }
+        }
+      }
+
+      @if (errorCambio()) {
+        <p-message severity="error" [text]="errorCambio()" styleClass="w-full" />
+      }
+
+      @if (paso() !== 'inicio') {
+        <button
+          type="button"
+          class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+          (click)="paso.set(paso() === 'intercambios' ? 'alimento' : 'inicio')"
+        >
+          <i class="pi pi-arrow-left text-xs mr-1" aria-hidden="true"></i>Volver
+        </button>
+      }
+    </div>
+  }
+</p-dialog>

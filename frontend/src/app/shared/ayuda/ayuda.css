@@ -1,0 +1,594 @@
+:host {
+  display: block;
+}
+
+.ayuda {
+  --rojo: #c0392b;
+  --oro: #b8960f;
+  --linea: rgb(90 78 66 / 0.32);
+  --relleno: rgb(90 78 66 / 0.08);
+  --texto: #3a332d;
+  --salida: cubic-bezier(0.16, 1, 0.3, 1);
+}
+:host-context(.dark) .ayuda {
+  --oro: #d4af37;
+  --linea: rgb(246 241 234 / 0.22);
+  --relleno: rgb(246 241 234 / 0.06);
+  --texto: #f6f1ea;
+}
+
+/* Se recoge y se abre sin saltos: la fila de la rejilla pasa de 0 a 1. */
+.cuerpo {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 320ms var(--salida);
+}
+.cerrada .cuerpo {
+  grid-template-rows: 0fr;
+}
+.cuerpo-interno {
+  min-height: 0;
+  overflow: hidden;
+}
+.flecha {
+  transition: transform 320ms var(--salida);
+}
+.ayuda:not(.cerrada) .flecha {
+  transform: rotate(180deg);
+}
+
+.demo {
+  height: 5.5rem;
+  display: grid;
+  place-items: center;
+  padding: 0.6rem;
+  border-radius: 0.6rem;
+  background: var(--relleno);
+  color: var(--texto);
+  overflow: hidden;
+  font-size: 0.72rem;
+}
+
+@media (min-width: 640px) {
+  .demo {
+    height: 6.75rem;
+  }
+}
+
+/* Toda animación se pausa con la ayuda cerrada y se apaga si se pidió menos movimiento. */
+.cerrada .demo * {
+  animation-play-state: paused !important;
+}
+
+/* ── Menú: cambiar un alimento por otro del mismo grupo ─────────── */
+.d-menu {
+  width: 100%;
+  display: grid;
+  gap: 0.15rem;
+}
+.d-menu .fila {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px solid var(--linea);
+  position: relative;
+}
+.d-menu b {
+  color: var(--oro);
+  font-variant-numeric: tabular-nums;
+}
+.d-menu .cambio {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.45rem;
+}
+.d-menu .cambio b {
+  margin-left: auto;
+}
+.d-menu .antes {
+  position: relative;
+  animation: d-sale 6s var(--salida) infinite;
+}
+.d-menu .antes::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 52%;
+  width: 100%;
+  height: 1.5px;
+  background: var(--rojo);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: d-tachar 6s var(--salida) infinite;
+}
+.d-menu .despues {
+  color: var(--oro);
+  opacity: 0;
+  animation: d-entra 6s var(--salida) infinite;
+}
+.d-menu .despues::before {
+  content: '→ ';
+}
+.d-menu .nota {
+  margin: 0.25rem 0 0;
+  text-align: right;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+@keyframes d-tachar {
+  0%, 15% { transform: scaleX(0); }
+  30%, 85% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+@keyframes d-sale {
+  0%, 30% { opacity: 1; }
+  40%, 85% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+@keyframes d-entra {
+  0%, 32% { opacity: 0; transform: translateX(-6px); }
+  45%, 85% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+
+/* ── Mercado: se marca cada producto ────────────────────────────── */
+.d-mercado {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 0.35rem;
+}
+.d-mercado li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.d-mercado i {
+  position: relative;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--linea);
+  animation: d-marca 6s var(--salida) infinite;
+}
+.d-mercado i::after {
+  content: '';
+  position: absolute;
+  left: 0.26rem;
+  top: 0.08rem;
+  width: 0.26rem;
+  height: 0.48rem;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) scale(0);
+  animation: d-visto 6s var(--salida) infinite;
+}
+.d-mercado span {
+  position: relative;
+  animation: d-opaco 6s var(--salida) infinite;
+}
+.d-mercado li:nth-child(2) i, .d-mercado li:nth-child(2) i::after, .d-mercado li:nth-child(2) span { animation-delay: 0.5s; }
+.d-mercado li:nth-child(3) i, .d-mercado li:nth-child(3) i::after, .d-mercado li:nth-child(3) span { animation-delay: 1s; }
+.d-mercado li:nth-child(4) i, .d-mercado li:nth-child(4) i::after, .d-mercado li:nth-child(4) span { animation-delay: 1.5s; }
+@keyframes d-marca {
+  0%, 8% { background: transparent; border-color: var(--linea); }
+  18%, 86% { background: var(--rojo); border-color: var(--rojo); }
+  100% { background: transparent; border-color: var(--linea); }
+}
+@keyframes d-visto {
+  0%, 8% { transform: rotate(45deg) scale(0); }
+  22%, 86% { transform: rotate(45deg) scale(1); }
+  100% { transform: rotate(45deg) scale(0); }
+}
+@keyframes d-opaco {
+  0%, 8% { opacity: 1; }
+  22%, 86% { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+/* ── Mi plan: una hoja que se guarda con candado ────────────────── */
+.d-plan {
+  position: relative;
+  width: 4.2rem;
+  height: 5rem;
+}
+.d-plan .hoja {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  padding: 0.7rem 0.55rem;
+  border: 1.5px solid var(--linea);
+  border-radius: 0.3rem;
+  background: var(--relleno);
+}
+.d-plan s {
+  display: block;
+  height: 0.22rem;
+  border-radius: 1px;
+  background: var(--linea);
+  transform-origin: left;
+  animation: d-linea 6s var(--salida) infinite;
+}
+.d-plan s:nth-child(2) { animation-delay: 0.2s; width: 80%; }
+.d-plan s:nth-child(3) { animation-delay: 0.4s; }
+.d-plan s:nth-child(4) { animation-delay: 0.6s; width: 60%; }
+.d-plan .candado {
+  position: absolute;
+  right: -0.7rem;
+  bottom: -0.5rem;
+  width: 1.5rem;
+  height: 1.15rem;
+  border-radius: 0.2rem;
+  background: var(--oro);
+  transform: scale(0);
+  animation: d-candado 6s var(--salida) infinite;
+}
+.d-plan .candado::before {
+  content: '';
+  position: absolute;
+  left: 0.3rem;
+  top: -0.6rem;
+  width: 0.9rem;
+  height: 0.75rem;
+  border: 2px solid var(--oro);
+  border-bottom: 0;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+@keyframes d-linea {
+  0% { transform: scaleX(0); }
+  15%, 100% { transform: scaleX(1); }
+}
+@keyframes d-candado {
+  0%, 38% { transform: scale(0); }
+  52%, 90% { transform: scale(1); }
+  100% { transform: scale(0); }
+}
+
+/* ── Avisos: suena la campana y llega la tarjeta ────────────────── */
+.d-avisos {
+  position: relative;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+.d-avisos .campana {
+  width: 1.7rem;
+  height: 1.7rem;
+  fill: none;
+  stroke: var(--rojo);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-origin: 50% 10%;
+  animation: d-suena 6s ease-in-out infinite;
+}
+.d-avisos .tarjeta {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--linea);
+  background: var(--relleno);
+  animation: d-llega 6s var(--salida) infinite;
+}
+.d-avisos i {
+  position: relative;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--oro);
+  animation: d-confirma 6s var(--salida) infinite;
+}
+@keyframes d-suena {
+  0%, 4% { transform: rotate(0); }
+  8% { transform: rotate(14deg); }
+  12% { transform: rotate(-12deg); }
+  16% { transform: rotate(8deg); }
+  20%, 100% { transform: rotate(0); }
+}
+@keyframes d-llega {
+  0%, 8% { opacity: 0; transform: translateY(-10px); }
+  22%, 85% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@keyframes d-confirma {
+  0%, 55% { background: transparent; }
+  66%, 100% { background: var(--oro); }
+}
+
+/* ── Cumplimiento: el anillo se llena hasta el porcentaje ───────── */
+@property --n {
+  syntax: '<integer>';
+  inherits: false;
+  initial-value: 86;
+}
+.d-cump {
+  position: relative;
+  width: 4.6rem;
+  height: 4.6rem;
+}
+.d-cump svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.d-cump circle {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.d-cump .pista {
+  stroke: var(--linea);
+}
+.d-cump .arco {
+  stroke: var(--oro);
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 16;
+  animation: d-llena 6s var(--salida) infinite;
+}
+.d-cump .num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  counter-reset: n var(--n);
+  animation: d-cuenta 6s var(--salida) infinite;
+}
+.d-cump .num::after {
+  content: counter(n) '%';
+}
+@keyframes d-llena {
+  0% { stroke-dashoffset: 113.1; }
+  45%, 88% { stroke-dashoffset: 16; }
+  100% { stroke-dashoffset: 113.1; }
+}
+@keyframes d-cuenta {
+  0% { --n: 0; }
+  45%, 88% { --n: 86; }
+  100% { --n: 0; }
+}
+
+/* ── Proyección: la curva llega hasta la fecha del control ──────── */
+.d-proy {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-linecap: round;
+}
+.d-proy .eje {
+  stroke: var(--linea);
+  stroke-width: 1.5;
+}
+.d-proy .curva {
+  stroke: var(--rojo);
+  stroke-width: 2.5;
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  animation: d-curva 6s var(--salida) infinite;
+}
+.d-proy .punto {
+  fill: var(--oro);
+  stroke: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+  animation: d-punto 6s var(--salida) infinite;
+}
+.d-proy .meta {
+  stroke: var(--oro);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+@keyframes d-curva {
+  0% { stroke-dashoffset: 130; }
+  50%, 90% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 130; }
+}
+@keyframes d-punto {
+  0%, 48% { transform: scale(0); }
+  60%, 90% { transform: scale(1); }
+  100% { transform: scale(0); }
+}
+
+/* ── Proteína: cae el scoop y se llena con leche y agua ─────────── */
+.d-prot {
+  position: relative;
+  width: 4.2rem;
+  height: 5.2rem;
+}
+.d-prot .vaso {
+  position: absolute;
+  inset: 1.2rem 0.6rem 0;
+  display: flex;
+  flex-direction: column-reverse;
+  border: 1.5px solid var(--linea);
+  border-top: 0;
+  border-radius: 0 0 0.6rem 0.6rem;
+  overflow: hidden;
+}
+.d-prot .leche,
+.d-prot .agua {
+  display: block;
+  height: 0;
+}
+.d-prot .leche {
+  background: #f1ece4;
+  animation: d-leche 6s var(--salida) infinite;
+}
+.d-prot .agua {
+  background: #6fa8d6;
+  animation: d-agua 6s var(--salida) infinite;
+}
+.d-prot .scoop {
+  position: absolute;
+  top: 0;
+  left: 1.6rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--oro);
+  opacity: 0;
+  animation: d-cae 6s var(--salida) infinite;
+}
+.d-prot .s2 { left: 1.95rem; animation-delay: 0.25s; }
+.d-prot .s3 { left: 1.3rem; animation-delay: 0.5s; }
+@keyframes d-cae {
+  0% { opacity: 0; transform: translateY(-4px); }
+  6% { opacity: 1; }
+  16% { opacity: 1; transform: translateY(2.2rem); }
+  22%, 100% { opacity: 0; transform: translateY(2.4rem); }
+}
+@keyframes d-leche {
+  0%, 22% { height: 0; }
+  42%, 90% { height: 35%; }
+  100% { height: 0; }
+}
+@keyframes d-agua {
+  0%, 44% { height: 0; }
+  66%, 90% { height: 50%; }
+  100% { height: 0; }
+}
+
+/* ── Medidas: el día uno contra hoy ─────────────────────────────── */
+@property --corte-med {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+.d-med {
+  position: relative;
+  width: 100%;
+  height: 3.4rem;
+  border-radius: 0.4rem;
+  overflow: hidden;
+  border: 1px solid var(--linea);
+  font-weight: 600;
+  animation: d-corta 6s var(--salida) infinite;
+}
+.d-med .dia,
+.d-med .hoy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 0.8rem;
+}
+.d-med .dia { background: var(--relleno); }
+.d-med .hoy {
+  justify-content: flex-end;
+  background: rgb(212 175 55 / 0.28);
+  clip-path: inset(0 0 0 var(--corte-med));
+}
+.d-med .barra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--corte-med);
+  width: 2px;
+  background: var(--oro);
+}
+@keyframes d-corta {
+  0%, 10% { --corte-med: 100%; }
+  45%, 62% { --corte-med: 10%; }
+  100% { --corte-med: 100%; }
+}
+
+/* ── Agenda: llega el día y se marca ────────────────────────────── */
+.d-agenda {
+  position: relative;
+  width: 4.4rem;
+  height: 4.4rem;
+}
+.d-agenda .cal {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--linea);
+  border-radius: 0.4rem;
+  overflow: hidden;
+  background: var(--relleno);
+}
+.d-agenda .cal b {
+  display: block;
+  height: 1.1rem;
+  background: var(--rojo);
+}
+.d-agenda .cal span {
+  position: absolute;
+  left: 0.9rem;
+  top: 1.9rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--oro);
+  animation: d-dia 6s var(--salida) infinite;
+}
+.d-agenda .visto {
+  position: absolute;
+  right: -0.45rem;
+  bottom: -0.45rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--oro);
+  transform: scale(0);
+  animation: d-hecho 6s var(--salida) infinite;
+}
+.d-agenda .visto::after {
+  content: '';
+  position: absolute;
+  left: 0.48rem;
+  top: 0.22rem;
+  width: 0.34rem;
+  height: 0.68rem;
+  border: solid #1b1511;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+@keyframes d-dia {
+  0%, 14% { transform: scale(0.4); opacity: 0; }
+  28% { transform: scale(1.25); opacity: 1; }
+  40%, 100% { transform: scale(1); opacity: 1; }
+}
+@keyframes d-hecho {
+  0%, 50% { transform: scale(0); }
+  64%, 90% { transform: scale(1); }
+  100% { transform: scale(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo *,
+  .cuerpo,
+  .flecha {
+    animation: none !important;
+    transition: none !important;
+  }
+  .d-menu .antes::after { transform: scaleX(1); }
+  .d-menu .despues { opacity: 1; }
+  .d-mercado i { background: var(--rojo); border-color: var(--rojo); }
+  .d-mercado i::after { transform: rotate(45deg) scale(1); }
+  .d-plan .candado { transform: scale(1); }
+  .d-avisos .tarjeta { opacity: 1; }
+  .d-proy .curva { stroke-dashoffset: 0; }
+  .d-proy .punto { transform: scale(1); }
+  .d-prot .leche { height: 35%; }
+  .d-prot .agua { height: 50%; }
+  .d-med { --corte-med: 40%; }
+  .d-agenda .visto { transform: scale(1); }
+}

@@ -1,0 +1,148 @@
+<div class="p-4 max-w-2xl mx-auto space-y-4">
+  <app-portada
+    foto="plan"
+    [titulo]="titulo()"
+    [subtitulo]="cuando() ? cuando() + ' · Cuéntanos qué comiste para ver cómo vas con tu plan.' : ''"
+  />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @if (cargando()) {
+    <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Cargando…</p>
+  } @else if (pedido(); as p) {
+    @if (p.contada) {
+      <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          Esta comida ya la contaste. Lo que se registra no se cambia, para que tu historia sea
+          fiel.
+        </p>
+        <a routerLink="/cumplimiento" class="text-sm font-semibold text-guerrero-red underline"
+          >Ver cómo voy</a
+        >
+      </section>
+    } @else {
+      <section
+        aria-labelledby="co-grupos"
+        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 id="co-grupos" class="font-semibold text-gray-900 dark:text-white">
+              ¿Cuánto comiste?
+            </h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              De lo que pedía tu plan para esta comida.
+            </p>
+          </div>
+          <p-button
+            label="Comí todo"
+            size="small"
+            severity="secondary"
+            variant="outlined"
+            (onClick)="todoElPlan()"
+          />
+        </div>
+
+        @for (g of p.grupos; track g.grupo) {
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-gray-800 dark:text-gray-100">
+              {{ grupos[g.grupo] }}
+              <span class="font-normal text-gray-500 dark:text-gray-400"
+                >· {{ g.porciones }} {{ g.porciones === 1 ? 'porción' : 'porciones' }}</span
+              >
+            </legend>
+            <div role="radiogroup" [attr.aria-label]="'Cuánto comiste de ' + grupos[g.grupo]" class="flex flex-wrap gap-2">
+              @for (o of opciones; track o.valor) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="avances()[g.grupo] === o.valor"
+                  [class]="clasesChip(avances()[g.grupo] === o.valor)"
+                  (click)="elegir(g.grupo, o.valor)"
+                >
+                  {{ o.label }}
+                </button>
+              }
+            </div>
+          </fieldset>
+        }
+      </section>
+
+      <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+        <div class="flex flex-col gap-1">
+          <label for="co-nota" class="text-sm font-medium text-gray-800 dark:text-gray-100"
+            >¿Qué fue? <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span></label
+          >
+          <textarea
+            pTextarea
+            id="co-nota"
+            rows="2"
+            maxlength="300"
+            placeholder="Ej. Pollo con arroz y ensalada"
+            [value]="nota()"
+            (input)="leerNota($event)"
+            class="w-full"
+          ></textarea>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+            Foto <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span>
+          </p>
+          @if (vista(); as url) {
+            <div class="relative w-40">
+              <img
+                [src]="url"
+                alt="Foto de tu comida"
+                class="w-40 h-40 object-cover rounded-xl border border-gray-200 dark:border-dark-700"
+              />
+              <button
+                type="button"
+                (click)="quitarFoto()"
+                aria-label="Quitar la foto"
+                class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gray-900 text-white flex items-center justify-center"
+              >
+                <i class="pi pi-times text-xs" aria-hidden="true"></i>
+              </button>
+            </div>
+          } @else {
+            <label
+              for="co-foto"
+              class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
+            >
+              <i class="pi pi-camera" aria-hidden="true"></i>
+              {{ leyendoFoto() ? 'Preparando…' : 'Tomar o elegir foto' }}
+            </label>
+            <input
+              id="co-foto"
+              type="file"
+              accept="image/*"
+              class="sr-only"
+              (change)="elegirFoto($event)"
+            />
+          }
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            La foto es solo tuya. El porcentaje sale de lo que marcas arriba, no de la imagen.
+          </p>
+        </div>
+      </section>
+
+      <div class="flex items-center gap-3">
+        <p-button
+          label="Guardar"
+          icon="pi pi-check"
+          [loading]="enviando()"
+          [disabled]="!completo()"
+          (onClick)="enviar()"
+        />
+        @if (!completo()) {
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            Marca cuánto comiste de cada grupo.
+          </span>
+        }
+      </div>
+    }
+  }
+</div>

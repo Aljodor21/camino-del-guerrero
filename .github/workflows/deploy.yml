@@ -1,0 +1,83 @@
+# Despliega en uburoom cuando algo llega a main. Corre en el runner de Warden
+# (self-hosted, etiqueta 'warden'): ver DEPLOY.md.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un despliegue a la vez; si llega otro, espera (nunca se cancela uno a medias).
+concurrency:
+  group: deploy-camino
+  cancel-in-progress: false
+
+env:
+  # El .env.docker real vive solo en el servidor, nunca en git.
+  ENV_FILE: /home/alejo/camino/.env.docker
+  RESPALDOS: /home/alejo/camino/respaldos
+  DB_CONTAINER: camino-del-guerrero-db-1
+
+jobs:
+  deploy:
+    name: Desplegar en uburoom
+    runs-on: [self-hosted, warden]
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Revisar el entorno del servidor
+        run: |
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "::error::Falta $ENV_FILE en el servidor. Ver DEPLOY.md, paso 3."
+            exit 1
+          fi
+
+      - name: Respaldo de la base antes de tocar nada
+        run: |
+          mkdir -p "$RESPALDOS"
+          if docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+            archivo="$RESPALDOS/antes-del-deploy-$(date +%F-%H%M%S).sql.gz"
+            docker exec "$DB_CONTAINER" sh -c \
+              'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' | gzip > "$archivo"
+            echo "Respaldo: $archivo ($(du -h "$archivo" | cut -f1))"
+            # Se guardan los últimos 10.
+            ls -1t "$RESPALDOS"/antes-del-deploy-*.sql.gz | tail -n +11 | xargs -r rm --
+          else
+            echo "No hay base corriendo todavía (primer despliegue): nada que respaldar."
+          fi
+
+      - name: Construir y levantar
+        run: |
+          cp "$ENV_FILE" .env.docker
+          docker compose --env-file .env.docker up -d --build --remove-orphans
+
+      - name: Esperar a que responda
+        run: |
+          puerto="$(grep -E '^APP_PORT=' .env.docker | cut -d= -f2 | tr -d '"' )"
+          puerto="${puerto:-80}"
+          for i in $(seq 1 40); do
+            web="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$puerto/" || true)"
+            api="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$puerto/api/usuarios/login/" || true)"
+            # La API responde 4xx a un GET sin datos: lo que importa es que no sea 000 ni 5xx.
+            if [[ "$web" == 200 && "$api" =~ ^[234] ]]; then
+              echo "Listo en el puerto $puerto (web $web, api $api)."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::La app no respondió a tiempo (web=$web, api=$api)."
+          exit 1
+
+      - name: Publicar en Cloudflare
+        run: sudo -n /usr/local/bin/warden publish
+
+      - name: Limpiar imágenes viejas
+        run: docker image prune -f
+
+      - name: Logs si algo falló
+        if: failure()
+        run: docker compose --env-file .env.docker logs --tail 80 backend frontend db || true

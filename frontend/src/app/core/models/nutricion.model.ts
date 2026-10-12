@@ -1,30 +1,15 @@
-export interface DiaNutricional {
-  id: number;
-  dia_semana: number;
-  dia_nombre: string;
-  desayuno: string;
-  almuerzo: string;
-  cena: string;
-  snacks: string;
-  calorias_aprox: number | null;
-}
-
-export interface PlanNutricional {
-  id: number;
-  fecha_generacion: string;
-  dias: DiaNutricional[];
-}
-
 export interface ItemMercado {
   id: number;
   nombre: string;
   cantidad: string;
   categoria: string;
   categoria_nombre: string;
-  frecuencia: 'semanal' | 'quincenal';
+  frecuencia: 'semanal' | 'quincenal' | 'mensual';
   frecuencia_nombre: string;
   comprado: boolean;
 }
+
+export type PeriodoMercado = 'semana' | 'quincena' | 'mes';
 
 export interface ItemYaComprado {
   nombre: string;
@@ -39,4 +24,7 @@ export interface ListaMercado {
   plan_preparacion: string[];
   num_personas: number;
   items_ya_comprados: ItemYaComprado[];
+  periodo: PeriodoMercado;
+  /** El próximo 15 o 30: promoción en Colanta. */
+  promocion_colanta: string;
 }

@@ -1,0 +1,117 @@
+@if (base(); as b) {
+  <section
+    class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-3"
+    aria-labelledby="comparar-titulo"
+  >
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <h2 id="comparar-titulo" class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Cómo empezaste y cómo vas
+      </h2>
+      @if (poses().length > 1) {
+        <p-selectbutton
+          [options]="poses()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="pose()"
+          (ngModelChange)="cambiarPose($event)"
+          [allowEmpty]="false"
+          size="small"
+          ariaLabelledBy="comparar-titulo"
+        />
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <figure class="space-y-1.5">
+        <button
+          type="button"
+          class="block w-full rounded-lg overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+          (click)="ampliar.emit({ foto: b.foto, medicion: b.medicion })"
+          aria-label="Ampliar foto del inicio"
+        >
+          <app-foto [fotoId]="b.foto.id" alt="Foto del inicio" class="aspect-[3/4]" />
+        </button>
+        <figcaption class="text-xs">
+          <span class="flex items-center gap-1 font-semibold text-amber-800 dark:text-amber-300">
+            @if (b.medicion.es_inicial) {
+              <i class="pi pi-lock text-[10px]" aria-hidden="true"></i> Inicio
+            } @else {
+              Primera foto
+            }
+          </span>
+          <span class="text-gray-500 dark:text-gray-400 tabular-nums">
+            {{ formatearFecha(b.medicion.fecha) }} · {{ num(b.medicion.peso_kg) }} kg
+          </span>
+        </figcaption>
+      </figure>
+
+      @if (comparada(); as c) {
+        <figure class="space-y-1.5">
+          <button
+            type="button"
+            class="block w-full rounded-lg overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+            (click)="ampliar.emit({ foto: c.foto, medicion: c.medicion })"
+            [attr.aria-label]="'Ampliar foto del ' + formatearFecha(c.medicion.fecha)"
+          >
+            <app-foto
+              [fotoId]="c.foto.id"
+              [alt]="'Foto del ' + formatearFecha(c.medicion.fecha)"
+              class="aspect-[3/4]"
+            />
+          </button>
+          <figcaption class="text-xs">
+            <span class="block font-semibold text-gray-900 dark:text-white">
+              {{ c === otras().at(-1) ? 'Ahora' : 'Comparando' }}
+            </span>
+            <span class="text-gray-500 dark:text-gray-400 tabular-nums">
+              {{ formatearFecha(c.medicion.fecha) }} · {{ num(c.medicion.peso_kg) }} kg
+            </span>
+          </figcaption>
+        </figure>
+      } @else {
+        <div
+          class="aspect-[3/4] rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-2 p-3 text-center"
+        >
+          <i class="pi pi-images text-xl text-gray-400" aria-hidden="true"></i>
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            Cuando registres otra medición con foto en esta pose, la verás aquí al lado.
+          </p>
+        </div>
+      }
+    </div>
+
+    @if (cambio(); as d) {
+      <p class="text-sm text-gray-600 dark:text-gray-300 tabular-nums">
+        <span class="font-semibold text-gray-900 dark:text-white"
+          >{{ d.kg > 0 ? '+' : '' }}{{ num(d.kg) }} kg</span
+        >
+        en {{ d.dias }} {{ d.dias === 1 ? 'día' : 'días' }}
+      </p>
+    }
+
+    @if (otras().length > 1) {
+      <div class="-mx-4 px-4 overflow-x-auto">
+        <ul class="flex gap-2 w-max" aria-label="Elegir la foto para comparar">
+          @for (t of otras(); track t.medicion.id) {
+            <li>
+              <button
+                type="button"
+                (click)="elegir(t)"
+                [attr.aria-pressed]="t === comparada()"
+                class="w-14 rounded-md overflow-hidden ring-2 transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+                [class]="t === comparada() ? 'ring-guerrero-red' : 'ring-transparent'"
+              >
+                <app-foto [fotoId]="t.foto.id" alt="" class="aspect-[3/4]" />
+                <span
+                  class="block text-[10px] py-0.5 bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 tabular-nums"
+                >
+                  {{ formatearFecha(t.medicion.fecha, 'grafica') }}
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </section>
+}

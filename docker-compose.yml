@@ -1,3 +1,7 @@
+# El nombre fija los volúmenes y los contenedores (camino-del-guerrero-db-1, ...): no cambiarlo
+# sin migrar los datos, porque Docker crearía volúmenes nuevos y vacíos.
+name: camino-del-guerrero
+
 services:
 
   # ── Base de datos PostgreSQL ──────────────────────────────────────────────
@@ -23,12 +27,22 @@ services:
     env_file: .env.docker
     volumes:
       - static_files:/app/staticfiles
+      - media_files:/app/media
     command: >
       sh -c "python manage.py migrate --no-input &&
              python manage.py loaddata fixtures/initial_data.json &&
              python manage.py crear_admin &&
              python manage.py collectstatic --no-input &&
              gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 300"
+
+  # ── Avisos: crea los del día y los manda al celular cada minuto ───────────
+  avisos:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file: .env.docker
+    command: python manage.py enviar_avisos --cada 60
 
   # ── Frontend Angular + Nginx ──────────────────────────────────────────────
   frontend:
@@ -44,3 +58,4 @@ services:
 volumes:
   postgres_data:   # datos de la BD — persisten entre reinicios
   static_files:    # archivos estáticos de Django (admin, etc.)
+  media_files:     # fotos de progreso de los usuarios — privadas, se sirven por la API

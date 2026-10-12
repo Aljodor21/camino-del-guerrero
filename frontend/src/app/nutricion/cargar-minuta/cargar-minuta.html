@@ -1,0 +1,365 @@
+<div class="p-4 max-w-2xl mx-auto space-y-4">
+  <div class="flex items-center justify-between gap-3">
+    <a
+      routerLink="/nutricion"
+      class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+    >
+      <i class="pi pi-arrow-left text-xs" aria-hidden="true"></i>Nutrición
+    </a>
+    <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums"
+      >Paso {{ numeroPaso() }} de {{ totalPasos }}</span
+    >
+  </div>
+
+  @switch (paso()) {
+    @case ('origen') {
+      <header class="space-y-1">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          ¿Quién arma tu plan de comida?
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          De esto sale tu menú de la semana, siempre con la lista de intercambios.
+        </p>
+      </header>
+      <div class="grid gap-3">
+        <button type="button" [class]="claseOpcion" (click)="elegirOrigen('nutricionista')">
+          <span class="font-semibold text-gray-900 dark:text-white">Tengo nutricionista</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400"
+            >Pasas a la plantilla las porciones que te dio. Si tu PDF es de un formato que conocemos
+            (como el de Comfama), se llena solo.</span
+          >
+        </button>
+        <button type="button" [class]="claseOpcion" (click)="elegirOrigen('ia')">
+          <span class="font-semibold text-gray-900 dark:text-white">La IA arma todo</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400"
+            >Calculamos tus porciones con tu peso, estatura, edad y meta. Es una guía general: no
+            reemplaza a un nutricionista.</span
+          >
+        </button>
+      </div>
+    }
+
+    @case ('minuta') {
+      @if (origen() === 'nutricionista') {
+        <header class="space-y-1">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Tu minuta</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Pasa las porciones de cada comida tal como te las dio tu nutricionista.
+          </p>
+        </header>
+
+        <div class="flex flex-wrap gap-2">
+          <label
+            for="cm-original"
+            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-700 text-sm font-semibold text-gray-800 dark:text-gray-100 cursor-pointer hover:border-guerrero-red focus-within:border-guerrero-red"
+            [class.pointer-events-none]="trabajando()"
+          >
+            <i
+              [class]="trabajando() ? 'pi pi-spin pi-spinner text-xs' : 'pi pi-file-pdf text-xs'"
+              aria-hidden="true"
+            ></i
+            >{{ original() ? 'Subir otro archivo' : 'Subir el PDF de tu plan' }}
+            <input
+              id="cm-original"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              class="sr-only"
+              (change)="subirOriginal($event)"
+            />
+          </label>
+        </div>
+        @if (!original()) {
+          <p class="text-xs text-gray-500 dark:text-gray-400 -mt-2">
+            Con el PDF llenamos la tabla por ti y tú la revisas. Si es una foto, la dejamos adjunta
+            y la llenas a mano.
+          </p>
+        }
+        @if (original(); as f) {
+          <p class="text-xs text-gray-500 dark:text-gray-400 -mt-2">
+            <i class="pi pi-paperclip text-[10px]" aria-hidden="true"></i> {{ f.name }}
+            @if (leidoDelPdf()) {
+              · llenamos la tabla con él, revísala.
+            }
+          </p>
+        }
+        @if (aviso()) {
+          <p-message severity="warn" [text]="aviso()" styleClass="w-full" />
+        }
+
+        <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4">
+          <app-editor-minuta [(porciones)]="porciones" />
+        </section>
+
+        <details class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 group">
+          <summary
+            class="cursor-pointer text-sm font-semibold text-gray-900 dark:text-white list-none flex items-center gap-2"
+          >
+            <i
+              class="pi pi-chevron-right text-xs transition-transform group-open:rotate-90"
+              aria-hidden="true"
+            ></i>
+            Calorías, proteína y recomendaciones (si te las dio)
+          </summary>
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400">
+              Calorías al día
+              <input
+                type="number"
+                inputmode="numeric"
+                class="h-10 px-3 rounded-lg border border-gray-200 dark:border-dark-700 bg-transparent text-gray-900 dark:text-white"
+                [value]="kcal() ?? ''"
+                (change)="kcal.set(numero($event))"
+              />
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400">
+              Proteína (g por kilo)
+              <input
+                type="number"
+                inputmode="decimal"
+                step="0.1"
+                class="h-10 px-3 rounded-lg border border-gray-200 dark:border-dark-700 bg-transparent text-gray-900 dark:text-white"
+                [value]="proteina() ?? ''"
+                (change)="proteina.set(numero($event))"
+              />
+            </label>
+            <label class="col-span-2 flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400">
+              Recomendaciones
+              <textarea
+                pTextarea
+                rows="3"
+                class="w-full"
+                [value]="recomendaciones()"
+                (input)="recomendaciones.set($any($event.target).value)"
+              ></textarea>
+            </label>
+          </div>
+        </details>
+      } @else {
+        <header class="space-y-1">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Tu plan calculado</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Es una guía general: si tienes nutricionista, usa su plan.
+          </p>
+        </header>
+        @if (trabajando() && !minutaLista()) {
+          <div class="flex flex-col items-center gap-3 py-14 text-center">
+            <i class="pi pi-spin pi-spinner text-2xl text-guerrero-red" aria-hidden="true"></i>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Calculando tus porciones…</p>
+          </div>
+        } @else if (minutaLista()) {
+          <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4">
+            <p class="text-sm text-gray-700 dark:text-gray-200 tabular-nums">
+              <strong>{{ kcal() }} kcal</strong> al día ·
+              <strong>{{ num(proteina()) }} g</strong> de proteína por kilo
+            </p>
+            @if (explicacion()) {
+              <p class="text-sm text-gray-500 dark:text-gray-400">{{ explicacion() }}</p>
+            }
+            <app-tabla-minuta [porciones]="porciones()" />
+            @if (recomendaciones()) {
+              <p class="text-sm text-gray-700 dark:text-gray-200">{{ recomendaciones() }}</p>
+            }
+          </section>
+          <p-button
+            label="Calcular de nuevo"
+            icon="pi pi-refresh"
+            size="small"
+            variant="text"
+            severity="secondary"
+            [loading]="trabajando()"
+            (onClick)="calcular()"
+          />
+        }
+      }
+
+      @if (error()) {
+        <p-message severity="error" [text]="error()" styleClass="w-full" />
+      }
+      <div class="flex justify-between gap-2">
+        <p-button label="Atrás" variant="text" severity="secondary" (onClick)="volver()" />
+        <p-button
+          label="Siguiente"
+          [disabled]="!minutaLista()"
+          [loading]="trabajando() && minutaLista()"
+          (onClick)="irASuplementos()"
+        />
+      </div>
+    }
+
+    @case ('suplementos') {
+      <header class="space-y-1">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          Tu proteína en la minuta
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          @if (sinSuplementos()) {
+            ¿Vas a tomar proteína? Actívala y dinos qué dice la etiqueta.
+          } @else {
+            Dinos en qué comidas la tomas, cuántos scoops en cada una y qué reemplaza.
+          }
+        </p>
+      </header>
+
+      @for (s of enMinuta(); track $index; let i = $index) {
+        <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
+          @if (s.existente) {
+            <h2 class="font-semibold text-gray-900 dark:text-white">{{ s.nombre }}</h2>
+          } @else {
+            <button
+              type="button"
+              role="switch"
+              [attr.aria-checked]="s.activo"
+              class="w-full flex items-center justify-between gap-3 text-left"
+              (click)="alternarActivo(i)"
+            >
+              <span class="font-semibold text-gray-900 dark:text-white">¿Vas a tomar proteína?</span>
+              <span
+                [class]="
+                  'shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors ' +
+                  (s.activo ? 'bg-guerrero-red' : 'bg-gray-300 dark:bg-dark-700')
+                "
+              >
+                <span
+                  [class]="
+                    'block w-5 h-5 rounded-full bg-white shadow transition-transform ' +
+                    (s.activo ? 'translate-x-5' : '')
+                  "
+                ></span>
+              </span>
+            </button>
+          }
+
+          @if (s.activo) {
+            @if (!s.existente) {
+              <div class="flex flex-col gap-1">
+                <label
+                  for="cm-sup-tipo"
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >Tipo de proteína
+                  <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span></label
+                >
+                <input
+                  pInputText
+                  id="cm-sup-tipo"
+                  maxlength="120"
+                  placeholder="Ej. whey, hipercalórica, caseína, vegetal…"
+                  [value]="s.nombre"
+                  (input)="actualizar(i, { nombre: $any($event.target).value })"
+                  class="w-full"
+                />
+              </div>
+            }
+            <app-etiqueta-suplemento
+              [prefijo]="'cm-sup-' + i"
+              [etiqueta]="s.etiqueta"
+              (etiquetaChange)="actualizar(i, { etiqueta: $event })"
+            />
+            <app-tomas-suplemento
+              [porciones]="porciones()"
+              [scoopsPorcion]="s.etiqueta.scoops"
+              [liquidoMl]="s.etiqueta.liquido ? s.etiqueta.liquidoMl : null"
+              [lecheMl]="s.etiqueta.liquido === 'leche' ? s.etiqueta.liquidoMl : s.etiqueta.lecheMl"
+              [tomas]="s.tomas"
+              (tomasChange)="actualizar(i, { tomas: $event })"
+            />
+          }
+        </section>
+      }
+
+      @if (error()) {
+        <p-message severity="error" [text]="error()" styleClass="w-full" />
+      }
+      <div class="flex justify-between gap-2">
+        <p-button label="Atrás" variant="text" severity="secondary" (onClick)="volver()" />
+        <p-button
+          label="Siguiente"
+          [loading]="trabajando()"
+          [disabled]="!suplementosValidos()"
+          (onClick)="irAPorFuera()"
+        />
+      </div>
+    }
+
+    @case ('fuera') {
+      <header class="space-y-1">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          ¿Comes alguna comida por fuera?
+        </h1>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          En esas te decimos qué pedir para cumplir la minuta, y no entran a la lista de mercado. Lo
+          puedes cambiar después.
+        </p>
+      </header>
+
+      <section class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4">
+        @for (t of tiempos(); track t) {
+          <div class="space-y-1.5">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+              {{ tiemposComida[t].label }}
+            </p>
+            <div
+              class="flex flex-wrap gap-2"
+              role="radiogroup"
+              [attr.aria-label]="tiemposComida[t].label"
+            >
+              @for (o of opcionesPorFuera; track o.label) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="reglaDe(t) === o.value"
+                  [class]="clasesChip(reglaDe(t) === o.value)"
+                  (click)="elegirPorFuera(t, o.value)"
+                >
+                  {{ o.label }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      @if (esPlanNuevo()) {
+        <section class="space-y-3" aria-labelledby="cm-periodo">
+          <h2 id="cm-periodo" class="font-semibold text-gray-900 dark:text-white">
+            ¿Hasta cuándo va este plan?
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Te sugerimos el mismo tiempo que ya tiene tu proceso, pero puedes elegir otro o dejarlo
+            sin definir.
+          </p>
+          <app-periodo-plan [sugerida]="sugerida()" [(fecha)]="periodo" />
+        </section>
+      }
+
+      @if (error()) {
+        <p-message severity="error" [text]="error()" styleClass="w-full" />
+      }
+      <div
+        class="rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-200"
+      >
+        Al guardar tu plan, la minuta (las porciones) queda fija: no se edita. Si después te dan
+        otra, la guardas y reemplaza a esta. Dónde comes cada comida sí lo puedes cambiar cuando
+        quieras.
+      </div>
+      <div class="flex justify-between gap-2">
+        @if (guardada()) {
+          <span></span>
+          <a
+            routerLink="/nutricion"
+            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold text-guerrero-red hover:bg-red-50 dark:hover:bg-guerrero-red/10"
+            >Ir a mi menú</a
+          >
+        } @else {
+          <p-button label="Atrás" variant="text" severity="secondary" (onClick)="volver()" />
+          <p-button
+            label="Guardar plan"
+            icon="pi pi-lock"
+            [loading]="trabajando()"
+            [disabled]="!puedeGuardar()"
+            (onClick)="guardar()"
+          />
+        }
+      </div>
+    }
+  }
+</div>

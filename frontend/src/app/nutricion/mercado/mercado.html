@@ -1,0 +1,250 @@
+<div class="space-y-4">
+  <app-ayuda
+    clave="mercado"
+    titulo="Tu lista de mercado"
+    para="Suma lo que cocinas en casa, con las cantidades exactas de tu plan. Lo fresco se compra cada semana y lo que dura sale para todo el periodo."
+    [pasos]="[
+        'Elige para cuántos días: una semana, 15 días o un mes.',
+        'Toca «Generar lista» para armarla con tu menú.',
+        'Marca cada producto cuando lo compres.'
+      ]"
+    demo="mercado"
+  />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  <!-- Badge de personas -->
+  <div
+    class="bg-white dark:bg-dark-800 rounded-xl p-3 shadow-sm flex items-center justify-between gap-3"
+  >
+    <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+      <i class="pi pi-users text-guerrero-red"></i> Personas
+    </span>
+    <div class="flex items-center gap-3">
+      <button
+        class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
+        [disabled]="numPersonas() <= 1"
+        (click)="ajustarPersonas(-1)"
+      >
+        -
+      </button>
+      <span class="text-base font-bold text-gray-800 dark:text-white w-6 text-center">{{
+        numPersonas()
+      }}</span>
+      <button
+        class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300 font-bold disabled:opacity-40"
+        [disabled]="numPersonas() >= 20"
+        (click)="ajustarPersonas(1)"
+      >
+        +
+      </button>
+    </div>
+  </div>
+
+  <!-- Para cuántos días -->
+  <div class="bg-white dark:bg-dark-800 rounded-xl p-3 shadow-sm space-y-2">
+    <div role="radiogroup" aria-label="Para cuántos días" class="flex flex-wrap gap-2">
+      @for (p of periodos; track p.id) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="periodo() === p.id"
+          [class]="clasesChip(periodo() === p.id)"
+          (click)="periodo.set(p.id)"
+        >
+          {{ p.label }}
+        </button>
+      }
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+      @if (periodo() === 'semana') {
+        Todo para esta semana, según tu menú.
+      } @else {
+        Lo que dura (arroz, avena, aceite, semillas, leguminosas) sale para
+        {{ periodo() === 'quincena' ? '15 días' : 'un mes' }}. Lo fresco se compra cada semana,
+        porque el menú cambia.
+      }
+      Toca "{{ lista() ? 'Volver a armar' : 'Generar lista' }}" para aplicarlo.
+    </p>
+  </div>
+
+  @if (cargando() || generando()) {
+    <div class="flex justify-center py-16">
+      <p-progressspinner styleClass="w-10 h-10" />
+    </div>
+  } @else if (!lista()) {
+    <div class="text-center py-16 text-gray-400 dark:text-gray-600">
+      <i class="pi pi-shopping-cart text-5xl"></i>
+      <p class="mt-3 text-sm">No tienes lista de mercado aún.</p>
+      <p class="text-xs mt-1">Se arma con tu menú de esta semana.</p>
+      <p-button
+        label="Generar lista"
+        icon="pi pi-refresh"
+        styleClass="mt-4"
+        [loading]="generando()"
+        (onClick)="generar()"
+      />
+    </div>
+  } @else {
+    <div class="flex justify-end">
+      <p-button
+        icon="pi pi-refresh"
+        label="Volver a armar"
+        variant="text"
+        severity="secondary"
+        size="small"
+        [loading]="generando()"
+        (onClick)="generar()"
+      />
+    </div>
+    <!-- Promoción de Colanta -->
+    <div
+      class="bg-white dark:bg-dark-800 rounded-xl p-3 shadow-sm flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300"
+    >
+      <i class="pi pi-calendar text-guerrero-red" aria-hidden="true"></i>
+      <p>
+        Promoción en Colanta el 15 y el 30 de cada mes. La próxima es el
+        <span class="font-semibold">{{ formatearFecha(lista()!.promocion_colanta, 'dia') }}</span>
+        ({{ cuandoEs(lista()!.promocion_colanta).toLowerCase() }}).
+      </p>
+    </div>
+
+    <!-- Progreso de compras -->
+    <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-4">
+      <i class="pi pi-shopping-bag text-guerrero-red text-2xl"></i>
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-gray-800 dark:text-white">
+          {{ itemsComprados() }} / {{ totalItems() }} productos
+        </p>
+        <div class="mt-1.5 h-2 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-guerrero-red rounded-full transition-all"
+            [style.width.%]="totalItems() > 0 ? (itemsComprados() / totalItems()) * 100 : 0"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ya lo compraste (quincenales comprados recientemente) -->
+    @if (lista()!.items_ya_comprados.length) {
+      <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+        <div
+          class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
+        >
+          <i class="pi pi-verified text-green-500"></i>
+          <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Ya tienes esto
+          </p>
+        </div>
+        <ul class="divide-y divide-gray-50 dark:divide-dark-700">
+          @for (yc of lista()!.items_ya_comprados; track yc.nombre) {
+            <li class="px-4 py-3 text-sm flex items-center justify-between gap-3">
+              <span class="text-gray-600 dark:text-gray-300">{{ yc.nombre }}</span>
+              <span class="text-xs text-gray-400 shrink-0">Comprado {{ yc.ultima_compra }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Items por categoría -->
+    @for (cat of categorias(); track cat.nombre) {
+      <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+        <div
+          class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600"
+        >
+          <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            {{ cat.nombre }}
+          </p>
+        </div>
+        <div class="divide-y divide-gray-50 dark:divide-dark-700">
+          @for (item of cat.items; track item.id) {
+            <button
+              class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-dark-700"
+              (click)="toggleItem(item)"
+            >
+              <i
+                [class]="
+                  item.comprado
+                    ? 'pi pi-check-circle text-green-500 text-lg motion-safe:animate-[pop_320ms_cubic-bezier(0.16,1,0.3,1)]'
+                    : 'pi pi-circle text-gray-300 dark:text-gray-600 text-lg'
+                "
+              ></i>
+              <span
+                class="flex-1 text-sm transition-colors duration-300"
+                [class]="
+                  item.comprado
+                    ? 'line-through text-gray-400 dark:text-gray-600'
+                    : 'text-gray-800 dark:text-white'
+                "
+                >{{ item.nombre }}</span
+              >
+              @if (item.frecuencia !== 'semanal') {
+                <span
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0"
+                  >{{ item.frecuencia === 'mensual' ? 'Mes' : '15 días' }}</span
+                >
+              }
+              @if (item.cantidad) {
+                <span class="text-xs text-gray-400 shrink-0">{{ item.cantidad }}</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Consejos de compra -->
+    @if (lista()!.consejos_compra.length) {
+      <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+        <div
+          class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
+        >
+          <i class="pi pi-tag text-guerrero-red"></i>
+          <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Cómo mercar
+          </p>
+        </div>
+        <ul class="divide-y divide-gray-50 dark:divide-dark-700">
+          @for (tip of lista()!.consejos_compra; track $index) {
+            <li
+              class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed flex gap-2"
+            >
+              <span class="text-guerrero-red">•</span>
+              <span>{{ tip }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Plan de preparación -->
+    @if (lista()!.plan_preparacion.length) {
+      <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm overflow-hidden">
+        <div
+          class="px-4 py-2.5 bg-gray-50 dark:bg-dark-700 border-b border-gray-100 dark:border-dark-600 flex items-center gap-2"
+        >
+          <i class="pi pi-clock text-guerrero-red"></i>
+          <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Plan de preparación
+          </p>
+        </div>
+        <ol class="divide-y divide-gray-50 dark:divide-dark-700">
+          @for (paso of lista()!.plan_preparacion; track $index; let i = $index) {
+            <li
+              class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed flex gap-3"
+            >
+              <span
+                class="shrink-0 w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center"
+                >{{ i + 1 }}</span
+              >
+              <span>{{ paso }}</span>
+            </li>
+          }
+        </ol>
+      </div>
+    }
+  }
+</div>

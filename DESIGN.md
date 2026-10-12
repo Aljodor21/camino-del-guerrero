@@ -1,0 +1,67 @@
+# Design
+
+Este archivo registra el mundo visual de la página pública (home) y cómo se lleva al resto de la app.
+
+## Mundo: poco y nítido
+
+Hero cinematográfico (referencia elegida por el usuario: hero "Portal" de dinamosites): los guantes rojos sobre negro a pantalla completa, con una animación que arranca con el primer scroll y sigue en bucle mientras el hero se vea (se pausa fuera de pantalla): vendas y cuerdas estallan alrededor de los guantes en una nube de magnesio. Son 96 cuadros WebP por orientación en `frontend/public/home/secuencia/` (`d-NNN` horizontal, `m-NNN` vertical) que un canvas dibuja a 20 cuadros por segundo; el primer cuadro es el que se ve al cargar, y con "reducir movimiento" o ahorro de datos se queda ese cuadro quieto. Titular al costado en escritorio, arriba en celular, y se desvanece al empezar a bajar. Barra transparente. Después, un recorrido de cuatro estaciones fijas (comida, entreno, progreso, agenda) donde cada foto sube como el sol, una línea dorada marca el avance y cada estación muestra un pedazo real de la app. Cierre en la cumbre al amanecer.
+
+## Color (comprometido, oscuro primero)
+
+La escena: alguien en el celular de noche o de madrugada pensando en empezar. Por eso el fondo es noche cálida y la luz es la del amanecer de las fotos.
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--noche` | `#100d0b` | Fondo |
+| `--tierra` | `#1b1511` | Superficies |
+| `--hueso` | `#f6f1ea` | Texto principal |
+| `--bruma` | `rgb(246 241 234 / 0.74)` | Texto secundario |
+| `--oro` | `#d4af37` | Contador, etiquetas, detalles |
+| `--rojo` | `#c0392b` | Tachado en la muestra de cambio |
+
+## Tipografía
+
+- Display: Barlow Condensed 700. Titular del hero clamp(62px, 6.9vw, 118px), interlineado 0.89, tracking -0.015em.
+- Texto: Barlow 400/500, 17–19px, medida máxima 60ch.
+- Números tabulares en contadores y cantidades.
+
+## Composición
+
+- Fotos a sangre completa con versión vertical para celular (`-movil.webp`).
+- Texto a la izquierda sobre degradado de noche; el sujeto de la foto a la derecha.
+- Botón principal de vidrio cálido: píldora de 62px de alto, borde blanco fino, blur 18px y reflejo interior; texto blanco centrado, sin icono.
+- Barra transparente sobre el hero (logo y enlaces de texto), sin fondo sólido.
+- Fotos en WebP de calidad alta (90) desde los originales.
+
+## Movimiento
+
+- Hero: al bajar, el texto se desvanece y sube un poco, y la foto se oscurece sin apagarse (nunca queda una pantalla vacía): el bloque "¿No sabes por dónde empezar?" sube por encima de ella.
+- Las tres preguntas son un camino: una línea dorada se llena al bajar y cada pregunta llega con su punto.
+- Cada estación trae una demo viva que muestra qué hace (cambio de alimento, temporizador de una serie, día uno contra hoy, avisos que llegan y se marcan); solo se mueve con la estación activa.
+- Estaciones: la foto sube con una cortina (clip-path) y se acerca suave; el titular entra con máscara; la línea dorada se llena; en el entreno se turnan boxeo, yoga y en casa.
+- Secciones de texto: un fundido corto al llegar.
+- Nada de partículas, destellos, rayos ni fotos animadas por código: si hay movimiento en la foto, viene de un video real.
+- Todo se apaga con "reducir movimiento".
+
+## En la app: ayuda que se ve
+
+`shared/ayuda`: en cada pantalla, una tarjeta "para qué sirve y cómo se usa" con tres pasos y una animación corta que muestra qué hace (menú, mercado, plan, avisos, cumplimiento, proyección, proteína, medidas, agenda). Se abre sola la primera vez y queda recogida. Las animaciones se pausan al cerrarla y se apagan con "reducir movimiento". Movimiento general: la pantalla entra con un fundido breve y los botones se hunden al tocarlos.
+
+## 404
+
+Pantalla completa con la animación del guerrero y el poste que dice 404; por encima, solo la barra de arriba y el pie, transparentes. Hay dos videos sin audio, cada uno con su cuadro fijo: horizontal (`404.mp4`, `404-poster.webp`) y vertical (`404-movil.mp4`, `404-movil-poster.webp`); se usa el que corresponde a la orientación de la pantalla y se cambia solo si gira. Con "reducir movimiento" queda el cuadro fijo.
+
+## Prohibido en este mundo
+
+- Iconos o brillos de IA, destellos y partículas, degradados en el texto, tarjetas iguales de icono + título + texto.
+- Testimonios, cifras o logos de clientes inventados.
+
+## En el resto de la app
+
+Lo que no se pierde: el rojo de la marca en lo activo y la acción, el modo claro y oscuro, la barra de abajo y lo práctico de cada pantalla. Lo que se trae del home:
+
+- Modo oscuro en noche cálida (`dark-900 #100d0b`, `dark-800 #1b1511`, `dark-700 #2b221c`) y grises cálidos en toda la app (`styles.css`); PrimeNG con las mismas superficies (`guerrero-preset.ts`).
+- Barlow en el texto y Barlow Condensed en `h1`/`h2`/`h3`.
+- Portada con foto (`shared/portada`) arriba de cada sección: Nutrición (desayuno), Rutinas (boxeo), Progreso (cinta métrica), Consejos (en casa), Perfil (amarrarse los tenis). Baja (9.5rem) para no quitar espacio.
+- Barras de arriba y abajo translúcidas con desenfoque; la sección activa en rojo con una rayita arriba.
+- Entrar y registrarse sobre la foto de los guantes.

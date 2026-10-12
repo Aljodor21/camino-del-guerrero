@@ -1,4 +1,5 @@
 <div class="p-4 space-y-4 max-w-2xl mx-auto">
+  <app-portada foto="entreno" titulo="Rutinas" [subtitulo]="rutina()?.nombre ?? ''" />
 
   <!-- Cargando -->
   @if (loading()) {
@@ -11,12 +12,12 @@
   @if (!loading() && !rutina()) {
     <div class="text-center space-y-4 py-16">
       <i class="pi pi-calendar-times text-5xl text-gray-300 dark:text-gray-600"></i>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Sin rutina generada</h2>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Aún no tienes rutina</h2>
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        Completa el onboarding para que la IA cree tu rutina personalizada.
+        Elige tus implementos y la generamos con la configuración de tu proceso.
       </p>
-      <p-button label="Ir al onboarding" icon="pi pi-arrow-right" iconPos="right"
-                (onClick)="irOnboarding()" />
+      <p-button label="Generar rutina" icon="pi pi-arrow-right" iconPos="right"
+                (onClick)="abrirRegenerar()" />
     </div>
   }
 
@@ -26,7 +27,7 @@
     <!-- Header -->
     <div class="flex items-start justify-between gap-3">
       <div>
-        <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ r.nombre }}</h1>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tu semana</h2>
         <p class="text-xs text-gray-400 mt-0.5">
           Generada el {{ r.fecha_generacion | date:'dd/MM/yyyy' }}
         </p>
@@ -36,7 +37,7 @@
         [rounded]="true"
         variant="outlined"
         severity="secondary"
-        pTooltip="Regenerar con IA"
+        pTooltip="Regenerar rutina"
         tooltipPosition="left"
         (onClick)="abrirRegenerar()"
       />
@@ -136,7 +137,7 @@
   } @else {
     <div class="space-y-4">
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        Selecciona los implementos disponibles y agrega cualquier equipo extra. La IA regenerará tu rutina con esta información.
+        Selecciona los implementos disponibles y agrega cualquier equipo extra. Tu rutina se volverá a generar con esta información.
       </p>
 
       <div class="grid grid-cols-2 gap-2">

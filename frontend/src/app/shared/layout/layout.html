@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-warm-bg dark:bg-dark-900 text-gray-900 dark:text-white">
-
   <!-- Navbar superior -->
-  <header class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4
-                 bg-warm-card dark:bg-dark-800 border-b border-gray-300 dark:border-dark-700 shadow-sm">
+  <header
+    class="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-4 bg-warm-card/85 dark:bg-dark-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-white/5"
+  >
     <a [routerLink]="['/']">
       <img
         [src]="themeService.isDark() ? '/Logo oscuro-sf.png' : '/Logo claro-sf.png'"
@@ -11,9 +11,27 @@
       />
     </a>
     <div class="flex items-center gap-1">
-      <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-1">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-2">
         {{ authService.usuario()?.nombre }}
       </span>
+      @if (!authService.isAdmin()) {
+        <a
+          href="/avisos"
+          (click)="alternarAvisos($event)"
+          class="relative w-10 h-10 flex items-center justify-center rounded-full text-guerrero-red hover:bg-guerrero-red/10 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          [attr.aria-label]="
+            avisos.pendientes() ? 'Avisos: ' + avisos.pendientes() + ' pendientes' : 'Avisos'
+          "
+        >
+          <i class="pi pi-bell" aria-hidden="true"></i>
+          @if (avisos.pendientes()) {
+            <span
+              class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-guerrero-red text-white text-[10px] font-bold leading-4 text-center tabular-nums"
+              >{{ avisos.pendientes() > 9 ? '9+' : avisos.pendientes() }}</span
+            >
+          }
+        </a>
+      }
       <p-button
         [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
         variant="text"
@@ -32,44 +50,60 @@
     </div>
   </header>
 
-  <!-- Banner recordatorio peso -->
-  @if (notificaciones.recordatorioPeso()) {
-    <div class="fixed top-14 inset-x-0 z-40 bg-amber-50 dark:bg-amber-950/60 border-b border-amber-300 dark:border-amber-700 px-4 py-2.5 flex items-center gap-3">
-      <i class="pi pi-bell text-amber-500 text-base shrink-0"></i>
-      <p class="flex-1 text-sm text-amber-800 dark:text-amber-300 font-medium leading-tight">
-        Es momento de registrar tu peso. ¡Lleva tu seguimiento al día!
-      </p>
-      <a [routerLink]="['/progreso']" (click)="notificaciones.dismiss()"
-         class="text-xs font-bold text-amber-700 dark:text-amber-400 underline shrink-0">
-        Registrar
-      </a>
-      <button (click)="notificaciones.dismiss()" class="text-amber-500 hover:text-amber-700 transition-colors ml-1 shrink-0">
-        <i class="pi pi-times text-sm"></i>
-      </button>
-    </div>
-  }
-
   <!-- Contenido principal -->
-  <main [class]="notificaciones.recordatorioPeso()
-    ? 'pt-24 pb-16 min-h-screen'
-    : 'pt-14 pb-16 min-h-screen'">
+  <main class="pt-14 pb-16 min-h-screen">
+    <!-- Aviso: uno a la vez, el más importante -->
+    @if (aviso(); as a) {
+      <div
+        role="status"
+        class="sticky top-14 z-40 bg-amber-50 dark:bg-amber-950 border-b border-amber-300 dark:border-amber-700 px-4 py-2.5 flex items-center gap-3"
+      >
+        <i [class]="a.icono + ' text-amber-500 text-base shrink-0'" aria-hidden="true"></i>
+        <p class="flex-1 text-sm text-amber-800 dark:text-amber-300 font-medium leading-tight">
+          {{ a.texto }}
+        </p>
+        @if (a.accion) {
+          <a
+            [routerLink]="a.enlace"
+            [queryParams]="a.queryParams"
+            (click)="descartarAviso(a)"
+            class="text-xs font-bold text-amber-700 dark:text-amber-400 underline shrink-0"
+          >
+            {{ a.accion }}
+          </a>
+        }
+        @if (a.descartar) {
+          <button
+            type="button"
+            (click)="descartarAviso(a)"
+            aria-label="Descartar aviso"
+            class="text-amber-500 hover:text-amber-700 transition-colors ml-1 shrink-0"
+          >
+            <i class="pi pi-times text-sm"></i>
+          </button>
+        }
+      </div>
+    }
+
     <router-outlet />
   </main>
 
   <!-- Navegación inferior -->
-  <nav class="fixed bottom-0 inset-x-0 z-50 h-16 flex
-              bg-warm-card dark:bg-dark-800 border-t border-gray-300 dark:border-dark-700">
+  <nav
+    class="fixed bottom-0 inset-x-0 z-50 h-16 flex bg-warm-card/90 dark:bg-dark-900/85 backdrop-blur-md border-t border-gray-200/80 dark:border-white/5"
+    aria-label="Secciones"
+  >
     @for (item of navItems(); track item.path) {
       <a
         [routerLink]="item.path"
-        routerLinkActive="!text-guerrero-red"
-        class="flex-1 flex flex-col items-center justify-center gap-0.5
-               text-gray-400 dark:text-gray-500 hover:text-guerrero-red transition-colors"
+        routerLinkActive="nav-activa"
+        class="nav-item relative flex-1 flex flex-col items-center justify-center gap-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
       >
-        <i [class]="item.icon + ' text-xl'"></i>
-        <span class="text-xs font-medium">{{ item.label }}</span>
+        <i [class]="item.icon + ' text-xl'" aria-hidden="true"></i>
+        <span class="text-xs font-medium tracking-wide">{{ item.label }}</span>
       </a>
     }
   </nav>
-
 </div>
+
+<app-visor />

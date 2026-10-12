@@ -1,10 +1,3 @@
-export interface RegistroPeso {
-  id: number;
-  peso_kg: number;
-  fecha: string;
-  nota: string;
-}
-
 export interface SerieCompletada {
   numero: number;
   duracion_seg: number;

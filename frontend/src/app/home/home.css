@@ -1,0 +1,1175 @@
+/* Poco y nítido: ver DESIGN.md. Sin JavaScript o con "reducir movimiento" todo se ve
+   quieto y completo; .con-movimiento (lo pone home.ts) activa los fundidos. */
+:host {
+  --noche: #100d0b;
+  --tierra: #1b1511;
+  --hueso: #f6f1ea;
+  --bruma: rgb(246 241 234 / 0.74);
+  --tenue: rgb(246 241 234 / 0.14);
+  --oro: #d4af37;
+  --rojo: #c0392b;
+  --salida: cubic-bezier(0.16, 1, 0.3, 1);
+  --display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --texto: 'Barlow', 'Segoe UI', system-ui, sans-serif;
+  --hero: 0;
+  --recorrido: 0;
+
+  display: block;
+  background: var(--noche);
+  color: var(--hueso);
+  font-family: var(--texto);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.titular {
+  font-family: var(--display);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin: 0;
+}
+.titular-medio {
+  font-size: clamp(2.6rem, 4.6vw + 1rem, 4.75rem);
+}
+.titular-grande {
+  font-size: clamp(2.6rem, 5vw + 1rem, 5.5rem);
+}
+.titular-parada {
+  font-size: clamp(2.1rem, 2.4vw + 1.2rem, 3.4rem);
+}
+.oro {
+  color: var(--oro);
+}
+.contenedor {
+  width: min(100% - 3rem, 72rem);
+  margin-inline: auto;
+}
+
+/* ── Botón de vidrio cálido ─────────────────────────────────────── */
+.boton-vidrio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 13rem;
+  min-height: 62px;
+  padding: 0 2rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.44);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.19), rgb(255 255 255 / 0.05)), rgb(58 24 16 / 0.38);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.27),
+    inset 0 -1px 0 rgb(255 255 255 / 0.07),
+    0 8px 28px rgb(0 0 0 / 0.28);
+  color: #fff;
+  font: 500 1.125rem/1.2 var(--texto);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition:
+    background-color 200ms,
+    border-color 200ms,
+    transform 200ms;
+}
+.boton-vidrio:hover {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.08)), rgb(58 24 16 / 0.3);
+  border-color: rgb(255 255 255 / 0.62);
+}
+.boton-vidrio:active {
+  transform: translateY(1px);
+}
+.boton-vidrio:focus-visible,
+.barra-enlace:focus-visible,
+.barra-logo:focus-visible,
+.paradas button:focus-visible,
+.pie a:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 5px;
+}
+
+/* ── Barra: transparente, solo lo necesario ─────────────────────── */
+.barra {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 4.5%;
+}
+.barra-logo img {
+  display: block;
+  height: 3rem;
+  width: auto;
+}
+.barra-acciones {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+.barra-enlace {
+  background: none;
+  border: 0;
+  padding: 10px 0;
+  color: var(--hueso);
+  font: 500 1.0625rem var(--texto);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 160ms;
+}
+.barra-enlace:hover {
+  opacity: 0.72;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 135svh;
+}
+.hero-escena {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 600px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--noche);
+}
+.hero-foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  z-index: -2;
+}
+.hero-secuencia {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+}
+.hero-sombra {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgb(16 13 11 / 0.5) 0%, transparent 32%),
+    linear-gradient(0deg, rgb(16 13 11 / 0.82) 0%, transparent 28%);
+}
+.hero-escena::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--noche);
+  opacity: 0;
+  pointer-events: none;
+}
+.hero-texto {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: clamp(5.25rem, 10.5svh, 7rem);
+  text-align: center;
+  text-shadow: 0 2px 18px rgb(16 13 11 / 0.55);
+}
+.hero-texto p {
+  margin: 0.9rem auto 0;
+  max-width: 60ch;
+  font-size: clamp(19px, 1.6vw, 25px);
+  line-height: 1.3;
+  color: var(--bruma);
+}
+.hero-titulo {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(62px, 6.9vw, 118px);
+  line-height: 0.89;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.hero-pie {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 37px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 18px 32px;
+}
+
+@media (min-width: 768px) {
+  /* La animación ocupa el centro; el texto va al costado, sobre el negro. */
+  .hero-texto {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    left: 4.5%;
+    width: min(26vw, 30rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+  }
+  .hero-titulo {
+    font-size: clamp(52px, 5vw, 88px);
+  }
+  .hero-texto p {
+    margin: 1.1rem 0 0;
+    max-width: 26ch;
+    font-size: clamp(18px, 1.45vw, 23px);
+  }
+  .hero-pie {
+    left: 4.5%;
+    right: auto;
+    justify-content: flex-start;
+    bottom: auto;
+    top: calc(50% + clamp(6.5rem, 15vw, 11rem));
+  }
+}
+
+/* ── ¿No sabes por dónde empezar? ───────────────────────────────── */
+.empezar {
+  position: relative;
+  z-index: 3;
+  /* Sube sobre el final del hero: la foto se oscurece pero no se apaga, y no queda un hueco. */
+  margin-top: -40svh;
+  padding-block: clamp(11rem, 44svh, 22rem) clamp(5rem, 12vh, 8rem);
+  background: linear-gradient(
+    180deg,
+    transparent 0,
+    rgb(16 13 11 / 0.88) clamp(8rem, 30svh, 18rem),
+    var(--noche) clamp(12rem, 44svh, 24rem)
+  );
+}
+.empezar-intro {
+  margin: 1.75rem 0 0;
+  font-size: clamp(1.15rem, 1vw + 0.95rem, 1.45rem);
+  color: var(--bruma);
+}
+.preguntas {
+  position: relative;
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0 0 0 2.25rem;
+  max-width: 52rem;
+}
+/* La línea del camino: gris de fondo y dorada hasta donde se ha bajado. */
+.preguntas::before,
+.preguntas::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 1.1rem;
+  bottom: 1.1rem;
+  width: 2px;
+}
+.preguntas::before {
+  background: var(--tenue);
+}
+.preguntas::after {
+  background: var(--oro);
+  transform-origin: top;
+  transform: scaleY(var(--preguntas, 1));
+}
+.preguntas li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: 0.25rem 2rem;
+  padding: 1.35rem 0;
+  border-bottom: 1px solid var(--tenue);
+}
+.preguntas li::before {
+  content: '';
+  position: absolute;
+  left: -2.25rem;
+  top: 1.55rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 2px solid var(--oro);
+  background: var(--noche);
+}
+.preguntas li.visible::before {
+  background: var(--oro);
+}
+.pregunta {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  color: var(--oro);
+}
+.respuesta {
+  font-size: 1.15rem;
+}
+.empezar-cierre {
+  margin: 2.5rem 0 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 1.6vw + 1.1rem, 2.4rem);
+}
+
+/* ── El recorrido: cada estación sube como el sol ───────────────── */
+.recorrido {
+  position: relative;
+  height: 500svh;
+}
+.recorrido-escena {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+.estacion-foto {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  clip-path: inset(100% 0 0 0);
+}
+.estacion-foto.revelada {
+  clip-path: inset(0 0 0 0);
+}
+.estacion-foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 50%;
+}
+.foto-entreno {
+  opacity: 0;
+}
+.foto-entreno.actual {
+  opacity: 1;
+}
+.recorrido-sombra {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: linear-gradient(
+    90deg,
+    rgb(16 13 11 / 0.93) 0%,
+    rgb(16 13 11 / 0.8) 30%,
+    rgb(16 13 11 / 0.12) 60%,
+    transparent 75%
+  );
+}
+.recorrido-texto {
+  position: absolute;
+  z-index: 20;
+  inset: 0 auto 0 0;
+  width: min(36rem, 48vw);
+  padding: 6rem clamp(1.5rem, 4vw, 4rem) 3rem clamp(3rem, 6vw, 6rem);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-content: center;
+  row-gap: 1.5rem;
+}
+.sendero {
+  position: absolute;
+  left: clamp(1.4rem, 3vw, 3rem);
+  top: 6rem;
+  bottom: 3rem;
+  width: 2px;
+  background: var(--tenue);
+}
+.sendero-lleno {
+  position: absolute;
+  inset: 0;
+  background: var(--oro);
+  transform-origin: top;
+  transform: scaleY(var(--recorrido));
+}
+.paradas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+.paradas button {
+  background: none;
+  border: 0;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+  color: rgb(246 241 234 / 0.5);
+  font: 500 0.95rem var(--texto);
+  cursor: pointer;
+  transition:
+    color 200ms,
+    border-color 200ms;
+}
+.paradas button.pasada {
+  color: var(--bruma);
+}
+.paradas button:hover,
+.paradas button.actual {
+  color: var(--hueso);
+}
+.paradas button.actual {
+  border-color: var(--oro);
+}
+.contador {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--bruma);
+  font-variant-numeric: tabular-nums;
+}
+.contador-actual {
+  color: var(--oro);
+  font-size: 1.6rem;
+}
+.linea {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+.linea > span {
+  display: block;
+}
+.parada {
+  grid-row: 3;
+  grid-column: 1;
+  align-self: start;
+  visibility: hidden;
+  opacity: 0;
+}
+.parada.activa {
+  visibility: visible;
+  opacity: 1;
+}
+.parada-texto {
+  margin: 1.1rem 0 0;
+  max-width: 30rem;
+  font-size: clamp(1.05rem, 0.4vw + 0.98rem, 1.2rem);
+  color: var(--bruma);
+}
+.muestra,
+.avisos {
+  margin-top: 1.75rem;
+  max-width: 26rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--tenue);
+  border-radius: 8px;
+  background: rgb(27 21 17 / 0.88);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.8);
+}
+.muestra-etiqueta {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+.muestra-nota {
+  margin: 0.7rem 0 0;
+  font-size: 0.92rem;
+  color: var(--bruma);
+}
+.cambio {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.7rem;
+  font-weight: 500;
+}
+.cambio > span {
+  white-space: nowrap;
+}
+.cambio-antes {
+  position: relative;
+  color: rgb(246 241 234 / 0.55);
+}
+.cambio-antes::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 52%;
+  height: 1.5px;
+  width: 100%;
+  background: var(--rojo);
+  transform-origin: left;
+}
+.cambio-flecha {
+  position: relative;
+  width: 1.1rem;
+  height: 2px;
+  background: var(--oro);
+}
+.cambio-flecha::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  border: 4px solid transparent;
+  border-left-color: var(--oro);
+  border-right: 0;
+}
+.poses {
+  margin: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+.poses span {
+  flex: 1;
+  text-align: center;
+  padding: 0.85rem 0.25rem 1.6rem;
+  border: 1px dashed rgb(212 175 55 / 0.55);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.enfoques {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.enfoques li {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--tenue);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  color: var(--bruma);
+}
+.enfoques li.actual {
+  color: var(--noche);
+  background: var(--oro);
+  border-color: var(--oro);
+}
+.avisos {
+  list-style: none;
+  padding-block: 0.4rem;
+}
+.avisos li {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--tenue);
+}
+.avisos li:last-child {
+  border-bottom: 0;
+}
+.avisos li {
+  position: relative;
+}
+.avisos li::after {
+  content: '';
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  width: 0.55rem;
+  height: 0.9rem;
+  margin-top: -0.6rem;
+  border: solid var(--oro);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transform-origin: 30% 70%;
+}
+.aviso-cuando {
+  color: var(--oro);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Demos vivas de cada estación (solo se mueven con .con-movimiento y estación activa) */
+@property --seg {
+  syntax: '<integer>';
+  inherits: false;
+  initial-value: 30;
+}
+@property --corte {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+.serie {
+  margin: 1.75rem 0 0;
+  max-width: 26rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.15rem;
+  border: 1px solid var(--tenue);
+  border-radius: 8px;
+  background: rgb(27 21 17 / 0.88);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.8);
+}
+.serie-anillo {
+  width: 3.4rem;
+  height: 3.4rem;
+  flex: none;
+  transform: rotate(-90deg);
+}
+.serie-anillo circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.serie-anillo .pista {
+  stroke: var(--tenue);
+}
+.serie-anillo .avance {
+  stroke: var(--oro);
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 28;
+}
+.serie-texto {
+  margin: 0;
+  display: grid;
+  line-height: 1.15;
+}
+.serie-nombre {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bruma);
+}
+.serie-tiempo {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  counter-reset: seg var(--seg);
+}
+.serie-tiempo::after {
+  content: '00:' counter(seg, decimal-leading-zero);
+}
+.serie-nota {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bruma);
+}
+.comparar {
+  position: relative;
+  display: flex;
+  height: 3.4rem;
+  margin-top: 0.7rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgb(212 175 55 / 0.4);
+  font-weight: 500;
+  --corte: 50%;
+}
+.comparar-dia,
+.comparar-hoy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 1rem;
+}
+.comparar-dia {
+  background: rgb(246 241 234 / 0.06);
+  justify-content: flex-start;
+}
+.comparar-hoy {
+  background: rgb(212 175 55 / 0.22);
+  justify-content: flex-end;
+  clip-path: inset(0 0 0 var(--corte));
+}
+.comparar-barra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--corte);
+  width: 2px;
+  background: var(--oro);
+}
+.poses span {
+  position: relative;
+}
+.poses span::after {
+  content: 'guardada';
+  position: absolute;
+  inset: auto 0 0.4rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--oro);
+  text-align: center;
+  opacity: 0.85;
+}
+
+/* ── Para todos ─────────────────────────────────────────────────── */
+.todos {
+  padding-block: clamp(7rem, 18vh, 11rem);
+}
+.para-quien {
+  list-style: none;
+  margin: 3rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  max-width: 52rem;
+}
+.para-quien li {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1.8vw + 1rem, 2.4rem);
+  line-height: 1.15;
+}
+.para-quien li:nth-child(even) {
+  color: var(--bruma);
+}
+.aclaracion {
+  margin: 3rem 0 0;
+  max-width: 38rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--tenue);
+  font-size: 1rem;
+  color: var(--bruma);
+}
+
+/* ── Cierre ─────────────────────────────────────────────────────── */
+.cierre {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+}
+.cierre-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 40% 60%;
+  z-index: -2;
+}
+.cierre-sombra {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, var(--noche) 0%, rgb(16 13 11 / 0.45) 20%, transparent 42%),
+    linear-gradient(0deg, rgb(16 13 11 / 0.6) 0%, transparent 25%);
+}
+.cierre-texto {
+  padding: clamp(7rem, 20svh, 12rem) 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding: 2rem 4.5%;
+  border-top: 1px solid var(--tenue);
+}
+.pie img {
+  height: 2.25rem;
+  width: auto;
+}
+.pie nav {
+  display: flex;
+  gap: 1.5rem;
+}
+.pie a {
+  color: var(--bruma);
+  text-decoration: none;
+}
+.pie a:hover {
+  color: var(--hueso);
+}
+
+/* ── Celular ────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .barra {
+    padding: 22px 20px;
+  }
+  .barra-logo img {
+    height: 2.5rem;
+  }
+  .hero-foto img {
+    object-position: 50% 45%;
+  }
+  .hero-texto {
+    top: 5.25rem;
+  }
+  .hero-titulo {
+    font-size: clamp(2.6rem, 10.8vw, 3.6rem);
+  }
+  .hero-texto p {
+    font-size: 19px;
+    max-width: 20rem;
+  }
+  .hero-pie {
+    bottom: 30px;
+  }
+  .preguntas li {
+    grid-template-columns: 1fr;
+  }
+  .estacion-foto img {
+    object-position: 50% 30%;
+  }
+  .recorrido-sombra {
+    background: linear-gradient(
+      0deg,
+      rgb(16 13 11 / 0.95) 0%,
+      rgb(16 13 11 / 0.86) 45%,
+      rgb(16 13 11 / 0.15) 72%,
+      rgb(16 13 11 / 0.45) 100%
+    );
+  }
+  .recorrido-texto {
+    inset: 0;
+    width: auto;
+    padding: 5.25rem 20px 1.75rem;
+    grid-template-rows: auto auto 1fr;
+    align-content: stretch;
+    row-gap: 0.75rem;
+  }
+  .sendero {
+    left: 20px;
+    right: 20px;
+    top: 4.75rem;
+    bottom: auto;
+    width: auto;
+    height: 2px;
+  }
+  .sendero-lleno {
+    transform-origin: left;
+    transform: scaleX(var(--recorrido));
+  }
+  .paradas {
+    gap: 0.15rem 0.9rem;
+  }
+  .paradas button {
+    font-size: 0.86rem;
+  }
+  .contador {
+    display: none;
+  }
+  .parada {
+    align-self: end;
+  }
+  .muestra,
+  .avisos {
+    margin-top: 1.1rem;
+  }
+  .avisos li {
+    grid-template-columns: 7.75rem 1fr;
+    gap: 0.5rem;
+  }
+  .cierre-foto {
+    object-position: 24% 60%;
+  }
+  .cierre-texto {
+    padding-top: 7rem;
+  }
+}
+
+/* ── Movimiento (solo si la persona no pidió reducirlo) ─────────── */
+:host(.con-movimiento) .hero-texto {
+  opacity: clamp(0, calc(1 - var(--hero) * 3), 1);
+  transform: translateY(calc(var(--hero) * -100px));
+  transition:
+    opacity 0.45s,
+    transform 0.5s;
+}
+:host(.con-movimiento) .hero-pie {
+  opacity: clamp(0, calc(1 - var(--hero) * 3), 1);
+  transition: opacity 0.4s;
+}
+:host(.con-movimiento) .hero-sombra {
+  opacity: calc(1 - var(--hero) * 0.7);
+}
+:host(.con-movimiento) .hero-escena::after {
+  /* La foto se oscurece pero no se apaga: el siguiente bloque sube por encima de ella. */
+  opacity: clamp(0, calc(var(--hero) * 0.85), 0.85);
+}
+:host(.con-movimiento) .estacion-foto {
+  transition: clip-path 1.15s var(--salida);
+}
+:host(.con-movimiento) .estacion-foto img {
+  transform: scale(1.14);
+  transition: transform 2.6s var(--salida);
+}
+:host(.con-movimiento) .estacion-foto.activa img {
+  transform: scale(1);
+}
+:host(.con-movimiento) .foto-entreno {
+  transition: opacity 1.1s ease;
+}
+:host(.con-movimiento) .parada {
+  transition:
+    opacity 400ms var(--salida),
+    visibility 0s linear 400ms;
+}
+:host(.con-movimiento) .parada.activa {
+  transition:
+    opacity 400ms var(--salida),
+    visibility 0s;
+}
+:host(.con-movimiento) .parada .linea > span {
+  transform: translateY(105%);
+  transition: transform 700ms var(--salida);
+}
+:host(.con-movimiento) .parada.activa .linea > span {
+  transform: none;
+  transition-delay: 120ms;
+}
+:host(.con-movimiento) .parada-texto,
+:host(.con-movimiento) .muestra,
+:host(.con-movimiento) .enfoques,
+:host(.con-movimiento) .avisos {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 600ms var(--salida),
+    transform 600ms var(--salida);
+}
+:host(.con-movimiento) .parada.activa .parada-texto {
+  opacity: 1;
+  transform: none;
+  transition-delay: 240ms;
+}
+:host(.con-movimiento) .parada.activa .muestra,
+:host(.con-movimiento) .parada.activa .enfoques,
+:host(.con-movimiento) .parada.activa .avisos {
+  opacity: 1;
+  transform: none;
+  transition-delay: 380ms;
+}
+:host(.con-movimiento) .parada.activa .cambio-antes::after {
+  animation: tachar 6s var(--salida) 0.8s infinite;
+}
+:host(.con-movimiento) .parada.activa .cambio-despues {
+  animation: llegar 6s var(--salida) 0.8s infinite;
+}
+:host(.con-movimiento) .enfoques li {
+  transition:
+    color 300ms,
+    background-color 300ms,
+    border-color 300ms;
+}
+:host(.con-movimiento) [data-aparece] {
+  transition:
+    opacity 0.9s var(--salida),
+    transform 0.9s var(--salida);
+}
+:host(.con-movimiento) [data-aparece]:not(.visible) {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+:host(.con-movimiento) .hero-texto {
+  opacity: clamp(0, calc(1 - var(--hero) * 2.4), 1);
+}
+:host(.con-movimiento) .preguntas li:not(.visible) {
+  opacity: 0;
+  transform: translateX(-14px);
+}
+:host(.con-movimiento) .preguntas li {
+  transition:
+    opacity 700ms var(--salida),
+    transform 700ms var(--salida);
+}
+:host(.con-movimiento) .preguntas li::before {
+  transition:
+    background-color 300ms,
+    transform 400ms var(--salida);
+}
+:host(.con-movimiento) .preguntas li.visible::before {
+  animation: nodo 600ms var(--salida);
+}
+:host(.con-movimiento) .para-quien li:not(.visible) {
+  opacity: 0;
+  transform: translateY(18px);
+}
+:host(.con-movimiento) .para-quien li {
+  transition:
+    opacity 800ms var(--salida),
+    transform 800ms var(--salida);
+}
+:host(.con-movimiento) .para-quien li:nth-child(2) {
+  transition-delay: 90ms;
+}
+:host(.con-movimiento) .para-quien li:nth-child(3) {
+  transition-delay: 180ms;
+}
+:host(.con-movimiento) .para-quien li:nth-child(4) {
+  transition-delay: 270ms;
+}
+:host(.con-movimiento) .cierre-foto {
+  transform: scale(1.14);
+  transition: transform 3.4s var(--salida);
+}
+:host(.con-movimiento) .cierre.entra .cierre-foto {
+  transform: none;
+}
+:host(.con-movimiento) .parada.activa .serie-anillo .avance {
+  animation: serie 6s linear 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .serie-tiempo {
+  animation: segundos 6s linear 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .comparar {
+  animation: corte 7s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .poses span::after {
+  animation: guardada 7s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .poses span:nth-child(2)::after {
+  animation-delay: 1.2s;
+}
+:host(.con-movimiento) .parada.activa .poses span:nth-child(3)::after {
+  animation-delay: 1.5s;
+}
+:host(.con-movimiento) .parada.activa .avisos li {
+  animation: aviso-llega 8s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .avisos li:nth-child(2) {
+  animation-delay: 2.2s;
+}
+:host(.con-movimiento) .parada.activa .avisos li::after {
+  animation: aviso-hecho 8s var(--salida) 0.9s infinite;
+}
+:host(.con-movimiento) .parada.activa .avisos li:nth-child(2)::after {
+  animation-delay: 2.2s;
+}
+
+@keyframes nodo {
+  0% {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes serie {
+  0% {
+    stroke-dashoffset: 113.1;
+  }
+  92%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes segundos {
+  0% {
+    --seg: 30;
+  }
+  92%,
+  100% {
+    --seg: 0;
+  }
+}
+@keyframes corte {
+  0%,
+  12% {
+    --corte: 100%;
+  }
+  45%,
+  62% {
+    --corte: 8%;
+  }
+  100% {
+    --corte: 100%;
+  }
+}
+@keyframes guardada {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  18%,
+  88% {
+    opacity: 0.85;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes aviso-llega {
+  0%,
+  4% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  14%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes aviso-hecho {
+  0%,
+  38% {
+    transform: rotate(45deg) scale(0);
+  }
+  50%,
+  90% {
+    transform: rotate(45deg) scale(1);
+  }
+  100% {
+    transform: rotate(45deg) scale(0);
+  }
+}
+
+@keyframes tachar {
+  0%,
+  8% {
+    transform: scaleX(0);
+  }
+  22%,
+  92% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+@keyframes llegar {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  32%,
+  92% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}

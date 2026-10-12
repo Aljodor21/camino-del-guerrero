@@ -1,0 +1,135 @@
+@if (estado(); as e) {
+  @if (e.disponible) {
+    <section
+      class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4"
+      aria-labelledby="il-titulo"
+    >
+      <h2 id="il-titulo" class="font-semibold text-gray-900 dark:text-white">
+        ¿Cómo podría verse?
+      </h2>
+      <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        Una imagen orientativa de tu cambio estimado, hecha a partir de tu foto de frente, con tu
+        entrenamiento, tu alimentación y tu proteína en cuenta. Muestra cuánto sería músculo y cuánto
+        grasa, según la estimación de arriba. No es una promesa.
+      </p>
+
+      @if (!pidiendo()) {
+        <p-button
+          label="Ver cómo podría verse"
+          icon="pi pi-image"
+          [disabled]="e.restantes_hoy === 0"
+          (onClick)="pidiendo.set(true)"
+        />
+        @if (e.restantes_hoy === 0) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Ya generaste las imágenes de hoy. Vuelve mañana.
+          </p>
+        }
+      } @else {
+        <div
+          class="rounded-xl border border-gray-200 dark:border-dark-700 p-4 space-y-3"
+          role="group"
+          aria-label="Permiso para enviar tu foto"
+        >
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            Para hacerla enviamos tu foto de frente más reciente a <strong>OpenAI</strong>, un
+            tercero, solo para generar esta imagen. La imagen que vuelve queda privada en tu cuenta
+            y la puedes borrar cuando quieras.
+          </p>
+          <label class="flex items-start gap-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer">
+            <input
+              type="checkbox"
+              class="mt-1 accent-[var(--color-guerrero-red)]"
+              [checked]="acepta()"
+              (change)="acepta.set($any($event.target).checked)"
+            />
+            <span>Acepto que mi foto se envíe a OpenAI para generar la imagen.</span>
+          </label>
+          @if (error()) {
+            <p-message severity="error" [text]="error()" styleClass="w-full" />
+          }
+          <div class="flex flex-wrap gap-2">
+            <p-button
+              label="Generar imagen"
+              icon="pi pi-check"
+              [loading]="generando()"
+              [disabled]="!acepta()"
+              (onClick)="generar()"
+            />
+            <p-button
+              label="Cancelar"
+              variant="text"
+              severity="secondary"
+              [disabled]="generando()"
+              (onClick)="pidiendo.set(false); error.set('')"
+            />
+          </div>
+          @if (generando()) {
+            <p class="text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+              Esto puede tardar hasta un minuto.
+            </p>
+          }
+        </div>
+      }
+
+      @if (e.ilustraciones.length) {
+        <ul class="grid gap-4">
+          @for (i of e.ilustraciones; track i.id) {
+            <li class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                @if (i.foto_origen) {
+                  <figure class="space-y-1.5">
+                    <div class="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-dark-700">
+                      @if (imagenes()['f' + i.foto_origen]; as origen) {
+                        <button type="button" class="block w-full h-full" (click)="ampliar('Tu foto de frente', origen)" aria-label="Ver tu foto en grande">
+                          <img [src]="origen" alt="Tu foto de frente" class="w-full h-full object-cover" />
+                        </button>
+                      }
+                    </div>
+                    <figcaption class="text-xs font-medium text-center text-gray-600 dark:text-gray-300">
+                      Tu foto · {{ num(i.peso_base, 1) }} kg
+                    </figcaption>
+                  </figure>
+                }
+                <figure class="space-y-1.5" [class.col-span-2]="!i.foto_origen">
+                  <div class="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-dark-700">
+                    @if (imagenes()['i' + i.id]; as src) {
+                      <button type="button" class="block w-full h-full" (click)="ampliar('Cómo podría verse', src)" aria-label="Ver la ilustración en grande">
+                        <img
+                          [src]="src"
+                          [alt]="'Ilustración orientativa de un cambio de ' + cambio(i.cambio_kg)"
+                          class="w-full h-full object-cover"
+                        />
+                      </button>
+                    }
+                  </div>
+                  <figcaption class="text-xs font-medium text-center text-gray-600 dark:text-gray-300">
+                    Cómo podría verse · {{ num(i.peso_final, 1) }} kg
+                  </figcaption>
+                </figure>
+              </div>
+              <div class="flex items-start justify-between gap-3">
+                <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span class="font-semibold tabular-nums">{{ cambio(i.cambio_kg) }}</span>
+                  en {{ i.dias }} días · de {{ num(i.peso_base, 1) }} a {{ num(i.peso_final, 1) }} kg ·
+                  {{ fecha(i.creada.slice(0, 10), 'corta') }}
+                  @if (i.limitado) {
+                    <br />La cuenta simple daba más; el cuerpo se adapta y se muestra un ritmo razonable.
+                  }
+                  <br />Ilustración orientativa, no es una promesa.
+                </p>
+                <button
+                  type="button"
+                  (click)="borrar(i.id)"
+                  class="shrink-0 text-xs text-gray-500 dark:text-gray-400 underline"
+                >
+                  Borrar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}

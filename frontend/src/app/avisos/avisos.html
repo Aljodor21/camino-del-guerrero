@@ -1,0 +1,332 @@
+<div class="p-4 max-w-2xl mx-auto space-y-4">
+  <app-portada
+    foto="agenda"
+    titulo="Avisos"
+    subtitulo="Lo pendiente del día. Sale de aquí cuando lo confirmas."
+  />
+
+  <app-ayuda
+    clave="avisos"
+    titulo="Tus avisos"
+    para="Te recuerdan el agua, la proteína, el entreno y contar tus comidas. Se quedan aquí hasta que confirmas."
+    [pasos]="[
+      'Cuando llegue la hora, toca el botón del aviso para confirmarlo.',
+      'En las comidas, cuenta cuánto comiste de cada grupo.',
+      'Apaga los que no quieras en los ajustes de más abajo.'
+    ]"
+    demo="avisos"
+  />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  <!-- Pendientes -->
+  <section aria-labelledby="av-pendientes" class="space-y-3">
+    <h2 id="av-pendientes" class="font-semibold text-gray-900 dark:text-white">
+      Pendientes
+      @if (pendientes().length) {
+        <span class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400"
+          >{{ pendientes().length }}</span
+        >
+      }
+    </h2>
+
+    @for (a of pendientes(); track a.id) {
+      <article
+        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 flex items-start gap-3"
+      >
+        <span
+          class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+        >
+          <i [class]="iconos[a.tipo]" aria-hidden="true"></i>
+        </span>
+        <div class="flex-1 min-w-0 space-y-2">
+          <div>
+            <p class="font-medium text-gray-900 dark:text-white leading-snug">{{ a.titulo }}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {{ a.cuerpo }}
+              <span class="text-gray-400 dark:text-gray-500">· {{ tiempo(a) }}</span>
+            </p>
+          </div>
+          @if (a.accion) {
+            <p-button
+              [label]="a.accion"
+              icon="pi pi-check"
+              size="small"
+              [loading]="confirmando() === a.id"
+              (onClick)="confirmar(a)"
+            />
+          } @else if (a.tipo === 'comida') {
+            <a
+              routerLink="/comidas/contar"
+              [queryParams]="{ tiempo: a.datos['tiempo'], fecha: a.fecha }"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
+              >Contar lo que comí</a
+            >
+          } @else if (a.tipo === 'proceso') {
+            <a
+              routerLink="/control"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
+              >Responder en Tu control</a
+            >
+          } @else {
+            <a
+              routerLink="/progreso"
+              class="text-sm font-semibold text-guerrero-red underline"
+              >Resolverlo en Progreso</a
+            >
+          }
+        </div>
+      </article>
+    } @empty {
+      <p
+        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 text-sm text-gray-600 dark:text-gray-300"
+      >
+        Estás al día. Cuando llegue la hora de algo, aparece aquí.
+      </p>
+    }
+  </section>
+
+  <!-- Tu día -->
+  @if (hoy(); as h) {
+    <section
+      aria-labelledby="av-dia"
+      class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4"
+    >
+      <h2 id="av-dia" class="font-semibold text-gray-900 dark:text-white">Tu día</h2>
+
+      @if (h.agua.meta) {
+        <div class="space-y-2">
+          <div class="flex items-baseline justify-between gap-3">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Agua</p>
+            <p class="text-sm tabular-nums text-gray-600 dark:text-gray-300">
+              {{ num(h.agua.vasos, 0) }} de {{ h.agua.meta }} vasos
+            </p>
+          </div>
+          <div
+            class="h-1.5 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
+            role="progressbar"
+            aria-label="Agua de hoy"
+            [attr.aria-valuenow]="h.agua.vasos"
+            aria-valuemin="0"
+            [attr.aria-valuemax]="h.agua.meta"
+          >
+            <div
+              class="h-full bg-guerrero-red transition-[width] duration-500"
+              [style.width.%]="h.agua.meta ? (h.agua.vasos / h.agua.meta) * 100 : 0"
+            ></div>
+          </div>
+          <p-button
+            label="Me tomé un vaso"
+            icon="pi pi-plus"
+            size="small"
+            variant="outlined"
+            (onClick)="unVaso()"
+          />
+        </div>
+      }
+
+      @if (h.tomas.length) {
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Proteína</p>
+          <ul class="space-y-1.5">
+            @for (t of h.tomas; track t.suplemento + t.tiempo) {
+              <li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <i
+                  [class]="t.hecha ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'"
+                  aria-hidden="true"
+                ></i>
+                <span class="flex-1">
+                  {{ nombreComida(t.tiempo, t.hora) }}
+                  @if (t.scoops) {
+                    · {{ num(t.scoops, 1) }} {{ t.scoops === 1 ? 'scoop' : 'scoops' }}
+                  }
+                </span>
+                <span class="sr-only">{{ t.hecha ? 'Hecha' : 'Pendiente' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (h.entreno.toca) {
+        <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <i
+            [class]="h.entreno.hecho ? 'pi pi-check-circle text-green-600' : 'pi pi-circle text-gray-400'"
+            aria-hidden="true"
+          ></i>
+          {{ h.entreno.hecho ? 'Entrenaste hoy' : 'Hoy toca entreno' }}
+        </p>
+      }
+
+      @if (h.dormir.hora) {
+        <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <i
+            [class]="h.dormir.acostado ? 'pi pi-check-circle text-green-600' : 'pi pi-moon text-gray-400'"
+            aria-hidden="true"
+          ></i>
+          Acostarte a las {{ hora(h.dormir.hora) }}
+        </p>
+      }
+
+      @if (!h.agua.meta && !h.tomas.length && !h.entreno.toca && !h.dormir.hora) {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Aún no hay nada programado. Configura tu agua y tu hora de dormir abajo.
+        </p>
+      }
+    </section>
+  }
+
+  <!-- Ajustes -->
+  <section
+    aria-labelledby="av-ajustes"
+    class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4"
+  >
+    <h2 id="av-ajustes" class="font-semibold text-gray-900 dark:text-white">Ajustes</h2>
+
+    <div class="flex flex-col gap-1">
+      <label for="av-agua" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Agua al día (litros)</label
+      >
+      <input
+        pInputText
+        id="av-agua"
+        inputmode="decimal"
+        placeholder="Ej. 2,5"
+        [value]="litros() === null ? '' : num(litros())"
+        (change)="leerLitros($any($event.target).value)"
+        class="w-full"
+      />
+      @if (vasosMeta(); as v) {
+        <p class="text-xs text-gray-500 dark:text-gray-400">Son {{ v }} vasos de 250 ml.</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="av-levantarse" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Me levanto</label
+        >
+        <input
+          pInputText
+          id="av-levantarse"
+          type="time"
+          [value]="levantarse()"
+          (change)="levantarse.set($any($event.target).value)"
+          class="w-full"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="av-dormir" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Me acuesto</label
+        >
+        <input
+          pInputText
+          id="av-dormir"
+          type="time"
+          [value]="dormir()"
+          (change)="dormir.set($any($event.target).value)"
+          class="w-full"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="av-entreno" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Entreno</label
+        >
+        <input
+          pInputText
+          id="av-entreno"
+          type="time"
+          [value]="entreno()"
+          (change)="entreno.set($any($event.target).value)"
+          class="w-full"
+        />
+      </div>
+    </div>
+
+    <fieldset class="space-y-2">
+      <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+        Avisos que quiero recibir
+      </legend>
+      <div class="flex flex-wrap gap-2">
+        @for (t of tipos; track t.id) {
+          <button
+            type="button"
+            [attr.aria-pressed]="!apagados().includes(t.id)"
+            [class]="clasesChip(!apagados().includes(t.id))"
+            (click)="alternarTipo(t.id)"
+          >
+            {{ t.label }}
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    @if (!ajustesValidos()) {
+      <p class="text-xs text-red-600 dark:text-red-400">
+        Revisa el agua (entre 0,25 y 8 litros) y que la hora de acostarte no sea la de levantarte.
+      </p>
+    }
+
+    <div class="flex items-center gap-3">
+      <p-button
+        label="Guardar"
+        icon="pi pi-check"
+        [loading]="guardando()"
+        [disabled]="!ajustesValidos()"
+        (onClick)="guardar()"
+      />
+      @if (guardado()) {
+        <span class="text-sm text-green-700 dark:text-green-400" role="status">Guardado</span>
+      }
+    </div>
+  </section>
+
+  <!-- Celular -->
+  <section
+    aria-labelledby="av-celular"
+    class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3"
+  >
+    <h2 id="av-celular" class="font-semibold text-gray-900 dark:text-white">
+      Notificaciones en este dispositivo
+    </h2>
+    @switch (push.estado()) {
+      @case ('activo') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Activas: te llegan aunque la app esté cerrada, con un botón para confirmar.
+        </p>
+        <p-button
+          label="Desactivar"
+          severity="secondary"
+          variant="outlined"
+          size="small"
+          (onClick)="alternarPush()"
+        />
+      }
+      @case ('inactivo') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Actívalas para que el aviso te llegue al celular a su hora.
+        </p>
+        <p-button label="Activar notificaciones" icon="pi pi-bell" size="small" (onClick)="alternarPush()" />
+      }
+      @case ('denegado') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Las bloqueaste en este navegador. Permítelas desde los ajustes del sitio y vuelve aquí.
+        </p>
+      }
+      @case ('sin-servidor') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          El servidor aún no tiene activadas las notificaciones al celular. Los avisos te llegan
+          aquí, en la app.
+        </p>
+      }
+      @default {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Este navegador no las soporta. En iPhone, agrega la app a la pantalla de inicio desde
+          Compartir y ábrela desde ahí.
+        </p>
+      }
+    }
+  </section>
+</div>

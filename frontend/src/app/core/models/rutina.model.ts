@@ -32,7 +32,6 @@ export interface DiaRutina {
   ejercicios: EjercicioDia[];
 }
 
-
 export interface Recomendacion {
   id: number;
   titulo: string;

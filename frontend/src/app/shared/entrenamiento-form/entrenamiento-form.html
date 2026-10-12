@@ -1,0 +1,62 @@
+<div [formGroup]="form()" class="space-y-5">
+  <div class="flex flex-col gap-2">
+    <span id="ent-enfoque" class="text-sm font-medium text-gray-600 dark:text-gray-400">Enfoque</span>
+    <div role="radiogroup" aria-labelledby="ent-enfoque" class="grid grid-cols-1 gap-2">
+      @for (op of enfoques; track op.value) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="form().controls.enfoque_entrenamiento.value === op.value"
+          (click)="form().controls.enfoque_entrenamiento.setValue(op.value)"
+          [class]="clasesOpcion(form().controls.enfoque_entrenamiento.value === op.value)"
+        >
+          <i [class]="op.icon + ' text-lg shrink-0'"></i>
+          <span class="flex flex-col items-start">
+            <span class="text-sm font-medium leading-tight">{{ op.label }}</span>
+            <span class="text-xs opacity-70 leading-tight">{{ op.desc }}</span>
+          </span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <span id="ent-nivel" class="text-sm font-medium text-gray-600 dark:text-gray-400">Nivel de actividad física</span>
+    <p-selectbutton
+      ariaLabelledBy="ent-nivel"
+      formControlName="nivel_actividad"
+      [options]="niveles"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      styleClass="w-full"
+    />
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="flex flex-col gap-2">
+      <span id="ent-dias" class="text-sm font-medium text-gray-600 dark:text-gray-400">Días por semana</span>
+      <p-selectbutton
+        ariaLabelledBy="ent-dias"
+        formControlName="dias_entrenamiento"
+        [options]="dias"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        styleClass="w-full"
+      />
+    </div>
+    <div class="flex flex-col gap-2">
+      <span id="ent-duracion" class="text-sm font-medium text-gray-600 dark:text-gray-400">Duración por sesión</span>
+      <p-selectbutton
+        ariaLabelledBy="ent-duracion"
+        formControlName="duracion_sesion"
+        [options]="duraciones"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        styleClass="w-full"
+      />
+    </div>
+  </div>
+</div>

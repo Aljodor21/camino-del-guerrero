@@ -1,0 +1,233 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { Observable } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+
+import { MenuService } from '../../core/services/menu';
+import {
+  ComidaMenu,
+  ComponenteComida,
+  MotivoCambio,
+  OpcionIntercambio,
+  SuplementoEnComida,
+} from '../../core/models/minuta.model';
+import {
+  GRUPOS_MINUTA,
+  MOTIVOS_CAMBIO,
+  ORDEN_GRUPOS,
+  porcionesDe,
+} from '../../core/constants/nutricion';
+import { clasesChip } from '../../shared/chip';
+import { mensajeError } from '../../shared/errores';
+import { fechaLocal, formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
+
+type Paso = 'inicio' | 'alimento' | 'intercambios' | 'otra';
+
+function lunesDe(iso: string): string {
+  const dia = fechaLocal(iso).getDay();
+  return sumarDias(iso, dia === 0 ? -6 : 1 - dia);
+}
+
+/** El menú de la semana: solo alimentos de la lista de intercambios en las porciones de la minuta. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
+@Component({
+  selector: 'app-menu-semanal',
+  templateUrl: './menu-semanal.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [Ayuda, ButtonModule, DialogModule, InputTextModule, MessageModule, ProgressSpinnerModule],
+})
+export class MenuSemanal implements OnInit {
+  protected servicio = inject(MenuService);
+
+  protected motivos = MOTIVOS_CAMBIO;
+  protected porcionesDe = porcionesDe;
+  protected claseOpcion =
+    'w-full text-left flex flex-col gap-0.5 rounded-xl border border-gray-200 dark:border-dark-700 px-4 py-3 hover:border-guerrero-red focus-visible:outline-2 focus-visible:outline-guerrero-red disabled:opacity-50';
+  protected clasesChip = clasesChip;
+  protected formatearFecha = formatearFecha;
+
+  private semanaActual = lunesDe(hoyISO());
+  protected semana = signal(this.semanaActual);
+  protected diaSeleccionado = signal(hoyISO());
+  protected cargando = signal(true);
+  protected armando = signal(false);
+  protected error = signal('');
+  protected confirmarRearmar = signal(false);
+
+  protected esSemanaActual = computed(() => this.semana() === this.semanaActual);
+  protected esSiguiente = computed(() => this.semana() === sumarDias(this.semanaActual, 7));
+  protected tituloSemana = computed(() => {
+    const desde = this.semana();
+    return `${formatearFecha(desde, 'grafica')} – ${formatearFecha(sumarDias(desde, 6), 'grafica')}`;
+  });
+  protected dias = computed(() =>
+    Array.from({ length: 7 }, (_, i) => {
+      const iso = sumarDias(this.semana(), i);
+      const fecha = fechaLocal(iso);
+      return {
+        iso,
+        nombre: fecha.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', ''),
+        numero: fecha.getDate(),
+        hoy: iso === hoyISO(),
+      };
+    }),
+  );
+  protected comidas = computed(() =>
+    (this.servicio.menu()?.comidas ?? []).filter((c) => c.fecha === this.diaSeleccionado()),
+  );
+  protected delDia = computed(() =>
+    (this.servicio.menu()?.durante_el_dia ?? []).map((p) => porcionesDe(p.grupo, p.porciones)),
+  );
+
+  // ── "No puedo con esta comida" ─────────────────────────────────────
+  protected comida = signal<ComidaMenu | null>(null);
+  protected paso = signal<Paso>('inicio');
+  protected componente = signal<ComponenteComida | null>(null);
+  protected opciones = signal<OpcionIntercambio[]>([]);
+  protected filtro = signal('');
+  protected motivo = signal<MotivoCambio | null>(null);
+  protected trabajando = signal(false);
+  protected errorCambio = signal('');
+  protected opcionesFiltradas = computed(() => {
+    const texto = this.normalizar(this.filtro());
+    return this.opciones().filter((o) => this.normalizar(o.nombre).includes(texto));
+  });
+  protected componentesCambiables = computed(() =>
+    (this.comida()?.componentes ?? []).filter((c) => c.grupo !== 'libres'),
+  );
+
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  /** Carga la semana; la actual o la siguiente se arman solas si aún no existen. */
+  protected cargar(): void {
+    this.cargando.set(true);
+    this.error.set('');
+    this.servicio.cargar(this.semana()).subscribe({
+      next: (menu) => {
+        this.cargando.set(false);
+        if (!menu && (this.esSemanaActual() || this.esSiguiente())) this.armar();
+      },
+      error: (err) => {
+        this.error.set(mensajeError(err, 'No pudimos cargar tu menú.'));
+        this.cargando.set(false);
+      },
+    });
+  }
+
+  protected armar(): void {
+    this.confirmarRearmar.set(false);
+    this.armando.set(true);
+    this.error.set('');
+    this.servicio.generar(this.semana()).subscribe({
+      next: () => this.armando.set(false),
+      error: (err) => {
+        this.error.set(mensajeError(err, 'No pudimos armar tu menú. Intenta de nuevo.'));
+        this.armando.set(false);
+      },
+    });
+  }
+
+  protected moverSemana(semanas: number): void {
+    this.semana.update((s) => sumarDias(s, semanas * 7));
+    const hoy = hoyISO();
+    const dentro = hoy >= this.semana() && hoy <= sumarDias(this.semana(), 6);
+    this.diaSeleccionado.set(dentro ? hoy : this.semana());
+    this.cargar();
+  }
+
+  protected grupo(nombre: string): string {
+    return GRUPOS_MINUTA[nombre as keyof typeof GRUPOS_MINUTA] ?? nombre;
+  }
+
+  /** "3 scoops, en lugar de 1 porción de lácteos". */
+  protected reemplazoTexto(s: SuplementoEnComida): string {
+    const partes = ORDEN_GRUPOS.filter((g) => s.reemplaza[g]).map((g) =>
+      porcionesDe(g, s.reemplaza[g]!),
+    );
+    const scoops = s.scoops ? `${s.scoops.toLocaleString('es-CO')} ${s.scoops === 1 ? 'scoop' : 'scoops'}, ` : '';
+    return scoops + (partes.length ? `en lugar de ${partes.join(' y ')}` : 'además de la comida');
+  }
+
+  // ── Diálogo de cambio ─────────────────────────────────────────────
+  protected abrirCambio(c: ComidaMenu): void {
+    this.comida.set(c);
+    this.paso.set('inicio');
+    this.componente.set(null);
+    this.motivo.set(null);
+    this.filtro.set('');
+    this.errorCambio.set('');
+  }
+
+  protected cerrarCambio(): void {
+    this.comida.set(null);
+  }
+
+  protected elegirComponente(c: ComponenteComida): void {
+    const comida = this.comida();
+    if (!comida) return;
+    this.componente.set(c);
+    this.opciones.set([]);
+    this.filtro.set('');
+    this.paso.set('intercambios');
+    this.trabajando.set(true);
+    this.servicio.opciones(comida.id, c.id).subscribe({
+      next: (opciones) => {
+        this.opciones.set(opciones);
+        this.trabajando.set(false);
+      },
+      error: (err) => {
+        this.errorCambio.set(mensajeError(err, 'No pudimos traer los intercambios.'));
+        this.trabajando.set(false);
+      },
+    });
+  }
+
+  protected usarIntercambio(o: OpcionIntercambio): void {
+    const comida = this.comida();
+    const c = this.componente();
+    if (comida && c) this.ejecutar(this.servicio.cambiarAlimento(comida.id, c.id, o.id));
+  }
+
+  protected pedirOtra(): void {
+    const comida = this.comida();
+    const motivo = this.motivo();
+    if (comida && motivo) this.ejecutar(this.servicio.sugerir(comida.id, motivo));
+  }
+
+  protected alternarPorFuera(): void {
+    const comida = this.comida();
+    if (comida) this.ejecutar(this.servicio.porFuera(comida.id, !comida.por_fuera));
+  }
+
+  private ejecutar(peticion: Observable<unknown>): void {
+    this.trabajando.set(true);
+    this.errorCambio.set('');
+    peticion.subscribe({
+      next: () => {
+        this.trabajando.set(false);
+        this.cerrarCambio();
+      },
+      error: (err) => {
+        this.errorCambio.set(mensajeError(err, 'No pudimos cambiar la comida.'));
+        this.trabajando.set(false);
+      },
+    });
+  }
+
+  private normalizar(texto: string): string {
+    return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+}

@@ -1,0 +1,114 @@
+<section
+  class="ayuda rounded-xl border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-sm"
+  [class.cerrada]="!abierta()"
+>
+  <button
+    type="button"
+    class="w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl focus-visible:outline-2 focus-visible:outline-guerrero-red"
+    [attr.aria-expanded]="abierta()"
+    [attr.aria-controls]="id"
+    (click)="alternar()"
+  >
+    <span class="w-8 h-8 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
+      <i class="pi pi-question text-sm" aria-hidden="true"></i>
+    </span>
+    <span class="flex-1 min-w-0">
+      <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ titulo() }}</span>
+      <span class="block text-xs text-gray-500 dark:text-gray-400">
+        {{ abierta() ? 'Para qué sirve y cómo se usa' : '¿Para qué sirve esto? Toca para verlo' }}
+      </span>
+    </span>
+    <i class="pi pi-chevron-down text-xs text-gray-400 flecha" aria-hidden="true"></i>
+  </button>
+
+  <div class="cuerpo" [id]="id" [attr.aria-hidden]="!abierta()">
+    <div class="cuerpo-interno">
+      <div class="px-4 pb-4 pt-1 grid gap-4 sm:grid-cols-[9.5rem_1fr] items-center">
+        <div class="demo" aria-hidden="true">
+          @switch (demo()) {
+            @case ('menu') {
+              <div class="d-menu">
+                <p class="fila"><span>Huevo</span><b>3</b></p>
+                <p class="fila"><span>Arepa</span><b>2</b></p>
+                <p class="fila cambio">
+                  <span class="antes">Arroz</span><span class="despues">Papa</span><b>4</b>
+                </p>
+                <p class="nota">misma porción</p>
+              </div>
+            }
+            @case ('mercado') {
+              <ul class="d-mercado">
+                <li><i></i><span>Arroz</span></li>
+                <li><i></i><span>Pollo</span></li>
+                <li><i></i><span>Papa</span></li>
+                <li><i></i><span>Leche</span></li>
+              </ul>
+            }
+            @case ('plan') {
+              <div class="d-plan">
+                <div class="hoja"><s></s><s></s><s></s><s></s></div>
+                <span class="candado"></span>
+              </div>
+            }
+            @case ('avisos') {
+              <div class="d-avisos">
+                <svg class="campana" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0" /></svg>
+                <p class="tarjeta"><span>Toma tu proteína</span><i></i></p>
+              </div>
+            }
+            @case ('cumplimiento') {
+              <div class="d-cump">
+                <svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18" /><circle class="arco" cx="22" cy="22" r="18" /></svg>
+                <span class="num"></span>
+              </div>
+            }
+            @case ('proyeccion') {
+              <svg class="d-proy" viewBox="0 0 120 80">
+                <path class="eje" d="M8 8v64h108" />
+                <path class="curva" d="M10 62 C 36 60, 60 48, 108 20" />
+                <circle class="punto" cx="108" cy="20" r="3.5" />
+                <path class="meta" d="M108 20v52" />
+              </svg>
+            }
+            @case ('proteina') {
+              <div class="d-prot">
+                <div class="vaso"><span class="agua"></span><span class="leche"></span></div>
+                <span class="scoop s1"></span><span class="scoop s2"></span><span class="scoop s3"></span>
+              </div>
+            }
+            @case ('medidas') {
+              <div class="d-med">
+                <span class="dia">Día 1</span><span class="hoy">Hoy</span><span class="barra"></span>
+              </div>
+            }
+            @case ('agenda') {
+              <div class="d-agenda">
+                <div class="cal"><b></b><span></span></div>
+                <span class="visto"></span>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="space-y-2.5">
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ para() }}</p>
+          <ol class="space-y-1.5">
+            @for (p of pasos(); track p; let i = $index) {
+              <li class="flex gap-2.5 text-sm text-gray-700 dark:text-gray-300 leading-snug">
+                <span class="w-5 h-5 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center tabular-nums">{{ i + 1 }}</span>
+                <span>{{ p }}</span>
+              </li>
+            }
+          </ol>
+          <button
+            type="button"
+            class="text-sm font-semibold text-guerrero-red hover:underline focus-visible:outline-2 focus-visible:outline-guerrero-red rounded"
+            (click)="alternar()"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
