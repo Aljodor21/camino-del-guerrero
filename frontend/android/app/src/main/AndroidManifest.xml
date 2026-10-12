@@ -40,4 +40,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Para abrir el instalador de Android con la actualización de la propia app. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Para que los avisos suenen a su hora exacta con la app cerrada (Android 13 o más lo concede solo). -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 </manifest>

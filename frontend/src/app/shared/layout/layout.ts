@@ -20,6 +20,7 @@ import { ProcesoService } from '../../core/services/proceso';
 import { AgendaService } from '../../core/services/agenda';
 import { AvisosService } from '../../core/services/avisos';
 import { ApkService } from '../../core/services/apk';
+import { NotificacionesLocalesService } from '../../core/services/notificaciones-locales';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
@@ -47,6 +48,7 @@ export class Layout implements OnInit, OnDestroy {
   private agenda = inject(AgendaService);
   protected avisos = inject(AvisosService);
   protected apk = inject(ApkService);
+  private celular = inject(NotificacionesLocalesService);
   private router = inject(Router);
   private location = inject(Location);
 
@@ -91,6 +93,7 @@ export class Layout implements OnInit, OnDestroy {
     if (!this.authService.isAdmin()) {
       this.agenda.cargar().subscribe({ error: () => {} });
       this.avisos.iniciar();
+      void this.celular.iniciar();
     }
   }
 
@@ -146,6 +149,16 @@ export class Layout implements OnInit, OnDestroy {
         accion: 'Registrar',
         enlace: ['/progreso'],
         descartar: () => this.notificaciones.dismiss(),
+      };
+    }
+    if (this.celular.estado() === 'inactivo') {
+      return {
+        icono: 'pi pi-bell',
+        texto:
+          'Activa las notificaciones para que los avisos te lleguen aunque la app esté cerrada.',
+        accion: 'Activar',
+        enlace: ['/avisos'],
+        queryParams: { seccion: 'ajustes' },
       };
     }
     // Lo último en la fila: la invitación a instalar la app, que se puede cerrar para siempre.

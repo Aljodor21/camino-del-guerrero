@@ -14,6 +14,7 @@ import { MessageModule } from 'primeng/message';
 
 import { Aviso, TipoAviso } from '../core/models/avisos.model';
 import { AvisosService } from '../core/services/avisos';
+import { NotificacionesLocalesService } from '../core/services/notificaciones-locales';
 import { PushService } from '../core/services/push';
 import { TIEMPOS_COMIDA } from '../core/constants/nutricion';
 import { TiempoComida } from '../core/models/minuta.model';
@@ -102,6 +103,7 @@ export class Avisos implements OnInit {
   }
   protected servicio = inject(AvisosService);
   protected push = inject(PushService);
+  protected celular = inject(NotificacionesLocalesService);
 
   protected iconos = ICONOS;
   protected estilos = ESTILOS;
@@ -259,12 +261,23 @@ export class Avisos implements OnInit {
           this.guardando.set(false);
           this.guardado.set(true);
           this.servicio.cargarHoy().subscribe({ error: () => undefined });
+          void this.celular.sincronizar(true);
         },
         error: (e) => {
           this.guardando.set(false);
           this.error.set(mensajeError(e, 'No pudimos guardar tus ajustes.'));
         },
       });
+  }
+
+  protected async alternarCelular(): Promise<void> {
+    this.error.set('');
+    try {
+      if (this.celular.estado() === 'activo') await this.celular.desactivar();
+      else await this.celular.activar();
+    } catch {
+      this.error.set('No pudimos activar las notificaciones en este celular.');
+    }
   }
 
   protected async alternarPush(): Promise<void> {

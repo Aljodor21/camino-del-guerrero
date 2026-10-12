@@ -99,6 +99,30 @@ class AvisosTest(APITestCase):
     def a_las(self, hora, minuto=0):
         return timezone.make_aware(datetime.combine(self.hoy, time(hora, minuto)))
 
+    def test_el_celular_pide_lo_que_viene_para_programarlo(self):
+        self.habitos(agua_ml=2000, vaso_ml=500, hora_levantarse='06:00', hora_dormir='22:00')
+        ahora = self.a_las(12)
+        lista = notificaciones.proximos(self.usuario, dias=2, ahora=ahora)
+        claves = [a['clave'] for a in lista]
+        # Solo lo que aún no llega a su hora, de hoy y de mañana, en orden.
+        self.assertTrue(all(a['programada_para'] > ahora for a in lista))
+        self.assertEqual([a['programada_para'] for a in lista], sorted(a['programada_para'] for a in lista))
+        self.assertIn(f'dormir:{self.hoy}', claves)
+        self.assertIn(f'dormir:{self.hoy + timedelta(days=1)}', claves)
+        self.assertEqual(sum(c.startswith('agua:') and f':{self.hoy + timedelta(days=1)}:' in c for c in claves), 4)
+        # Lo que ya está en la bandeja no se vuelve a programar.
+        notificaciones.generar(self.usuario, self.a_las(23))
+        claves = [a['clave'] for a in notificaciones.proximos(self.usuario, dias=1, ahora=self.a_las(23, 30))]
+        self.assertEqual(claves, [])
+
+    def test_proximos_por_la_api_pide_entre_1_y_14_dias(self):
+        self.habitos(agua_ml=2000, vaso_ml=500)
+        r = self.client.get(reverse('avisos-proximos'), {'dias': 3})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(set(r.data[0]), {'clave', 'tipo', 'titulo', 'cuerpo', 'programada_para'})
+        self.assertEqual(self.client.get(reverse('avisos-proximos'), {'dias': 30}).status_code,
+                         status.HTTP_400_BAD_REQUEST)
+
     def test_no_llegan_avisos_de_antes_del_registro(self):
         Usuario.objects.filter(pk=self.usuario.pk).update(date_joined=self.a_las(15))
         self.usuario.refresh_from_db()

@@ -374,47 +374,90 @@
         <h2 id="av-celular" class="font-semibold text-gray-900 dark:text-white">
           Notificaciones en este dispositivo
         </h2>
-        @switch (push.estado()) {
-          @case ('activo') {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              Activas: te llegan aunque la app esté cerrada, con un botón para confirmar.
-            </p>
-            <p-button
-              label="Desactivar"
-              severity="secondary"
-              variant="outlined"
-              size="small"
-              (onClick)="alternarPush()"
-            />
+        @if (celular.soportado) {
+          @switch (celular.estado()) {
+            @case ('activo') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Activas: tu celular las programa y suenan a su hora aunque la app esté cerrada. Se
+                renuevan cada vez que abres la app
+                @if (celular.programados()) {
+                  (ahora hay {{ celular.programados() }} programadas para los próximos 7 días)
+                }
+                .
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Si alguna no llega, en los ajustes del celular quita el ahorro de batería a Camino
+                del Guerrero.
+              </p>
+              <p-button
+                label="Desactivar"
+                severity="secondary"
+                variant="outlined"
+                size="small"
+                (onClick)="alternarCelular()"
+              />
+            }
+            @case ('denegado') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Las bloqueaste en este celular. Actívalas en Ajustes › Apps › Camino del Guerrero ›
+                Notificaciones y vuelve aquí.
+              </p>
+            }
+            @default {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Actívalas para que cada aviso suene a su hora, aunque la app esté cerrada.
+              </p>
+              <p-button
+                label="Activar notificaciones"
+                icon="pi pi-bell"
+                size="small"
+                (onClick)="alternarCelular()"
+              />
+            }
           }
-          @case ('inactivo') {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              Actívalas para que el aviso te llegue al celular a su hora.
-            </p>
-            <p-button
-              label="Activar notificaciones"
-              icon="pi pi-bell"
-              size="small"
-              (onClick)="alternarPush()"
-            />
-          }
-          @case ('denegado') {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              Las bloqueaste en este navegador. Permítelas desde los ajustes del sitio y vuelve
-              aquí.
-            </p>
-          }
-          @case ('sin-servidor') {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              El servidor aún no tiene activadas las notificaciones al celular. Los avisos te llegan
-              aquí, en la app.
-            </p>
-          }
-          @default {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              Este navegador no las soporta. En iPhone, agrega la app a la pantalla de inicio desde
-              Compartir y ábrela desde ahí.
-            </p>
+        } @else {
+          @switch (push.estado()) {
+            @case ('activo') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Activas: te llegan aunque la app esté cerrada, con un botón para confirmar.
+              </p>
+              <p-button
+                label="Desactivar"
+                severity="secondary"
+                variant="outlined"
+                size="small"
+                (onClick)="alternarPush()"
+              />
+            }
+            @case ('inactivo') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Actívalas para que el aviso te llegue al celular a su hora.
+              </p>
+              <p-button
+                label="Activar notificaciones"
+                icon="pi pi-bell"
+                size="small"
+                (onClick)="alternarPush()"
+              />
+            }
+            @case ('denegado') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Las bloqueaste en este navegador. Permítelas desde los ajustes del sitio y vuelve
+                aquí.
+              </p>
+            }
+            @case ('sin-servidor') {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                El servidor aún no tiene activadas las notificaciones al celular. Los avisos te
+                llegan aquí, en la app.
+              </p>
+            }
+            @default {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Este navegador no las soporta. En iPhone, agrega la app a la pantalla de inicio
+                desde Compartir y ábrela desde ahí.
+              </p>
+            }
           }
         }
       </section>

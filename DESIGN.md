@@ -125,6 +125,12 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **El aviso de arriba (el que sale en todas las pantallas):** va dentro de la página, nunca flota ni tapa el título. Si pide algo es una tarjeta tranquila con un botón de texto (Registrar, Actualizar…); si solo informa ("Tu proceso inicia el martes") es una línea discreta, sin caja ni botón.
 - **Barra de pestañas:** flecha "›" mientras queden pestañas a la derecha y "‹" cuando se pueda volver a la izquierda; tocarlas desplaza la barra.
 
+## Notificaciones en el celular
+
+- **Ajustes de Avisos › Notificaciones en este dispositivo** cambia según dónde se abra: en la app instalada, "Activar notificaciones" (pide el permiso de Android), "Activas" con cuántas hay programadas y una nota sobre el ahorro de batería, o cómo desbloquearlas si se negaron; en el navegador, el web push de siempre.
+- **El aviso de arriba invita a activarlas** ("Activa las notificaciones para que los avisos te lleguen aunque la app esté cerrada") mientras estén sin activar en la app instalada.
+- **En la barra de estado:** una campana blanca de una sola silueta, que es lo que Android permite, tintada del rojo de la marca. Al tocar una notificación se abre la bandeja de Avisos.
+
 ## Auditoría (administrador)
 
 - **Pantalla `/admin/auditoria`**, con Resumen y Huellas, y con filtros de periodo (Hoy, 7, 30 y 90 días), desde dónde (todos, app instalada, navegador), solo errores, buscar una ruta y mostrar las revisiones automáticas que la app hace sola cada minuto (ocultas por defecto).
