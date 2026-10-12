@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -22,7 +22,8 @@ import { TamanoVaso, vasoValido } from '../shared/tamano-vaso';
 import { parsearDecimal } from '../shared/decimal-input';
 import { mensajeError } from '../shared/errores';
 import { formatearHora, formatearNumero } from '../shared/fechas';
-import { Portada } from '../shared/portada/portada';
+import { Pestana, Pestanas } from '../shared/pestanas/pestanas';
+import { guardarSeccionEnUrl } from '../shared/seccion-en-url';
 
 const ICONOS: Record<TipoAviso, string> = {
   agua: 'pi pi-circle-fill',
@@ -58,14 +59,36 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
 import { Ayuda } from '../shared/ayuda/ayuda';
 
+type Seccion = 'pendientes' | 'dia' | 'ajustes';
+const SECCIONES: Seccion[] = ['pendientes', 'dia', 'ajustes'];
+
 @Component({
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, Portada, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
+  imports: [Ayuda, Pestanas, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
 })
 export class Avisos implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private ruta = inject(ActivatedRoute);
+
+  protected seccion = signal<Seccion>(
+    SECCIONES.find((x) => x === this.ruta.snapshot.queryParamMap.get('seccion')) ?? 'pendientes',
+  );
+  protected pestanas = computed((): Pestana<Seccion>[] => [
+    {
+      id: 'pendientes',
+      label: 'Pendientes',
+      icon: 'pi pi-inbox',
+      contador: this.pendientes().length,
+    },
+    { id: 'dia', label: 'Tu día', icon: 'pi pi-sun' },
+    { id: 'ajustes', label: 'Ajustes', icon: 'pi pi-sliders-h' },
+  ]);
+
+  constructor() {
+    guardarSeccionEnUrl(this.seccion);
+  }
   protected servicio = inject(AvisosService);
   protected push = inject(PushService);
 

@@ -112,3 +112,11 @@ Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pesta�
 - **Cómo lo sabe:** el interceptor `servidorInterceptor` cuenta las respuestas de nuestra API. Dos fallos seguidos (sin respuesta, 502, 503 o 504) la marcan como caída; cualquier respuesta (incluso un 400 o 401: el servidor contestó) la recupera. Mientras está caída se sondea cada 8 segundos `/api/app/version/` con `fetch`.
 - **nginx:** si el backend está apagado, `/api/` contesta un JSON claro (`503 {"detail": ...}`) en vez de una página HTML de error.
 - **404:** una ruta que no existe muestra la página 404 (video del guerrero). Si no carga ni el sitio (el túnel o uburoom apagados), lo que se ve es la página de error de Cloudflare: eso no lo controla la app; la app instalada, en cambio, sí carga (va empaquetada) y muestra esta tarjeta.
+
+## Avisos, una sección propia
+
+- **Cabecera propia, no la foto de las demás pantallas:** el icono de la campana en rojo, "Avisos" y una línea que dice cuántos faltan ("2 sin atender") o "Estás al día". Fondo con un tinte cálido arriba y llega desde la derecha (sin dejar un `transform` puesto).
+- **Tres pestañas:** Pendientes (con su contador rojo; la ayuda y la bandeja), Tu día (el agua, la proteína, el entreno y la hora de dormir) y Ajustes (agua, horas, qué avisos llegan y las notificaciones del celular). La pestaña queda en la URL.
+- **El aviso del agua dice cuánto llevas hoy** ("Llevas 1 de 4 vasos de hoy (600 ml cada uno)"), no el número del recordatorio: el texto se arma al mostrarlo, tanto en la app como en el push.
+- **El aviso de arriba (el que sale en todas las pantallas):** va dentro de la página, nunca flota ni tapa el título. Si pide algo es una tarjeta tranquila con un botón de texto (Registrar, Actualizar…); si solo informa ("Tu proceso inicia el martes") es una línea discreta, sin caja ni botón.
+- **Barra de pestañas:** flecha "›" mientras queden pestañas a la derecha y "‹" cuando se pueda volver a la izquierda; tocarlas desplaza la barra.
