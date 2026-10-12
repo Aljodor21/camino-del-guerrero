@@ -438,6 +438,10 @@
               />
             }
           }
+        } @else if (push.enLaApp()) {
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Ya tienes la app instalada: los avisos te llegan ahí y no se repiten en el navegador.
+          </p>
         } @else {
           @switch (push.estado()) {
             @case ('activo') {

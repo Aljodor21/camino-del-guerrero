@@ -139,3 +139,24 @@ class FirebaseTest(APITestCase):
         with patch.object(fcm, '_sesion', side_effect=ValueError('credenciales inválidas')):
             r = self.client.post(reverse('push-celular-probar'))
         self.assertEqual((r.status_code, r.data), (status.HTTP_200_OK, {'enviadas': 0}))
+
+
+class WebPushConLaAppTest(FirebaseTest):
+    """Quien ya tiene la app instalada no recibe lo mismo en el navegador."""
+
+    @override_settings(VAPID_PUBLIC_KEY='pub', VAPID_PRIVATE_KEY='priv', VAPID_EMAIL='a@b.co')
+    def test_con_la_app_registrada_el_navegador_no_recibe_el_aviso(self):
+        from .models import SuscripcionPush
+        SuscripcionPush.objects.create(usuario=self.usuario, endpoint='https://push.example/x', p256dh='a', auth='b')
+        with patch('agenda.push.webpush') as web:
+            push.enviar_web(self.aviso)
+            self.assertEqual(web.call_count, 1)        # sin la app, sí le llega al navegador
+            TokenCelular.objects.create(usuario=self.usuario, token=TOKEN)
+            push.enviar_web(self.aviso)
+            self.assertEqual(web.call_count, 1)        # con la app, ya no
+
+    @override_settings(VAPID_PUBLIC_KEY='pub', VAPID_PRIVATE_KEY='priv', VAPID_EMAIL='a@b.co')
+    def test_el_navegador_sabe_si_ya_tienes_la_app(self):
+        self.assertFalse(self.client.get(reverse('avisos-push')).data['en_la_app'])
+        TokenCelular.objects.create(usuario=self.usuario, token=TOKEN)
+        self.assertTrue(self.client.get(reverse('avisos-push')).data['en_la_app'])
