@@ -31,11 +31,14 @@ const RADIO = 42;
 const PERIMETRO = 2 * Math.PI * RADIO;
 
 /** Qué tanto se cumple la minuta según lo que se ha contado, en una torta con el porcentaje. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+import { animarProgreso } from '../../shared/animar-numero';
+
 @Component({
   selector: 'app-cumplimiento',
   templateUrl: './cumplimiento.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, RouterLink, MessageModule, FotoComida],
+  imports: [Ayuda, Portada, RouterLink, MessageModule, FotoComida],
 })
 export class CumplimientoPlan implements OnInit {
   private comidas = inject(ComidasService);
@@ -63,8 +66,17 @@ export class CumplimientoPlan implements OnInit {
   protected error = signal('');
   protected recienContada = signal<TiempoComida | null>(null);
 
+  /** De 0 a 1: la torta se llena y el porcentaje sube al llegar los datos. */
+  protected llenado = signal(1);
+  private cancelarLlenado: () => void = () => undefined;
+
   /** Largo del trazo de lo cumplido sobre el total del círculo. */
-  protected trazoCumplido = computed(() => ((this.datos()?.porcentaje ?? 0) / 100) * PERIMETRO);
+  protected trazoCumplido = computed(
+    () => ((this.datos()?.porcentaje ?? 0) / 100) * PERIMETRO * this.llenado(),
+  );
+  protected porcentajeMostrado = computed(() =>
+    Math.round((this.datos()?.porcentaje ?? 0) * this.llenado()),
+  );
   protected faltoPorciones = computed(() => {
     const d = this.datos();
     return d ? Math.max(0, d.porciones_pedidas - d.porciones_comidas) : 0;
@@ -99,6 +111,8 @@ export class CumplimientoPlan implements OnInit {
     this.comidas.cumplimiento(this.periodo()).subscribe({
       next: (d) => {
         this.datos.set(d);
+        this.cancelarLlenado();
+        this.cancelarLlenado = animarProgreso((v) => this.llenado.set(v));
         this.cargando.set(false);
       },
       error: (e) => {

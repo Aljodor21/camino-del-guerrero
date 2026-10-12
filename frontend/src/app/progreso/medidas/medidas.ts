@@ -37,11 +37,13 @@ import { mensajeError } from '../../shared/errores';
 type ModoRegistro = 'nueva' | 'inicial';
 
 /** Historial de mediciones corporales y registro de nuevas (incluida la inicial del proceso). */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-medidas',
   templateUrl: './medidas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [Ayuda, 
     ButtonModule,
     ChartModule,
     DialogModule,

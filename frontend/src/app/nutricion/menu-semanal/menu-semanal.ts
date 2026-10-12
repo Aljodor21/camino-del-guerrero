@@ -39,11 +39,13 @@ function lunesDe(iso: string): string {
 }
 
 /** El menú de la semana: solo alimentos de la lista de intercambios en las porciones de la minuta. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-menu-semanal',
   templateUrl: './menu-semanal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, DialogModule, InputTextModule, MessageModule, ProgressSpinnerModule],
+  imports: [Ayuda, ButtonModule, DialogModule, InputTextModule, MessageModule, ProgressSpinnerModule],
 })
 export class MenuSemanal implements OnInit {
   protected servicio = inject(MenuService);

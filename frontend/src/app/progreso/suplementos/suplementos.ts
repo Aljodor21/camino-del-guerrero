@@ -76,11 +76,13 @@ const CAMPOS_TABLA: { id: CampoTabla; label: string; max: number }[] = [
   { id: 'grasa_g', label: 'Grasa (g)', max: 200 },
 ];
 
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-suplementos',
   templateUrl: './suplementos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [Ayuda, 
     ReactiveFormsModule,
     ButtonModule,
     DialogModule,

@@ -5,6 +5,18 @@
     subtitulo="Lo pendiente del día. Sale de aquí cuando lo confirmas."
   />
 
+  <app-ayuda
+    clave="avisos"
+    titulo="Tus avisos"
+    para="Te recuerdan el agua, la proteína, el entreno y contar tus comidas. Se quedan aquí hasta que confirmas."
+    [pasos]="[
+      'Cuando llegue la hora, toca el botón del aviso para confirmarlo.',
+      'En las comidas, cuenta cuánto comiste de cada grupo.',
+      'Apaga los que no quieras en los ajustes de más abajo.'
+    ]"
+    demo="avisos"
+  />
+
   @if (error()) {
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }

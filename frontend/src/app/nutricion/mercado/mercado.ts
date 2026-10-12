@@ -21,11 +21,13 @@ import { environment } from '../../../environments/environment';
 const API = `${environment.apiUrl}/nutricion/lista-mercado`;
 
 /** Lista de mercado de la semana: sale del menú, sin las comidas que se hacen por fuera. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-mercado',
   templateUrl: './mercado.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, MessageModule, ProgressSpinnerModule],
+  imports: [Ayuda, ButtonModule, MessageModule, ProgressSpinnerModule],
 })
 export class Mercado implements OnInit {
   private http = inject(HttpClient);

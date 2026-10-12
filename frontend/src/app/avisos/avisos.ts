@@ -43,11 +43,13 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
 ];
 
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
+import { Ayuda } from '../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, RouterLink, ButtonModule, InputTextModule, MessageModule],
+  imports: [Ayuda, Portada, RouterLink, ButtonModule, InputTextModule, MessageModule],
 })
 export class Avisos implements OnInit {
   protected servicio = inject(AvisosService);

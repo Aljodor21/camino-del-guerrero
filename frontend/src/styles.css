@@ -151,3 +151,64 @@ html.dark .p-select.p-disabled .p-select-label {
   p-button { display: inline-block; vertical-align: top; }
   p-button:has(> button.w-full) { display: block; }
 }
+
+/*
+ * Movimiento de la app: corto, para decir "esto cambió" y no para decorar. Apagado con
+ * "reducir movimiento". La pantalla entra con un fundido breve; las pestañas también.
+ */
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes aparece {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+router-outlet + *,
+app-menu-semanal,
+app-mercado,
+app-mi-minuta,
+app-medidas,
+app-agenda,
+app-suplementos {
+  animation: entrada 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* Un botón se hunde un poco al tocarlo. */
+.p-button:not(:disabled):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  router-outlet + *,
+  app-menu-semanal,
+  app-mercado,
+  app-mi-minuta,
+  app-medidas,
+  app-agenda,
+  app-suplementos {
+    animation: none;
+  }
+  .p-button:not(:disabled):active {
+    transform: none;
+  }
+}

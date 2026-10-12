@@ -1,4 +1,16 @@
 <section class="space-y-4" aria-label="Menú de la semana">
+  <app-ayuda
+    clave="menu"
+    titulo="Tu menú de la semana"
+    para="Cada comida sale solo de tu minuta y de tu lista de intercambios. Si algo no te sirve, lo cambias por otro del mismo grupo y la porción no se mueve."
+    [pasos]="[
+        'Toca un día para ver sus comidas.',
+        'Si no puedes con una comida, toca «No puedo con esta comida» y elige qué hacer.',
+        'Marca como «por fuera» las que no cocinas en casa: no entran a tu lista de mercado.'
+      ]"
+    demo="menu"
+  />
+
   <div class="flex items-center justify-between gap-2">
     <button
       type="button"

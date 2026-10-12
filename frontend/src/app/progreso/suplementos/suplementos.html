@@ -1,4 +1,15 @@
 <section id="suplementos" class="space-y-2 scroll-mt-20" aria-labelledby="sp-titulo">
+  <app-ayuda
+    clave="proteina"
+    titulo="Tu proteína"
+    para="Dice cuánto dura tu envase, en qué comidas la tomas y qué reemplaza de tu plan; con la tabla nutricional, la estimación es más real."
+    [pasos]="[
+      'Escribe lo que dice la etiqueta: peso, porción y scoops.',
+      'Elige en qué comidas la tomas, y a qué hora si quieres.',
+      'Sube la foto de la etiqueta y léela para sumar sus calorías.'
+    ]"
+    demo="proteina"
+  />
   <div class="flex items-center justify-between gap-3">
     <h2
       id="sp-titulo"

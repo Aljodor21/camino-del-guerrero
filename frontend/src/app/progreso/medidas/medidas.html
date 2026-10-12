@@ -8,6 +8,18 @@
     }
   </div>
 
+  <app-ayuda
+    clave="medidas"
+    titulo="Tus medidas"
+    para="Tu primer día queda guardado y no se toca. Así comparas cómo vas contra un punto de partida real."
+    [pasos]="[
+      'Registra tu peso y tus medidas cuando te toque.',
+      'Sube fotos de frente, perfil y espalda: solo tú las ves.',
+      'Compárate con tu inicio en la sección de fotos.'
+    ]"
+    demo="medidas"
+  />
+
   @if (error() && !modo()) {
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }

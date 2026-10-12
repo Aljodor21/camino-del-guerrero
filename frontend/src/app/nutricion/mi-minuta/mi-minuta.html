@@ -1,5 +1,17 @@
 @if (servicio.vigente(); as m) {
   <div class="space-y-4">
+    <app-ayuda
+      clave="plan"
+      titulo="Mi plan"
+      para="Aquí está la minuta que te dio tu nutricionista. Una vez guardada no se edita: si te dan otra, la guardas y reemplaza a esta."
+      [pasos]="[
+          'Mira cuántas porciones te tocan en cada comida.',
+          'Cambia dónde comes cada una: en casa o por fuera.',
+          'Abre el original cuando lo necesites.'
+        ]"
+      demo="plan"
+    />
+
     @if (error()) {
       <p-message severity="error" [text]="error()" styleClass="w-full" />
     }

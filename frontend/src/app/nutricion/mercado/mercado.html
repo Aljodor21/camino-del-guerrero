@@ -1,4 +1,16 @@
 <div class="space-y-4">
+  <app-ayuda
+    clave="mercado"
+    titulo="Tu lista de mercado"
+    para="Suma lo que cocinas en casa, con las cantidades exactas de tu plan. Lo fresco se compra cada semana y lo que dura sale para todo el periodo."
+    [pasos]="[
+        'Elige para cuántos días: una semana, 15 días o un mes.',
+        'Toca «Generar lista» para armarla con tu menú.',
+        'Marca cada producto cuando lo compres.'
+      ]"
+    demo="mercado"
+  />
+
   @if (error()) {
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }
@@ -156,12 +168,12 @@
               <i
                 [class]="
                   item.comprado
-                    ? 'pi pi-check-circle text-green-500 text-lg'
+                    ? 'pi pi-check-circle text-green-500 text-lg motion-safe:animate-[pop_320ms_cubic-bezier(0.16,1,0.3,1)]'
                     : 'pi pi-circle text-gray-300 dark:text-gray-600 text-lg'
                 "
               ></i>
               <span
-                class="flex-1 text-sm"
+                class="flex-1 text-sm transition-colors duration-300"
                 [class]="
                   item.comprado
                     ? 'line-through text-gray-400 dark:text-gray-600'

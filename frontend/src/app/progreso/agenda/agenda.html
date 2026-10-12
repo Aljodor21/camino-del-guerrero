@@ -4,6 +4,18 @@
     <p-button icon="pi pi-plus" label="Agregar" (onClick)="nuevo()" />
   </div>
 
+  <app-ayuda
+    clave="agenda"
+    titulo="Tu agenda"
+    para="Recordatorios tuyos y los que la app sugiere: controles, cuándo pesarte y cuándo se acaba la proteína."
+    [pasos]="[
+      'Agrega lo que no quieres olvidar, con su fecha.',
+      'El día de la fecha (o después) lo marcas como hecho.',
+      'Los sugeridos se resuelven desde la tarjeta de tu proteína.'
+    ]"
+    demo="agenda"
+  />
+
   @if (error() && editando() === null) {
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }

@@ -1,6 +1,18 @@
 <div class="p-4 max-w-2xl mx-auto space-y-5 pb-8">
   <app-portada foto="agenda" titulo="¿Cuánto puedo cambiar?" subtitulo="Una estimación hasta tu próximo control." />
 
+  <app-ayuda
+    clave="proyeccion"
+    titulo="¿Cuánto puedo cambiar?"
+    para="Una estimación de tu peso hasta tu control, con tu comida, tu entreno y tu proteína. Es una guía, no una promesa."
+    [pasos]="[
+      'Mira los escenarios: cumpliendo todo y con tu cumplimiento real.',
+      'Revisa «Con qué lo calculamos» para ver qué se tuvo en cuenta.',
+      'Sube la tabla nutricional de tu proteína para afinarla.'
+    ]"
+    demo="proyeccion"
+  />
+
   @if (cargando()) {
     <div class="flex justify-center py-16"><p-progressspinner styleClass="w-10 h-10" /></div>
   } @else if (error()) {

@@ -20,11 +20,13 @@ import { formatearFecha, formatearNumero } from '../../shared/fechas';
 import { TablaMinuta } from '../tabla-minuta/tabla-minuta';
 
 /** La minuta vigente: fija. Lo único que se ajusta aquí es qué comidas se hacen por fuera. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-mi-minuta',
   templateUrl: './mi-minuta.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ButtonModule, MessageModule, TablaMinuta],
+  imports: [Ayuda, RouterLink, ButtonModule, MessageModule, TablaMinuta],
 })
 export class MiMinuta implements OnInit {
   protected servicio = inject(MinutaService);

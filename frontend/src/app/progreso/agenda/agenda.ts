@@ -29,11 +29,13 @@ import { mensajeError } from '../../shared/errores';
 import { Suplementos } from '../suplementos/suplementos';
 
 /** Fechas importantes del proceso: controles, mediciones y otros recordatorios. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-agenda',
   templateUrl: './agenda.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [Ayuda, 
     NgTemplateOutlet,
     ReactiveFormsModule,
     ButtonModule,

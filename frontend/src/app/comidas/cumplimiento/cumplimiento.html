@@ -5,6 +5,18 @@
     subtitulo="Lo que comes frente a lo que pidió tu nutricionista."
   />
 
+  <app-ayuda
+    clave="cumplimiento"
+    titulo="¿Cuánto cumples de tu plan?"
+    para="Compara lo que cuentas de cada comida con lo que pide tu minuta y te dice qué te faltó."
+    [pasos]="[
+      'Cuando llegue el aviso de una comida, cuéntala con «Comí todo» o por grupos.',
+      'Aquí ves el porcentaje y los grupos que te faltaron.',
+      'Las comidas que no cuentas no se suman: no suponemos que no comiste.'
+    ]"
+    demo="cumplimiento"
+  />
+
   @if (recienContada(); as t) {
     <p-message
       severity="success"
@@ -51,13 +63,13 @@
             }
             @if (d.porcentaje !== null) {
               <circle cx="50" cy="50" [attr.r]="radio" fill="none" stroke-width="14"
-                class="stroke-green-600 transition-[stroke-dasharray] duration-700 motion-reduce:transition-none"
+                class="stroke-green-600"
                 [attr.stroke-dasharray]="trazoCumplido() + ' ' + perimetro" />
             }
           </svg>
           <figcaption class="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span class="text-4xl font-bold tabular-nums" [class]="tono()">
-              {{ d.porcentaje === null ? '—' : d.porcentaje + '%' }}
+              {{ d.porcentaje === null ? '—' : porcentajeMostrado() + '%' }}
             </span>
             <span class="text-xs text-gray-500 dark:text-gray-400">cumplido</span>
           </figcaption>

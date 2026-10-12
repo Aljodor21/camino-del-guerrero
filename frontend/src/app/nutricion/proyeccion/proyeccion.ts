@@ -41,11 +41,13 @@ interface ProyeccionPeso {
 }
 
 /** Cuánto podría cambiar el peso hasta el próximo control, uniendo todo lo que ya se sabe. */
+import { Ayuda } from '../../shared/ayuda/ayuda';
+
 @Component({
   selector: 'app-proyeccion',
   templateUrl: './proyeccion.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, RouterLink, MessageModule, ProgressSpinnerModule, IlustracionCambio],
+  imports: [Ayuda, Portada, RouterLink, MessageModule, ProgressSpinnerModule, IlustracionCambio],
 })
 export class Proyeccion implements OnInit {
   private http = inject(HttpClient);

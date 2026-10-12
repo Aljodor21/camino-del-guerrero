@@ -58,63 +58,85 @@
         }
       </div>
 
-      <a
-        routerLink="/cumplimiento"
-        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
-      >
-        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
-          <i class="pi pi-chart-pie" aria-hidden="true"></i>
-        </span>
-        <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-gray-900 dark:text-white">¿Cuánto cumples de tu plan?</span>
-          <span class="block text-xs text-gray-500 dark:text-gray-400">Lo que cuentas de cada comida, frente a la minuta.</span>
-        </span>
-        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
-      </a>
+      <div class="grid grid-cols-2 gap-3">
+        <a
+          routerLink="/cumplimiento"
+          class="flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow focus-visible:outline-2 focus-visible:outline-guerrero-red"
+        >
+          <span
+            class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+          >
+            <i class="pi pi-chart-pie" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white"
+              >¿Cuánto cumples de tu plan?</span
+            >
+            <span class="block text-xs text-gray-500 dark:text-gray-400"
+              >Lo que cuentas de cada comida, frente a la minuta.</span
+            >
+          </span>
+        </a>
 
-      <a
-        routerLink="/progreso"
-        [queryParams]="{ seccion: 'agenda' }"
-        fragment="suplementos"
-        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
-      >
-        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
-          <i class="pi pi-box" aria-hidden="true"></i>
-        </span>
-        <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-gray-900 dark:text-white">Mi proteína</span>
-          <span class="block text-xs text-gray-500 dark:text-gray-400">Foto, información y tabla nutricional.</span>
-        </span>
-        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
-      </a>
+        <a
+          routerLink="/progreso"
+          [queryParams]="{ seccion: 'agenda' }"
+          fragment="suplementos"
+          class="flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow focus-visible:outline-2 focus-visible:outline-guerrero-red"
+        >
+          <span
+            class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+          >
+            <i class="pi pi-box" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white"
+              >Mi proteína</span
+            >
+            <span class="block text-xs text-gray-500 dark:text-gray-400"
+              >Foto, información y tabla nutricional.</span
+            >
+          </span>
+        </a>
 
-      <a
-        routerLink="/lista-alimentos"
-        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
-      >
-        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
-          <i class="pi pi-list" aria-hidden="true"></i>
-        </span>
-        <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-gray-900 dark:text-white">Mi lista de alimentos</span>
-          <span class="block text-xs text-gray-500 dark:text-gray-400">Qué puedes comer y cómo cambiarla.</span>
-        </span>
-        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
-      </a>
+        <a
+          routerLink="/lista-alimentos"
+          class="flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow focus-visible:outline-2 focus-visible:outline-guerrero-red"
+        >
+          <span
+            class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+          >
+            <i class="pi pi-list" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white"
+              >Mi lista de alimentos</span
+            >
+            <span class="block text-xs text-gray-500 dark:text-gray-400"
+              >Qué puedes comer y cómo cambiarla.</span
+            >
+          </span>
+        </a>
 
-      <a
-        routerLink="/proyeccion"
-        class="flex items-center gap-3 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow"
-      >
-        <span class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center">
-          <i class="pi pi-chart-line" aria-hidden="true"></i>
-        </span>
-        <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-gray-900 dark:text-white">¿Cuánto puedo cambiar?</span>
-          <span class="block text-xs text-gray-500 dark:text-gray-400">Estimación hasta tu próximo control.</span>
-        </span>
-        <i class="pi pi-angle-right text-gray-400" aria-hidden="true"></i>
-      </a>
+        <a
+          routerLink="/proyeccion"
+          class="flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl shadow-sm p-3.5 hover:ring-1 hover:ring-guerrero-red transition-shadow focus-visible:outline-2 focus-visible:outline-guerrero-red"
+        >
+          <span
+            class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+          >
+            <i class="pi pi-chart-line" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white"
+              >¿Cuánto puedo cambiar?</span
+            >
+            <span class="block text-xs text-gray-500 dark:text-gray-400"
+              >Estimación hasta tu próximo control.</span
+            >
+          </span>
+        </a>
+      </div>
 
       @switch (seccion()) {
         @case ('menu') {
