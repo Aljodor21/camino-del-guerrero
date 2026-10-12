@@ -23,6 +23,10 @@ Real versions come from `backend/requirements.txt` and `frontend/package.json`, 
 
 Los avisos (agua, tomas de proteína, dormir, entreno, recordatorios) los arma `agenda/notificaciones.py`: se crean a su hora, quedan pendientes en la app **hasta que el usuario confirma** y al confirmar se guarda el dato en `RegistroHabito` (inmutable). El envío al celular (web push) lo hace `python manage.py enviar_avisos --cada 60` (servicio `avisos` en `docker-compose.yml`) y necesita `VAPID_*` en `.env.docker` (se generan con `python manage.py llaves_push`). El service worker es `frontend/public/sw.js`. Eso es solo para el navegador: en la app instalada (Capacitor) el web push no existe, así que ahí el celular programa sus propios avisos con `@capacitor/local-notifications` (`core/services/notificaciones-locales.ts`), a partir de `GET /api/agenda/avisos/proximos/` (los próximos días, calculados por `notificaciones.proximos`); se reprograma cada vez que se abre la app. Los avisos de comida (`tipo='comida'`) no se confirman a ciegas: se resuelven al contar lo que se comió (`nutricion/comidas.py`, `RegistroComida`), que se compara con la minuta para el porcentaje de cumplimiento; la foto es opcional, privada y de apoyo (el porcentaje sale de lo que el usuario marca).
 
+## Auditoría
+
+La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/api/` (middleware `AuditoriaMiddleware`) y por cada pantalla que abre la persona (`POST /api/auditoria/pantalla/`): quién, ruta (con su forma, para agrupar), resultado, duración, IP y dispositivo (se interpreta del User-Agent y de las cabeceras `X-Cliente` y `X-App-Version` que manda la app). Nunca guarda cuerpos de peticiones, fotos ni claves; la consulta tapa valores sensibles. Solo el administrador la ve (`/api/auditoria/eventos|resumen/`, pantalla `/admin/auditoria`). `limpiar_auditoria` borra lo de más de 90 días y lo corre el servicio `avisos` una vez al día.
+
 ## Domain language
 
 The domain is written in **Spanish**: model names, fields, API paths, AI prompts, and commit messages. Keep new domain code, fields, and prompts in Spanish to match.

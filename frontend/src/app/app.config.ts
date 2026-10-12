@@ -10,6 +10,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { GuerreroPreset } from './core/theme/guerrero-preset';
+import { auditoriaInterceptor } from './core/interceptors/auditoria-interceptor';
 import { jwtInterceptor } from './core/interceptors/jwt-interceptor';
 import { servidorInterceptor } from './core/interceptors/servidor-interceptor';
 
@@ -19,7 +20,9 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     provideAnimationsAsync(),
-    provideHttpClient(withInterceptors([servidorInterceptor, jwtInterceptor])),
+    provideHttpClient(
+      withInterceptors([servidorInterceptor, auditoriaInterceptor, jwtInterceptor]),
+    ),
     providePrimeNG({
       theme: {
         preset: GuerreroPreset,

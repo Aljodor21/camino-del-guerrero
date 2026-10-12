@@ -1,5 +1,6 @@
 import time
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
@@ -16,8 +17,16 @@ class Command(BaseCommand):
         parser.add_argument('--cada', type=int, default=0, help='Segundos entre revisiones (0: una vez)')
 
     def handle(self, *args, cada, **options):
+        limpieza = None
         while True:
             self.revisar()
+            # Una vez al día se borra la auditoría vieja.
+            if limpieza != timezone.localdate():
+                limpieza = timezone.localdate()
+                try:
+                    call_command('limpiar_auditoria', verbosity=0)
+                except Exception as e:  # la limpieza no debe frenar los avisos
+                    self.stderr.write(f'No se pudo limpiar la auditoría: {e}')
             if not cada:
                 return
             time.sleep(cada)

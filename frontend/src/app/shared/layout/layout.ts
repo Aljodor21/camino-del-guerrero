@@ -193,6 +193,7 @@ export class Layout implements OnInit, OnDestroy {
         { path: '/admin/ejercicios', icon: 'pi pi-video', label: 'Ejercicios' },
         { path: '/admin/recomendaciones', icon: 'pi pi-play-circle', label: 'Consejos' },
         { path: '/admin/usuarios', icon: 'pi pi-users', label: 'Usuarios' },
+        { path: '/admin/auditoria', icon: 'pi pi-eye', label: 'Auditoría' },
       ];
     }
     const p = this.procesos.vigente();

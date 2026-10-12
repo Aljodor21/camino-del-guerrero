@@ -76,7 +76,13 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        # La auditoría anota quién intentó entrar (solo el correo, nunca la clave).
+        peticion = getattr(self.context.get('request'), '_request', None)
+        if peticion is not None:
+            peticion.auditoria_correo = str(attrs.get(self.username_field, ''))[:254]
         data = super().validate(attrs)
+        if peticion is not None:
+            peticion.auditoria_usuario = self.user
         data['usuario'] = UsuarioSerializer(self.user).data
         return data
 
