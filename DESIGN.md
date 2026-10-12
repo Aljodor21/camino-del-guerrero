@@ -106,6 +106,10 @@ Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pesta�
 - **Ventanas (`p-dialog`):** nunca hay que dejar un `transform` (ni el de cero) puesto en un contenedor de pantalla: vuelve a ese contenedor la referencia de los elementos de posición fija y la ventana se mide contra la pantalla y no contra el celular (salía cortada). Por eso las animaciones de entrada usan solo `backwards` (no `both`/`forwards`).
 - **Fechas de un plan:** siempre se dice de qué es: "hasta cuándo dura tu proceso", "fecha en que termina tu plan", "tu próximo control", "sin fecha por ahora" (no "va hasta" ni "sin definir" a secas).
 
+### Actualizar sin salir de la app
+
+Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: un plugin propio de Android (`ActualizadorPlugin.java`) baja el APK desde nuestro dominio con una barra de progreso ("Descargando la actualización… 60 %"), comprueba que sea de esta misma app (mismo paquete) y abre el instalador de Android, donde la persona toca "Instalar" y la app se actualiza encima, con su sesión y sus datos. Estados: descargando (barra), "Descarga lista · Toca «Instalar» en la pantalla de Android", "Falta un permiso" (la primera vez Android pide activar "Permitir de esta fuente"; se abre la pantalla de ajustes y se vuelve a tocar Actualizar) y error ("No pudimos descargarla" + reintentar + "Descargarla con el navegador"). Android no instala en silencio una app de fuera de la Play Store: la confirmación es siempre de la persona.
+
 ## Cuando el servidor no responde
 
 - **Una sola tarjeta para toda la app** (`app-servidor-caido`), sobre la barra de abajo y sin tapar lo que se lee: "No podemos conectar con el servidor" o "Sin internet", la tranquilidad de que los datos están a salvo, un botón "Reintentar" y "Reintentando solos". Cuando vuelve la conexión se retira sola y deja 3 segundos una tarjeta verde "Conexión recuperada".

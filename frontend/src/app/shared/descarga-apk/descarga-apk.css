@@ -250,6 +250,58 @@
   color: #1a1100;
 }
 
+/* ── Descarga dentro de la app: barra de progreso ─── */
+.progreso {
+  width: 100%;
+  max-width: 32rem;
+}
+.progreso-texto {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--bruma);
+}
+.progreso-texto b {
+  color: var(--oro);
+  font-variant-numeric: tabular-nums;
+}
+.progreso-barra {
+  height: 0.6rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+}
+.progreso-barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--rojo), var(--oro));
+  transition: width 200ms linear;
+}
+.progreso-barra span.indeterminada {
+  width: 40% !important;
+  animation: va-y-viene 1.2s ease-in-out infinite alternate;
+}
+@keyframes va-y-viene {
+  from {
+    translate: -20% 0;
+  }
+  to {
+    translate: 160% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progreso-barra span {
+    transition: none;
+  }
+  .progreso-barra span.indeterminada {
+    animation: none;
+    width: 100% !important;
+  }
+}
+
 /* ── Celular: todo a la vista, con el celular asomándose por abajo ─── */
 @media (max-width: 767px) {
   .portada {
