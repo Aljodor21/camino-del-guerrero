@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  input,
+} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -42,6 +50,9 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
   imports: [Portada, InputTextModule, MessageModule, ProgressSpinnerModule, ButtonModule],
 })
 export class ListaAlimentos implements OnInit {
+  /** Dentro de las pestañas de otra sección: sin portada ni margen propios. */
+  readonly embebido = input(false);
+
   private http = inject(HttpClient);
 
   protected alimentos = signal<Alimento[]>([]);
@@ -63,9 +74,27 @@ export class ListaAlimentos implements OnInit {
   protected encontrados = computed(() => this.grupos().reduce((n, g) => n + g.items.length, 0));
 
   protected ejemplo = [
-    { grupo: 'cereales', subgrupo: 'Cereales', alimento: 'Arepa delgada de maíz blanco trillado', gramos: '56', medida: '1 unidad pequeña' },
-    { grupo: 'frutas', subgrupo: 'Frutas', alimento: 'Mango', gramos: '110', medida: '½ unidad mediana' },
-    { grupo: 'lacteos', subgrupo: 'Lácteos', alimento: 'Yogurt griego natural descremado', gramos: '100', medida: '1 vaso pequeño' },
+    {
+      grupo: 'cereales',
+      subgrupo: 'Cereales',
+      alimento: 'Arepa delgada de maíz blanco trillado',
+      gramos: '56',
+      medida: '1 unidad pequeña',
+    },
+    {
+      grupo: 'frutas',
+      subgrupo: 'Frutas',
+      alimento: 'Mango',
+      gramos: '110',
+      medida: '½ unidad mediana',
+    },
+    {
+      grupo: 'lacteos',
+      subgrupo: 'Lácteos',
+      alimento: 'Yogurt griego natural descremado',
+      gramos: '100',
+      medida: '1 vaso pequeño',
+    },
   ];
 
   ngOnInit(): void {

@@ -1,25 +1,17 @@
 <div class="p-4 max-w-2xl mx-auto space-y-4">
   @if (vistaEntrenamiento() === 'lista' || seccion() !== 'entrenamiento') {
-    <app-portada foto="progreso" titulo="Progreso" subtitulo="Tus medidas, tu agenda y tus sesiones." />
+    <app-portada
+      foto="progreso"
+      titulo="Progreso"
+      subtitulo="Tus medidas, tu agenda y tus sesiones."
+    />
   }
 
   @if (vistaEntrenamiento() === 'lista' || seccion() !== 'entrenamiento') {
     <app-resumen-proceso (verAgenda)="seccion.set('agenda')" />
   }
 
-  <div class="flex bg-gray-100 dark:bg-dark-700 rounded-xl p-1 gap-1" role="tablist" aria-label="Secciones de progreso">
-      @for (t of pestanas(); track t.id) {
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="seccion() === t.id"
-          [class]="seccion() === t.id
-            ? 'flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-dark-800 text-guerrero-red shadow-sm transition-all'
-            : 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 transition-all'"
-          (click)="seccion.set(t.id)"
-        ><i [class]="t.icon + ' mr-1'" aria-hidden="true"></i> {{ t.label }}</button>
-      }
-    </div>
+  <app-pestanas [items]="pestanas()" [(activa)]="seccion" etiqueta="Secciones de progreso" />
 
   @if (seccion() === 'medidas') {
     <app-medidas />
@@ -29,37 +21,53 @@
     <app-agenda />
   }
 
+  @if (seccion() === 'proyeccion' && tieneAlimentacion()) {
+    <app-proyeccion [embebido]="true" />
+  }
+
   <!-- ====== ENTRENAMIENTO ====== -->
   @if (seccion() === 'entrenamiento' && tieneEntrenamiento()) {
-
     <!-- LISTA -->
     @if (vistaEntrenamiento() === 'lista') {
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Entrenamientos</h2>
         @if (!sinRutina() && rutina()) {
-          <p-button icon="pi pi-plus" label="Nueva sesión" (onClick)="vistaEntrenamiento.set('elegir_dia')" />
+          <p-button
+            icon="pi pi-plus"
+            label="Nueva sesión"
+            (onClick)="vistaEntrenamiento.set('elegir_dia')"
+          />
         }
       </div>
 
       <!-- Banner sesión pendiente -->
       @if (sesionPendiente()) {
-        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 space-y-3">
+        <div
+          class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 space-y-3"
+        >
           <div class="flex items-start gap-3">
             <i class="pi pi-clock text-amber-500 text-xl mt-0.5"></i>
             <div class="flex-1">
-              <p class="text-sm font-bold text-amber-700 dark:text-amber-300">Sesión guardada sin finalizar</p>
+              <p class="text-sm font-bold text-amber-700 dark:text-amber-300">
+                Sesión guardada sin finalizar
+              </p>
               <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                {{ sesionPendiente()!.diaNombre }} · {{ formatTimestamp(sesionPendiente()!.inicio) }}
+                {{ sesionPendiente()!.diaNombre }} ·
+                {{ formatTimestamp(sesionPendiente()!.inicio) }}
               </p>
             </div>
           </div>
           <div class="flex gap-2">
-            <button (click)="restaurarSesion()"
-                    class="flex-1 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5">
+            <button
+              (click)="restaurarSesion()"
+              class="flex-1 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
               <i class="pi pi-play"></i> Continuar sesión
             </button>
-            <button (click)="descartarSesionLocal()"
-                    class="flex-1 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center justify-center gap-1.5">
+            <button
+              (click)="descartarSesionLocal()"
+              class="flex-1 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center justify-center gap-1.5"
+            >
               <i class="pi pi-trash"></i> Descartar
             </button>
           </div>
@@ -82,33 +90,53 @@
             </div>
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
               <p class="text-xs text-gray-400 mb-1">Total</p>
-              <p class="text-2xl font-bold text-guerrero-red">{{ totalMinutosSesiones() }}<span class="text-xs font-normal ml-0.5">min</span></p>
+              <p class="text-2xl font-bold text-guerrero-red">
+                {{ totalMinutosSesiones() }}<span class="text-xs font-normal ml-0.5">min</span>
+              </p>
             </div>
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm text-center">
               <p class="text-xs text-gray-400 mb-1">Promedio</p>
-              <p class="text-2xl font-bold text-guerrero-red">{{ promedioMinutos() }}<span class="text-xs font-normal ml-0.5">min</span></p>
+              <p class="text-2xl font-bold text-guerrero-red">
+                {{ promedioMinutos() }}<span class="text-xs font-normal ml-0.5">min</span>
+              </p>
             </div>
           </div>
 
           @if (chartSesionesData()) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
-              <p class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Duración últimas sesiones</p>
+              <p class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">
+                Duración últimas sesiones
+              </p>
               <div style="height: 180px">
-                <p-chart type="bar" [data]="chartSesionesData()" [options]="chartSesionesOptions()" />
+                <p-chart
+                  type="bar"
+                  [data]="chartSesionesData()"
+                  [options]="chartSesionesOptions()"
+                />
               </div>
             </div>
           }
 
           @if (topEjercicios().length > 0) {
             <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-3">
-              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Ejercicios más frecuentes</p>
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                Ejercicios más frecuentes
+              </p>
               @for (ej of topEjercicios(); track ej.nombre; let i = $index) {
                 <div class="flex items-center gap-3">
-                  <span class="w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0">{{ i + 1 }}</span>
-                  <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{{ ej.nombre }}</span>
+                  <span
+                    class="w-5 h-5 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0"
+                    >{{ i + 1 }}</span
+                  >
+                  <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{{
+                    ej.nombre
+                  }}</span>
                   <span class="text-xs font-semibold text-gray-400">{{ ej.veces }}x</span>
                   <div class="w-16 bg-gray-100 dark:bg-dark-700 rounded-full h-1.5">
-                    <div class="bg-guerrero-red h-1.5 rounded-full" [style.width.%]="(ej.veces / topEjercicios()[0].veces) * 100"></div>
+                    <div
+                      class="bg-guerrero-red h-1.5 rounded-full"
+                      [style.width.%]="(ej.veces / topEjercicios()[0].veces) * 100"
+                    ></div>
                   </div>
                 </div>
               }
@@ -127,15 +155,21 @@
               <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                   <div>
-                    <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ r.dia_nombre }}</p>
+                    <p class="text-sm font-semibold text-gray-800 dark:text-white">
+                      {{ r.dia_nombre }}
+                    </p>
                     <p class="text-xs text-gray-400">{{ formatFecha(r.fecha) }}</p>
                   </div>
-                  <span class="text-sm font-bold text-guerrero-red font-mono">{{ formatSegundos(r.duracion_segundos) }}</span>
+                  <span class="text-sm font-bold text-guerrero-red font-mono">{{
+                    formatSegundos(r.duracion_segundos)
+                  }}</span>
                 </div>
                 @if (r.ejercicios_completados.length > 0) {
                   <div class="flex flex-wrap gap-1">
                     @for (ej of r.ejercicios_completados; track ej.ejercicio_dia_id) {
-                      <span class="text-xs bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                      <span
+                        class="text-xs bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full"
+                      >
                         {{ ej.nombre }} {{ seriesCompletadas(ej) }}/{{ ej.series_plan }}
                       </span>
                     }
@@ -151,15 +185,22 @@
     <!-- ELEGIR DÍA -->
     @if (vistaEntrenamiento() === 'elegir_dia') {
       <div class="flex items-center gap-2">
-        <p-button icon="pi pi-arrow-left" variant="text" [rounded]="true" severity="secondary"
-                  (onClick)="vistaEntrenamiento.set('lista')" />
+        <p-button
+          icon="pi pi-arrow-left"
+          variant="text"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="vistaEntrenamiento.set('lista')"
+        />
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">¿Qué día entrenas hoy?</h1>
       </div>
 
       <!-- Barra de progreso de la rutina -->
       <div class="bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm space-y-2">
         <div class="flex items-center justify-between">
-          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Progreso de la rutina</p>
+          <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Progreso de la rutina
+          </p>
           <p class="text-sm font-bold text-guerrero-red">
             {{ progresoRutina().completados }} / {{ progresoRutina().total }} días
           </p>
@@ -170,7 +211,9 @@
             [style.width.%]="progresoRutina().porcentaje"
           ></div>
         </div>
-        @if (progresoRutina().completados === progresoRutina().total && progresoRutina().total > 0) {
+        @if (
+          progresoRutina().completados === progresoRutina().total && progresoRutina().total > 0
+        ) {
           <p class="text-xs text-green-600 dark:text-green-400 font-semibold text-center">
             ¡Completaste todos los días! Puedes repetir cualquiera.
           </p>
@@ -178,13 +221,15 @@
       </div>
 
       <div class="space-y-2">
-        @for (dia of (rutina()?.dias ?? []); track dia.id) {
+        @for (dia of rutina()?.dias ?? []; track dia.id) {
           @let hecho = !!diasUltimaVez()[dia.id];
           <button
             class="w-full bg-white dark:bg-dark-800 rounded-xl p-4 shadow-sm flex items-center gap-3 border-2 transition-all text-left"
-            [class]="hecho
-              ? 'border-green-200 dark:border-green-800 hover:border-guerrero-red'
-              : 'border-transparent hover:border-guerrero-red'"
+            [class]="
+              hecho
+                ? 'border-green-200 dark:border-green-800 hover:border-guerrero-red'
+                : 'border-transparent hover:border-guerrero-red'
+            "
             (click)="elegirDia(dia)"
           >
             <!-- Icono de estado -->
@@ -200,8 +245,10 @@
 
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-gray-900 dark:text-white">{{ dia.dia_nombre }}</p>
-              <p class="text-xs mt-0.5"
-                 [class]="hecho ? 'text-green-600 dark:text-green-400' : 'text-gray-400'">
+              <p
+                class="text-xs mt-0.5"
+                [class]="hecho ? 'text-green-600 dark:text-green-400' : 'text-gray-400'"
+              >
                 @if (hecho) {
                   Completado · {{ formatFecha(diasUltimaVez()[dia.id]) }}
                 } @else {
@@ -219,23 +266,40 @@
     <!-- PRE-SESIÓN -->
     @if (vistaEntrenamiento() === 'pre_sesion') {
       <div class="flex items-center gap-2">
-        <p-button icon="pi pi-arrow-left" variant="text" [rounded]="true" severity="secondary"
-                  (onClick)="vistaEntrenamiento.set('elegir_dia')" />
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ diaSeleccionado()?.dia_nombre }}</h1>
+        <p-button
+          icon="pi pi-arrow-left"
+          variant="text"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="vistaEntrenamiento.set('elegir_dia')"
+        />
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          {{ diaSeleccionado()?.dia_nombre }}
+        </h1>
       </div>
 
-      <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm divide-y divide-gray-100 dark:divide-dark-700">
-        @for (ej of (diaSeleccionado()?.ejercicios ?? []); track ej.id; let i = $index) {
+      <div
+        class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm divide-y divide-gray-100 dark:divide-dark-700"
+      >
+        @for (ej of diaSeleccionado()?.ejercicios ?? []; track ej.id; let i = $index) {
           <div class="flex items-center gap-3 px-4 py-3">
-            <span class="w-7 h-7 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0">
+            <span
+              class="w-7 h-7 rounded-full bg-guerrero-red/10 text-guerrero-red text-xs font-bold flex items-center justify-center shrink-0"
+            >
               {{ i + 1 }}
             </span>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">{{ ej.ejercicio.nombre }}</p>
+              <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">
+                {{ ej.ejercicio.nombre }}
+              </p>
               <p class="text-xs text-gray-400 mt-0.5">
                 {{ ej.series ?? 1 }} series
-                @if (ej.repeticiones) { · {{ ej.repeticiones }} reps }
-                @if (ej.duracion_segundos) { · {{ ej.duracion_segundos }}s }
+                @if (ej.repeticiones) {
+                  · {{ ej.repeticiones }} reps
+                }
+                @if (ej.duracion_segundos) {
+                  · {{ ej.duracion_segundos }}s
+                }
               </p>
             </div>
             @if (ej.ejercicio.url_youtube) {
@@ -256,20 +320,29 @@
 
     <!-- SESIÓN ACTIVA -->
     @if (vistaEntrenamiento() === 'sesion') {
-
       <!-- Header de sesión -->
       <div class="flex items-center gap-2">
-        <p-button icon="pi pi-times" variant="text" [rounded]="true" severity="secondary"
-                  (onClick)="cancelarSesion()" />
+        <p-button
+          icon="pi pi-times"
+          variant="text"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="cancelarSesion()"
+        />
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ sesion()?.diaNombre }}</p>
+          <p class="font-bold text-sm text-gray-900 dark:text-white truncate">
+            {{ sesion()?.diaNombre }}
+          </p>
           <p class="text-xs text-gray-400">
-            Ejercicio {{ (sesion()?.ejercicioActual ?? 0) + 1 }} de {{ sesion()?.ejercicios?.length }}
+            Ejercicio {{ (sesion()?.ejercicioActual ?? 0) + 1 }} de
+            {{ sesion()?.ejercicios?.length }}
           </p>
         </div>
         <!-- Timer total de sesión -->
         <div class="bg-gray-100 dark:bg-dark-700 px-3 py-1.5 rounded-lg">
-          <span class="text-sm font-mono font-bold text-gray-600 dark:text-gray-300">{{ sesionDuracionDisplay() }}</span>
+          <span class="text-sm font-mono font-bold text-gray-600 dark:text-gray-300">{{
+            sesionDuracionDisplay()
+          }}</span>
         </div>
       </div>
 
@@ -282,10 +355,8 @@
       </div>
 
       @if (ejercicioActual(); as ej) {
-
         <!-- Tarjeta del ejercicio -->
         <div class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm overflow-hidden">
-
           <!-- Thumbnail YouTube o cabecera -->
           @if (youtubeThumb(ej.url_youtube); as thumb) {
             <div class="relative">
@@ -295,31 +366,50 @@
                 (click)="verVideo(ej.url_youtube!)"
                 class="absolute inset-0 flex items-end p-4 gap-2"
               >
-                <div class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg shrink-0">
+                <div
+                  class="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg shrink-0"
+                >
                   <i class="pi pi-play text-guerrero-red ml-0.5"></i>
                 </div>
-                <span class="text-white text-sm font-semibold drop-shadow">Ver video del ejercicio</span>
+                <span class="text-white text-sm font-semibold drop-shadow"
+                  >Ver video del ejercicio</span
+                >
               </button>
             </div>
           } @else if (ej.url_youtube) {
-            <a [href]="ej.url_youtube" target="_blank" rel="noopener"
-               class="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30">
+            <a
+              [href]="ej.url_youtube"
+              target="_blank"
+              rel="noopener"
+              class="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/30"
+            >
               <i class="pi pi-youtube text-red-500"></i>
-              <span class="text-sm font-medium text-red-600 dark:text-red-400">Ver video del ejercicio</span>
+              <span class="text-sm font-medium text-red-600 dark:text-red-400"
+                >Ver video del ejercicio</span
+              >
             </a>
           } @else if (gifActual()) {
-            <img [src]="gifActual()!" [alt]="ej.nombre" class="w-full h-64 object-contain bg-black" />
+            <img
+              [src]="gifActual()!"
+              [alt]="ej.nombre"
+              class="w-full h-64 object-contain bg-black"
+            />
           }
 
           <div class="p-5 space-y-5">
-
             <!-- Nombre y descripción -->
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{{ ej.nombre }}</h2>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                {{ ej.nombre }}
+              </h2>
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {{ ej.series_plan }} series
-                @if (ej.repeticiones) { &nbsp;·&nbsp; {{ ej.repeticiones }} repeticiones }
-                @if (ej.duracion_segundos_plan) { &nbsp;·&nbsp; {{ ej.duracion_segundos_plan }}s por serie }
+                @if (ej.repeticiones) {
+                  &nbsp;·&nbsp; {{ ej.repeticiones }} repeticiones
+                }
+                @if (ej.duracion_segundos_plan) {
+                  &nbsp;·&nbsp; {{ ej.duracion_segundos_plan }}s por serie
+                }
               </p>
             </div>
 
@@ -329,17 +419,23 @@
                 <div class="flex-1 flex flex-col items-center gap-1">
                   <div
                     class="w-full h-2 rounded-full transition-all"
-                    [class]="s.completada
-                      ? 'bg-guerrero-red'
-                      : si === serieActivaIdx()
-                        ? 'bg-guerrero-red/40 animate-pulse'
-                        : 'bg-gray-200 dark:bg-dark-600'"
+                    [class]="
+                      s.completada
+                        ? 'bg-guerrero-red'
+                        : si === serieActivaIdx()
+                          ? 'bg-guerrero-red/40 animate-pulse'
+                          : 'bg-gray-200 dark:bg-dark-600'
+                    "
                   ></div>
                   <span
                     class="text-xs font-bold transition-colors"
                     [class]="s.completada ? 'text-guerrero-red' : 'text-gray-400'"
                   >
-                    @if (s.completada) { <i class="pi pi-check"></i> } @else { {{ si + 1 }} }
+                    @if (s.completada) {
+                      <i class="pi pi-check"></i>
+                    } @else {
+                      {{ si + 1 }}
+                    }
                   </span>
                 </div>
               }
@@ -349,11 +445,17 @@
 
             <!-- DESCANSO -->
             @if (enDescanso()) {
-              <div class="rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 text-center space-y-4">
-                <p class="text-xs font-bold text-blue-500 uppercase tracking-widest flex items-center justify-center gap-1.5">
+              <div
+                class="rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 text-center space-y-4"
+              >
+                <p
+                  class="text-xs font-bold text-blue-500 uppercase tracking-widest flex items-center justify-center gap-1.5"
+                >
                   <i class="pi pi-hourglass"></i> Descansando
                 </p>
-                <p class="text-7xl font-mono font-bold text-blue-500 tabular-nums leading-none">{{ descansoDisplay() }}</p>
+                <p class="text-7xl font-mono font-bold text-blue-500 tabular-nums leading-none">
+                  {{ descansoDisplay() }}
+                </p>
                 <p class="text-xs text-blue-400">
                   Siguiente: serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
                 </p>
@@ -368,20 +470,26 @@
 
             <!-- SERIE ACTIVA -->
             @if (!enDescanso() && serieActivaIdx() !== null) {
-              <div class="rounded-2xl bg-guerrero-red/5 border-2 border-guerrero-red/30 p-6 text-center space-y-4">
+              <div
+                class="rounded-2xl bg-guerrero-red/5 border-2 border-guerrero-red/30 p-6 text-center space-y-4"
+              >
                 <p class="text-xs font-bold text-guerrero-red uppercase tracking-widest">
                   Serie {{ serieActivaIdx()! + 1 }} de {{ ej.series_plan }} en curso
                 </p>
 
                 @if (ej.duracion_segundos_plan) {
                   <!-- Por tiempo: cuenta regresiva grande -->
-                  <p class="text-8xl font-mono font-bold text-guerrero-red tabular-nums leading-none">
+                  <p
+                    class="text-8xl font-mono font-bold text-guerrero-red tabular-nums leading-none"
+                  >
                     {{ timerDisplay() }}
                   </p>
                   <p class="text-xs text-guerrero-red/60">segundos restantes</p>
                 } @else {
                   <!-- Por repeticiones: número grande -->
-                  <p class="text-8xl font-bold text-guerrero-red leading-none">{{ ej.repeticiones }}</p>
+                  <p class="text-8xl font-bold text-guerrero-red leading-none">
+                    {{ ej.repeticiones }}
+                  </p>
                   <p class="text-sm font-semibold text-guerrero-red/70">repeticiones</p>
                 }
 
@@ -400,24 +508,30 @@
                 (click)="iniciarSerie()"
                 class="w-full border-2 border-guerrero-red text-guerrero-red hover:bg-guerrero-red hover:text-white active:scale-95 font-bold py-5 rounded-2xl text-lg transition-all"
               >
-                <i class="pi pi-play mr-2"></i>Iniciar serie {{ seriesCompletadasActual() + 1 }} de {{ ej.series_plan }}
+                <i class="pi pi-play mr-2"></i>Iniciar serie {{ seriesCompletadasActual() + 1 }} de
+                {{ ej.series_plan }}
               </button>
             }
 
             <!-- EJERCICIO COMPLETADO -->
             @if (ejercicioCompletado()) {
-              <div class="flex items-center justify-center gap-2 py-4 bg-green-50 dark:bg-green-900/20 rounded-2xl">
+              <div
+                class="flex items-center justify-center gap-2 py-4 bg-green-50 dark:bg-green-900/20 rounded-2xl"
+              >
                 <i class="pi pi-check-circle text-green-500 text-2xl"></i>
-                <span class="font-bold text-green-700 dark:text-green-400 text-lg">¡Ejercicio completado!</span>
+                <span class="font-bold text-green-700 dark:text-green-400 text-lg"
+                  >¡Ejercicio completado!</span
+                >
               </div>
             }
-
           </div>
         </div>
 
         <!-- Error de guardado -->
         @if (errorSesion()) {
-          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-3">
+          <div
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 space-y-3"
+          >
             <div class="flex gap-2">
               <i class="pi pi-exclamation-circle text-red-500 mt-0.5 shrink-0"></i>
               <p class="text-sm text-red-700 dark:text-red-300">{{ errorSesion() }}</p>
@@ -473,12 +587,9 @@
             }
           </div>
         }
-
       }
     }
-
   }
-
 </div>
 
 <!-- Dialog video -->
@@ -496,7 +607,14 @@
         [src]="videoUrl()!"
         class="absolute inset-0 w-full h-full rounded-lg"
         frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="
+          accelerometer;
+          autoplay;
+          clipboard-write;
+          encrypted-media;
+          gyroscope;
+          picture-in-picture;
+        "
         allowfullscreen
       ></iframe>
     </div>

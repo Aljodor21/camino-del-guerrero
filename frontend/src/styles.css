@@ -68,6 +68,15 @@ h1 {
   font-weight: 700;
 }
 
+/* Barra horizontal que se desplaza sin mostrar la barra (las pestañas de cada sección). */
+.sin-barra {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.sin-barra::-webkit-scrollbar {
+  display: none;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
