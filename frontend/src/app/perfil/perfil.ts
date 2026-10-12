@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -18,13 +19,14 @@ import { PAISES } from '../core/constants/paises';
 
 import { environment } from '../../environments/environment';
 import { Portada } from '../shared/portada/portada';
+import { ApkService } from '../core/services/apk';
 const API = environment.apiUrl;
 
 @Component({
   selector: 'app-perfil',
   templateUrl: './perfil.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, 
+  imports: [Portada, RouterLink, 
     ReactiveFormsModule,
     InputNumberModule,
     InputTextModule,
@@ -40,6 +42,7 @@ export class Perfil implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   protected auth = inject(AuthService);
+  protected apk = inject(ApkService);
 
   protected sexos = signal<Sexo[]>([]);
   protected paisesFiltrados = signal<string[]>([]);

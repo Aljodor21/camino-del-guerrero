@@ -33,6 +33,7 @@ export const routes: Routes = [
       { path: 'control',          canActivate: [userGuard], loadComponent: () => import('./control/control').then(m => m.Control) },
       { path: 'lista-alimentos',  canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/lista-alimentos/lista-alimentos').then(m => m.ListaAlimentos) },
       { path: 'proyeccion',       canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/proyeccion/proyeccion').then(m => m.Proyeccion) },
+      { path: 'descargar-app',    loadComponent: () => import('./descargar-app/descargar-app').then(m => m.DescargarApp) },
       { path: 'avisos',           canActivate: [userGuard], loadComponent: () => import('./avisos/avisos').then(m => m.Avisos) },
       { path: 'recomendaciones',  canActivate: [userGuard], loadComponent: () => import('./recomendaciones/recomendaciones').then(m => m.Recomendaciones) },
       { path: 'perfil',           canActivate: [userGuard], loadComponent: () => import('./perfil/perfil').then(m => m.Perfil) },

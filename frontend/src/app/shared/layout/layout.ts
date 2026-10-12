@@ -1,5 +1,13 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Component, ChangeDetectionStrategy, inject, computed, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  computed,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -10,6 +18,7 @@ import { NotificacionService } from '../../core/services/notificaciones';
 import { ProcesoService } from '../../core/services/proceso';
 import { AgendaService } from '../../core/services/agenda';
 import { AvisosService } from '../../core/services/avisos';
+import { ApkService } from '../../core/services/apk';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
@@ -36,6 +45,7 @@ export class Layout implements OnInit, OnDestroy {
   private procesos = inject(ProcesoService);
   private agenda = inject(AgendaService);
   protected avisos = inject(AvisosService);
+  private apk = inject(ApkService);
   private router = inject(Router);
 
   private anterior = '/nutricion';
@@ -60,6 +70,7 @@ export class Layout implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.notificaciones.verificar();
     if (!this.authService.isAdmin()) {
+      void this.apk.cargar();
       this.agenda.cargar().subscribe({ error: () => {} });
       this.avisos.iniciar();
     }
@@ -117,6 +128,16 @@ export class Layout implements OnInit, OnDestroy {
         accion: 'Registrar',
         enlace: ['/progreso'],
         descartar: () => this.notificaciones.dismiss(),
+      };
+    }
+    // Lo último en la fila: la invitación a instalar la app, que se puede cerrar para siempre.
+    if (this.apk.invitacion()) {
+      return {
+        icono: 'pi pi-mobile',
+        texto: 'Llévate el camino en el celular: descarga la app de Android.',
+        accion: 'Descargar',
+        enlace: ['/descargar-app'],
+        descartar: () => this.apk.cerrarInvitacion(),
       };
     }
     return null;

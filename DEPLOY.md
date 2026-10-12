@@ -61,4 +61,10 @@ y vuelve a lanzar el workflow. No lo hagas después de tener datos reales.
 
 ## La app instalada (APK)
 
-La APK llama a `https://camino.servelejo.site/api` (`frontend/src/environments/environment.movil.ts`). El backend ya acepta los orígenes de la app (`https://localhost`, `capacitor://localhost`). Compilar: `cd frontend && npm run build:movil` y luego `npm run apk` (necesita el Android SDK).
+La app de Android llama a `https://camino.servelejo.site/api` (`frontend/src/environments/environment.movil.ts`) y el backend ya acepta sus orígenes (`https://localhost`, `capacitor://localhost`).
+
+**Se publica sola.** `.github/workflows/apk.yml` corre en GitHub (no en uburoom) con cada merge a `main` que toque `frontend/`: compila el APK, lo **firma** y lo publica como release `v1.0.<número de corrida>` con el archivo `camino-del-guerrero.apk` (se conservan los últimos 10). La pantalla **Descargar la app** (`/descargar-app`, también un aviso arriba y un acceso en Perfil) lee el último release de GitHub y descarga siempre `releases/latest/download/camino-del-guerrero.apk`, así que no hay que tocar nada al sacar versiones. Dentro de la app instalada esa pantalla no se ofrece.
+
+**La firma.** Android solo instala una versión encima de otra si trae la misma firma y un `versionCode` mayor (el workflow usa el número de corrida). La llave vive en cuatro secretos del repo: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` y `KEY_PASSWORD`. La copia es `~/Android/camino-release.jks` (y sus claves en `camino-release.properties`) en tu equipo: **guárdala en un lugar seguro**, porque si se pierde, nadie podrá actualizar la app sin desinstalarla antes. Nunca va a git.
+
+**Compilar a mano** (prueba local): `cd frontend && npm run build:movil && cd android && ./gradlew assembleDebug` (necesita el Android SDK; el APK de depuración se firma con otra llave y no se actualiza con el del release: desinstálalo antes de instalar el oficial).
