@@ -108,8 +108,9 @@ const PASOS: Record<PasoId, { titulo: string; descripcion: string }> = {
     descripcion: 'Al terminar lo dejas listo. De ahí sale tu menú de cada semana.',
   },
   duracion: {
-    titulo: '¿Hasta cuándo va?',
-    descripcion: 'Así ves en qué semana vas y cuánto falta. Una vez la pones, queda fija.',
+    titulo: '¿Hasta cuándo dura tu proceso?',
+    descripcion:
+      'Es la fecha en que termina esta etapa de tu plan. Así ves en qué semana vas y cuánto falta, y al llegar la app te pregunta si sigues o cambias. Una vez la pones, queda fija.',
   },
   suplementos: {
     titulo: '¿Vas a tomar proteína?',
@@ -350,19 +351,23 @@ export class Onboarding implements OnInit {
       {
         id: 'control' as const,
         titulo: 'Hasta mi próximo control',
-        detalle: 'La fecha que te dio tu profesional',
+        detalle: 'La fecha de tu próxima cita con tu nutricionista o profesional',
       },
       {
         id: 'semanas8' as const,
         titulo: '8 semanas',
-        detalle: semanas(8) ? `Hasta el ${formatearFecha(semanas(8))}` : '',
+        detalle: semanas(8) ? `Termina el ${formatearFecha(semanas(8))}` : '',
       },
       {
         id: 'semanas12' as const,
         titulo: '12 semanas',
-        detalle: semanas(12) ? `Hasta el ${formatearFecha(semanas(12))}` : '',
+        detalle: semanas(12) ? `Termina el ${formatearFecha(semanas(12))}` : '',
       },
-      { id: 'sin' as const, titulo: 'Sin definir', detalle: 'Lo defines más adelante' },
+      {
+        id: 'sin' as const,
+        titulo: 'Sin fecha por ahora',
+        detalle: 'Pones cuándo termina más adelante',
+      },
     ];
   });
 

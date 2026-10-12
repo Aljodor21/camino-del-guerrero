@@ -116,7 +116,7 @@
         </div>
         <div class="flex flex-col gap-1">
           <label for="mp-fin" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-            >Va hasta</label
+            >Fecha en que termina tu plan</label
           >
           <input
             pInputText
@@ -129,9 +129,10 @@
           />
           <small id="mp-fin-ayuda" class="text-xs text-gray-500 dark:text-gray-400">
             @if (finPlanFijo()) {
-              La fecha que pusiste al empezar. No se puede cambiar.
+              La fecha de fin que pusiste al empezar. No se puede cambiar.
             } @else {
-              Por ejemplo, el día de tu próximo control. Una vez la pones, queda fija.
+              Por ejemplo, el día de tu próximo control con tu nutricionista. Una vez la pones,
+              queda fija.
             }
           </small>
         </div>

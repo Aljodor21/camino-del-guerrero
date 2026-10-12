@@ -1,5 +1,9 @@
 <div class="p-4 max-w-2xl mx-auto space-y-6 pb-8">
-  <app-portada foto="agenda" titulo="Tu control" subtitulo="Cierra este periodo y decide cómo sigues." />
+  <app-portada
+    foto="agenda"
+    titulo="Tu control"
+    subtitulo="Cierra este periodo y decide cómo sigues."
+  />
 
   @if (proceso(); as p) {
     @if (!p.plan_terminado) {
@@ -50,7 +54,12 @@
         }
         @case ('seguir') {
           <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4">
-            <h2 class="font-semibold text-gray-900 dark:text-white">¿Hasta cuándo seguimos?</h2>
+            <h2 class="font-semibold text-gray-900 dark:text-white">
+              ¿Hasta cuándo dura tu nuevo plan?
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Es la fecha en que termina esta nueva etapa; ahí vuelve a llegar tu control.
+            </p>
             <app-periodo-plan [sugerida]="sugerida()" [(fecha)]="fecha" />
             @if (error()) {
               <p-message severity="error" [text]="error()" styleClass="w-full" />
@@ -95,13 +104,16 @@
                   routerLink="/perfil"
                   class="flex items-center justify-between gap-3 py-3 text-sm text-gray-800 dark:text-gray-200 hover:text-guerrero-red"
                 >
-                  <span>Cambió mi entrenamiento, quiero sumar o quitar un módulo, o empezar de cero</span>
+                  <span
+                    >Cambió mi entrenamiento, quiero sumar o quitar un módulo, o empezar de
+                    cero</span
+                  >
                   <i class="pi pi-angle-right" aria-hidden="true"></i>
                 </a>
               </li>
             </ul>
             <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              Al guardar el plan nuevo eliges hasta cuándo va; ahí se cierra este control.
+              Al guardar el plan nuevo eliges cuándo termina; ahí se cierra este control.
             </p>
             <p-button
               label="Atrás"

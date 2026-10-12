@@ -33,7 +33,9 @@ export class ResumenProceso {
   /** Semanas planeadas de un proceso que aún no inicia. */
   protected semanasPlan = computed(() => {
     const p = this.proceso();
-    return p?.fecha_fin_plan ? Math.ceil((diasEntre(p.fecha_inicio, p.fecha_fin_plan) + 1) / 7) : null;
+    return p?.fecha_fin_plan
+      ? Math.ceil((diasEntre(p.fecha_inicio, p.fecha_fin_plan) + 1) / 7)
+      : null;
   });
 
   protected diasParaIniciar = computed(() => {
