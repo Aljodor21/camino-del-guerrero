@@ -25,8 +25,12 @@ export class AvisosService {
   readonly habitos = this._habitos.asReadonly();
   readonly pendientes = computed(() => this._avisos().length);
 
-  cargar(): Observable<Aviso[]> {
-    return this.http.get<Aviso[]>(`${API}/avisos/`).pipe(tap((a) => this._avisos.set(a)));
+  /** `sondeo`: la revisión que la app hace sola cada minuto, para no mezclarla con lo que la persona hace. */
+  cargar(sondeo = false): Observable<Aviso[]> {
+    const headers = sondeo ? { 'X-Segundo-Plano': '1' } : undefined;
+    return this.http
+      .get<Aviso[]>(`${API}/avisos/`, { headers })
+      .pipe(tap((a) => this._avisos.set(a)));
   }
 
   cargarHoy(): Observable<ResumenHoy> {
@@ -60,7 +64,7 @@ export class AvisosService {
     if (this.temporizador) return;
     this.cargar().subscribe({ error: () => undefined });
     this.temporizador = setInterval(() => {
-      if (!document.hidden) this.cargar().subscribe({ error: () => undefined });
+      if (!document.hidden) this.cargar(true).subscribe({ error: () => undefined });
     }, REVISION_MS);
   }
 
