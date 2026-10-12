@@ -77,3 +77,12 @@ La tarjeta de descarga es un componente compartido (`app-descarga-apk`) que se u
 La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/app/version/`, con caché de 10 minutos) y no el navegador: Cloudflare le pone al sitio un `Content-Security-Policy: connect-src 'self'` que le prohíbe hablar con GitHub. Si no hay datos pero sí enlace, el botón de descarga se muestra igual, sin versión. En celular la tarjeta es compacta: botón de ancho completo en una sola línea y el celular de muestra asomando por abajo, con los guantes visibles.
 
 El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enlace a GitHub salta de página en el celular. En la app instalada, el enlace abre el navegador del sistema (el WebView no maneja descargas), que baja el archivo y la app se actualiza al instalarlo.
+
+## Cómo se ordenan las secciones
+
+Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pestañas de arriba, no en tarjetas sueltas:
+
+- **Nutrición:** Menú · Mercado · Mi plan · Cumplimiento · Alimentos (la lista de intercambios).
+- **Progreso:** Medidas · Agenda · Proyección ("¿cuánto puedo cambiar?", solo si el proceso incluye alimentación) · Sesiones (solo con entrenamiento). La proteína vive en la Agenda.
+- La barra (`app-pestanas`) se desplaza hacia el lado si no caben todas y deja la activa a la vista; la sección elegida queda en la URL (`?seccion=`).
+- Los enlaces viejos (`/cumplimiento`, `/lista-alimentos`, `/proyeccion`) redirigen a su pestaña conservando los parámetros (`?listo=desayuno`).

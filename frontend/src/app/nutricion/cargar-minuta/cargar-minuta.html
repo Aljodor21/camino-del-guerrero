@@ -188,9 +188,7 @@
 
     @case ('suplementos') {
       <header class="space-y-1">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-          Tu proteína en la minuta
-        </h1>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Tu proteína en la minuta</h1>
         <p class="text-sm text-gray-600 dark:text-gray-300">
           @if (sinSuplementos()) {
             ¿Vas a tomar proteína? Actívala y dinos qué dice la etiqueta.
@@ -212,7 +210,9 @@
               class="w-full flex items-center justify-between gap-3 text-left"
               (click)="alternarActivo(i)"
             >
-              <span class="font-semibold text-gray-900 dark:text-white">¿Vas a tomar proteína?</span>
+              <span class="font-semibold text-gray-900 dark:text-white"
+                >¿Vas a tomar proteína?</span
+              >
               <span
                 [class]="
                   'shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors ' +
@@ -236,7 +236,9 @@
                   for="cm-sup-tipo"
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >Tipo de proteína
-                  <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span></label
+                  <span class="font-normal text-gray-500 dark:text-gray-400"
+                    >(opcional)</span
+                  ></label
                 >
                 <input
                   pInputText

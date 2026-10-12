@@ -15,17 +15,32 @@ import { mensajeError } from '../shared/errores';
 import { MenuSemanal } from './menu-semanal/menu-semanal';
 import { Mercado } from './mercado/mercado';
 import { MiMinuta } from './mi-minuta/mi-minuta';
+import { ListaAlimentos } from './lista-alimentos/lista-alimentos';
+import { CumplimientoPlan } from '../comidas/cumplimiento/cumplimiento';
+import { Pestana, Pestanas } from '../shared/pestanas/pestanas';
 import { Portada } from '../shared/portada/portada';
 import { guardarSeccionEnUrl } from '../shared/seccion-en-url';
 
-type Seccion = 'menu' | 'mercado' | 'plan';
+type Seccion = 'menu' | 'mercado' | 'plan' | 'cumplimiento' | 'alimentos';
+const SECCIONES: Seccion[] = ['menu', 'mercado', 'plan', 'cumplimiento', 'alimentos'];
 
-/** Menú, mercado y plan. Sin plan todavía: cómo armarlo. */
+/** Menú, mercado, plan, cumplimiento y alimentos. Sin plan todavía: cómo armarlo. */
 @Component({
   selector: 'app-nutricion',
   templateUrl: './nutricion.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, RouterLink, MessageModule, ProgressSpinnerModule, MenuSemanal, Mercado, MiMinuta],
+  imports: [
+    Portada,
+    RouterLink,
+    MessageModule,
+    ProgressSpinnerModule,
+    MenuSemanal,
+    Mercado,
+    MiMinuta,
+    CumplimientoPlan,
+    ListaAlimentos,
+    Pestanas,
+  ],
 })
 export class Nutricion implements OnInit {
   protected minutas = inject(MinutaService);
@@ -35,10 +50,12 @@ export class Nutricion implements OnInit {
   protected seccion = signal<Seccion>(this.seccionInicial());
   protected error = signal('');
   protected cargando = computed(() => this.minutas.minutas() === null && !this.error());
-  protected pestanas: { id: Seccion; label: string; icon: string }[] = [
+  protected pestanas: Pestana<Seccion>[] = [
     { id: 'menu', label: 'Menú', icon: 'pi pi-calendar' },
     { id: 'mercado', label: 'Mercado', icon: 'pi pi-shopping-cart' },
     { id: 'plan', label: 'Mi plan', icon: 'pi pi-file' },
+    { id: 'cumplimiento', label: 'Cumplimiento', icon: 'pi pi-chart-pie' },
+    { id: 'alimentos', label: 'Alimentos', icon: 'pi pi-list' },
   ];
 
   constructor() {
@@ -47,7 +64,7 @@ export class Nutricion implements OnInit {
 
   private seccionInicial(): Seccion {
     const pedida = this.route.snapshot.queryParamMap.get('seccion');
-    return pedida === 'mercado' || pedida === 'plan' ? pedida : 'menu';
+    return SECCIONES.find((x) => x === pedida) ?? 'menu';
   }
 
   ngOnInit(): void {

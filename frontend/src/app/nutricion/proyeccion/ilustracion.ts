@@ -74,7 +74,10 @@ export class IlustracionCambio implements OnInit {
         e.ilustraciones.forEach((i) => {
           this.traerImagen(`i${i.id}`, `${API}/${i.id}/imagen/`);
           if (i.foto_origen) {
-            this.traerImagen(`f${i.foto_origen}`, `${environment.apiUrl}/progreso/fotos/${i.foto_origen}/`);
+            this.traerImagen(
+              `f${i.foto_origen}`,
+              `${environment.apiUrl}/progreso/fotos/${i.foto_origen}/`,
+            );
           }
         });
       },
