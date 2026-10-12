@@ -151,6 +151,8 @@ Antes de actualizar una instalación con datos reales, hacer copia de la base de
 
 Cada pull request pasa por CI (pruebas, build y compose) y cada merge a `main` se despliega solo en el servidor con el runner de [Warden](https://github.com/Aljodor21/warden), que publica `https://camino.servelejo.site`. Los pasos para ponerlo en marcha, los respaldos y cómo volver atrás están en [DEPLOY.md](DEPLOY.md).
 
+La app de Android se compila y se firma sola en cada merge a `main` y queda disponible para descargar dentro de la propia app (pantalla **Descargar la app**), siempre en su última versión.
+
 ---
 
 ## Pendientes

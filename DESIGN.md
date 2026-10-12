@@ -65,3 +65,7 @@ Lo que no se pierde: el rojo de la marca en lo activo y la acción, el modo clar
 - Portada con foto (`shared/portada`) arriba de cada sección: Nutrición (desayuno), Rutinas (boxeo), Progreso (cinta métrica), Consejos (en casa), Perfil (amarrarse los tenis). Baja (9.5rem) para no quitar espacio.
 - Barras de arriba y abajo translúcidas con desenfoque; la sección activa en rojo con una rayita arriba.
 - Entrar y registrarse sobre la foto de los guantes.
+
+## Descargar la app
+
+Pantalla dentro de la app (`/descargar-app`, también un aviso arriba y un acceso en Perfil) para bajar la última versión del APK. La cabecera es oscura en cualquier tema, con el mismo botón de vidrio del home: titular "Tu camino, en el bolsillo.", versión, peso y fecha del último release en números tabulares (el valor en oro), y un celular con el primer cuadro de los guantes y un aviso de ejemplo ("En media hora, a dormir") que sube y baja, todo quieto con "reducir movimiento". Debajo, tres pasos sobre una línea dorada, como el camino del home. Estados: buscando, lista, sin versión todavía (con reintento), iPhone (solo Android, con la alternativa de agregar a pantalla de inicio) y dentro de la app instalada (no se ofrece). La lectura del release usa `fetch` y no `HttpClient`, para que el interceptor del JWT no le mande el token de la sesión a GitHub.
