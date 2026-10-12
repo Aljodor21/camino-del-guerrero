@@ -323,11 +323,12 @@
       @if (esPlanNuevo()) {
         <section class="space-y-3" aria-labelledby="cm-periodo">
           <h2 id="cm-periodo" class="font-semibold text-gray-900 dark:text-white">
-            ¿Hasta cuándo va este plan?
+            ¿Hasta cuándo dura este plan?
           </h2>
           <p class="text-sm text-gray-600 dark:text-gray-300">
-            Te sugerimos el mismo tiempo que ya tiene tu proceso, pero puedes elegir otro o dejarlo
-            sin definir.
+            Es la fecha en que termina este plan: ahí la app te pregunta si sigues o cambias. Te
+            sugerimos el mismo tiempo que ya tiene tu proceso, pero puedes elegir otro o dejarlo sin
+            fecha por ahora.
           </p>
           <app-periodo-plan [sugerida]="sugerida()" [(fecha)]="periodo" />
         </section>

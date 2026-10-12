@@ -462,7 +462,7 @@
           @case ('duracion') {
             <div
               role="radiogroup"
-              aria-label="Duración del proceso"
+              aria-label="Hasta cuándo dura tu proceso"
               class="grid grid-cols-1 sm:grid-cols-2 gap-2"
             >
               @for (o of opcionesDuracion(); track o.id) {
@@ -489,7 +489,7 @@
                   <label
                     for="ob-control"
                     class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                    >Fecha del control</label
+                    >Fecha de tu próximo control</label
                   >
                   <input
                     pInputText
@@ -882,7 +882,7 @@
               }
               <div class="flex justify-between gap-4 py-2.5">
                 <dt class="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                  <i class="pi pi-lock text-xs" aria-hidden="true"></i> Inicio
+                  <i class="pi pi-lock text-xs" aria-hidden="true"></i> Tu proceso inicia
                 </dt>
                 <dd
                   class="font-medium text-gray-900 dark:text-white text-right first-letter:uppercase"
@@ -891,7 +891,7 @@
                 </dd>
               </div>
               <div class="flex justify-between gap-4 py-2.5">
-                <dt class="text-gray-500 dark:text-gray-400">Va hasta</dt>
+                <dt class="text-gray-500 dark:text-gray-400">Tu proceso termina</dt>
                 <dd
                   class="font-medium text-gray-900 dark:text-white text-right first-letter:uppercase"
                 >
@@ -903,7 +903,7 @@
                       >
                     }
                   } @else {
-                    Sin definir
+                    Sin fecha por ahora
                   }
                 </dd>
               </div>
