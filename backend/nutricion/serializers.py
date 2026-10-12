@@ -1,4 +1,5 @@
 import json
+from datetime import time
 from decimal import Decimal
 
 from django.utils import timezone
@@ -33,6 +34,52 @@ class ListaMercadoSerializer(serializers.ModelSerializer):
         return mercado.proxima_promocion_colanta(timezone.localdate())
 
 
+LIMITES_TABLA = {'porcion_g': (1, 1000), 'liquido_ml': (10, 3000), 'kcal': (0, 1500), 'proteina_g': (0, 200),
+                 'carbohidratos_g': (0, 300), 'grasa_g': (0, 200)}
+
+
+def validar_tabla_leche(tabla):
+    """La tabla de la leche por porción: cuántos ml, calorías y proteína."""
+    if tabla in (None, {}):
+        return None
+    limites = {'porcion_ml': (10, 1000), 'kcal': (0, 1000), 'proteina_g': (0, 100)}
+    if not isinstance(tabla, dict) or set(tabla) - set(limites) or set(limites) - set(tabla):
+        raise serializers.ValidationError('Escribe los ml de la porción, las calorías y la proteína de la leche.')
+    limpia = {}
+    for campo, (minimo, maximo) in limites.items():
+        try:
+            numero = float(str(tabla[campo]).replace(',', '.'))
+        except ValueError:
+            raise serializers.ValidationError(f'{campo}: escribe un número.')
+        if not minimo <= numero <= maximo:
+            raise serializers.ValidationError(f'{campo}: debe estar entre {minimo} y {maximo}.')
+        limpia[campo] = round(numero, 1)
+    return limpia
+
+
+def validar_tabla(tabla):
+    """La tabla nutricional por porción: kcal y proteína son obligatorias; el resto, opcional."""
+    if tabla in (None, {}):
+        return None
+    if not isinstance(tabla, dict) or set(tabla) - set(LIMITES_TABLA):
+        raise serializers.ValidationError('La tabla nutricional no tiene el formato esperado.')
+    limpia = {}
+    for campo, (minimo, maximo) in LIMITES_TABLA.items():
+        valor = tabla.get(campo)
+        if valor in (None, ''):
+            continue
+        try:
+            numero = float(str(valor).replace(',', '.'))
+        except ValueError:
+            raise serializers.ValidationError(f'{campo}: escribe un número.')
+        if not minimo <= numero <= maximo:
+            raise serializers.ValidationError(f'{campo}: debe estar entre {minimo} y {maximo}.')
+        limpia[campo] = round(numero, 1)
+    if 'kcal' not in limpia or 'proteina_g' not in limpia:
+        raise serializers.ValidationError('La tabla necesita al menos las calorías y los gramos de proteína por porción.')
+    return limpia
+
+
 class SuplementoSerializer(serializers.ModelSerializer):
     tipo_nombre  = serializers.CharField(source='get_tipo_display', read_only=True)
     fin_estimado = serializers.DateField(read_only=True)
@@ -46,8 +93,8 @@ class SuplementoSerializer(serializers.ModelSerializer):
         model  = Suplemento
         fields = ['id', 'tipo', 'tipo_nombre', 'nombre', 'fecha_inicio', 'duracion_dias', 'duracion_confirmada',
                   'porciones_envase', 'porciones_dia', 'envase_desde', 'fecha_fin', 'fin_estimado',
-                  'peso_envase_g', 'porcion_g', 'scoops_porcion', 'porciones_por_envase', 'liquido', 'liquido_ml',
-                  'info_url', 'info_archivo_tipo', 'tiene_foto',
+                  'peso_envase_g', 'porcion_g', 'scoops_porcion', 'porciones_por_envase', 'liquido', 'liquido_ml', 'leche_ml', 'leche_nutricional',
+                  'info_url', 'info_archivo_tipo', 'tiene_foto', 'tabla_nutricional',
                   'dias_envase', 'se_acaba', 'proceso', 'tomas']
         read_only_fields = ['fecha_inicio', 'envase_desde', 'fecha_fin', 'proceso']
         extra_kwargs = {
@@ -55,9 +102,10 @@ class SuplementoSerializer(serializers.ModelSerializer):
             'porciones_envase': {'min_value': 1, 'max_value': 500},
             'porciones_dia':    {'min_value': Decimal('0.5'), 'max_value': 10, 'coerce_to_string': False},
             'peso_envase_g':    {'min_value': 50, 'max_value': 20000},
-            'porcion_g':        {'min_value': Decimal('1'), 'max_value': Decimal('500'), 'coerce_to_string': False},
-            'scoops_porcion':   {'min_value': Decimal('0.5'), 'max_value': Decimal('10'), 'coerce_to_string': False},
+            'porcion_g':        {'min_value': Decimal('1'), 'max_value': Decimal('1000'), 'coerce_to_string': False},
+            'scoops_porcion':   {'min_value': Decimal('0.5'), 'max_value': Decimal('20'), 'coerce_to_string': False},
             'liquido_ml':       {'min_value': 10, 'max_value': 5000},
+            'leche_ml':         {'min_value': 10, 'max_value': 5000},
         }
 
     def validate_nombre(self, nombre):
@@ -67,6 +115,12 @@ class SuplementoSerializer(serializers.ModelSerializer):
         if url and not url.lower().startswith(('http://', 'https://')):
             raise serializers.ValidationError('El enlace debe empezar por http:// o https://.')
         return url
+
+    def validate_tabla_nutricional(self, tabla):
+        return validar_tabla(tabla)
+
+    def validate_leche_nutricional(self, tabla):
+        return validar_tabla_leche(tabla)
 
     def get_tiene_foto(self, s):
         return bool(s.foto)
@@ -98,25 +152,46 @@ class SuplementoSerializer(serializers.ModelSerializer):
             limpio[grupo] = self._medio(porciones, 5, 'Las porciones van de media en media, hasta 5.')
         return limpio
 
+    MAX_OTRAS_TOMAS = 4
+
     def validate_tomas(self, tomas):
-        if not isinstance(tomas, list) or len(tomas) > len(TIEMPOS):
+        """Una toma por comida de la minuta, y además "otras tomas" a la hora que la persona elija."""
+        if not isinstance(tomas, list) or len(tomas) > len(TIEMPOS) + self.MAX_OTRAS_TOMAS:
             raise serializers.ValidationError('Indica en qué comidas lo tomas.')
-        limpias, vistos = [], set()
+        limpias, vistos, horas = [], set(), set()
         for toma in tomas:
             tiempo = toma.get('tiempo') if isinstance(toma, dict) else None
-            if tiempo not in NOMBRE_TIEMPO:
-                raise serializers.ValidationError('Cada toma va en una comida de la minuta.')
-            if tiempo in vistos:
-                raise serializers.ValidationError(f'{NOMBRE_TIEMPO[tiempo]} está repetida.')
-            vistos.add(tiempo)
+            if tiempo != 'otro' and tiempo not in NOMBRE_TIEMPO:
+                raise serializers.ValidationError('Cada toma va en una comida de la minuta o en otra hora.')
+            if tiempo != 'otro':
+                if tiempo in vistos:
+                    raise serializers.ValidationError(f'{NOMBRE_TIEMPO[tiempo]} está repetida.')
+                vistos.add(tiempo)
             scoops = toma.get('scoops')
-            limpias.append({
+            limpia = {
                 'tiempo': tiempo,
                 'scoops': None if scoops is None else self._medio(
-                    scoops, 20, 'Los scoops van de medio en medio, hasta 20.'),
-                'reemplaza': self._reemplaza(toma.get('reemplaza') or {}),
-            })
-        return sorted(limpias, key=lambda t: ORDEN_TIEMPO[t['tiempo']])
+                    scoops, 40, 'Los scoops van de medio en medio, hasta 40.'),
+                # Otra toma no reemplaza una comida de la minuta: se suma a lo que ya se come.
+                'reemplaza': {} if tiempo == 'otro' else self._reemplaza(toma.get('reemplaza') or {}),
+            }
+            hora, nota = toma.get('hora'), str(toma.get('nota') or '').strip()[:80]
+            if hora:
+                try:
+                    limpia['hora'] = time.fromisoformat(str(hora)[:5]).isoformat('minutes')
+                except ValueError:
+                    raise serializers.ValidationError('La hora de la toma no es válida (por ejemplo, 16:30).')
+            if tiempo == 'otro':
+                if 'hora' not in limpia:
+                    raise serializers.ValidationError('Otra toma necesita la hora a la que la tomas.')
+                if limpia['hora'] in horas:
+                    raise serializers.ValidationError(f'Ya tienes una toma a las {limpia["hora"]}.')
+                horas.add(limpia['hora'])
+            if nota:
+                limpia['nota'] = nota
+            limpias.append(limpia)
+        # Primero las comidas de la minuta, en su orden; luego las otras, por hora.
+        return sorted(limpias, key=lambda t: (1, t['hora']) if t['tiempo'] == 'otro' else (0, ORDEN_TIEMPO[t['tiempo']]))
 
     def validate(self, datos):
         """La porción es la del día: si se dice cuántos scoops lleva cada toma, entre todas
@@ -129,8 +204,22 @@ class SuplementoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'tomas': f'Las tomas deben sumar los {Decimal(scoops_porcion).normalize():f} scoops de la porción.'})
             datos['porciones_dia'] = Decimal(1)
-        if not datos.get('liquido', getattr(self.instance, 'liquido', '')):
+        liquido = datos.get('liquido', getattr(self.instance, 'liquido', ''))
+        if not liquido:
             datos['liquido_ml'] = None
+        total = datos.get('liquido_ml', getattr(self.instance, 'liquido_ml', None))
+        if liquido == 'leche':
+            datos['leche_ml'] = total
+        elif liquido == 'mezcla':
+            leche = datos.get('leche_ml', getattr(self.instance, 'leche_ml', None))
+            if not total or not leche:
+                raise serializers.ValidationError({'leche_ml': 'Indica cuánto líquido lleva y cuánto de ese es leche.'})
+            if leche >= total:
+                raise serializers.ValidationError({'leche_ml': 'La leche tiene que ser menos que el líquido total; si es solo leche, elige "Leche".'})
+        else:
+            datos['leche_ml'] = None
+        if liquido in ('agua', ''):
+            datos['leche_nutricional'] = None
         return datos
 
 
@@ -342,7 +431,7 @@ class IlustracionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Ilustracion
-        fields = ['id', 'creada', 'peso_base', 'cambio_kg', 'peso_final', 'limitado', 'dias']
+        fields = ['id', 'creada', 'peso_base', 'cambio_kg', 'peso_final', 'limitado', 'dias', 'foto_origen']
         read_only_fields = fields
 
     def get_peso_final(self, i):

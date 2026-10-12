@@ -109,17 +109,26 @@ class Suplemento(models.Model):
     porciones_dia       = models.DecimalField(max_digits=3, decimal_places=1, default=1)
     # Con qué se mezcla (opcional) y cuánto líquido lleva la porción completa del día.
     # Con leche, esos ml entran a la lista de mercado.
-    liquido             = models.CharField(max_length=10, blank=True, choices=[('agua', 'Agua'), ('leche', 'Leche')])
+    liquido             = models.CharField(max_length=10, blank=True,
+                                           choices=[('agua', 'Agua'), ('leche', 'Leche'), ('mezcla', 'Leche y agua')])
     liquido_ml          = models.PositiveIntegerField(null=True, blank=True, help_text='ml de líquido por porción')
+    # De esos ml, cuántos son de leche (el resto es agua). Con solo leche son todos.
+    leche_ml            = models.PositiveIntegerField(null=True, blank=True)
+    # Tabla nutricional de la leche, por porción: {porcion_ml, kcal, proteina_g}. Opcional.
+    leche_nutricional   = models.JSONField(null=True, blank=True)
     envase_desde        = models.DateField(help_text='Día en que se abrió el envase actual')
     fecha_fin           = models.DateField(null=True, blank=True, help_text='Día en que se dejó de tomar')
     # Dónde entra en la minuta: la porción del día se reparte en tomas, cada una en una
     # comida, con sus scoops y lo que reemplaza en esa comida:
-    # [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {'lacteos': 1}}]. Vacío si aún no se sabe.
+    # [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {'lacteos': 1}, 'hora': '16:30', 'nota': '…'}]
+    # (hora y nota son opcionales: a qué hora o cómo). Vacío si aún no se sabe.
     tomas               = models.JSONField(default=list, blank=True)
     # Información nutricional: un enlace y/o la foto o el PDF de la etiqueta (privado).
     info_url            = models.URLField(max_length=500, blank=True)
     info_archivo        = models.FileField(upload_to=ruta_info_suplemento, blank=True)
+    # Tabla nutricional POR PORCIÓN, confirmada por la persona: {porcion_g, kcal, proteina_g,
+    # carbohidratos_g, grasa_g}. Se lee de la etiqueta o se escribe a mano.
+    tabla_nutricional   = models.JSONField(null=True, blank=True)
     # Foto del producto (el pote), aparte de la etiqueta con su información nutricional.
     foto                = models.FileField(upload_to=ruta_info_suplemento, blank=True)
     fecha_creacion      = models.DateTimeField(auto_now_add=True)
@@ -148,6 +157,13 @@ class Suplemento(models.Model):
             return self.nombre
         generico = 'suplemento' if self.tipo == 'otro' else self.get_tipo_display().lower()
         return f'{self.ARTICULOS[self.tipo]} {generico}'
+
+    @staticmethod
+    def clave_toma(toma):
+        """Cómo se reconoce una toma: su comida, o 'otro-1630' si es otra toma a esa hora."""
+        if toma['tiempo'] == 'otro':
+            return 'otro-' + toma['hora'].replace(':', '')
+        return toma['tiempo']
 
     def toma_en(self, tiempo):
         return next((t for t in self.tomas if t['tiempo'] == tiempo), None)
@@ -408,6 +424,9 @@ class Ilustracion(models.Model):
     limitado          = models.BooleanField(default=False)
     dias              = models.PositiveSmallIntegerField()
     imagen            = models.FileField(upload_to=ruta_ilustracion)
+    # La foto de frente de la que parte, para mostrarla al lado de la ilustración.
+    foto_origen       = models.ForeignKey('progress.FotoProgreso', on_delete=models.SET_NULL, null=True, blank=True,
+                                          related_name='+')
     consentimiento_en = models.DateTimeField()
 
     class Meta:

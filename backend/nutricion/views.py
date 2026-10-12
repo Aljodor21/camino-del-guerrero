@@ -235,6 +235,23 @@ class IntercambiosView(generics.ListAPIView):
     queryset = AlimentoIntercambio.objects.all()
 
 
+class IntercambiosCsvView(APIView):
+    """La lista de intercambios como tabla (CSV para Excel): sirve para verla y como formato para
+    proponer una lista distinta."""
+
+    def get(self, request):
+        import csv
+        from django.http import HttpResponse
+        respuesta = HttpResponse(content_type='text/csv; charset=utf-8')
+        respuesta['Content-Disposition'] = 'attachment; filename="lista-de-intercambios.csv"'
+        respuesta.write('\ufeff')  # para que Excel lea bien las tildes
+        escritor = csv.writer(respuesta, delimiter=';')
+        escritor.writerow(['grupo', 'subgrupo', 'alimento', 'gramos_de_una_porcion', 'medida_casera_de_una_porcion'])
+        for a in AlimentoIntercambio.objects.all():
+            escritor.writerow([a.grupo, a.subgrupo, a.nombre, a.gramos if a.gramos is not None else '', a.medida])
+        return respuesta
+
+
 class MinutaListCreateView(APIView):
     """Minutas del proceso (la primera es la vigente) y guardar una nueva."""
     parser_classes = [MultiPartParser, JSONParser]
@@ -513,6 +530,14 @@ class SuplementoFotoView(APIView):
 
     def delete(self, request, pk):
         return Response(SuplementoSerializer(suplementos.quitar_foto(self._suplemento(request, pk))).data)
+
+
+class SuplementoLeerTablaView(APIView):
+    """Lee la tabla nutricional de la etiqueta con IA y la propone; la persona la confirma."""
+
+    def post(self, request, pk):
+        s = get_object_or_404(Suplemento.objects.select_related('proceso'), pk=pk, usuario=request.user)
+        return Response(suplementos.leer_tabla(s))
 
 
 class SuplementoInfoView(APIView):

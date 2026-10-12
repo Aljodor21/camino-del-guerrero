@@ -1,10 +1,10 @@
 from django.urls import path
 
 from .views import (CalcularMinutaView, CumplimientoView, IlustracionImagenView, IlustracionView, PedidoComidaView, ProyeccionView, RegistroComidaFotoView,
-                    RegistroComidaListCreateView, ComidaAccionView, ComidaOpcionesView, GenerarRutinaView, IntercambiosView,
+                    RegistroComidaListCreateView, ComidaAccionView, ComidaOpcionesView, GenerarRutinaView, IntercambiosCsvView, IntercambiosView,
                     ItemMercadoToggleView, LeerPdfView, ListaMercadoView, MenuView, MinutaArchivoView,
                     MinutaDetailView, MinutaListCreateView, PreferenciasComidaView, SuplementoAccionView,
-                    SuplementoDetailView, SuplementoFotoView, SuplementoInfoView, SuplementoListCreateView)
+                    SuplementoDetailView, SuplementoFotoView, SuplementoInfoView, SuplementoLeerTablaView, SuplementoListCreateView)
 
 urlpatterns = [
     path('generar-rutina/',   GenerarRutinaView.as_view(),     name='generar-rutina'),
@@ -16,9 +16,11 @@ urlpatterns = [
     path('suplementos/',          SuplementoListCreateView.as_view(), name='suplementos'),
     path('suplementos/<int:pk>/', SuplementoDetailView.as_view(),     name='suplemento-detail'),
     path('suplementos/<int:pk>/info/', SuplementoInfoView.as_view(), name='suplemento-info'),
+    path('suplementos/<int:pk>/tabla/leer/', SuplementoLeerTablaView.as_view(), name='suplemento-leer-tabla'),
     path('suplementos/<int:pk>/foto/', SuplementoFotoView.as_view(), name='suplemento-foto'),
     path('suplementos/<int:pk>/<slug:accion>/', SuplementoAccionView.as_view(), name='suplemento-accion'),
     path('intercambios/',                   IntercambiosView.as_view(),     name='intercambios'),
+    path('intercambios/csv/',               IntercambiosCsvView.as_view(),  name='intercambios-csv'),
     path('minutas/',                        MinutaListCreateView.as_view(), name='minutas'),
     path('minutas/<int:pk>/',               MinutaDetailView.as_view(),     name='minuta-detail'),
     path('minutas/leer-pdf/',               LeerPdfView.as_view(),          name='minuta-leer-pdf'),

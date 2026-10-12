@@ -2,6 +2,7 @@
 
 Todo cambio pasa por aquí para que los recordatorios sugeridos y el menú queden al día.
 """
+import logging
 from decimal import Decimal
 
 from django.db import transaction
@@ -16,6 +17,9 @@ from .grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from .models import Suplemento
 
 MAX_DIAS_DURACION = 730
+
+
+log = logging.getLogger(__name__)
 
 
 def _validar(proceso, datos, actual=None):
@@ -34,6 +38,8 @@ def _validar_en_minuta(proceso, tomas):
         return
     for toma in tomas:
         tiempo = toma['tiempo']
+        if tiempo == 'otro':
+            continue
         en_la_comida = minuta.porciones_en(tiempo)
         for grupo, porciones in toma['reemplaza'].items():
             if en_la_comida.get(grupo, Decimal(0)) < Decimal(str(porciones)):
@@ -117,7 +123,8 @@ def reemplazar(suplemento, datos):
     """Termina el actual y empieza otro del mismo tipo (ej. cambio de proteína), que
     por defecto se toma en las mismas comidas y reemplaza lo mismo."""
     terminar(suplemento)
-    datos = {'tomas': suplemento.tomas, 'liquido': suplemento.liquido, 'liquido_ml': suplemento.liquido_ml, **datos}
+    datos = {'tomas': suplemento.tomas, 'liquido': suplemento.liquido, 'liquido_ml': suplemento.liquido_ml,
+             'leche_ml': suplemento.leche_ml, 'leche_nutricional': suplemento.leche_nutricional, **datos}
     return crear_suplemento(suplemento.proceso, {'tipo': suplemento.tipo, **datos})
 
 
@@ -197,3 +204,30 @@ def quitar_foto(suplemento):
         suplemento.save(update_fields=['foto'])
         suplemento.foto.storage.delete(anterior)
     return suplemento
+
+
+def leer_tabla(suplemento):
+    """Propone la tabla nutricional leyendo la foto o el PDF de la etiqueta. No guarda nada:
+    la persona la revisa y la confirma."""
+    from core.ai_service import AIService
+    from .serializers import validar_tabla
+    from rest_framework.exceptions import ValidationError
+
+    if not suplemento.info_archivo:
+        raise ReglaNegocioError('Sube primero la foto o el PDF de la etiqueta para poder leerla.')
+    nombre = suplemento.info_archivo.name.lower()
+    mime = 'application/pdf' if nombre.endswith('.pdf') else 'image/jpeg'
+    with suplemento.info_archivo.open('rb') as f:
+        datos = f.read()
+    try:
+        leido = AIService().leer_tabla_nutricional((datos, mime))
+        if not isinstance(leido, dict) or not leido.get('legible'):
+            raise ValueError('No legible')
+        tabla = validar_tabla({c: leido.get(c) for c in ('porcion_g', 'liquido_ml', 'kcal', 'proteina_g', 'carbohidratos_g', 'grasa_g')})
+    except (ValidationError, ValueError, TypeError):
+        raise ReglaNegocioError(
+            'No pudimos leer la tabla de esa etiqueta (por porción). Escríbela a mano o sube una foto más clara.')
+    except Exception:
+        log.exception('La IA no pudo leer la tabla nutricional.')
+        raise ReglaNegocioError('No pudimos leer la etiqueta ahora. Escribe la tabla a mano o intenta más tarde.')
+    return {'tabla': tabla, 'nota': str(leido.get('nota') or '')[:300]}

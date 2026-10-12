@@ -1,7 +1,8 @@
 """Imagen orientativa de cómo podría verse el cambio estimado hasta el control.
 
-Parte de la foto de frente de la persona (la que subió con sus medidas) y le pide a OpenAI un
-cambio suave, proporcional a los kilos de la proyección. Solo se envía la foto con el permiso
+Parte de la foto de frente de la persona (la que subió con sus medidas) y le pide a OpenAI el
+cambio de la proyección, con cuánto sería músculo y cuánto grasa. La estimación ya viene acotada
+a un ritmo que el cuerpo puede dar (ver `proyeccion`), así que la imagen no se inventa nada. Solo se envía la foto con el permiso
 expreso de la persona, y la imagen queda privada. Es una ilustración, no una promesa.
 """
 import logging
@@ -24,8 +25,6 @@ log = logging.getLogger(__name__)
 
 # Por debajo de esto el cambio no se notaría en una imagen.
 CAMBIO_MINIMO_KG = 0.3
-# La imagen nunca muestra más que esto, aunque la cuenta dé más: así no se exagera nada.
-CAMBIO_MAXIMO_KG = 3.0
 LADO_ENVIO = 1536
 LADO_GUARDADO = 1600
 
@@ -43,17 +42,55 @@ def restantes_hoy(usuario):
     return max(0, settings.ILUSTRACIONES_POR_DIA - generadas_hoy(usuario))
 
 
-def _prompt(peso_base, cambio, dias):
-    if cambio > 0:
-        cambio_texto = ('un poco más de masa corporal, con músculos algo más llenos y definidos, '
-                        'sin agrandar nada de forma exagerada')
+# Cómo se nota el entrenamiento en el cuerpo, según su enfoque.
+MATIZ_ENFOQUE = {
+    'fuerza': 'músculos algo más llenos y marcados, sobre todo en hombros, pecho y brazos',
+    'boxeo': 'un cuerpo atlético y algo más definido, con hombros y espalda trabajados',
+    'funcional': 'un cuerpo atlético, funcional y algo más definido',
+    'cardio_casa': 'un cuerpo más ligero y definido, sin ganar volumen muscular',
+    'movilidad': 'un tono suave, sin cambios marcados de volumen',
+}
+
+
+def _contexto(proy):
+    """Lo que sabemos de la persona, en una o dos frases para el pedido de la imagen."""
+    entreno = proy['entrenamiento']
+    if entreno:
+        actividad = (f'Hace ejercicio: {entreno["nombre"].lower()}, {entreno["dias"]} días por semana de '
+                     f'{entreno["duracion"]} minutos, lo que se nota en {MATIZ_ENFOQUE[entreno["enfoque"]]}.')
     else:
-        cambio_texto = 'el cuerpo algo más delgado y definido, sin exagerar la pérdida'
+        actividad = ('No hace ejercicio: el cambio viene solo de la alimentación, así que cambia la masa '
+                     'corporal en general y no se nota una ganancia muscular marcada.')
+    if proy['proteina']:
+        actividad += (f' Toma un suplemento de proteína en polvo (unos {proy["proteina"]["proteina_g"]} g de '
+                      'proteína al día), que ya cuenta en su alimentación.')
+    return actividad
+
+
+def _descripcion_del_cambio(escenario):
+    """Cómo se vería ese cambio, según cuánto sería músculo y cuánto grasa y agua."""
+    cambio, musculo, grasa = escenario['cambio_kg'], escenario['musculo_kg'], escenario['grasa_kg']
+    detalle = (f'(unos {abs(musculo):.1f} kg de músculo y {abs(grasa):.1f} kg de grasa y agua)'
+               .replace('.', ','))
+    if cambio < 0:
+        return f'un cuerpo más delgado y definido, que conserva su músculo {detalle}'
+    parte_muscular = musculo / cambio
+    if parte_muscular >= 0.6:
+        return f'sobre todo músculo: más volumen muscular y definición, con muy poca grasa nueva {detalle}'
+    if parte_muscular >= 0.3:
+        return f'una mezcla de músculo y algo de grasa: más volumen en general y algo de definición {detalle}'
+    return ('sobre todo grasa y agua: algo más de volumen corporal en general (cintura, rostro y brazos un poco '
+            f'más llenos), sin ganancia muscular marcada {detalle}')
+
+
+def _prompt(proy, escenario):
+    peso_base, cambio = proy['peso_actual_kg'], escenario['cambio_kg']
     return (
-        f'Edita esta foto de la misma persona para mostrar cómo podría verse después de {dias} días '
+        f'Edita esta foto de la misma persona para mostrar cómo podría verse después de {proy["dias"]} días '
         f'con un cambio de peso de {cambio:+.1f} kg (de {peso_base:.1f} a {peso_base + cambio:.1f} kg): '
-        f'{cambio_texto}. Es un cambio pequeño y realista. Conserva idénticos el rostro, la identidad, '
-        'el tono de piel, la pose, la ropa, el fondo, la iluminación y el encuadre. '
+        f'{_descripcion_del_cambio(escenario)}. {_contexto(proy)} El cambio debe ser realista y proporcional a '
+        'esos kilos, sin exagerarlo. Conserva idénticos el rostro, la identidad, el tono de piel, la pose, '
+        'la ropa, el fondo, la iluminación y el encuadre. '
         'Resultado fotorrealista y natural; sin filtros, sin texto y sin marcas.'
     )
 
@@ -90,11 +127,10 @@ def generar(usuario, consentimiento):
 
     proy = proyeccion.proyectar(usuario, timezone.localdate())
     escenario = proy['escenarios'][0]  # cumpliendo todo el plan
-    real = escenario['cambio_kg']
-    cambio = max(-CAMBIO_MAXIMO_KG, min(CAMBIO_MAXIMO_KG, real))
+    cambio = escenario['cambio_kg']
     if abs(cambio) < CAMBIO_MINIMO_KG:
         raise ReglaNegocioError(
-            f'Con tu plan el cambio estimado es de {real:+.1f} kg: casi no se notaría en una imagen.'.replace('.', ','))
+            f'Con tu plan el cambio estimado es de {cambio:+.1f} kg: casi no se notaría en una imagen.'.replace('.', ','))
 
     foto = _foto_de_frente(usuario)
     with foto.imagen.open('rb') as f:
@@ -102,7 +138,7 @@ def generar(usuario, consentimiento):
         original.load()
     envio = a_jpeg(original.convert('RGB'), LADO_ENVIO, 90).read()
     try:
-        resultado = _pedir_a_openai(envio, _prompt(proy['peso_actual_kg'], cambio, proy['dias']))
+        resultado = _pedir_a_openai(envio, _prompt(proy, escenario))
         imagen = a_jpeg(Image.open(BytesIO(resultado)).convert('RGB'), LADO_GUARDADO, 88)
     except Exception:
         log.exception('OpenAI no pudo generar la imagen.')
@@ -110,8 +146,8 @@ def generar(usuario, consentimiento):
 
     ahora = timezone.now()
     ilustracion = Ilustracion(usuario=usuario, creada=ahora, peso_base=proy['peso_actual_kg'],
-                              cambio_kg=cambio, limitado=abs(real) > CAMBIO_MAXIMO_KG, dias=proy['dias'],
-                              consentimiento_en=ahora)
+                              cambio_kg=cambio, limitado=escenario['limitado'], dias=proy['dias'],
+                              foto_origen=foto, consentimiento_en=ahora)
     ilustracion.imagen.save('ilustracion.jpg', ContentFile(imagen.read()), save=False)
     ilustracion.save()
     return ilustracion

@@ -91,6 +91,101 @@ class SuplementoTest(APITestCase):
             self.assertIsNone(r.data['info_archivo_tipo'])
             self.assertEqual(self.client.get(info).status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_la_proteina_se_mezcla_con_leche_y_agua_y_cada_toma_dice_su_hora(self):
+        base = {'tipo': 'proteina', 'peso_envase_g': 2268, 'porcion_g': 150, 'scoops_porcion': 6,
+                'duracion_confirmada': True, 'duracion_dias': 60,
+                'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}, 'hora': '10:30', 'nota': 'Después de entrenar'},
+                          {'tiempo': 'algo', 'scoops': 3, 'reemplaza': {}}]}
+        # Mezcla: 1.200 ml de líquido para los 6 scoops, 500 ml de leche y el resto agua.
+        sup = self.crear(**base, liquido='mezcla', liquido_ml=1200, leche_ml=500,
+                         leche_nutricional={'porcion_ml': 250, 'kcal': 150, 'proteina_g': 8})
+        self.assertEqual((sup['liquido'], sup['leche_ml'], sup['liquido_ml']), ('mezcla', 500, 1200))
+        self.assertEqual(sup['tomas'][0]['hora'], '10:30')
+        self.assertEqual(sup['tomas'][0]['nota'], 'Después de entrenar')
+        self.assertNotIn('hora', sup['tomas'][1])
+        url = reverse('suplemento-detail', args=[sup['id']])
+        # Mezcla sin decir cuánta leche, o con leche igual o mayor al líquido, no se acepta.
+        for mala in ({'leche_ml': None}, {'leche_ml': 1200}, {'leche_ml': 1500}):
+            self.assertEqual(self.client.patch(url, mala, format='json').status_code,
+                             status.HTTP_400_BAD_REQUEST, mala)
+        self.assertEqual(self.client.patch(url, {'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}, 'hora': '25:99'},
+                                                           {'tiempo': 'algo', 'scoops': 3, 'reemplaza': {}}]},
+                                           format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        # Solo leche: toda la porción de líquido es leche; con agua no hay leche ni su tabla.
+        r = self.client.patch(url, {'liquido': 'leche'}, format='json')
+        self.assertEqual(r.data['leche_ml'], 1200)
+        r = self.client.patch(url, {'liquido': 'agua'}, format='json')
+        self.assertIsNone(r.data['leche_ml'])
+        self.assertIsNone(r.data['leche_nutricional'])
+        # Una porción más grande que antes (12 scoops, 300 g) ya cabe.
+        r = self.client.patch(url, {'scoops_porcion': 12, 'porcion_g': 300,
+                                    'tomas': [{'tiempo': 'onces', 'scoops': 6, 'reemplaza': {}},
+                                              {'tiempo': 'algo', 'scoops': 6, 'reemplaza': {}}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+
+    def test_se_pueden_agregar_otras_tomas_a_la_hora_que_la_persona_elija(self):
+        base = {'tipo': 'proteina', 'peso_envase_g': 2268, 'porcion_g': 150, 'scoops_porcion': 6,
+                'duracion_confirmada': True, 'duracion_dias': 60}
+        tomas = [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}},
+                 {'tiempo': 'otro', 'scoops': 2, 'hora': '21:30', 'nota': 'Antes de dormir'},
+                 {'tiempo': 'otro', 'scoops': 1, 'hora': '07:00'}]
+        sup = self.crear(**base, tomas=tomas)
+        # Las de la minuta van primero; las otras, por hora, y no reemplazan comida.
+        self.assertEqual([(t['tiempo'], t.get('hora')) for t in sup['tomas']],
+                         [('onces', None), ('otro', '07:00'), ('otro', '21:30')])
+        self.assertTrue(all(t['reemplaza'] == {} for t in sup['tomas'] if t['tiempo'] == 'otro'))
+        # Cuentan para la porción del día: tienen que sumar sus 6 scoops.
+        url = reverse('suplemento-detail', args=[sup['id']])
+        r = self.client.patch(url, {'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}},
+                                              {'tiempo': 'otro', 'scoops': 1, 'hora': '21:30'}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        # Otra toma pide su hora, y no se repiten dos a la misma hora.
+        for mala in ([{'tiempo': 'otro', 'scoops': 6}],
+                     [{'tiempo': 'otro', 'scoops': 3, 'hora': '21:30'}, {'tiempo': 'otro', 'scoops': 3, 'hora': '21:30'}]):
+            self.assertEqual(self.client.patch(url, {'tomas': mala}, format='json').status_code,
+                             status.HTTP_400_BAD_REQUEST)
+
+    def test_la_tabla_nutricional_se_lee_de_la_etiqueta_y_la_persona_la_confirma(self):
+        import tempfile
+        from io import BytesIO
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from PIL import Image
+        sup = self.crear(tipo='proteina', duracion_dias=90, porciones_envase=30, porciones_dia=1)
+        leer = reverse('suplemento-leer-tabla', args=[sup['id']])
+        url = reverse('suplemento-detail', args=[sup['id']])
+        buena = {'legible': True, 'porcion_g': 30, 'kcal': 120, 'proteina_g': 24, 'carbohidratos_g': 3,
+                 'grasa_g': 1.5, 'nota': ''}
+        with override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix='cdg-test-media-')):
+            # Sin etiqueta subida no hay nada que leer.
+            self.assertEqual(self.client.post(leer).status_code, status.HTTP_400_BAD_REQUEST)
+            imagen = BytesIO()
+            Image.new('RGB', (600, 800), 'white').save(imagen, 'PNG')
+            self.client.post(reverse('suplemento-info', args=[sup['id']]),
+                             {'archivo': SimpleUploadedFile('e.png', imagen.getvalue(), 'image/png')},
+                             format='multipart')
+            with mock.patch('core.ai_service.AIService.leer_tabla_nutricional') as ia:
+                ia.return_value = {'legible': False}
+                self.assertEqual(self.client.post(leer).status_code, status.HTTP_400_BAD_REQUEST)
+                ia.return_value = buena
+                r = self.client.post(leer)
+                self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
+                self.assertEqual(r.data['tabla'], {'porcion_g': 30.0, 'kcal': 120.0, 'proteina_g': 24.0,
+                                                   'carbohidratos_g': 3.0, 'grasa_g': 1.5})
+                # Un dato absurdo no pasa.
+                ia.return_value = {**buena, 'kcal': 99999}
+                self.assertEqual(self.client.post(leer).status_code, status.HTTP_400_BAD_REQUEST)
+                ia.side_effect = Exception('sin IA')
+                self.assertEqual(self.client.post(leer).status_code, status.HTTP_400_BAD_REQUEST)
+        # Leer no guarda: solo queda lo que la persona confirma.
+        self.assertIsNone(self.client.get(reverse('suplementos')).data[0]['tabla_nutricional'])
+        r = self.client.patch(url, {'tabla_nutricional': {'kcal': 120, 'proteina_g': 24}}, format='json')
+        self.assertEqual(r.data['tabla_nutricional'], {'kcal': 120.0, 'proteina_g': 24.0})
+        for mala in ({'kcal': 120}, {'kcal': 'x', 'proteina_g': 2}, {'kcal': 1, 'proteina_g': 2, 'sodio': 3}):
+            self.assertEqual(self.client.patch(url, {'tabla_nutricional': mala}, format='json').status_code,
+                             status.HTTP_400_BAD_REQUEST, mala)
+        self.assertIsNone(self.client.patch(url, {'tabla_nutricional': None}, format='json').data['tabla_nutricional'])
+
     def test_la_foto_del_producto_es_privada_y_se_reduce(self):
         import tempfile
         from io import BytesIO
@@ -326,10 +421,110 @@ class MinutaYMenuTest(APITestCase):
         self.assertEqual(d['balance_kcal'], 2700 - d['gasto_kcal'])
         todo = d['escenarios'][0]
         self.assertEqual(todo['porcentaje'], 100)
-        self.assertAlmostEqual(todo['cambio_kg'], d['balance_kcal'] * 60 / 7700, places=1)
+        # Con un balance casi en cero el cambio es mínimo, como la cuenta simple.
+        self.assertAlmostEqual(todo['cambio_kg'], d['balance_kcal'] * 60 / 7700, delta=0.15)
         self.assertAlmostEqual(todo['peso_final_kg'], 70 + todo['cambio_kg'], places=1)
+        self.assertEqual(round(todo['musculo_kg'] + todo['grasa_kg'], 1), todo['cambio_kg'])
+        self.assertTrue(d['supuestos'])
         self.assertTrue(any('Peso actual: 70' in f for f in d['factores']))
         self.assertIn('estimación', d['aviso'])
+
+    def test_la_proyeccion_cuenta_el_entrenamiento_y_la_tabla_de_la_proteina(self, ai):
+        from progress.models import Medicion
+        from users.models import ConfiguracionEntrenamiento
+        from .models import Suplemento
+        Usuario.objects.filter(pk=self.usuario.pk).update(estatura=178, fecha_nacimiento='2001-12-25')
+        self.usuario.refresh_from_db()
+        Medicion.objects.create(usuario=self.usuario, peso_kg=70)
+        self.subir_y_confirmar(kcal=2700)
+        url = reverse('proyeccion')
+
+        # Solo alimentación: lo dice y el gasto es el de reposo con el factor base.
+        base = self.client.get(url).data
+        self.assertTrue(base['solo_alimentacion'])
+        self.assertIsNone(base['entrenamiento'])
+        self.assertTrue(any('solo de alimentación' in f for f in base['factores']))
+
+        # Con entreno de fuerza (MET 5): (5-1) × 70 kg × 1 h × 4 días / 7 = 160 kcal al día.
+        Proceso.objects.filter(pk=self.proceso.pk).update(incluye_entrenamiento=True)
+        ConfiguracionEntrenamiento.objects.create(proceso=self.proceso, enfoque_entrenamiento='fuerza',
+                                                  dias_entrenamiento=4, duracion_sesion=60)
+        con = self.client.get(url).data
+        self.assertFalse(con['solo_alimentacion'])
+        self.assertEqual(con['entrenamiento']['kcal_dia'], 160)
+        self.assertEqual(con['gasto_kcal'], base['gasto_kcal'] + 160)
+        self.assertTrue(any('Entrenamiento: fuerza' in f for f in con['factores']))
+        self.assertLess(con['escenarios'][0]['cambio_kg'], base['escenarios'][0]['cambio_kg'])
+
+        # Proteína sin tabla: se avisa; con tabla: aporta 120 kcal y reemplaza 1 lácteo (140) y 1 cereal (100).
+        sup = Suplemento.objects.create(
+            usuario=self.usuario, proceso=self.proceso, tipo='proteina', porciones_dia=1, fecha_inicio=self.hoy, envase_desde=self.hoy,
+            tomas=[{'tiempo': 'onces', 'scoops': 1, 'reemplaza': {'lacteos': 1, 'cereales': 1}}])
+        sin_tabla = self.client.get(url).data
+        self.assertIsNone(sin_tabla['proteina'])
+        self.assertTrue(any('no tiene tabla nutricional' in f for f in sin_tabla['factores']))
+        sup.tabla_nutricional = {'kcal': 120, 'proteina_g': 24}
+        sup.save(update_fields=['tabla_nutricional'])
+        con_tabla = self.client.get(url).data
+        self.assertEqual(con_tabla['proteina'], {'kcal': 120, 'proteina_g': 24})
+        self.assertEqual(con_tabla['balance_kcal'], con['balance_kcal'] + (120 - 240))
+        self.assertTrue(any('Tu proteína aporta 120 kcal y 24 g' in f for f in con_tabla['factores']))
+
+    def test_el_pedido_de_la_imagen_dice_si_hay_ejercicio_y_si_toma_proteina(self, ai):
+        from . import ilustracion
+        proy = {'peso_actual_kg': 70.0, 'dias': 40, 'proteina': None,
+                'entrenamiento': {'enfoque': 'fuerza', 'nombre': 'Fuerza', 'dias': 4, 'duracion': 60, 'kcal_dia': 160}}
+        mas_musculo = {'cambio_kg': 2.0, 'musculo_kg': 1.6, 'grasa_kg': 0.4}
+        con = ilustracion._prompt(proy, mas_musculo)
+        self.assertIn('Hace ejercicio: fuerza, 4 días por semana de 60 minutos', con)
+        self.assertIn('músculos algo más llenos', con)
+        self.assertIn('sobre todo músculo', con)
+        self.assertIn('unos 1,6 kg de músculo y 0,4 kg de grasa y agua', con)
+        mixto = ilustracion._prompt(proy, {'cambio_kg': 2.0, 'musculo_kg': 0.8, 'grasa_kg': 1.2})
+        self.assertIn('una mezcla de músculo y algo de grasa', mixto)
+        solo = ilustracion._prompt({**proy, 'entrenamiento': None, 'proteina': {'kcal': 120, 'proteina_g': 24}},
+                                   {'cambio_kg': 2.0, 'musculo_kg': 0.2, 'grasa_kg': 1.8})
+        self.assertIn('No hace ejercicio: el cambio viene solo de la alimentación', solo)
+        self.assertIn('sobre todo grasa y agua', solo)
+        self.assertNotIn('Hace ejercicio', solo)
+        self.assertIn('unos 24 g de proteína al día', solo)
+        bajar = ilustracion._prompt(proy, {'cambio_kg': -2.0, 'musculo_kg': -0.2, 'grasa_kg': -1.8})
+        self.assertIn('más delgado y definido, que conserva su músculo', bajar)
+
+    def test_el_modelo_se_adapta_y_se_limita_a_lo_que_el_cuerpo_puede_dar(self, ai):
+        from types import SimpleNamespace
+        from . import proyeccion
+        constante = lambda peso: 2300  # gasto que no cambia con el peso
+        # Superávit de 500 kcal: sin tope sería 500 × 28 / 7700 = 1,8 kg y no se llega al 1 % semanal.
+        cambio, limitado = proyeccion._simular(70, 28, 2800, constante)
+        self.assertAlmostEqual(cambio, 1.8, delta=0.05)
+        self.assertFalse(limitado)
+        # Superávit enorme: se queda en el 1 % por semana (0,7 kg y subiendo con el peso).
+        cambio, limitado = proyeccion._simular(70, 28, 4300, constante)
+        self.assertTrue(limitado)
+        self.assertAlmostEqual(cambio, 70 * 0.01 * 4 * 1.01, delta=0.2)
+        # Si el gasto sube con el peso, el mismo superávit da menos que la cuenta lineal.
+        crece = lambda peso: 2300 + (peso - 70) * 30
+        adaptado, _ = proyeccion._simular(70, 120, 2800, crece)
+        lineal, _ = proyeccion._simular(70, 120, 2800, constante)
+        self.assertLess(adaptado, lineal)
+        # Déficit: baja, también con tope.
+        self.assertLess(proyeccion._simular(70, 28, 1000, constante)[0], 0)
+
+        # Músculo: techo según el nivel, solo con entrenamiento de fuerza; lo demás es grasa y agua.
+        def entreno(enfoque, nivel, dias=4):
+            return SimpleNamespace(enfoque_entrenamiento=enfoque, nivel_actividad=nivel, dias_entrenamiento=dias)
+        principiante = proyeccion._composicion(3.0, 70, 60, entreno('fuerza', 'principiante'))
+        avanzado = proyeccion._composicion(3.0, 70, 60, entreno('fuerza', 'avanzado'))
+        self.assertEqual(principiante, (1.4, 1.6))   # 1 % de 70 kg al mes × 2 meses
+        self.assertEqual(avanzado, (0.4, 2.6))       # 0,25 % al mes
+        self.assertEqual(proyeccion._composicion(3.0, 70, 60, entreno('movilidad', 'principiante')), (0.3, 2.7))
+        self.assertEqual(proyeccion._composicion(3.0, 70, 60, None), (0.3, 2.7))
+        # Si el superávit es pequeño, no puede ser más músculo que el cambio total.
+        self.assertEqual(proyeccion._composicion(0.5, 70, 60, entreno('fuerza', 'principiante')), (0.5, 0.0))
+        # Al bajar, con fuerza se conserva más músculo.
+        self.assertEqual(proyeccion._composicion(-2.0, 70, 60, entreno('fuerza', 'principiante')), (-0.2, -1.8))
+        self.assertEqual(proyeccion._composicion(-2.0, 70, 60, None), (-0.5, -1.5))
 
     def test_la_ilustracion_pide_permiso_foto_y_cambio_notable_y_es_privada(self, ai):
         import tempfile
@@ -372,15 +567,18 @@ class MinutaYMenuTest(APITestCase):
                 fotos.agregar_foto(medicion, 'frente', SimpleUploadedFile('f.png', png.getvalue(), 'image/png'))
                 r = self.client.post(url, {'consentimiento': True}, format='json')
                 self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
-                # Con 3.300 kcal la cuenta da más de 7 kg, pero la imagen se queda en un cambio moderado.
-                self.assertEqual(r.data['cambio_kg'], 3.0)
+                # Con 3.300 kcal la cuenta simple daba unos 9 kg; el cuerpo no pasa del 1 % de su peso por
+                # semana (unos 6 kg en 60 días, algo más a medida que sube el peso), y esa estimación es la que ilustra la imagen.
+                self.assertAlmostEqual(r.data['cambio_kg'], 6.2, delta=0.1)
                 self.assertTrue(r.data['limitado'])
-                self.assertEqual(r.data['peso_final'], 73.0)
+                self.assertAlmostEqual(r.data['peso_final'], 76.2, delta=0.1)
+                self.assertEqual(r.data['foto_origen'], medicion.fotos.get(pose='frente').id)
                 self.assertEqual(r.data['peso_base'], 70)
                 prompt = llamada.call_args.args[1]
                 self.assertIn('Conserva idénticos el rostro', prompt)
-                self.assertIn('+3.0 kg', prompt)
-                self.assertIn('cambio pequeño y realista', prompt)
+                self.assertIn('+6.2 kg', prompt)
+                self.assertIn('sobre todo grasa y agua', prompt)  # sin entrenamiento de fuerza
+                self.assertIn('sin exagerarlo', prompt)
                 nueva = r.data['id']
                 imagen = self.client.get(reverse('ilustracion-imagen', args=[nueva]))
                 self.assertEqual(imagen['Content-Type'], 'image/jpeg')
@@ -402,6 +600,30 @@ class MinutaYMenuTest(APITestCase):
                                  status.HTTP_204_NO_CONTENT)
                 self.assertEqual(self.client.get(url).data['restantes_hoy'], 1)
 
+    def test_las_ilustraciones_viejas_reciben_su_foto_de_frente(self, ai):
+        import importlib
+        import tempfile
+        from io import BytesIO
+        from django.apps import apps
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from PIL import Image
+        from progress import fotos
+        from progress.models import Medicion
+        from .models import Ilustracion
+        migracion = importlib.import_module('nutricion.migrations.0017_foto_origen_de_las_ilustraciones_viejas')
+        png = BytesIO()
+        Image.new('RGB', (200, 300), 'gray').save(png, 'PNG')
+        with override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix='cdg-test-media-')):
+            medicion = Medicion.objects.create(usuario=self.usuario, peso_kg=70)
+            foto = fotos.agregar_foto(medicion, 'frente', SimpleUploadedFile('f.png', png.getvalue(), 'image/png'))
+            vieja = Ilustracion.objects.create(usuario=self.usuario, peso_base=70, cambio_kg=2, dias=30,
+                                               imagen='ilustraciones/x.jpg', consentimiento_en=timezone.now())
+            self.assertIsNone(vieja.foto_origen)
+            migracion.asignar_foto_de_frente(apps, None)
+            vieja.refresh_from_db()
+            self.assertEqual(vieja.foto_origen, foto)
+
     def test_con_un_cambio_minimo_no_se_genera_imagen(self, ai):
         import tempfile
         from django.test import override_settings
@@ -416,6 +638,15 @@ class MinutaYMenuTest(APITestCase):
             self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('casi no se notaría', str(r.data))
             llamada.assert_not_called()
+
+    def test_la_lista_de_intercambios_se_descarga_como_tabla(self, ai):
+        r = self.client.get(reverse('intercambios-csv'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIn('text/csv', r['Content-Type'])
+        lineas = r.content.decode('utf-8-sig').splitlines()
+        self.assertEqual(lineas[0], 'grupo;subgrupo;alimento;gramos_de_una_porcion;medida_casera_de_una_porcion')
+        self.assertGreater(len(lineas), 300)
+        self.assertTrue(any(l.startswith('cereales;') and 'Almojábana' in l for l in lineas))
 
     def test_la_minuta_guardada_queda_fija(self, ai):
         from core.exceptions import DatoInmutableError

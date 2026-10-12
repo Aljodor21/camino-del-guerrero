@@ -16,7 +16,16 @@ class AIService:
         self.model = settings.AI_MODEL
         self.api_key = settings.AI_API_KEY
 
-    def _chat_claude(self, prompt, max_tokens):
+    @staticmethod
+    def _bloque_claude(adjunto):
+        """Una imagen o un PDF como bloque de contenido de Claude. `adjunto` = (bytes, mime)."""
+        import base64
+        datos, mime = adjunto
+        tipo = 'document' if mime == 'application/pdf' else 'image'
+        return {'type': tipo, 'source': {'type': 'base64', 'media_type': mime,
+                                         'data': base64.b64encode(datos).decode()}}
+
+    def _chat_claude(self, prompt, max_tokens, adjunto=None):
         """Claude con el SDK oficial de Anthropic (AI_PROVIDER=anthropic)."""
         cliente = anthropic.Anthropic(api_key=self.api_key, timeout=600)
         opciones = {}
@@ -26,7 +35,8 @@ class AIService:
             model=self.model,
             # El razonamiento del modelo también cuenta en max_tokens: se deja holgura.
             max_tokens=max(max_tokens, 16000),
-            messages=[{'role': 'user', 'content': prompt}],
+            messages=[{'role': 'user', 'content': [self._bloque_claude(adjunto), {'type': 'text', 'text': prompt}]
+                       if adjunto else prompt}],
             **opciones,
         )
         if respuesta.stop_reason == 'refusal':
@@ -35,18 +45,27 @@ class AIService:
             raise Exception('La respuesta de Claude quedó cortada.')
         return ''.join(b.text for b in respuesta.content if b.type == 'text')
 
-    def _chat(self, prompt, max_tokens=4096):
+    def _chat(self, prompt, max_tokens=4096, adjunto=None):
         if self.provider == 'anthropic':
-            return self._chat_claude(prompt, max_tokens)
+            return self._chat_claude(prompt, max_tokens, adjunto)
+        if adjunto and (self.provider == 'ollama' or adjunto[1] == 'application/pdf'):
+            raise Exception('Este proveedor de IA no puede leer ese tipo de archivo.')
         if self.provider == 'ollama':
             url = f'{self.base_url}/api/generate'
             payload = {'model': self.model, 'prompt': prompt, 'stream': False}
             headers = {}
         else:
             url = f'{self.base_url}/v1/chat/completions'
+            contenido = prompt
+            if adjunto:
+                import base64
+                datos, mime = adjunto
+                contenido = [{'type': 'text', 'text': prompt},
+                             {'type': 'image_url',
+                              'image_url': {'url': f'data:{mime};base64,{base64.b64encode(datos).decode()}'}}]
             payload = {
                 'model': self.model,
-                'messages': [{'role': 'user', 'content': prompt}],
+                'messages': [{'role': 'user', 'content': contenido}],
                 'max_tokens': max_tokens,
             }
             if 'deepseek.com' in self.base_url:
@@ -66,11 +85,11 @@ class AIService:
             return data.get('response', '')
         return data['choices'][0]['message']['content']
 
-    def _chat_json(self, prompt, max_tokens=8192, retries=3):
+    def _chat_json(self, prompt, max_tokens=8192, retries=3, adjunto=None):
         import re, time
         for attempt in range(retries + 1):
             try:
-                return self._parse_json(self._chat(prompt, max_tokens))
+                return self._parse_json(self._chat(prompt, max_tokens, adjunto))
             except json.JSONDecodeError:
                 if attempt == retries:
                     raise
@@ -130,6 +149,23 @@ class AIService:
             'peso_objetivo': f'{proceso.peso_objetivo} kg' if proceso.peso_objetivo else 'No definido',
             'entrenamiento': entreno,
         }
+
+    def leer_tabla_nutricional(self, adjunto):
+        """Lee la tabla nutricional de la etiqueta de un suplemento (foto o PDF). No estima nada:
+        solo copia lo impreso. `adjunto` = (bytes, mime)."""
+        prompt = """
+Lee la TABLA NUTRICIONAL de la etiqueta de este suplemento (el adjunto es una foto o un PDF). Copia solo lo que está impreso; no estimes, no calcules y no completes lo que no se ve.
+
+## QUÉ DEVOLVER
+Los valores POR PORCIÓN (la columna "por porción" o "por serving"), no por 100 g. Si la tabla solo trae la columna por 100 g, devuelve legible=false.
+
+## FORMATO DE SALIDA
+Responde ÚNICAMENTE con este JSON, sin markdown ni texto extra. Usa números (punto decimal) y null en lo que no aparezca:
+{"legible": true, "porcion_g": 30, "liquido_ml": 240, "kcal": 120, "proteina_g": 24, "carbohidratos_g": 3, "grasa_g": 1.5, "nota": "texto corto si algo es dudoso, o vacío"}
+
+"liquido_ml" es con cuántos ml de agua o líquido se prepara una porción, SOLO si la etiqueta lo dice (por ejemplo "mezclar con 240 ml"); si no lo dice, null.
+"""
+        return self._chat_json(prompt, max_tokens=1024, retries=1, adjunto=adjunto)
 
     def calcular_minuta(self, usuario, proceso, kcal, proteina, kcal_porcion):
         p = self._perfil(usuario)

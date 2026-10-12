@@ -444,12 +444,12 @@ CATEGORIA_MERCADO = {
 
 def leche_para_proteina(menu, num_personas=1):
     """ml de leche de la semana para mezclar la proteína, o 0 si no se mezcla con leche.
-    Es el líquido de la porción de cada día en que se toma (una porción al día)."""
-    suplementos = menu.minuta.proceso.suplementos.filter(liquido='leche', liquido_ml__isnull=False)
+    Es la leche de la porción de cada día en que se toma; si se mezcla con agua, solo la parte de leche."""
+    suplementos = menu.minuta.proceso.suplementos.filter(leche_ml__isnull=False)
     ml = 0
     for s in suplementos:
         dias = sum(1 for i in range(7) if s.activo_en(menu.semana + timedelta(days=i)))
-        ml += s.liquido_ml * dias
+        ml += s.leche_ml * dias
     return ml * num_personas
 
 
