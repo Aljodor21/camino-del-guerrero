@@ -251,6 +251,14 @@
     </div>
   </section>
 
+  @if (auth.isLoggedIn() && (apk.plataforma !== 'ios' || apk.enLaApp)) {
+    <section class="descarga" aria-label="Descarga la app">
+      <div class="contenedor">
+        <app-descarga-apk />
+      </div>
+    </section>
+  }
+
   <section class="cierre" data-cierre aria-labelledby="cierre-titulo">
     <img
       class="cierre-foto"

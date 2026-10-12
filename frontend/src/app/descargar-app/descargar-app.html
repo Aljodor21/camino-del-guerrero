@@ -1,108 +1,35 @@
 <div class="pagina">
-  <section class="portada" aria-labelledby="titulo-apk">
-    <div class="portada-texto">
-      <h1 id="titulo-apk" class="titular">Tu camino,<br />en el bolsillo.</h1>
-      <p class="bajada">
-        Instala Camino del Guerrero en tu celular Android. Se abre a pantalla completa, guarda tu
-        sesión y trae lo mismo que ves en la web.
-      </p>
+  <app-descarga-apk [titulo1]="true" />
 
-      @if (apk.enLaApp) {
-        <p class="nota-grande">Ya estás usando la app instalada.</p>
-      } @else if (apk.plataforma === 'ios') {
-        <div class="nota-grande">
-          <strong>El archivo es solo para Android.</strong>
-          <span
-            >En iPhone abre esta página en Safari, toca Compartir y elige “Agregar a pantalla de
-            inicio”.</span
-          >
-        </div>
-      } @else {
-        @switch (apk.estado()) {
-          @case ('lista') {
-            <a class="boton" [href]="url" download="camino-del-guerrero.apk">
-              <i class="pi pi-download" aria-hidden="true"></i>
-              Descargar para Android
-            </a>
-            @if (apk.version(); as v) {
-              <p class="meta" aria-label="Datos de la última versión">
-                <span
-                  >Versión <b>{{ v.version }}</b></span
-                >
-                <span aria-hidden="true">·</span>
-                <span
-                  ><b>{{ megas(v.bytes) | number: '1.0-0' }}</b> MB</span
-                >
-                <span aria-hidden="true">·</span>
-                <span>{{ v.publicada | date: 'd MMM y' }}</span>
-              </p>
-            }
-          }
-          @case ('cargando') {
-            <span class="boton boton-espera" role="status" aria-live="polite">
-              <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
-              Buscando la última versión…
-            </span>
-          }
-          @default {
-            <div class="nota-grande" role="status">
-              <strong>Estamos preparando la primera versión.</strong>
-              <span>Vuelve en unos minutos, o intenta de nuevo ahora.</span>
-              <button type="button" class="enlace" (click)="reintentar()">Intentar de nuevo</button>
-            </div>
-          }
-        }
-
-        @if (apk.plataforma === 'otra') {
-          <p class="aparte">
-            ¿Estás en el computador? Copia el enlace y ábrelo en tu celular.
-            <button type="button" class="enlace" (click)="copiar()">
-              {{ copiado() ? 'Enlace copiado' : 'Copiar enlace' }}
-            </button>
+  @if (!apk.enLaApp) {
+    <section class="pasos" aria-labelledby="titulo-pasos">
+      <h2 id="titulo-pasos" class="titulo-pasos">Instálala en tres pasos</h2>
+      <ol class="camino">
+        <li>
+          <h3>Descarga el archivo</h3>
+          <p>
+            Toca el botón desde tu celular. Si el navegador dice que el archivo puede ser dañino, es
+            el aviso que sale con cualquier app fuera de la tienda: continúa.
           </p>
-        }
-      }
-    </div>
-
-    <div class="portada-celular" aria-hidden="true">
-      <div class="brillo"></div>
-      <div class="celular">
-        <div class="pantalla">
-          <img src="/home/secuencia/m-000.webp" alt="" width="720" height="1280" loading="lazy" />
-          <div class="aviso-demo">
-            <i class="pi pi-moon"></i>
-            <span>En media hora, a dormir</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="pasos" aria-labelledby="titulo-pasos">
-    <h2 id="titulo-pasos" class="titulo-pasos">Instálala en tres pasos</h2>
-    <ol class="camino">
-      <li>
-        <h3>Descarga el archivo</h3>
-        <p>
-          Toca el botón desde tu celular. Si el navegador dice que el archivo puede ser dañino, es
-          el aviso que sale con cualquier app fuera de la tienda: continúa.
-        </p>
-      </li>
-      <li>
-        <h3>Permite instalar desde esa fuente</h3>
-        <p>
-          Abre el archivo descargado. Android te pide una sola vez activar “Permitir de esta
-          fuente”; después la instala.
-        </p>
-      </li>
-      <li>
-        <h3>Abre la app y entra</h3>
-        <p>Inicia sesión con tu cuenta de siempre. Es la misma información que tienes en la web.</p>
-      </li>
-    </ol>
-    <p class="cierre">
-      Cuando salga una versión nueva, descárgala igual: se instala encima de la anterior y no
-      pierdes nada.
-    </p>
-  </section>
+        </li>
+        <li>
+          <h3>Permite instalar desde esa fuente</h3>
+          <p>
+            Abre el archivo descargado. Android te pide una sola vez activar “Permitir de esta
+            fuente”; después la instala.
+          </p>
+        </li>
+        <li>
+          <h3>Abre la app y entra</h3>
+          <p>
+            Inicia sesión con tu cuenta de siempre. Es la misma información que tienes en la web.
+          </p>
+        </li>
+      </ol>
+      <p class="cierre">
+        Cuando salga una versión nueva, descárgala igual: se instala encima de la anterior y no
+        pierdes nada.
+      </p>
+    </section>
+  }
 </div>

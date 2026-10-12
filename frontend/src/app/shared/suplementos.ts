@@ -56,8 +56,17 @@ const GRAMOS_POR: Record<Etiqueta['unidad'], number> = { kg: 1000, lb: 453.592, 
 
 export function etiquetaVacia(): Etiqueta {
   return {
-    peso: null, unidad: 'kg', porcionG: null, scoops: null, porcionesDia: 1, liquido: '', liquidoMl: null,
-    lecheMl: null, lechePorcionMl: null, lecheKcal: null, lecheProteina: null,
+    peso: null,
+    unidad: 'kg',
+    porcionG: null,
+    scoops: null,
+    porcionesDia: 1,
+    liquido: '',
+    liquidoMl: null,
+    lecheMl: null,
+    lechePorcionMl: null,
+    lecheKcal: null,
+    lecheProteina: null,
   };
 }
 
@@ -108,9 +117,18 @@ export function porcionesPorEnvase(e: Etiqueta): number | null {
 /** Lo que está mal escrito; vacío si todo se puede guardar (todo es opcional menos las del día). */
 export function erroresEtiqueta(e: Etiqueta): Partial<Record<keyof Etiqueta, string>> {
   const errores: Partial<Record<keyof Etiqueta, string>> = {};
-  const malEscritos = (['peso', 'porcionG', 'scoops', 'liquidoMl', 'lecheMl', 'lechePorcionMl', 'lecheKcal', 'lecheProteina'] as const).filter((k) =>
-    Number.isNaN(e[k]),
-  );
+  const malEscritos = (
+    [
+      'peso',
+      'porcionG',
+      'scoops',
+      'liquidoMl',
+      'lecheMl',
+      'lechePorcionMl',
+      'lecheKcal',
+      'lecheProteina',
+    ] as const
+  ).filter((k) => Number.isNaN(e[k]));
   for (const k of malEscritos) errores[k] = 'Escribe solo el número.';
   if (malEscritos.length) return errores;
   const g = gramosEnvase(e);
@@ -122,8 +140,10 @@ export function erroresEtiqueta(e: Etiqueta): Partial<Record<keyof Etiqueta, str
   if (e.liquido && e.liquidoMl !== null && (e.liquidoMl < 10 || e.liquidoMl > 5000))
     errores.liquidoMl = 'Entre 10 y 5.000 ml.';
   if (e.liquido === 'mezcla') {
-    if (e.lecheMl === null || !e.liquidoMl) errores.lecheMl = 'Escribe cuánto líquido lleva y cuánto de ese es leche.';
-    else if (e.lecheMl < 10 || e.lecheMl >= e.liquidoMl) errores.lecheMl = 'La leche tiene que ser menos que el líquido total.';
+    if (e.lecheMl === null || !e.liquidoMl)
+      errores.lecheMl = 'Escribe cuánto líquido lleva y cuánto de ese es leche.';
+    else if (e.lecheMl < 10 || e.lecheMl >= e.liquidoMl)
+      errores.lecheMl = 'La leche tiene que ser menos que el líquido total.';
   }
   const tablaLeche = [e.lechePorcionMl, e.lecheKcal, e.lecheProteina];
   if (tablaLeche.some((v) => v !== null) && tablaLeche.some((v) => v === null))

@@ -14,6 +14,17 @@
       <span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:block mr-2">
         {{ authService.usuario()?.nombre }}
       </span>
+      @if (apk.plataforma !== 'ios' || apk.enLaApp) {
+        <a
+          routerLink="/descargar-app"
+          class="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          [attr.aria-label]="apk.enLaApp ? 'Actualizar la app' : 'Descargar la app de Android'"
+          [pTooltip]="apk.enLaApp ? 'Actualizar la app' : 'Descargar la app'"
+          tooltipPosition="bottom"
+        >
+          <i class="pi pi-mobile" aria-hidden="true"></i>
+        </a>
+      }
       @if (!authService.isAdmin()) {
         <a
           href="/avisos"

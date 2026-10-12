@@ -24,6 +24,8 @@ import { RouterLink } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 
 import { AuthService } from '../core/services/auth';
+import { ApkService } from '../core/services/apk';
+import { DescargaApk } from '../shared/descarga-apk/descarga-apk';
 
 interface Imagen {
   nombre: string;
@@ -102,10 +104,11 @@ function avance(seccion: HTMLElement, alto: number): number {
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, DescargaApk],
 })
 export class Home {
   protected auth = inject(AuthService);
+  protected apk = inject(ApkService);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 

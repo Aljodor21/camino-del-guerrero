@@ -1,7 +1,7 @@
 <div class="p-4 max-w-2xl mx-auto space-y-6 pb-8">
   <app-portada foto="agenda" titulo="Mi perfil" subtitulo="Tus datos personales y tu proceso." />
 
-  @if (!apk.enLaApp && apk.plataforma !== 'ios') {
+  @if (apk.enLaApp || apk.plataforma !== 'ios') {
     <a
       routerLink="/descargar-app"
       class="flex items-center gap-4 rounded-2xl bg-dark-900 text-white p-4 shadow-sm hover:shadow-md transition-shadow focus-visible:outline-2 focus-visible:outline-guerrero-red"
@@ -13,7 +13,9 @@
         <i class="pi pi-mobile text-xl"></i>
       </span>
       <span class="flex-1 min-w-0">
-        <span class="block font-semibold leading-tight">Descarga la app de Android</span>
+        <span class="block font-semibold leading-tight">{{
+          apk.enLaApp ? 'Actualiza la app' : 'Descarga la app de Android'
+        }}</span>
         <span class="block text-sm text-white/70"
           >Siempre la última versión, para instalar en tu celular.</span
         >

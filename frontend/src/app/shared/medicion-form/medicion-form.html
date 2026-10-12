@@ -1,19 +1,41 @@
 <div [formGroup]="form()" class="space-y-4">
   <div class="grid grid-cols-2 gap-4">
     <div class="flex flex-col gap-1">
-      <label for="med-peso" class="text-sm font-medium text-gray-600 dark:text-gray-400">Peso (kg)</label>
-      <input pInputText appDecimal id="med-peso" formControlName="peso_kg" placeholder="63,2" class="w-full"
-        aria-describedby="med-peso-error" />
+      <label for="med-peso" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Peso (kg)</label
+      >
+      <input
+        pInputText
+        appDecimal
+        id="med-peso"
+        formControlName="peso_kg"
+        placeholder="63,2"
+        class="w-full"
+        aria-describedby="med-peso-error"
+      />
       @if (form().controls.peso_kg.invalid && form().controls.peso_kg.touched) {
-        <small id="med-peso-error" class="text-xs text-red-600 dark:text-red-400">Escribe un peso entre 20 y 300 kg.</small>
+        <small id="med-peso-error" class="text-xs text-red-600 dark:text-red-400"
+          >Escribe un peso entre 20 y 300 kg.</small
+        >
       }
     </div>
     <div class="flex flex-col gap-1">
-      <label for="med-talla" class="text-sm font-medium text-gray-600 dark:text-gray-400">Talla (cm)</label>
-      <input pInputText appDecimal id="med-talla" formControlName="talla_cm" placeholder="178" class="w-full"
-        aria-describedby="med-talla-error" />
+      <label for="med-talla" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Talla (cm)</label
+      >
+      <input
+        pInputText
+        appDecimal
+        id="med-talla"
+        formControlName="talla_cm"
+        placeholder="178"
+        class="w-full"
+        aria-describedby="med-talla-error"
+      />
       @if (form().controls.talla_cm.invalid && form().controls.talla_cm.touched) {
-        <small id="med-talla-error" class="text-xs text-red-600 dark:text-red-400">Escribe una talla entre 100 y 250 cm.</small>
+        <small id="med-talla-error" class="text-xs text-red-600 dark:text-red-400"
+          >Escribe una talla entre 100 y 250 cm.</small
+        >
       }
     </div>
   </div>
@@ -25,7 +47,9 @@
   </p>
 
   <div class="flex flex-col gap-2">
-    <span id="med-origen" class="text-sm font-medium text-gray-600 dark:text-gray-400">¿Quién tomó la medición?</span>
+    <span id="med-origen" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+      >¿Quién tomó la medición?</span
+    >
     <p-selectbutton
       ariaLabelledBy="med-origen"
       formControlName="origen"
@@ -44,8 +68,17 @@
 
   @if (conFecha()) {
     <div class="flex flex-col gap-1">
-      <label for="med-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400">Fecha de la medición</label>
-      <input pInputText id="med-fecha" type="date" formControlName="fecha" [max]="hoy" class="w-full" />
+      <label for="med-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+        >Fecha de la medición</label
+      >
+      <input
+        pInputText
+        id="med-fecha"
+        type="date"
+        formControlName="fecha"
+        [max]="hoy"
+        class="w-full"
+      />
     </div>
   }
 
@@ -53,14 +86,26 @@
     <summary
       class="flex items-center justify-between cursor-pointer list-none px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300"
     >
-      <span>Perímetros <span class="ml-1 text-xs font-normal text-gray-400">cm · opcional</span></span>
-      <i class="pi pi-chevron-down text-xs text-gray-400 transition-transform group-open:rotate-180"></i>
+      <span
+        >Perímetros <span class="ml-1 text-xs font-normal text-gray-400">cm · opcional</span></span
+      >
+      <i
+        class="pi pi-chevron-down text-xs text-gray-400 transition-transform group-open:rotate-180"
+      ></i>
     </summary>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 px-4 pb-4">
       @for (p of perimetros; track p.campo) {
         <div class="flex flex-col gap-1">
-          <label [for]="'med-' + p.campo" class="text-xs text-gray-500 dark:text-gray-400">{{ p.label }}</label>
-          <input pInputText appDecimal [id]="'med-' + p.campo" [formControlName]="p.campo" class="w-full" />
+          <label [for]="'med-' + p.campo" class="text-xs text-gray-500 dark:text-gray-400">{{
+            p.label
+          }}</label>
+          <input
+            pInputText
+            appDecimal
+            [id]="'med-' + p.campo"
+            [formControlName]="p.campo"
+            class="w-full"
+          />
         </div>
       }
     </div>
@@ -70,14 +115,27 @@
     <summary
       class="flex items-center justify-between cursor-pointer list-none px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300"
     >
-      <span>Pliegues cutáneos <span class="ml-1 text-xs font-normal text-gray-400">mm · opcional</span></span>
-      <i class="pi pi-chevron-down text-xs text-gray-400 transition-transform group-open:rotate-180"></i>
+      <span
+        >Pliegues cutáneos
+        <span class="ml-1 text-xs font-normal text-gray-400">mm · opcional</span></span
+      >
+      <i
+        class="pi pi-chevron-down text-xs text-gray-400 transition-transform group-open:rotate-180"
+      ></i>
     </summary>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 px-4 pb-4">
       @for (p of pliegues; track p.campo) {
         <div class="flex flex-col gap-1">
-          <label [for]="'med-' + p.campo" class="text-xs text-gray-500 dark:text-gray-400">{{ p.label }}</label>
-          <input pInputText appDecimal [id]="'med-' + p.campo" [formControlName]="p.campo" class="w-full" />
+          <label [for]="'med-' + p.campo" class="text-xs text-gray-500 dark:text-gray-400">{{
+            p.label
+          }}</label>
+          <input
+            pInputText
+            appDecimal
+            [id]="'med-' + p.campo"
+            [formControlName]="p.campo"
+            class="w-full"
+          />
         </div>
       }
     </div>
@@ -87,6 +145,13 @@
     <label for="med-nota" class="text-sm font-medium text-gray-600 dark:text-gray-400">
       Nota <span class="font-normal text-gray-400">(opcional)</span>
     </label>
-    <input pInputText id="med-nota" formControlName="nota" maxlength="300" placeholder="Ej: en ayunas, consulta con la nutricionista" class="w-full" />
+    <input
+      pInputText
+      id="med-nota"
+      formControlName="nota"
+      maxlength="300"
+      placeholder="Ej: en ayunas, consulta con la nutricionista"
+      class="w-full"
+    />
   </div>
 </div>

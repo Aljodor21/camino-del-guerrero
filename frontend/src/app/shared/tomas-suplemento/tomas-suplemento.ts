@@ -93,19 +93,24 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
 
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1">
-              <label [for]="'tm-hora-' + t.tiempo" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              <label
+                [for]="'tm-hora-' + t.tiempo"
+                class="text-xs font-medium text-gray-600 dark:text-gray-400"
                 >Hora <span class="font-normal text-gray-400">opcional</span></label
               >
               <input
                 [id]="'tm-hora-' + t.tiempo"
                 type="time"
-                pInputText class="w-full"
+                pInputText
+                class="w-full"
                 [value]="t.hora ?? ''"
                 (change)="detalle(t.tiempo, { hora: $any($event.target).value })"
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label [for]="'tm-nota-' + t.tiempo" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              <label
+                [for]="'tm-nota-' + t.tiempo"
+                class="text-xs font-medium text-gray-600 dark:text-gray-400"
                 >Cómo <span class="font-normal text-gray-400">opcional</span></label
               >
               <input
@@ -113,7 +118,8 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
                 type="text"
                 maxlength="80"
                 placeholder="Ej. después de entrenar"
-                pInputText class="w-full"
+                pInputText
+                class="w-full"
                 [value]="t.nota ?? ''"
                 (change)="detalle(t.tiempo, { nota: $any($event.target).value })"
               />
@@ -141,8 +147,8 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ texto }}</p>
               } @else {
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Si no marcas nada, esa comida se arma completa además de la proteína. Marca lo
-                  que la proteína reemplaza para que el menú no lo pida.
+                  Si no marcas nada, esa comida se arma completa además de la proteína. Marca lo que
+                  la proteína reemplaza para que el menú no lo pida.
                 </p>
               }
             </div>
@@ -196,7 +202,11 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
 
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1">
-              <label [for]="'tm-extra-hora-' + i" class="text-xs font-medium text-gray-600 dark:text-gray-400">Hora</label>
+              <label
+                [for]="'tm-extra-hora-' + i"
+                class="text-xs font-medium text-gray-600 dark:text-gray-400"
+                >Hora</label
+              >
               <input
                 [id]="'tm-extra-hora-' + i"
                 type="time"
@@ -208,7 +218,9 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label [for]="'tm-extra-nota-' + i" class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              <label
+                [for]="'tm-extra-nota-' + i"
+                class="text-xs font-medium text-gray-600 dark:text-gray-400"
                 >Cómo <span class="font-normal text-gray-400">opcional</span></label
               >
               <input
@@ -250,8 +262,8 @@ type TomaDeComida = Toma & { tiempo: TiempoComida };
           @if (faltan() === 0) {
             Sumas los {{ n(scoopsPorcion()!) }} scoops de tu porción.
           } @else if (faltan() > 0) {
-            Te faltan {{ n(faltan()) }} {{ faltan() === 1 ? 'scoop' : 'scoops' }} para completar
-            la porción de {{ n(scoopsPorcion()!) }}.
+            Te faltan {{ n(faltan()) }} {{ faltan() === 1 ? 'scoop' : 'scoops' }} para completar la
+            porción de {{ n(scoopsPorcion()!) }}.
           } @else {
             Te pasas por {{ n(-faltan()) }} {{ faltan() === -1 ? 'scoop' : 'scoops' }} de los
             {{ n(scoopsPorcion()!) }} de la porción.
@@ -275,7 +287,9 @@ export class TomasSuplemento {
   protected clasesChip = clasesChip;
   protected readonly maxExtras = 4;
   /** Las tomas que van en una comida de la minuta, y las "otras" a la hora que se elige. */
-  protected deComida = computed(() => this.tomas().filter((t): t is TomaDeComida => t.tiempo !== 'otro'));
+  protected deComida = computed(() =>
+    this.tomas().filter((t): t is TomaDeComida => t.tiempo !== 'otro'),
+  );
   protected extras = computed(() => this.tomas().filter((t) => t.tiempo === 'otro'));
   protected tiempos = computed(() => tiemposDe(this.porciones()));
   protected faltan = computed(() => scoopsFaltantes(this.tomas(), this.scoopsPorcion()));
@@ -327,7 +341,7 @@ export class TomasSuplemento {
   protected alternar(tiempo: TiempoComida): void {
     const actuales = this.deComida();
     const orden = this.tiempos();
-    const tiempos = orden.filter((t) => t === tiempo !== actuales.some((x) => x.tiempo === t));
+    const tiempos = orden.filter((t) => (t === tiempo) !== actuales.some((x) => x.tiempo === t));
     const comidas: Toma[] = tiempos.map((t) => ({
       ...(actuales.find((x) => x.tiempo === t) ?? { tiempo: t, scoops: null, reemplaza: {} }),
       tiempo: t,
@@ -338,8 +352,12 @@ export class TomasSuplemento {
   /** Otra toma a una hora que la persona elige; la porción se reparte de nuevo. */
   protected agregarExtra(): void {
     const ocupadas = new Set(this.extras().map((t) => t.hora));
-    const hora = ['21:00', '07:00', '13:00', '17:00', '10:00', '19:00'].find((h) => !ocupadas.has(h)) ?? '12:00';
-    this.tomas.set(this.repartir([...this.tomas(), { tiempo: 'otro', scoops: null, reemplaza: {}, hora }]));
+    const hora =
+      ['21:00', '07:00', '13:00', '17:00', '10:00', '19:00'].find((h) => !ocupadas.has(h)) ??
+      '12:00';
+    this.tomas.set(
+      this.repartir([...this.tomas(), { tiempo: 'otro', scoops: null, reemplaza: {}, hora }]),
+    );
   }
 
   protected quitarExtra(indice: number): void {

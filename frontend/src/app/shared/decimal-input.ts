@@ -38,7 +38,8 @@ export class DecimalInput implements ControlValueAccessor, Validator {
   private onTouched: () => void = () => {};
 
   writeValue(valor: number | null): void {
-    this.el.nativeElement.value = valor === null || valor === undefined ? '' : String(valor).replace('.', ',');
+    this.el.nativeElement.value =
+      valor === null || valor === undefined ? '' : String(valor).replace('.', ',');
   }
 
   registerOnChange(fn: (valor: number | null) => void): void {
@@ -54,7 +55,9 @@ export class DecimalInput implements ControlValueAccessor, Validator {
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
-    return typeof control.value === 'number' && Number.isNaN(control.value) ? { decimal: true } : null;
+    return typeof control.value === 'number' && Number.isNaN(control.value)
+      ? { decimal: true }
+      : null;
   }
 
   protected alEscribir(): void {

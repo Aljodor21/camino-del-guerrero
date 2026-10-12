@@ -11,5 +11,10 @@ export function mensajeError(err: unknown, respaldo: string): string {
     if (valor && typeof valor === 'object') return primero(Object.values(valor)[0]);
     return null;
   };
-  return primero(err.error.detail) ?? primero(err.error.non_field_errors) ?? primero(err.error) ?? respaldo;
+  return (
+    primero(err.error.detail) ??
+    primero(err.error.non_field_errors) ??
+    primero(err.error) ??
+    respaldo
+  );
 }

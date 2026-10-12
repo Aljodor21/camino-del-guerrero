@@ -1,9 +1,20 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { ConfigEntrenamiento } from '../../core/models/proceso.model';
-import { CONFIG_ENTRENAMIENTO_INICIAL, DIAS, DURACIONES, ENFOQUES, NIVELES } from '../../core/constants/proceso';
+import {
+  CONFIG_ENTRENAMIENTO_INICIAL,
+  DIAS,
+  DURACIONES,
+  ENFOQUES,
+  NIVELES,
+} from '../../core/constants/proceso';
 
 export type EntrenamientoFormGroup = FormGroup<{
   [K in keyof ConfigEntrenamiento]: FormControl<ConfigEntrenamiento[K]>;
