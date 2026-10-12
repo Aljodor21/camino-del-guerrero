@@ -1,3 +1,7 @@
+# El nombre fija los volúmenes y los contenedores (camino-del-guerrero-db-1, ...): no cambiarlo
+# sin migrar los datos, porque Docker crearía volúmenes nuevos y vacíos.
+name: camino-del-guerrero
+
 services:
 
   # ── Base de datos PostgreSQL ──────────────────────────────────────────────

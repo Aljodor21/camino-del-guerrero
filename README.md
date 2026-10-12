@@ -147,6 +147,10 @@ make down      # apagar
 
 Antes de actualizar una instalación con datos reales, hacer copia de la base de datos: algunas migraciones reemplazan estructuras viejas de suplementos y planes.
 
+## Despliegue
+
+Cada pull request pasa por CI (pruebas, build y compose) y cada merge a `main` se despliega solo en el servidor con el runner de [Warden](https://github.com/Aljodor21/warden), que publica `https://camino.servelejo.site`. Los pasos para ponerlo en marcha, los respaldos y cómo volver atrás están en [DEPLOY.md](DEPLOY.md).
+
 ---
 
 ## Pendientes

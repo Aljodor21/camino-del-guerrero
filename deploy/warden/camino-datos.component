@@ -1,0 +1,20 @@
+# Respaldo de los DATOS de Camino del Guerrero (base de datos + fotos).
+# Warden deja fuera del backup automático a las apps de CI/CD (las que tienen URL git), así que
+# los datos van en este componente aparte: sin COMP_INSTALL ni subdominio, solo respaldo.
+# Copiar a ~/warden/site/catalog/camino-datos.component en uburoom. Ver DEPLOY.md.
+COMP_NAME="Camino del Guerrero (datos)"
+COMP_TAG="camino-datos"
+COMP_KIND="files+db"
+# Fotos de progreso y del suplemento (volumen media_files del compose).
+COMP_PATHS=( "/var/lib/docker/volumes/camino-del-guerrero_media_files/_data" )
+COMP_EXCLUDES=()
+COMP_DB_TYPE="postgres"
+COMP_DB_CONTAINER="camino-del-guerrero-db-1"
+COMP_DB_NAME="camino_db"
+COMP_DB_USER="camino_user"
+COMP_INSTALL=""
+COMP_CONTAINER=""
+COMP_SECRETS=()
+COMP_CF_HOST=""
+COMP_CF_PORT=""
+COMP_NOTE="Solo respaldo: la base 'camino_db' y las fotos de los usuarios. La app se despliega con el componente 'camino'."

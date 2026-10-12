@@ -1,0 +1,20 @@
+# Camino del Guerrero — app con CI/CD (se despliega desde su repo git).
+# Copiar a ~/warden/site/catalog/camino.component en uburoom, o dar de alta la app desde el
+# panel (Catálogo → Nueva app) con estos mismos datos. Ver DEPLOY.md.
+COMP_NAME="Camino del Guerrero"
+COMP_TAG="camino"
+COMP_KIND="none"
+COMP_PATHS=()
+COMP_EXCLUDES=()
+COMP_DB_TYPE=""
+COMP_DB_CONTAINER=""
+COMP_DB_NAME=""
+COMP_DB_USER=""
+# URL git = app de CI/CD: el runner clona, construye y levanta (no el instalador de warden).
+COMP_INSTALL="https://github.com/Aljodor21/camino-del-guerrero"
+COMP_CONTAINER="camino-del-guerrero-frontend-1"
+COMP_SECRETS=()
+COMP_ICON="docker"
+COMP_CF_HOST="camino.servelejo.site"
+COMP_CF_PORT="8085"
+COMP_NOTE="App de nutrición, entreno y progreso. Se despliega sola al hacer merge a main. Sus datos se respaldan con el componente 'camino-datos'."
