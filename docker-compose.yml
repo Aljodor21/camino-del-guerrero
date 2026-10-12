@@ -28,6 +28,7 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
+      - apk_files:/app/apk_cache
     command: >
       sh -c "python manage.py migrate --no-input &&
              python manage.py loaddata fixtures/initial_data.json &&
@@ -54,8 +55,10 @@ services:
       - "${APP_PORT:-80}:80"
     volumes:
       - static_files:/staticfiles:ro
+      - apk_files:/apk:ro
 
 volumes:
   postgres_data:   # datos de la BD — persisten entre reinicios
   static_files:    # archivos estáticos de Django (admin, etc.)
   media_files:     # fotos de progreso de los usuarios — privadas, se sirven por la API
+  apk_files:       # copia de la última versión de la app de Android (la baja el backend, la entrega nginx)
