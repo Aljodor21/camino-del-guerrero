@@ -42,22 +42,37 @@ export interface Etiqueta {
   porcionG: number | null;
   scoops: number | null;
   porcionesDia: number | null;
-  /** Con qué se mezcla y cuántos litros lleva la porción del día (opcional). */
+  /** Con qué se mezcla (opcional), cuántos ml de líquido lleva la porción del día y cuántos son leche. */
   liquido: Liquido;
-  liquidoL: number | null;
+  liquidoMl: number | null;
+  lecheMl: number | null;
+  /** Tabla nutricional de la leche por porción (opcional): ml de la porción, calorías y proteína. */
+  lechePorcionMl: number | null;
+  lecheKcal: number | null;
+  lecheProteina: number | null;
 }
 
 const GRAMOS_POR: Record<Etiqueta['unidad'], number> = { kg: 1000, lb: 453.592, g: 1 };
 
 export function etiquetaVacia(): Etiqueta {
-  return { peso: null, unidad: 'kg', porcionG: null, scoops: null, porcionesDia: 1, liquido: '', liquidoL: null };
+  return {
+    peso: null, unidad: 'kg', porcionG: null, scoops: null, porcionesDia: 1, liquido: '', liquidoMl: null,
+    lecheMl: null, lechePorcionMl: null, lecheKcal: null, lecheProteina: null,
+  };
 }
 
 /** La etiqueta de un suplemento guardado: en kg si es redondo, en libras si son libras enteras. */
 export function etiquetaDe(
   s: Pick<
     Suplemento,
-    'peso_envase_g' | 'porcion_g' | 'scoops_porcion' | 'porciones_dia' | 'liquido' | 'liquido_ml'
+    | 'peso_envase_g'
+    | 'porcion_g'
+    | 'scoops_porcion'
+    | 'porciones_dia'
+    | 'liquido'
+    | 'liquido_ml'
+    | 'leche_ml'
+    | 'leche_nutricional'
   >,
 ): Etiqueta {
   const g = s.peso_envase_g;
@@ -71,7 +86,11 @@ export function etiquetaDe(
     scoops: s.scoops_porcion === null ? null : Number(s.scoops_porcion),
     porcionesDia: Number(s.porciones_dia),
     liquido: s.liquido,
-    liquidoL: s.liquido_ml === null ? null : s.liquido_ml / 1000,
+    liquidoMl: s.liquido_ml,
+    lecheMl: s.leche_ml,
+    lechePorcionMl: s.leche_nutricional?.porcion_ml ?? null,
+    lecheKcal: s.leche_nutricional?.kcal ?? null,
+    lecheProteina: s.leche_nutricional?.proteina_g ?? null,
   };
 }
 
@@ -89,19 +108,26 @@ export function porcionesPorEnvase(e: Etiqueta): number | null {
 /** Lo que está mal escrito; vacío si todo se puede guardar (todo es opcional menos las del día). */
 export function erroresEtiqueta(e: Etiqueta): Partial<Record<keyof Etiqueta, string>> {
   const errores: Partial<Record<keyof Etiqueta, string>> = {};
-  const malEscritos = (['peso', 'porcionG', 'scoops', 'liquidoL'] as const).filter((k) =>
+  const malEscritos = (['peso', 'porcionG', 'scoops', 'liquidoMl', 'lecheMl', 'lechePorcionMl', 'lecheKcal', 'lecheProteina'] as const).filter((k) =>
     Number.isNaN(e[k]),
   );
   for (const k of malEscritos) errores[k] = 'Escribe solo el número.';
   if (malEscritos.length) return errores;
   const g = gramosEnvase(e);
   if (g !== null && (g < 50 || g > 20000)) errores.peso = 'Revisa el peso del envase.';
-  if (e.porcionG !== null && (e.porcionG < 1 || e.porcionG > 500))
-    errores.porcionG = 'Entre 1 y 500 g.';
-  if (e.scoops !== null && (e.scoops < 0.5 || e.scoops > 10 || (e.scoops * 2) % 1))
-    errores.scoops = 'Entre 0,5 y 10.';
-  if (e.liquido && e.liquidoL !== null && (e.liquidoL < 0.01 || e.liquidoL > 5))
-    errores.liquidoL = 'Entre 0,01 y 5 litros.';
+  if (e.porcionG !== null && (e.porcionG < 1 || e.porcionG > 1000))
+    errores.porcionG = 'Entre 1 y 1.000 g.';
+  if (e.scoops !== null && (e.scoops < 0.5 || e.scoops > 20 || (e.scoops * 2) % 1))
+    errores.scoops = 'Entre 0,5 y 20, de medio en medio.';
+  if (e.liquido && e.liquidoMl !== null && (e.liquidoMl < 10 || e.liquidoMl > 5000))
+    errores.liquidoMl = 'Entre 10 y 5.000 ml.';
+  if (e.liquido === 'mezcla') {
+    if (e.lecheMl === null || !e.liquidoMl) errores.lecheMl = 'Escribe cuánto líquido lleva y cuánto de ese es leche.';
+    else if (e.lecheMl < 10 || e.lecheMl >= e.liquidoMl) errores.lecheMl = 'La leche tiene que ser menos que el líquido total.';
+  }
+  const tablaLeche = [e.lechePorcionMl, e.lecheKcal, e.lecheProteina];
+  if (tablaLeche.some((v) => v !== null) && tablaLeche.some((v) => v === null))
+    errores.lecheKcal = 'Escribe los ml de la porción, las calorías y la proteína de la leche.';
   if (g !== null && e.porcionG !== null && !errores.peso && !errores.porcionG && g < e.porcionG)
     errores.porcionG = 'La porción no puede pesar más que el envase.';
   return errores;
@@ -115,7 +141,12 @@ export function payloadEtiqueta(e: Etiqueta) {
     scoops_porcion: e.scoops,
     porciones_dia: 1,
     liquido: e.liquido,
-    liquido_ml: e.liquido && e.liquidoL !== null ? Math.round(e.liquidoL * 1000) : null,
+    liquido_ml: e.liquido && e.liquidoMl !== null ? Math.round(e.liquidoMl) : null,
+    leche_ml: e.liquido === 'mezcla' ? e.lecheMl : null,
+    leche_nutricional:
+      (e.liquido === 'leche' || e.liquido === 'mezcla') && e.lechePorcionMl !== null
+        ? { porcion_ml: e.lechePorcionMl, kcal: e.lecheKcal!, proteina_g: e.lecheProteina! }
+        : null,
   };
 }
 

@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { MinutaService } from '../../core/services/minuta';
+import { VisorService } from '../../core/services/visor';
 import { Minuta, ReglaPorFuera, TiempoComida } from '../../core/models/minuta.model';
 import { OPCIONES_POR_FUERA, TIEMPOS_COMIDA } from '../../core/constants/nutricion';
 import { clasesChip } from '../../shared/chip';
@@ -27,6 +28,7 @@ import { TablaMinuta } from '../tabla-minuta/tabla-minuta';
 })
 export class MiMinuta implements OnInit {
   protected servicio = inject(MinutaService);
+  private visor = inject(VisorService);
 
   protected tiempos = TIEMPOS_COMIDA;
   protected opcionesPorFuera = OPCIONES_POR_FUERA;
@@ -37,7 +39,6 @@ export class MiMinuta implements OnInit {
   protected porFuera = signal<Partial<Record<TiempoComida, ReglaPorFuera>>>({});
   protected guardando = signal(false);
   protected guardado = signal(false);
-  protected abriendo = signal(false);
   protected error = signal('');
 
   protected ejemplo = computed(() => {
@@ -78,21 +79,6 @@ export class MiMinuta implements OnInit {
   }
 
   protected verOriginal(minuta: Minuta): void {
-    // Se abre la pestaña antes de la petición para que el navegador no la bloquee.
-    const pestana = window.open('', '_blank');
-    this.abriendo.set(true);
-    this.servicio.archivo(minuta.id).subscribe({
-      next: (pdf) => {
-        const url = URL.createObjectURL(pdf);
-        if (pestana) pestana.location.href = url;
-        else window.location.href = url;
-        this.abriendo.set(false);
-      },
-      error: (err) => {
-        pestana?.close();
-        this.error.set(mensajeError(err, 'No pudimos abrir el original.'));
-        this.abriendo.set(false);
-      },
-    });
+    this.visor.abrir('Tu plan, el original', this.servicio.archivo(minuta.id));
   }
 }

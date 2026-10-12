@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, model, signal, untracked } from '@angular/core';
 
+import { InputTextModule } from 'primeng/inputtext';
+
 import { clasesChip } from '../chip';
 import { formatearFecha, hoyISO, sumarDias } from '../fechas';
 
@@ -14,6 +16,7 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
   selector: 'app-periodo-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
+  imports: [InputTextModule],
   template: `
     <div class="space-y-3">
       <div role="radiogroup" [attr.aria-label]="etiqueta()" class="flex flex-wrap gap-2">
@@ -38,7 +41,7 @@ type Opcion = 'sugerida' | 'semanas8' | 'semanas12' | 'otra' | 'sin';
             <input
               id="pp-fecha"
               type="date"
-              class="p-inputtext p-component w-full"
+              pInputText class="w-full"
               [min]="minima"
               [max]="maxima"
               [value]="otra()"

@@ -13,6 +13,7 @@ import { GRUPOS_MINUTA, TIEMPOS_COMIDA, porcionesDe } from '../../core/constants
 import { Cumplimiento, PeriodoCumplimiento } from '../../core/models/comidas.model';
 import { TiempoComida } from '../../core/models/minuta.model';
 import { ComidasService } from '../../core/services/comidas';
+import { VisorService } from '../../core/services/visor';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 import { diasDesde, formatearFecha, formatearNumero } from '../../shared/fechas';
@@ -39,6 +40,12 @@ const PERIMETRO = 2 * Math.PI * RADIO;
 export class CumplimientoPlan implements OnInit {
   private comidas = inject(ComidasService);
   private ruta = inject(ActivatedRoute);
+  private visor = inject(VisorService);
+
+  /** La foto de una comida, en grande y dentro de la app. */
+  protected verFoto(id: number, titulo: string): void {
+    this.visor.abrir(titulo, this.comidas.fotoBlob(id));
+  }
 
   protected periodos = PERIODOS;
   protected clasesChip = clasesChip;

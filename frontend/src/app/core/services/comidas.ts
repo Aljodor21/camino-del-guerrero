@@ -44,6 +44,11 @@ export class ComidasService {
     return this.http.get<Cumplimiento>(`${API}/cumplimiento/`, { params: { periodo } });
   }
 
+  /** La foto completa, como archivo, para verla en el visor de la app. */
+  fotoBlob(id: number): Observable<Blob> {
+    return this.http.get(`${API}/registros/${id}/foto/`, { responseType: 'blob' });
+  }
+
   /** La foto es privada: se pide con el token y se muestra con una URL local. */
   foto(id: number, tamano: 'mini' | 'completa'): Observable<string> {
     const params = tamano === 'mini' ? { tamano } : undefined;

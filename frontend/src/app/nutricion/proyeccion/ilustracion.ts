@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { environment } from '../../../environments/environment';
+import { VisorService } from '../../core/services/visor';
 import { mensajeError } from '../../shared/errores';
 import { formatearFecha, formatearNumero } from '../../shared/fechas';
 
@@ -24,6 +25,8 @@ interface Ilustracion {
   peso_final: number;
   limitado: boolean;
   dias: number;
+  /** La foto de frente de la que parte; null si ya se borró. */
+  foto_origen: number | null;
 }
 
 interface EstadoIlustraciones {
@@ -44,9 +47,11 @@ interface EstadoIlustraciones {
 })
 export class IlustracionCambio implements OnInit {
   private http = inject(HttpClient);
+  private visor = inject(VisorService);
 
   protected estado = signal<EstadoIlustraciones | null>(null);
-  protected imagenes = signal<Record<number, string>>({});
+  /** Imágenes privadas ya pedidas: `i<id>` la ilustración, `f<id>` la foto de la que parte. */
+  protected imagenes = signal<Record<string, string>>({});
   protected pidiendo = signal(false);
   protected acepta = signal(false);
   protected generando = signal(false);
@@ -66,17 +71,26 @@ export class IlustracionCambio implements OnInit {
     this.http.get<EstadoIlustraciones>(`${API}/`).subscribe({
       next: (e) => {
         this.estado.set(e);
-        e.ilustraciones.forEach((i) => this.traerImagen(i.id));
+        e.ilustraciones.forEach((i) => {
+          this.traerImagen(`i${i.id}`, `${API}/${i.id}/imagen/`);
+          if (i.foto_origen) {
+            this.traerImagen(`f${i.foto_origen}`, `${environment.apiUrl}/progreso/fotos/${i.foto_origen}/`);
+          }
+        });
       },
       error: () => this.estado.set(null),
     });
   }
 
-  private traerImagen(id: number): void {
-    if (this.imagenes()[id]) return;
-    this.http.get(`${API}/${id}/imagen/`, { responseType: 'blob' }).subscribe({
-      next: (blob) => this.imagenes.update((m) => ({ ...m, [id]: URL.createObjectURL(blob) })),
+  private traerImagen(clave: string, url: string): void {
+    if (this.imagenes()[clave]) return;
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => this.imagenes.update((m) => ({ ...m, [clave]: URL.createObjectURL(blob) })),
     });
+  }
+
+  protected ampliar(titulo: string, url: string): void {
+    this.visor.abrirUrl(titulo, url);
   }
 
   protected generar(): void {
@@ -100,9 +114,9 @@ export class IlustracionCambio implements OnInit {
   protected borrar(id: number): void {
     this.http.delete(`${API}/${id}/imagen/`).subscribe({
       next: () => {
-        const url = this.imagenes()[id];
+        const url = this.imagenes()[`i${id}`];
         if (url) URL.revokeObjectURL(url);
-        this.imagenes.update(({ [id]: _, ...resto }) => resto);
+        this.imagenes.update(({ [`i${id}`]: _, ...resto }) => resto);
         this.cargar();
       },
     });

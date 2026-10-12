@@ -113,7 +113,14 @@
           @for (c of d.comidas; track c.id) {
             <li class="py-3 flex items-start gap-3">
               @if (c.tiene_foto) {
-                <app-foto-comida [registro]="c.id" class="w-14 h-14 rounded-lg shrink-0" />
+                <button
+                  type="button"
+                  (click)="verFoto(c.id, c.nombre + ' · ' + fecha(c.fecha))"
+                  class="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                  [attr.aria-label]="'Ver la foto de ' + c.nombre"
+                >
+                  <app-foto-comida [registro]="c.id" class="w-14 h-14 rounded-lg" />
+                </button>
               }
               <div class="flex-1 min-w-0 space-y-0.5">
                 <p class="text-sm font-medium text-gray-900 dark:text-white">

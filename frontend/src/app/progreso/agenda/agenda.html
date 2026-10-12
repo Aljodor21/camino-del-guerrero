@@ -77,7 +77,7 @@
                   {{ r.titulo }}
                 </p>
                 <p class="text-xs text-gray-400 dark:text-gray-500">
-                  {{ formatearFecha(r.fecha) }}
+                  Era el {{ formatearFecha(r.fecha) }} · {{ cuandoSeHizo(r) }}
                 </p>
               </div>
               @if (!r.automatico) {
@@ -147,6 +147,8 @@
         }
       </div>
     </button>
+    <!-- Se marca como hecho cuando llega su fecha, no antes. -->
+    @if (r.fecha <= hoy) {
     <button
       type="button"
       (click)="completar(r)"
@@ -155,6 +157,7 @@
     >
       <i class="pi pi-check text-base" aria-hidden="true"></i>
     </button>
+    }
   </li>
 </ng-template>
 

@@ -2,7 +2,7 @@ import { Reemplazo, TiempoComida } from './minuta.model';
 
 export type TipoSuplemento = 'hipercalorico' | 'proteina' | 'creatina' | 'otro';
 
-export type Liquido = '' | 'agua' | 'leche';
+export type Liquido = '' | 'agua' | 'leche' | 'mezcla';
 
 export interface Suplemento {
   id: number;
@@ -23,6 +23,10 @@ export interface Suplemento {
   /** Con qué se mezcla y cuántos ml lleva la porción del día; opcional. */
   liquido: Liquido;
   liquido_ml: number | null;
+  /** De esos ml, cuántos son de leche (el resto es agua). */
+  leche_ml: number | null;
+  /** Tabla nutricional de la leche por porción; opcional. */
+  leche_nutricional: { porcion_ml: number; kcal: number; proteina_g: number } | null;
   porciones_dia: number;
   envase_desde: string;
   fecha_fin: string | null;
@@ -36,14 +40,31 @@ export interface Suplemento {
   info_url: string;
   /** Hay foto del producto (el pote); es privada. */
   tiene_foto: boolean;
+  /** La tabla nutricional por porción que confirmó el usuario; null si aún no. */
+  tabla_nutricional: TablaNutricional | null;
   /** La foto o el PDF de la etiqueta que subió el usuario; null si no hay. */
   info_archivo_tipo: 'pdf' | 'imagen' | null;
 }
 
+/** Lo que dice la etiqueta por porción. Calorías y proteína son obligatorias. */
+export interface TablaNutricional {
+  porcion_g?: number;
+  /** Con cuántos ml de líquido se prepara una porción, si la etiqueta lo dice. */
+  liquido_ml?: number;
+  kcal: number;
+  proteina_g: number;
+  carbohidratos_g?: number;
+  grasa_g?: number;
+}
+
 /** Una toma: la comida, cuántos scoops lleva y qué porciones de esa comida reemplaza. */
 export interface Toma {
-  tiempo: TiempoComida;
+  tiempo: TiempoComida | 'otro';
   scoops: number | null;
+  /** A qué hora (HH:MM); sin ella, la de la comida. Opcional. */
+  hora?: string;
+  /** Cómo se toma ("después de entrenar"). Opcional. */
+  nota?: string;
   /** Vacío: se suma a lo que indica la minuta. */
   reemplaza: Reemplazo;
 }
@@ -60,8 +81,10 @@ export type SuplementoPayload = Pick<
   | 'porciones_dia'
   | 'liquido'
   | 'liquido_ml'
+  | 'leche_ml'
+  | 'leche_nutricional'
 > &
-  Partial<Pick<Suplemento, 'tomas' | 'info_url'>>;
+  Partial<Pick<Suplemento, 'tomas' | 'info_url' | 'tabla_nutricional'>>;
 
 export type CrearSuplementoPayload = SuplementoPayload &
   Pick<Suplemento, 'tipo'> & {

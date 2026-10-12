@@ -32,6 +32,8 @@ export interface TomaDeHoy {
   suplemento: number;
   nombre: string;
   tiempo: string;
+  /** HH:MM si es otra toma a esa hora. */
+  hora?: string | null;
   scoops: number | null;
   hecha: boolean;
 }

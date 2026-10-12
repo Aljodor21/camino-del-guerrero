@@ -112,7 +112,8 @@ export class Avisos implements OnInit {
     });
   }
 
-  protected nombreComida(tiempo: string): string {
+  protected nombreComida(tiempo: string, hora?: string | null): string {
+    if (tiempo.startsWith('otro')) return `Otra toma${hora ? ` · ${formatearHora(hora)}` : ''}`;
     return this.comidas[tiempo as TiempoComida]?.label ?? tiempo;
   }
 

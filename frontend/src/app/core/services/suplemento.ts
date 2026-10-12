@@ -9,6 +9,7 @@ import {
   CrearSuplementoPayload,
   Suplemento,
   SuplementoPayload,
+  TablaNutricional,
 } from '../models/suplemento.model';
 import { environment } from '../../../environments/environment';
 
@@ -85,6 +86,11 @@ export class SuplementoService {
   /** La foto es privada: se pide con el token. */
   verFoto(id: number): Observable<Blob> {
     return this.http.get(`${API}/${id}/foto/`, { responseType: 'blob' });
+  }
+
+  /** La IA propone la tabla leyendo la etiqueta subida. No guarda: el usuario la revisa y la confirma. */
+  leerTabla(id: number): Observable<{ tabla: TablaNutricional; nota: string }> {
+    return this.http.post<{ tabla: TablaNutricional; nota: string }>(`${API}/${id}/tabla/leer/`, {});
   }
 
   eliminar(id: number): Observable<void> {

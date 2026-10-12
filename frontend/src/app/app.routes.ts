@@ -31,6 +31,7 @@ export const routes: Routes = [
       { path: 'comidas/contar',   canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./comidas/contar/contar').then(m => m.ContarComida) },
       { path: 'cumplimiento',     canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./comidas/cumplimiento/cumplimiento').then(m => m.CumplimientoPlan) },
       { path: 'control',          canActivate: [userGuard], loadComponent: () => import('./control/control').then(m => m.Control) },
+      { path: 'lista-alimentos',  canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/lista-alimentos/lista-alimentos').then(m => m.ListaAlimentos) },
       { path: 'proyeccion',       canActivate: [userGuard, moduloGuard('alimentacion')], loadComponent: () => import('./nutricion/proyeccion/proyeccion').then(m => m.Proyeccion) },
       { path: 'avisos',           canActivate: [userGuard], loadComponent: () => import('./avisos/avisos').then(m => m.Avisos) },
       { path: 'recomendaciones',  canActivate: [userGuard], loadComponent: () => import('./recomendaciones/recomendaciones').then(m => m.Recomendaciones) },

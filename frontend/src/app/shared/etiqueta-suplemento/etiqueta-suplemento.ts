@@ -98,7 +98,7 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
         <small class="block text-xs text-red-600 dark:text-red-400 -mt-1">{{ error }}</small>
       }
 
-      <div class="space-y-2">
+      <div class="space-y-3">
         <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
           ¿Con qué la mezclas? (opcional)
         </p>
@@ -108,34 +108,121 @@ import { Etiqueta, erroresEtiqueta, gramosEnvase, porcionesPorEnvase } from '../
               type="button"
               role="radio"
               [attr.aria-checked]="e().liquido === l.value"
-              (click)="cambiar({ liquido: l.value, liquidoL: l.value ? e().liquidoL : null })"
+              (click)="elegirLiquido(l.value)"
               [class]="clasesChip(e().liquido === l.value)"
             >
               {{ l.label }}
             </button>
           }
         </div>
+
         @if (e().liquido) {
           <div class="flex flex-col gap-1">
             <label
               [for]="prefijo() + '-liquido'"
               class="text-xs font-medium text-gray-600 dark:text-gray-400"
-              >Litros para la porción del día</label
+              >Líquido de la porción del día (ml)</label
             >
             <input
               pInputText
               [id]="prefijo() + '-liquido'"
               inputmode="decimal"
-              placeholder="Ej. 0,6"
-              [value]="numero(e().liquidoL)"
-              (change)="cambiar({ liquidoL: leer($event) })"
-              [attr.aria-invalid]="!!errores().liquidoL"
+              [placeholder]="sugerencia() ? 'Ej. ' + sugerencia() : 'Ej. 600'"
+              [value]="numero(e().liquidoMl)"
+              (change)="cambiar({ liquidoMl: leer($event) })"
+              [attr.aria-invalid]="!!errores().liquidoMl"
               class="w-full"
             />
-            @if (errores().liquidoL; as error) {
+            @if (errores().liquidoMl; as error) {
               <small class="text-xs text-red-600 dark:text-red-400">{{ error }}</small>
+            } @else if (e().liquidoMl === null && sugerencia(); as sug) {
+              <small class="text-xs text-gray-500 dark:text-gray-400">
+                Un punto de partida: unos 200 ml por scoop, o sea
+                {{ sug }} ml para tus {{ n(e().scoops ?? 0) }} scoops. Tu etiqueta puede decir otra cosa.
+                <button type="button" class="font-semibold text-guerrero-red underline ml-1" (click)="cambiar({ liquidoMl: sug })">
+                  Usar {{ sug }} ml
+                </button>
+              </small>
             }
           </div>
+        }
+
+        @if (e().liquido === 'mezcla') {
+          <div class="flex flex-col gap-1">
+            <label
+              [for]="prefijo() + '-leche'"
+              class="text-xs font-medium text-gray-600 dark:text-gray-400"
+              >De ese líquido, cuánta es leche (ml)</label
+            >
+            <input
+              pInputText
+              [id]="prefijo() + '-leche'"
+              inputmode="decimal"
+              placeholder="Ej. 500"
+              [value]="numero(e().lecheMl)"
+              (change)="cambiar({ lecheMl: leer($event) })"
+              [attr.aria-invalid]="!!errores().lecheMl"
+              class="w-full"
+            />
+            @if (errores().lecheMl; as error) {
+              <small class="text-xs text-red-600 dark:text-red-400">{{ error }}</small>
+            } @else if (agua() !== null) {
+              <small class="text-xs text-gray-500 dark:text-gray-400">El resto, {{ agua() }} ml, es agua.</small>
+            }
+          </div>
+        }
+
+        @if (e().liquido === 'leche' || e().liquido === 'mezcla') {
+          <fieldset class="space-y-2">
+            <legend class="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Tabla nutricional de la leche <span class="font-normal text-gray-400">opcional</span>
+            </legend>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="flex flex-col gap-1">
+                <label [for]="prefijo() + '-lt-ml'" class="text-[11px] text-gray-500 dark:text-gray-400">Porción (ml)</label>
+                <input
+                  pInputText
+                  [id]="prefijo() + '-lt-ml'"
+                  inputmode="decimal"
+                  placeholder="250"
+                  [value]="numero(e().lechePorcionMl)"
+                  (change)="cambiar({ lechePorcionMl: leer($event) })"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label [for]="prefijo() + '-lt-kcal'" class="text-[11px] text-gray-500 dark:text-gray-400">Calorías</label>
+                <input
+                  pInputText
+                  [id]="prefijo() + '-lt-kcal'"
+                  inputmode="decimal"
+                  placeholder="150"
+                  [value]="numero(e().lecheKcal)"
+                  (change)="cambiar({ lecheKcal: leer($event) })"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label [for]="prefijo() + '-lt-prot'" class="text-[11px] text-gray-500 dark:text-gray-400">Proteína (g)</label>
+                <input
+                  pInputText
+                  [id]="prefijo() + '-lt-prot'"
+                  inputmode="decimal"
+                  placeholder="8"
+                  [value]="numero(e().lecheProteina)"
+                  (change)="cambiar({ lecheProteina: leer($event) })"
+                  class="w-full"
+                />
+              </div>
+            </div>
+            @if (errores().lecheKcal; as error) {
+              <small class="text-xs text-red-600 dark:text-red-400">{{ error }}</small>
+            } @else {
+              <small class="text-xs text-gray-500 dark:text-gray-400">
+                Con ella, la estimación de tu cambio cuenta lo que aporta la leche.
+              </small>
+            }
+          </fieldset>
         }
       </div>
 
@@ -158,10 +245,38 @@ export class EtiquetaSuplemento {
     { value: '', label: 'No sé' },
     { value: 'agua', label: 'Agua' },
     { value: 'leche', label: 'Leche' },
+    { value: 'mezcla', label: 'Leche y agua' },
   ];
   protected clasesChip = clasesChip;
 
+  protected n = (v: number) => formatearNumero(v, 1);
+
   protected errores = computed(() => erroresEtiqueta(this.e()));
+
+  /** Un punto de partida cuando se conocen los scoops: unos 200 ml por scoop. */
+  protected sugerencia = computed(() => {
+    const scoops = this.e().scoops;
+    return scoops && !Number.isNaN(scoops) ? Math.round(scoops * 200) : null;
+  });
+
+  /** El agua que completa el líquido cuando se mezcla con leche. */
+  protected agua = computed(() => {
+    const e = this.e();
+    return e.liquido === 'mezcla' && e.liquidoMl && e.lecheMl && e.lecheMl < e.liquidoMl
+      ? e.liquidoMl - e.lecheMl
+      : null;
+  });
+
+  protected elegirLiquido(liquido: Etiqueta['liquido']): void {
+    this.cambiar({
+      liquido,
+      liquidoMl: liquido ? this.e().liquidoMl : null,
+      lecheMl: liquido === 'mezcla' ? this.e().lecheMl : null,
+      ...(liquido === 'leche' || liquido === 'mezcla'
+        ? {}
+        : { lechePorcionMl: null, lecheKcal: null, lecheProteina: null }),
+    });
+  }
   protected erroresPorcion = computed(() => {
     const e = this.errores();
     return [e.porcionG, e.scoops].filter((x): x is string => !!x);
@@ -190,8 +305,12 @@ export class EtiquetaSuplemento {
     } else {
       partes.push('Con el peso del envase y el de la porción calculamos cuánto te dura.');
     }
-    if (e.liquido === 'leche' && e.liquidoL && !this.errores().liquidoL) {
-      partes.push(`Por semana son ${n(e.liquidoL * 7)} L de leche: van a tu lista de mercado.`);
+    const leche = e.liquido === 'leche' ? e.liquidoMl : e.liquido === 'mezcla' ? e.lecheMl : null;
+    if (leche && !this.errores().liquidoMl && !this.errores().lecheMl) {
+      const agua = e.liquido === 'mezcla' && this.agua() !== null ? ` y ${this.agua()} ml de agua` : '';
+      partes.push(
+        `Al día: ${leche} ml de leche${agua}. Por semana son ${n((leche * 7) / 1000)} L de leche: van a tu lista de mercado.`,
+      );
     }
     return partes.join(' ');
   });

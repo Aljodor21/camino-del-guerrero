@@ -10,6 +10,7 @@ import { NotificacionService } from '../../core/services/notificaciones';
 import { ProcesoService } from '../../core/services/proceso';
 import { AgendaService } from '../../core/services/agenda';
 import { AvisosService } from '../../core/services/avisos';
+import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
 interface Aviso {
@@ -26,7 +27,7 @@ interface Aviso {
   selector: 'app-layout',
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, Visor],
 })
 export class Layout implements OnInit, OnDestroy {
   protected authService = inject(AuthService);

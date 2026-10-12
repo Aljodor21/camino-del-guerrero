@@ -257,6 +257,8 @@
             <app-tomas-suplemento
               [porciones]="porciones()"
               [scoopsPorcion]="s.etiqueta.scoops"
+              [liquidoMl]="s.etiqueta.liquido ? s.etiqueta.liquidoMl : null"
+              [lecheMl]="s.etiqueta.liquido === 'leche' ? s.etiqueta.liquidoMl : s.etiqueta.lecheMl"
               [tomas]="s.tomas"
               (tomasChange)="actualizar(i, { tomas: $event })"
             />

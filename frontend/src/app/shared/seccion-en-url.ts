@@ -13,6 +13,7 @@ export function guardarSeccionEnUrl(seccion: Signal<string>): void {
       relativeTo: route,
       queryParams: { seccion: seccion() },
       queryParamsHandling: 'merge',
+      preserveFragment: true,
       replaceUrl: true,
     });
   });

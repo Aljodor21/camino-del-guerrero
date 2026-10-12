@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +17,8 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { SuplementoService } from '../../core/services/suplemento';
 import { FotoSuplemento } from '../../shared/foto-suplemento';
+import { VisorService } from '../../core/services/visor';
+import { parsearDecimal } from '../../shared/decimal-input';
 import { MinutaService } from '../../core/services/minuta';
 import { TIEMPOS_COMIDA } from '../../core/constants/nutricion';
 import { ProcesoService } from '../../core/services/proceso';
@@ -23,6 +26,7 @@ import { Recordatorio } from '../../core/models/agenda.model';
 import {
   Suplemento,
   SuplementoPayload,
+  TablaNutricional,
   TipoSuplemento,
   Toma,
 } from '../../core/models/suplemento.model';
@@ -33,7 +37,7 @@ import {
 } from '../../core/constants/proceso';
 import { EtiquetaSuplemento } from '../../shared/etiqueta-suplemento/etiqueta-suplemento';
 import { TomasSuplemento } from '../../shared/tomas-suplemento/tomas-suplemento';
-import { cuandoEs, formatearFecha, formatearNumero } from '../../shared/fechas';
+import { cuandoEs, formatearFecha, formatearHora, formatearNumero } from '../../shared/fechas';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 import {
@@ -62,6 +66,16 @@ const TITULOS: Record<Modo, string> = {
 };
 
 /** Suplementos del proceso: cuánto llevan, cuándo se acaba el envase y qué sigue al terminar. */
+type CampoTabla = keyof TablaNutricional;
+const CAMPOS_TABLA: { id: CampoTabla; label: string; max: number }[] = [
+  { id: 'porcion_g', label: 'Porción (g)', max: 1000 },
+  { id: 'liquido_ml', label: 'Se prepara con (ml)', max: 3000 },
+  { id: 'kcal', label: 'Calorías (kcal)', max: 1500 },
+  { id: 'proteina_g', label: 'Proteína (g)', max: 200 },
+  { id: 'carbohidratos_g', label: 'Carbohidratos (g)', max: 300 },
+  { id: 'grasa_g', label: 'Grasa (g)', max: 200 },
+];
+
 @Component({
   selector: 'app-suplementos',
   templateUrl: './suplementos.html',
@@ -127,6 +141,89 @@ export class Suplementos implements OnInit {
     duracion_confirmada: this.fb.control(false),
   });
 
+  /** La tabla nutricional por porción, como texto de cada campo (también vive fuera del formulario). */
+  protected camposTabla = CAMPOS_TABLA;
+  protected tabla = signal<Record<CampoTabla, string>>(this.tablaVacia());
+  protected leyendoTabla = signal(false);
+  protected notaTabla = signal('');
+
+  private tablaVacia(): Record<CampoTabla, string> {
+    return { porcion_g: '', liquido_ml: '', kcal: '', proteina_g: '', carbohidratos_g: '', grasa_g: '' };
+  }
+
+  private tablaDe(s: Suplemento | null): Record<CampoTabla, string> {
+    const t = s?.tabla_nutricional;
+    const texto = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','));
+    return t
+      ? {
+          porcion_g: texto(t.porcion_g),
+          liquido_ml: texto(t.liquido_ml),
+          kcal: texto(t.kcal),
+          proteina_g: texto(t.proteina_g),
+          carbohidratos_g: texto(t.carbohidratos_g),
+          grasa_g: texto(t.grasa_g),
+        }
+      : this.tablaVacia();
+  }
+
+  protected escribirTabla(campo: CampoTabla, valor: string): void {
+    this.tabla.update((t) => ({ ...t, [campo]: valor }));
+    this.notaTabla.set('');
+  }
+
+  /** null si no escribió nada; si escribió algo, calorías y proteína son obligatorias. */
+  private tablaPayload(): TablaNutricional | null {
+    const t = this.tabla();
+    const nums = Object.fromEntries(
+      CAMPOS_TABLA.map((c) => [c.id, parsearDecimal(t[c.id])]),
+    ) as Record<CampoTabla, number | null>;
+    if (CAMPOS_TABLA.every((c) => nums[c.id] === null)) return null;
+    const resultado: Partial<TablaNutricional> = {};
+    for (const c of CAMPOS_TABLA) {
+      if (nums[c.id] !== null) (resultado as Record<string, number>)[c.id] = nums[c.id]!;
+    }
+    return resultado as TablaNutricional;
+  }
+
+  protected errorTabla = computed(() => {
+    const t = this.tabla();
+    const vacia = CAMPOS_TABLA.every((c) => t[c.id].trim() === '');
+    if (vacia) return '';
+    for (const c of CAMPOS_TABLA) {
+      const n = parsearDecimal(t[c.id]);
+      if (n !== null && (Number.isNaN(n) || n > c.max)) return `${c.label}: escribe un número hasta ${c.max}.`;
+    }
+    return parsearDecimal(t.kcal) === null || parsearDecimal(t.proteina_g) === null
+      ? 'Faltan las calorías y los gramos de proteína por porción.'
+      : '';
+  });
+
+  /** La IA lee la etiqueta que subiste y propone la tabla; tú la revisas y guardas. */
+  protected leerTabla(): void {
+    const s = this.actual();
+    if (!s) return;
+    this.leyendoTabla.set(true);
+    this.error.set('');
+    this.notaTabla.set('');
+    this.servicio.leerTabla(s.id).subscribe({
+      next: ({ tabla, nota }) => {
+        this.tabla.set(
+          this.tablaDe({ tabla_nutricional: tabla } as Suplemento),
+        );
+        this.notaTabla.set(nota || 'Revisa que coincida con tu etiqueta y guarda.');
+        // Si la etiqueta dice con cuánto líquido se prepara y aún no lo habías escrito, se propone.
+        if (tabla.liquido_ml && this.etiqueta().liquido && this.etiqueta().liquidoMl === null) {
+          this.etiqueta.update((e) => ({ ...e, liquidoMl: tabla.liquido_ml! }));
+        }
+        this.leyendoTabla.set(false);
+      },
+      error: (err) => {
+        this.error.set(mensajeError(err, 'No pudimos leer la etiqueta.'));
+        this.leyendoTabla.set(false);
+      },
+    });
+  }
+
   /** Lo que dice la etiqueta y en qué comidas se toma: viven fuera del formulario. */
   protected etiqueta = signal<Etiqueta>(etiquetaVacia());
   protected tomas = signal<Toma[]>([]);
@@ -136,8 +233,16 @@ export class Suplementos implements OnInit {
       scoopsFaltantes(this.tomas(), this.etiqueta().scoops) === 0,
   );
 
+  private ruta = inject(ActivatedRoute);
+  private visor = inject(VisorService);
+
   ngOnInit(): void {
+    // Si se llega desde "Mi proteína" (#suplementos), se baja hasta aquí cuando ya cargó la lista.
+    const irAqui = this.ruta.snapshot.fragment === 'suplementos';
     this.servicio.cargar().subscribe({
+      next: () => {
+        if (irAqui) setTimeout(() => document.getElementById('suplementos')?.scrollIntoView({ block: 'start' }), 100);
+      },
       error: (err) => this.error.set(mensajeError(err, 'No pudimos cargar tus suplementos.')),
     });
     if (this.minutas.minutas() === null)
@@ -152,7 +257,9 @@ export class Suplementos implements OnInit {
         const cuanto = t.scoops
           ? `${formatearNumero(t.scoops, 1)} ${t.scoops === 1 ? 'scoop' : 'scoops'} en `
           : 'En ';
-        return `${cuanto}${TIEMPOS_COMIDA[t.tiempo].con}`;
+        const donde =
+          t.tiempo === 'otro' ? `a las ${t.hora ? formatearHora(t.hora) : 'la hora que elegiste'}` : TIEMPOS_COMIDA[t.tiempo].con;
+        return `${cuanto}${donde}`;
       });
       partes.push(donde.join(' y '));
     }
@@ -182,6 +289,7 @@ export class Suplementos implements OnInit {
       this.cargarFormulario({ tipo: 'proteina', ...this.porDefecto('proteina') });
       this.etiqueta.set(etiquetaVacia());
       this.tomas.set([]);
+      this.tabla.set(this.tablaVacia());
     } else if (s) {
       const nuevo = modo === 'reemplazar';
       this.cargarFormulario(
@@ -190,7 +298,9 @@ export class Suplementos implements OnInit {
       // Otro producto empieza con su etiqueta, pero sigue tomándose en las mismas comidas.
       this.etiqueta.set(nuevo ? etiquetaVacia() : etiquetaDe(s));
       this.tomas.set(nuevo ? s.tomas.map((t) => ({ ...t, scoops: null })) : s.tomas);
+      this.tabla.set(nuevo ? this.tablaVacia() : this.tablaDe(s));
     }
+    this.notaTabla.set('');
     this.modo.set(modo);
   }
 
@@ -210,6 +320,8 @@ export class Suplementos implements OnInit {
       porciones_dia: 1,
       liquido: '',
       liquido_ml: null,
+      leche_ml: null,
+      leche_nutricional: null,
     };
   }
 
@@ -240,13 +352,14 @@ export class Suplementos implements OnInit {
       porciones_envase: null,
       ...payloadEtiqueta(this.etiqueta()),
       ...(this.minuta() ? { tomas: this.tomas() } : {}),
+      tabla_nutricional: this.tablaPayload(),
     };
   }
 
   protected guardar(): void {
     const modo = this.modo();
     const s = this.actual();
-    if (this.form.invalid || !this.etiquetaValida()) return;
+    if (this.form.invalid || !this.etiquetaValida() || this.errorTabla()) return;
     if (modo === 'nuevo') {
       this.ejecutar(this.servicio.crear({ ...this.payload(), tipo: this.form.getRawValue().tipo }));
     } else if (modo === 'editar' && s) {
@@ -286,7 +399,7 @@ export class Suplementos implements OnInit {
   /** Abre la edición del suplemento justo en lo que falta adjuntar. */
   protected agregarInfo(s: Suplemento): void {
     this.abrir('editar', s);
-    const destino = s.tiene_foto ? 'sp-info' : 'sp-foto';
+    const destino = s.info_archivo_tipo && !s.tabla_nutricional ? 'sp-tabla' : s.tiene_foto ? 'sp-info' : 'sp-foto';
     setTimeout(() => document.getElementById(destino)?.scrollIntoView({ block: 'center' }), 150);
   }
 
@@ -357,20 +470,14 @@ export class Suplementos implements OnInit {
     });
   }
 
-  /** Abre la etiqueta en otra pestaña. La pestaña se abre ya, en el clic, para que no la bloqueen. */
+  /** Abre la etiqueta (foto o PDF) en una ventana dentro de la app. */
   protected verInfo(s: Suplemento): void {
-    const pestana = window.open('about:blank', '_blank');
-    this.servicio.verInfo(s.id).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        if (pestana) pestana.location.href = url;
-        setTimeout(() => URL.revokeObjectURL(url), 5 * 60_000);
-      },
-      error: (err) => {
-        pestana?.close();
-        this.error.set(mensajeError(err, 'No pudimos abrir el archivo.'));
-      },
-    });
+    this.visor.abrir(`Etiqueta · ${s.nombre || s.tipo_nombre}`, this.servicio.verInfo(s.id));
+  }
+
+  /** Abre la foto del producto en grande, dentro de la app. */
+  protected verFoto(s: Suplemento): void {
+    this.visor.abrir(`${s.nombre || s.tipo_nombre}`, this.servicio.verFoto(s.id));
   }
 
   protected terminar(): void {

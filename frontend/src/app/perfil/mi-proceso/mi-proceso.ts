@@ -30,6 +30,7 @@ import { DecimalInput } from '../../shared/decimal-input';
   selector: 'app-mi-proceso',
   templateUrl: './mi-proceso.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block space-y-6' },
   imports: [
     DecimalInput,
     RouterLink,

@@ -131,3 +131,23 @@ html.dark .p-select.p-disabled .p-select-label {
 .p-select.p-disabled {
   opacity: 1;
 }
+
+/*
+ * Los componentes propios y los de PrimeNG son elementos en línea por defecto, y el espacio
+ * vertical entre bloques (space-y, margin) no se aplica a los elementos en línea: por eso
+ * algunas cosas quedaban pegadas. Se declaran como bloque en la capa base, para que las
+ * utilidades de cada componente (flex, grid, w-14…) sigan mandando.
+ */
+@layer base {
+  app-admin-recomendaciones, app-agenda, app-avisos, app-cargar-minuta, app-comparar-fotos,
+  app-contar-comida, app-control, app-cumplimiento, app-editor-minuta, app-ejercicios,
+  app-entrenamiento-form, app-etiqueta-suplemento, app-ilustracion, app-implementos,
+  app-medicion-form, app-medidas, app-menu-semanal, app-mercado, app-mi-minuta, app-mi-proceso,
+  app-nutricion, app-perfil, app-periodo-plan, app-portada, app-progreso, app-proyeccion,
+  app-recomendaciones, app-resumen-proceso, app-rutinas, app-selector-fotos, app-suplementos,
+  app-tabla-minuta, app-tomas-suplemento, app-usuarios, p-message, p-selectbutton {
+    display: block;
+  }
+  p-button { display: inline-block; vertical-align: top; }
+  p-button:has(> button.w-full) { display: block; }
+}

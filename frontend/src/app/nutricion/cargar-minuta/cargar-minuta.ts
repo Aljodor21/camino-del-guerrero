@@ -253,7 +253,7 @@ export class CargarMinuta implements OnInit {
         nombre: s.nombre || s.tipo_nombre,
         activo: true,
         etiqueta: etiquetaDe(s),
-        tomas: s.tomas.filter((t) => this.tiempos().includes(t.tiempo)),
+        tomas: s.tomas.filter((t) => t.tiempo === 'otro' || this.tiempos().includes(t.tiempo)),
       }));
     }
     return [

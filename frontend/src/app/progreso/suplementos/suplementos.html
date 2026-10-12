@@ -1,4 +1,4 @@
-<section class="space-y-2" aria-labelledby="sp-titulo">
+<section id="suplementos" class="space-y-2 scroll-mt-20" aria-labelledby="sp-titulo">
   <div class="flex items-center justify-between gap-3">
     <h2
       id="sp-titulo"
@@ -26,11 +26,18 @@
     <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
       <div class="flex items-start justify-between gap-3">
         @if (s.tiene_foto) {
-          <app-foto-suplemento
-            [suplemento]="s.id"
-            [version]="fotoVersion()"
-            class="w-14 h-14 shrink-0 rounded-lg"
-          />
+          <button
+            type="button"
+            (click)="verFoto(s)"
+            class="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-guerrero-red"
+            [attr.aria-label]="'Ver la foto de ' + nombre(s)"
+          >
+            <app-foto-suplemento
+              [suplemento]="s.id"
+              [version]="fotoVersion()"
+              class="w-14 h-14 rounded-lg"
+            />
+          </button>
         }
         <div class="min-w-0 flex-1">
           <p class="font-semibold text-gray-900 dark:text-white truncate">
@@ -86,6 +93,21 @@
           }
         </p>
       }
+      @if (s.tabla_nutricional; as t) {
+        <p class="text-sm text-gray-600 dark:text-gray-300 -mt-1 tabular-nums">
+          Por porción: {{ t.kcal }} kcal · {{ t.proteina_g }} g de proteína
+        </p>
+      } @else if (s.info_archivo_tipo) {
+        <button
+          type="button"
+          (click)="agregarInfo(s)"
+          class="self-start inline-flex items-center gap-1.5 text-sm font-medium text-guerrero-red hover:underline -mt-1"
+        >
+          <i class="pi pi-search text-xs" aria-hidden="true"></i>
+          Leer la tabla nutricional de la etiqueta
+        </button>
+      }
+
       @if (faltaAdjunto(s); as texto) {
         <button
           type="button"
@@ -564,10 +586,63 @@
           }
         </fieldset>
 
+        @if (modo() === 'editar' && actual(); as sup) {
+          <fieldset id="sp-tabla" class="space-y-3">
+            <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tabla nutricional por porción
+              <span class="text-xs font-normal text-gray-400">opcional</span>
+            </legend>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Con ella la estimación de tu cambio cuenta lo que de verdad aporta tu proteína. La
+              puedes escribir o leer de la foto o el PDF de la etiqueta.
+            </p>
+            @if (sup.info_archivo_tipo) {
+              <p-button
+                label="Leer de la etiqueta"
+                icon="pi pi-search"
+                size="small"
+                variant="outlined"
+                [loading]="leyendoTabla()"
+                (onClick)="leerTabla()"
+              />
+            } @else {
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Sube la foto o el PDF de la etiqueta, arriba, para poder leerla.
+              </p>
+            }
+            <div class="grid grid-cols-2 gap-3">
+              @for (c of camposTabla; track c.id) {
+                <div class="flex flex-col gap-1">
+                  <label [for]="'sp-t-' + c.id" class="text-xs font-medium text-gray-600 dark:text-gray-400">{{
+                    c.label
+                  }}</label>
+                  <input
+                    pInputText
+                    [id]="'sp-t-' + c.id"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [value]="tabla()[c.id]"
+                    (input)="escribirTabla(c.id, $any($event.target).value)"
+                    class="w-full"
+                  />
+                </div>
+              }
+            </div>
+            @if (errorTabla(); as e) {
+              <small class="text-xs text-red-600 dark:text-red-400">{{ e }}</small>
+            }
+            @if (notaTabla(); as nota) {
+              <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed" aria-live="polite">{{ nota }}</p>
+            }
+          </fieldset>
+        }
+
         @if (minuta(); as m) {
           <app-tomas-suplemento
             [porciones]="m.porciones"
             [scoopsPorcion]="etiqueta().scoops"
+            [liquidoMl]="etiqueta().liquido ? etiqueta().liquidoMl : null"
+            [lecheMl]="etiqueta().liquido === 'leche' ? etiqueta().liquidoMl : etiqueta().lecheMl"
             [(tomas)]="tomas"
           />
         }

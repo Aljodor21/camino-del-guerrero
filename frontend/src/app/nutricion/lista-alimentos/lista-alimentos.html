@@ -1,0 +1,113 @@
+<div class="p-4 max-w-2xl mx-auto space-y-5 pb-8">
+  <app-portada foto="agenda" titulo="Mi lista de alimentos" subtitulo="De aquí salen tu menú y tus cambios." />
+
+  @if (cargando()) {
+    <div class="flex justify-center py-16"><p-progressspinner styleClass="w-10 h-10" /></div>
+  } @else if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  } @else {
+    <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4" aria-labelledby="la-lista">
+      <div class="space-y-1">
+        <h2 id="la-lista" class="font-semibold text-gray-900 dark:text-white">La lista de intercambios</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          Cada alimento viene con lo que es <strong>una porción</strong> en medida casera y en gramos. Tu plan
+          te pide porciones de cada grupo; tú escoges cualquier alimento del mismo grupo.
+          Hoy son {{ total() }} alimentos, de la lista de intercambios de Comfama.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="la-buscar" class="text-sm font-medium text-gray-600 dark:text-gray-400">Buscar un alimento</label>
+        <input
+          id="la-buscar"
+          type="search"
+          pInputText class="w-full"
+          placeholder="Ej. arepa, mango, yogur"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+        @if (busqueda().trim()) {
+          <small class="text-xs text-gray-500 dark:text-gray-400" aria-live="polite">
+            {{ encontrados() }} de {{ total() }} alimentos
+          </small>
+        }
+      </div>
+
+      @for (g of grupos(); track g.id) {
+        <details class="group border-t border-gray-200 dark:border-dark-700 pt-3" [open]="busqueda().trim() !== ''">
+          <summary class="flex items-center justify-between gap-3 cursor-pointer list-none py-1">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ g.nombre }}</span>
+            <span class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              {{ g.items.length }}
+              <i class="pi pi-chevron-down text-[10px] transition-transform group-open:rotate-180" aria-hidden="true"></i>
+            </span>
+          </summary>
+          <ul class="mt-2 divide-y divide-gray-100 dark:divide-dark-700">
+            @for (a of g.items; track a.id) {
+              <li class="py-2.5 flex items-start justify-between gap-3">
+                <span class="text-sm text-gray-800 dark:text-gray-200">{{ a.nombre }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 text-right shrink-0 tabular-nums">
+                  {{ a.medida }}@if (a.gramos) {
+                    · {{ a.gramos }} g
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </details>
+      } @empty {
+        <p class="text-sm text-gray-500 dark:text-gray-400 py-4">
+          No hay alimentos que coincidan con "{{ busqueda() }}".
+        </p>
+      }
+    </section>
+
+    <section class="bg-white dark:bg-dark-800 rounded-2xl shadow-sm p-5 space-y-4" aria-labelledby="la-cambiar">
+      <h2 id="la-cambiar" class="font-semibold text-gray-900 dark:text-white">¿Cómo agregar o cambiar alimentos?</h2>
+      <ol class="space-y-2 text-sm text-gray-700 dark:text-gray-300 list-decimal pl-5 leading-relaxed">
+        <li>Descarga la lista actual: sirve de formato. Se abre en Excel o en Google Sheets.</li>
+        <li>Agrega, quita o cambia filas. Una fila es <strong>un alimento</strong> con lo que equivale una porción.</li>
+        <li>Envíasela a quien administra la app. Hoy la lista la carga el administrador: aún no se puede cambiar desde aquí.</li>
+      </ol>
+
+      <div class="space-y-2">
+        <p class="text-sm font-medium text-gray-800 dark:text-gray-200">El formato recomendado</p>
+        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-dark-700">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-gray-50 dark:bg-dark-700 text-gray-600 dark:text-gray-300">
+              <tr>
+                <th class="px-3 py-2 font-semibold">grupo</th>
+                <th class="px-3 py-2 font-semibold">subgrupo</th>
+                <th class="px-3 py-2 font-semibold">alimento</th>
+                <th class="px-3 py-2 font-semibold">gramos_de_una_porcion</th>
+                <th class="px-3 py-2 font-semibold">medida_casera_de_una_porcion</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-700 text-gray-700 dark:text-gray-300">
+              @for (f of ejemplo; track f.alimento) {
+                <tr>
+                  <td class="px-3 py-2">{{ f.grupo }}</td>
+                  <td class="px-3 py-2">{{ f.subgrupo }}</td>
+                  <td class="px-3 py-2">{{ f.alimento }}</td>
+                  <td class="px-3 py-2 tabular-nums">{{ f.gramos }}</td>
+                  <td class="px-3 py-2">{{ f.medida }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <ul class="space-y-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed list-disc pl-5">
+          <li>
+            <strong>grupo</strong> va en minúsculas y sin tildes, igual que en tu minuta: sustitutos, lacteos,
+            carnes, leguminosas, cereales, verduras, frutas, grasas, semillas.
+          </li>
+          <li><strong>gramos</strong> es el peso de una porción, solo el número. Si no lo sabes, déjalo vacío.</li>
+          <li><strong>medida casera</strong> es lo que equivale una porción: "1 unidad pequeña", "4 cucharadas soperas".</li>
+          <li>Una sola tabla, sin celdas combinadas, y un alimento por fila.</li>
+        </ul>
+      </div>
+
+      <p-button label="Descargar la lista actual (CSV)" icon="pi pi-download" variant="outlined" (onClick)="descargar()" />
+    </section>
+  }
+</div>

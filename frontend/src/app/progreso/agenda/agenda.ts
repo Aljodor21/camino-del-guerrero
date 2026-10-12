@@ -24,7 +24,7 @@ import {
   TipoRecordatorio,
 } from '../../core/models/agenda.model';
 import { AVISOS_RECORDATORIO, TIPOS_RECORDATORIO } from '../../core/constants/proceso';
-import { cuandoEs, formatearFecha, formatearHora, hoyISO, sumarDias } from '../../shared/fechas';
+import { cuandoEs, diasEntre, formatearFecha, formatearHora, hoyISO, sumarDias } from '../../shared/fechas';
 import { mensajeError } from '../../shared/errores';
 import { Suplementos } from '../suplementos/suplementos';
 
@@ -58,6 +58,16 @@ export class Agenda implements OnInit {
   protected formatearFecha = formatearFecha;
   protected formatearHora = formatearHora;
   protected cuandoEs = cuandoEs;
+
+  /** "Hecho el 14 de oct · 3 días después" si se marcó pasada su fecha; "a tiempo" si fue el mismo día. */
+  protected cuandoSeHizo(r: Recordatorio): string {
+    if (!r.completado_en) return '';
+    const hecho = r.completado_en.slice(0, 10);
+    const dias = diasEntre(r.fecha, hecho);
+    const cuando = `Hecho el ${formatearFecha(hecho)}`;
+    if (dias <= 0) return `${cuando} · a tiempo`;
+    return `${cuando} · ${dias} ${dias === 1 ? 'día' : 'días'} después`;
+  }
 
   protected cargando = signal(true);
   protected error = signal('');

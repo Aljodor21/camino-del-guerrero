@@ -8,8 +8,9 @@
         ¿Cómo podría verse?
       </h2>
       <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-        Una imagen orientativa de tu cambio estimado, hecha a partir de tu foto de frente. Es un
-        cambio suave y nunca más de 3 kg, aunque la estimación diera más. No es una promesa.
+        Una imagen orientativa de tu cambio estimado, hecha a partir de tu foto de frente, con tu
+        entrenamiento, tu alimentación y tu proteína en cuenta. Muestra cuánto sería músculo y cuánto
+        grasa, según la estimación de arriba. No es una promesa.
       </p>
 
       @if (!pidiendo()) {
@@ -74,21 +75,46 @@
       @if (e.ilustraciones.length) {
         <ul class="grid gap-4">
           @for (i of e.ilustraciones; track i.id) {
-            <li class="space-y-2">
-              @if (imagenes()[i.id]; as src) {
-                <img
-                  [src]="src"
-                  [alt]="'Ilustración orientativa de un cambio de ' + cambio(i.cambio_kg)"
-                  class="w-full max-w-xs mx-auto rounded-xl"
-                />
-              }
+            <li class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                @if (i.foto_origen) {
+                  <figure class="space-y-1.5">
+                    <div class="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-dark-700">
+                      @if (imagenes()['f' + i.foto_origen]; as origen) {
+                        <button type="button" class="block w-full h-full" (click)="ampliar('Tu foto de frente', origen)" aria-label="Ver tu foto en grande">
+                          <img [src]="origen" alt="Tu foto de frente" class="w-full h-full object-cover" />
+                        </button>
+                      }
+                    </div>
+                    <figcaption class="text-xs font-medium text-center text-gray-600 dark:text-gray-300">
+                      Tu foto · {{ num(i.peso_base, 1) }} kg
+                    </figcaption>
+                  </figure>
+                }
+                <figure class="space-y-1.5" [class.col-span-2]="!i.foto_origen">
+                  <div class="aspect-[2/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-dark-700">
+                    @if (imagenes()['i' + i.id]; as src) {
+                      <button type="button" class="block w-full h-full" (click)="ampliar('Cómo podría verse', src)" aria-label="Ver la ilustración en grande">
+                        <img
+                          [src]="src"
+                          [alt]="'Ilustración orientativa de un cambio de ' + cambio(i.cambio_kg)"
+                          class="w-full h-full object-cover"
+                        />
+                      </button>
+                    }
+                  </div>
+                  <figcaption class="text-xs font-medium text-center text-gray-600 dark:text-gray-300">
+                    Cómo podría verse · {{ num(i.peso_final, 1) }} kg
+                  </figcaption>
+                </figure>
+              </div>
               <div class="flex items-start justify-between gap-3">
                 <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
                   <span class="font-semibold tabular-nums">{{ cambio(i.cambio_kg) }}</span>
                   en {{ i.dias }} días · de {{ num(i.peso_base, 1) }} a {{ num(i.peso_final, 1) }} kg ·
-                  {{ fecha(i.creada, 'corta') }}
+                  {{ fecha(i.creada.slice(0, 10), 'corta') }}
                   @if (i.limitado) {
-                    <br />La estimación daba más; la imagen muestra un cambio moderado.
+                    <br />La cuenta simple daba más; el cuerpo se adapta y se muestra un ritmo razonable.
                   }
                   <br />Ilustración orientativa, no es una promesa.
                 </p>

@@ -14,6 +14,11 @@ interface Escenario {
   nombre: string;
   porcentaje: number;
   cambio_kg: number;
+  /** Cuánto del cambio sería músculo y cuánto grasa y agua (con signo). */
+  musculo_kg: number;
+  grasa_kg: number;
+  /** El cuerpo no da ese ritmo: la estimación se quedó en el tope semanal. */
+  limitado: boolean;
   peso_final_kg: number;
 }
 
@@ -24,9 +29,14 @@ interface ProyeccionPeso {
   kcal_plan: number;
   gasto_kcal: number;
   balance_kcal: number;
+  solo_alimentacion: boolean;
+  entrenamiento: { nombre: string; dias: number; duracion: number; kcal_dia: number } | null;
+  proteina: { kcal: number; proteina_g: number } | null;
   cumplimiento: number | null;
   escenarios: Escenario[];
   factores: string[];
+  supuestos: string[];
+  limitado: boolean;
   aviso: string;
 }
 
