@@ -77,9 +77,6 @@ jobs:
           echo "::error::La app no respondió a tiempo (web=$web, api=$api)."
           exit 1
 
-      - name: Publicar en Cloudflare
-        run: sudo -n /usr/local/bin/warden publish
-
       - name: Limpiar imágenes viejas
         run: docker image prune -f
 
