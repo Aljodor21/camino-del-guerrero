@@ -1,0 +1,306 @@
+<div class="p-4 max-w-5xl mx-auto space-y-4">
+  <header>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Auditoría</h1>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+      Quién usa la app, desde qué dispositivo y qué consulta. Solo se guarda la ruta, el resultado y
+      el dispositivo, nunca lo que se escribe. Se borra a los 90 días.
+    </p>
+  </header>
+
+  <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Periodo">
+    @for (r of rangos; track r.dias) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="dias() === r.dias"
+        [class]="clasesChip(dias() === r.dias)"
+        (click)="elegirRango(r.dias)"
+      >
+        {{ r.label }}
+      </button>
+    }
+  </div>
+  <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Desde dónde">
+    @for (
+      c of [
+        ['', 'Todos'],
+        ['app', 'App instalada'],
+        ['web', 'Navegador'],
+      ];
+      track c[0]
+    ) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="cliente() === c[0]"
+        [class]="clasesChip(cliente() === c[0])"
+        (click)="elegirCliente($any(c[0]))"
+      >
+        {{ c[1] }}
+      </button>
+    }
+    <button
+      type="button"
+      role="switch"
+      [attr.aria-checked]="soloErrores()"
+      [class]="clasesChip(soloErrores())"
+      (click)="alternar('soloErrores')"
+    >
+      Solo errores
+    </button>
+    <button
+      type="button"
+      role="switch"
+      [attr.aria-checked]="conAutomaticos()"
+      [class]="clasesChip(conAutomaticos())"
+      (click)="alternar('conAutomaticos')"
+    >
+      Con revisiones automáticas
+    </button>
+  </div>
+  <form class="flex gap-2" (submit)="$event.preventDefault(); cambiar()">
+    <label class="sr-only" for="au-buscar">Buscar una ruta</label>
+    <input
+      id="au-buscar"
+      type="search"
+      class="flex-1 min-w-0 rounded-xl border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 px-3 py-2 text-sm"
+      placeholder="Buscar una ruta (ej. avisos, cumplimiento)"
+      [value]="buscar()"
+      (input)="buscar.set($any($event.target).value)"
+    />
+    <p-button type="submit" label="Buscar" icon="pi pi-search" size="small" />
+  </form>
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  <app-pestanas [items]="pestanas" [(activa)]="vista" etiqueta="Vistas de la auditoría" />
+
+  @switch (vista()) {
+    @case ('resumen') {
+      @if (resumen(); as r) {
+        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div class="rounded-xl bg-white dark:bg-dark-800 shadow-sm py-3">
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Consultas</dt>
+            <dd class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {{ r.consultas }}
+            </dd>
+          </div>
+          <div class="rounded-xl bg-white dark:bg-dark-800 shadow-sm py-3">
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Personas</dt>
+            <dd class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {{ r.personas }}
+            </dd>
+          </div>
+          <div class="rounded-xl bg-white dark:bg-dark-800 shadow-sm py-3">
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Errores</dt>
+            <dd
+              class="text-2xl font-bold tabular-nums"
+              [class]="r.errores ? 'text-guerrero-red' : 'text-gray-900 dark:text-white'"
+            >
+              {{ r.errores }}
+            </dd>
+          </div>
+          <div class="rounded-xl bg-white dark:bg-dark-800 shadow-sm py-3">
+            <dt class="text-xs text-gray-500 dark:text-gray-400">Huellas</dt>
+            <dd class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {{ r.total }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (r.por_dia.length) {
+          <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+            <h2 class="font-semibold text-gray-900 dark:text-white">Actividad por día</h2>
+            <div class="flex items-end gap-1 h-28" role="img" aria-label="Huellas por día">
+              @for (d of r.por_dia; track d.fecha) {
+                <div
+                  class="flex-1 min-w-1 max-w-10 rounded-t bg-guerrero-red/80"
+                  [style.height.%]="altura(d.total)"
+                  [attr.title]="
+                    dia(d.fecha) + ': ' + d.total + ' huellas, ' + d.personas + ' personas'
+                  "
+                ></div>
+              }
+            </div>
+            <p class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
+              <span>{{ dia(r.por_dia[0].fecha) }}</span>
+              <span>{{ dia(r.por_dia[r.por_dia.length - 1].fecha) }}</span>
+            </p>
+          </section>
+        }
+
+        <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Dispositivos</h2>
+          @if (r.por_dispositivo.length) {
+            <ul class="divide-y divide-gray-100 dark:divide-white/5">
+              @for (d of r.por_dispositivo; track d.dispositivo + d.sistema + d.cliente) {
+                <li class="py-2 flex items-center justify-between gap-3 text-sm">
+                  <div class="min-w-0">
+                    <p class="font-medium text-gray-900 dark:text-white truncate">
+                      {{ d.dispositivo }}
+                      <span class="font-normal text-gray-500 dark:text-gray-400"
+                        >· {{ d.sistema }}</span
+                      >
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ nombreCliente(d.cliente) }} · última vez {{ momento(d.ultima) }}
+                    </p>
+                  </div>
+                  <span class="tabular-nums text-gray-700 dark:text-gray-200 shrink-0"
+                    >{{ d.total }} · {{ d.personas }}
+                    {{ d.personas === 1 ? 'persona' : 'personas' }}</span
+                  >
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-sm text-gray-600 dark:text-gray-300">Aún no hay dispositivos.</p>
+          }
+        </section>
+
+        @if (r.versiones_app.length) {
+          <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+            <h2 class="font-semibold text-gray-900 dark:text-white">Versiones de la app</h2>
+            <ul class="divide-y divide-gray-100 dark:divide-white/5 text-sm">
+              @for (v of r.versiones_app; track v.version_app) {
+                <li class="py-2 flex justify-between">
+                  <span class="font-medium text-gray-900 dark:text-white">{{ v.version_app }}</span>
+                  <span class="tabular-nums text-gray-600 dark:text-gray-300"
+                    >{{ v.personas }} {{ v.personas === 1 ? 'persona' : 'personas' }}</span
+                  >
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Personas</h2>
+          <ul class="divide-y divide-gray-100 dark:divide-white/5 text-sm">
+            @for (p of r.por_persona; track p.usuario) {
+              <li class="py-2 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="font-medium text-gray-900 dark:text-white truncate">{{ p.correo }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Última vez {{ momento(p.ultima) }}
+                  </p>
+                </div>
+                <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ p.total }}</span>
+              </li>
+            } @empty {
+              <li class="py-2 text-gray-600 dark:text-gray-300">Aún no hay actividad.</li>
+            }
+          </ul>
+        </section>
+
+        <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Qué se consulta más</h2>
+          <ul class="divide-y divide-gray-100 dark:divide-white/5 text-sm">
+            @for (x of r.rutas; track x.metodo + x.ruta) {
+              <li class="py-2 flex items-center justify-between gap-3">
+                <p class="min-w-0 truncate text-gray-900 dark:text-white">
+                  <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{
+                    x.metodo
+                  }}</span>
+                  {{ x.ruta }}
+                </p>
+                <span class="shrink-0 tabular-nums text-gray-600 dark:text-gray-300">
+                  {{ x.total }}
+                  @if (x.errores) {
+                    <span class="text-guerrero-red">· {{ x.errores }} con error</span>
+                  }
+                  @if (x.ms !== null) {
+                    <span class="text-gray-400">· {{ x.ms }} ms</span>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        @if (r.pantallas.length) {
+          <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+            <h2 class="font-semibold text-gray-900 dark:text-white">Pantallas más abiertas</h2>
+            <ul class="divide-y divide-gray-100 dark:divide-white/5 text-sm">
+              @for (p of r.pantallas; track p.ruta) {
+                <li class="py-2 flex justify-between">
+                  <span class="text-gray-900 dark:text-white">{{ p.ruta }}</span>
+                  <span class="tabular-nums text-gray-600 dark:text-gray-300">{{ p.total }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      } @else if (cargando()) {
+        <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Cargando…</p>
+      }
+    }
+    @case ('huellas') {
+      <section class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm overflow-hidden">
+        <ul class="divide-y divide-gray-100 dark:divide-white/5">
+          @for (h of huellas(); track h.id) {
+            <li class="p-3 space-y-1">
+              <div class="flex items-center justify-between gap-3">
+                <p class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white">
+                  <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{
+                    h.metodo
+                  }}</span>
+                  {{ h.camino }}
+                  @if (h.consulta) {
+                    <span class="text-gray-500 dark:text-gray-400">?{{ h.consulta }}</span>
+                  }
+                </p>
+                @if (h.tipo === 'api') {
+                  <span
+                    class="shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums"
+                    [class]="tonoEstado(h.estado)"
+                    >{{ h.estado }}</span
+                  >
+                }
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ momento(h.momento) }} · {{ h.correo || 'Sin sesión' }} ·
+                {{ nombreCliente(h.cliente) }}
+                @if (h.version_app) {
+                  {{ h.version_app }}
+                }
+                @if (h.dispositivo) {
+                  · {{ h.dispositivo }}
+                }
+                @if (h.sistema) {
+                  · {{ h.sistema }}
+                }
+                @if (h.navegador && h.cliente === 'web') {
+                  · {{ h.navegador }}
+                }
+                @if (h.ip) {
+                  · {{ h.ip }}
+                }
+                @if (h.duracion_ms !== null) {
+                  · {{ h.duracion_ms }} ms
+                }
+              </p>
+            </li>
+          } @empty {
+            <li class="p-4 text-sm text-gray-600 dark:text-gray-300">
+              {{ cargando() ? 'Cargando…' : 'No hay huellas con estos filtros.' }}
+            </li>
+          }
+        </ul>
+      </section>
+      @if (siguiente() !== null) {
+        <div class="text-center">
+          <p-button
+            label="Ver más"
+            icon="pi pi-angle-down"
+            severity="secondary"
+            [loading]="cargando()"
+            (onClick)="masHuellas()"
+          />
+        </div>
+      }
+    }
+  }
+</div>

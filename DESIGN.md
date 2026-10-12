@@ -125,6 +125,12 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **El aviso de arriba (el que sale en todas las pantallas):** va dentro de la página, nunca flota ni tapa el título. Si pide algo es una tarjeta tranquila con un botón de texto (Registrar, Actualizar…); si solo informa ("Tu proceso inicia el martes") es una línea discreta, sin caja ni botón.
 - **Barra de pestañas:** flecha "›" mientras queden pestañas a la derecha y "‹" cuando se pueda volver a la izquierda; tocarlas desplaza la barra.
 
+## Auditoría (administrador)
+
+- **Pantalla `/admin/auditoria`**, con Resumen y Huellas, y con filtros de periodo (Hoy, 7, 30 y 90 días), desde dónde (todos, app instalada, navegador), solo errores, buscar una ruta y mostrar las revisiones automáticas que la app hace sola cada minuto (ocultas por defecto).
+- **Resumen:** consultas, personas, errores, actividad por día, dispositivos (modelo, sistema, cuántas personas, última vez), versiones de la app en uso, personas con su última vez, lo que más se consulta (con errores y tiempo medio) y las pantallas más abiertas.
+- **Huellas:** una fila por cada una, con método y ruta, el resultado en una etiqueta (verde bien, ámbar error de quien pidió, rojo falla del servidor), la hora, quién, desde dónde y la IP; "Ver más" sigue desde donde quedó.
+
 ## Cumplimiento, en Avisos
 
 - **Vive en Avisos** como cuarta pestaña ("Cumplimiento"), con Día · Semana · Mes · Trimestre y flechas para ir a periodos anteriores ("Volver a hoy" cuando se aleja).
