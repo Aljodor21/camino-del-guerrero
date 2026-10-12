@@ -134,7 +134,11 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
 RECUPERACION_MINUTOS = 30  # cuánto dura el enlace para recuperar la clave
 
 # CORS
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:4200').split(',')
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:4200').split(',') + [
+    # La app instalada (Capacitor) hace sus llamadas desde estos orígenes del WebView.
+    'https://localhost',
+    'capacitor://localhost',
+]
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost').split(',')
 
 # AI Service

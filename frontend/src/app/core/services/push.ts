@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { firstValueFrom } from 'rxjs';
 
 import { AvisosService } from './avisos';
@@ -20,6 +21,8 @@ export class PushService {
   readonly estado = this._estado.asReadonly();
 
   private get soportado(): boolean {
+    // En la app instalada el web push no existe: ahí los avisos viven dentro de la app.
+    if (Capacitor.isNativePlatform()) return false;
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   }
 
@@ -63,7 +66,9 @@ export class PushService {
     const registro = await navigator.serviceWorker.ready;
     const suscripcion = await registro.pushManager.getSubscription();
     if (suscripcion) {
-      await firstValueFrom(this.avisos.desuscribirPush(suscripcion.endpoint)).catch(() => undefined);
+      await firstValueFrom(this.avisos.desuscribirPush(suscripcion.endpoint)).catch(
+        () => undefined,
+      );
       await suscripcion.unsubscribe();
     }
     this._estado.set('inactivo');
