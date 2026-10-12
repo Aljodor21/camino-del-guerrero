@@ -156,6 +156,14 @@
   z-index: -2;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms;
+}
+.hero-secuencia.reproduciendo {
+  opacity: 1;
 }
 .hero-sombra {
   position: absolute;
@@ -334,14 +342,18 @@
   overflow: hidden;
   isolation: isolate;
 }
+/* La foto sube desde abajo como una ventana que se abre. En vez de animar clip-path (que repinta
+   la foto en cada cuadro), la ventana sube con translate y la foto baja lo mismo en sentido
+   contrario: queda quieta y solo se va descubriendo. Ambos corren en la tarjeta gráfica. */
 .estacion-foto {
   position: absolute;
   inset: 0;
   margin: 0;
-  clip-path: inset(100% 0 0 0);
+  overflow: hidden;
+  translate: 0 100%;
 }
 .estacion-foto.revelada {
-  clip-path: inset(0 0 0 0);
+  translate: 0 0;
 }
 .estacion-foto img {
   position: absolute;
@@ -350,6 +362,10 @@
   height: 100%;
   object-fit: cover;
   object-position: 70% 50%;
+  translate: 0 -100%;
+}
+.estacion-foto.revelada img {
+  translate: 0 0;
 }
 .foto-entreno {
   opacity: 0;
@@ -810,7 +826,8 @@
   .barra-logo img {
     height: 2.5rem;
   }
-  .hero-foto img {
+  .hero-foto img,
+  .hero-secuencia {
     object-position: 50% 45%;
   }
   .hero-texto {
@@ -909,14 +926,16 @@
   opacity: clamp(0, calc(var(--hero) * 0.85), 0.85);
 }
 :host(.con-movimiento) .estacion-foto {
-  transition: clip-path 1.15s var(--salida);
+  transition: translate 1.15s var(--salida);
 }
 :host(.con-movimiento) .estacion-foto img {
-  transform: scale(1.14);
-  transition: transform 2.6s var(--salida);
+  scale: 1.14;
+  transition:
+    translate 1.15s var(--salida),
+    scale 2.6s var(--salida);
 }
 :host(.con-movimiento) .estacion-foto.activa img {
-  transform: scale(1);
+  scale: 1;
 }
 :host(.con-movimiento) .foto-entreno {
   transition: opacity 1.1s ease;

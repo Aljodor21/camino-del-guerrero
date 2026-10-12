@@ -18,20 +18,30 @@
       <picture class="hero-foto">
         <source
           media="(max-width: 767px)"
-          srcset="/home/secuencia/m-000.webp"
-          width="810"
-          height="1440"
+          srcset="/home/hero-poster-movil.webp"
+          width="1080"
+          height="1920"
         />
         <img
-          src="/home/secuencia/d-000.webp"
-          width="1280"
-          height="720"
+          src="/home/hero-poster.webp"
+          width="1920"
+          height="1080"
           alt="Unos guantes de boxeo rojos flotan sobre fondo negro"
           fetchpriority="high"
           decoding="async"
         />
       </picture>
-      <canvas class="hero-secuencia" data-secuencia aria-hidden="true"></canvas>
+      <video
+        class="hero-secuencia"
+        data-video
+        muted
+        loop
+        playsinline
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+        aria-hidden="true"
+      ></video>
       <div class="hero-sombra" aria-hidden="true"></div>
 
       <div class="hero-texto">
