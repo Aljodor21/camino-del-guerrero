@@ -27,6 +27,11 @@ export class DescargaApk {
   protected titular = computed(() =>
     this.apk.enLaApp ? 'Mantén tu app al día.' : 'Tu camino, en el bolsillo.',
   );
+  protected etiquetaBoton = computed(() => {
+    if (this.apk.actualizacion() === 'atrasada')
+      return `Actualizar a la ${this.apk.version()?.version}`;
+    return this.apk.enLaApp ? 'Descargar la última versión' : 'Descargar para Android';
+  });
   protected bajada = computed(() =>
     this.apk.enLaApp
       ? 'Descarga la última versión: se instala encima de la que tienes y conservas tu sesión y tus datos.'

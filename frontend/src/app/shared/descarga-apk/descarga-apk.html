@@ -18,22 +18,47 @@
     } @else {
       @switch (apk.estado()) {
         @case ('lista') {
-          <a class="boton" [href]="url" download="camino-del-guerrero.apk">
-            <i class="pi pi-download" aria-hidden="true"></i>
-            {{ apk.enLaApp ? 'Descargar la última versión' : 'Descargar para Android' }}
-          </a>
-          @if (apk.version(); as v) {
-            <p class="meta" aria-label="Datos de la última versión">
-              <span
-                >Versión <b>{{ v.version }}</b></span
-              >
-              <span aria-hidden="true">·</span>
-              <span
-                ><b>{{ megas(v.bytes) | number: '1.0-0' }}</b> MB</span
-              >
-              <span aria-hidden="true">·</span>
-              <span>{{ v.publicada | date: 'd MMM y' }}</span>
-            </p>
+          @if (apk.actualizacion() === 'actual') {
+            <div class="estado estado-ok" role="status">
+              <span class="estado-icono" aria-hidden="true"><i class="pi pi-check"></i></span>
+              <span class="estado-texto">
+                <strong>Estás actualizado</strong>
+                <span>Tienes la versión {{ apk.instalada() }}, que es la última.</span>
+              </span>
+            </div>
+            <a class="enlace" [href]="url" download="camino-del-guerrero.apk">Descargar de nuevo</a>
+          } @else {
+            @if (apk.actualizacion() === 'atrasada') {
+              <div class="estado estado-alerta" role="alert">
+                <span class="estado-icono" aria-hidden="true"
+                  ><i class="pi pi-exclamation-triangle"></i
+                ></span>
+                <span class="estado-texto">
+                  <strong>Hay una versión nueva</strong>
+                  <span
+                    >Tienes la {{ apk.instalada() }} y la última es la
+                    {{ apk.version()?.version }}.</span
+                  >
+                </span>
+              </div>
+            }
+            <a class="boton" [href]="url" download="camino-del-guerrero.apk">
+              <i class="pi pi-download" aria-hidden="true"></i>
+              {{ etiquetaBoton() }}
+            </a>
+            @if (apk.version(); as v) {
+              <p class="meta" aria-label="Datos de la última versión">
+                <span
+                  >Versión <b>{{ v.version }}</b></span
+                >
+                <span aria-hidden="true">·</span>
+                <span
+                  ><b>{{ megas(v.bytes) | number: '1.0-0' }}</b> MB</span
+                >
+                <span aria-hidden="true">·</span>
+                <span>{{ v.publicada | date: 'd MMM y' }}</span>
+              </p>
+            }
           }
         }
         @case ('cargando') {

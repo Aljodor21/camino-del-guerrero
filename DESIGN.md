@@ -77,3 +77,10 @@ La tarjeta de descarga es un componente compartido (`app-descarga-apk`) que se u
 La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/app/version/`, con caché de 10 minutos) y no el navegador: Cloudflare le pone al sitio un `Content-Security-Policy: connect-src 'self'` que le prohíbe hablar con GitHub. Si no hay datos pero sí enlace, el botón de descarga se muestra igual, sin versión. En celular la tarjeta es compacta: botón de ancho completo en una sola línea y el celular de muestra asomando por abajo, con los guantes visibles.
 
 El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enlace a GitHub salta de página en el celular. En la app instalada, el enlace abre el navegador del sistema (el WebView no maneja descargas), que baja el archivo y la app se actualiza al instalarlo.
+
+### La app instalada sabe si está actualizada
+
+Dentro de la app (Android) la pantalla de descarga lee la versión instalada (plugin oficial `@capacitor/app`, `App.getInfo()`; el `versionName` es `1.0.<número de corrida>`) y la compara con la última publicada, número a número (1.0.5 < 1.0.12):
+- **Al día:** barra verde con un check: "Estás actualizado · Tienes la versión 1.0.5, que es la última", y un enlace discreto para descargar de nuevo.
+- **Una versión atrás:** alerta ámbar "Hay una versión nueva · Tienes la 1.0.5 y la última es la 1.0.7" y el botón "Actualizar a la 1.0.7"; además un punto rojo en el icono del celular de la barra de arriba y, cuando no haya otro aviso más importante, la tarjeta flotante "Hay una versión nueva de la app" (se cierra y no vuelve hasta que salga otra versión).
+- **Sin saber la versión** (sin red, o en la web): el botón de siempre. En la web de un celular Android se ofrece "Descargar para Android"; en el computador, copiar el enlace.

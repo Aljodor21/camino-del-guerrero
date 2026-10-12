@@ -134,7 +134,17 @@ export class Layout implements OnInit, OnDestroy {
     return this.invitacionApp();
   });
 
+  /** Lo de la app de Android: primero que hay una versión nueva, y si no, la invitación a instalarla. */
   private invitacionApp(): Aviso | null {
+    if (this.apk.avisoActualizacion()) {
+      return {
+        icono: 'pi pi-download',
+        texto: `Hay una versión nueva de la app (${this.apk.version()?.version}). Actualízala para tener lo último.`,
+        accion: 'Actualizar',
+        enlace: ['/descargar-app'],
+        descartar: () => this.apk.descartarActualizacion(),
+      };
+    }
     if (!this.apk.invitacion()) return null;
     return {
       icono: 'pi pi-mobile',

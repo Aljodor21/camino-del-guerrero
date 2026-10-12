@@ -17,12 +17,18 @@
       @if (apk.plataforma !== 'ios' || apk.enLaApp) {
         <a
           routerLink="/descargar-app"
-          class="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          class="relative w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-guerrero-red"
           [attr.aria-label]="apk.enLaApp ? 'Actualizar la app' : 'Descargar la app de Android'"
           [pTooltip]="apk.enLaApp ? 'Actualizar la app' : 'Descargar la app'"
           tooltipPosition="bottom"
         >
           <i class="pi pi-mobile" aria-hidden="true"></i>
+          @if (apk.actualizacion() === 'atrasada') {
+            <span
+              class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-guerrero-red ring-2 ring-white dark:ring-dark-900"
+              aria-hidden="true"
+            ></span>
+          }
         </a>
       }
       @if (!authService.isAdmin()) {
