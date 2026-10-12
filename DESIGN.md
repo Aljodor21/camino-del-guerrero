@@ -78,6 +78,12 @@ La versión, el peso y la fecha del último APK los lee nuestro servidor (`/api/
 
 El botón descarga desde nuestro propio dominio (`/api/app/descargar/`): un enlace a GitHub salta de página en el celular. En la app instalada, el enlace abre el navegador del sistema (el WebView no maneja descargas), que baja el archivo y la app se actualiza al instalarlo.
 
+## Los avisos se ven como notificaciones
+
+- **Aviso de arriba:** una tarjeta flotante (redondeada, con sombra, ícono a la izquierda y botón de acción), no una barra a todo lo ancho. Solo uno a la vez, el más importante.
+- **Bandeja de Pendientes:** una sola lista (lo más nuevo arriba), cada aviso con el color y el ícono de su tipo (agua celeste, proteína ámbar, dormir índigo, entreno rojo, comida verde, agenda violeta), un punto rojo de "sin atender" y cuándo llegó ("Ahora", "Hace 12 min", "Hace 2 h"). Un contador rojo en el título y en la campana; la campana se sacude un instante cada tanto mientras haya algo pendiente. Vacía dice "Estás al día".
+- **En el celular (push):** ícono de estado de una sola silueta (`badge.png`), vibración, la hora a la que tocaba el aviso y el botón de confirmar en la propia notificación.
+
 ## Cómo se ordenan las secciones
 
 Cada pestaña de abajo es una sola cosa y lo secundario va en la barra de pestañas de arriba, no en tarjetas sueltas:

@@ -21,66 +21,97 @@
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }
 
-  <!-- Pendientes -->
+  <!-- Pendientes: una bandeja de notificaciones -->
   <section aria-labelledby="av-pendientes" class="space-y-3">
-    <h2 id="av-pendientes" class="font-semibold text-gray-900 dark:text-white">
+    <h2
+      id="av-pendientes"
+      class="flex items-center gap-2 font-semibold text-gray-900 dark:text-white"
+    >
       Pendientes
       @if (pendientes().length) {
-        <span class="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">{{
-          pendientes().length
-        }}</span>
+        <span
+          class="min-w-6 h-6 px-2 rounded-full bg-guerrero-red text-white text-xs font-bold leading-6 text-center tabular-nums"
+          [attr.aria-label]="pendientes().length + ' sin atender'"
+          >{{ pendientes().length }}</span
+        >
       }
     </h2>
 
-    @for (a of pendientes(); track a.id) {
-      <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 flex items-start gap-3">
-        <span
-          class="w-9 h-9 shrink-0 rounded-full bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
-        >
-          <i [class]="iconos[a.tipo]" aria-hidden="true"></i>
-        </span>
-        <div class="flex-1 min-w-0 space-y-2">
-          <div>
-            <p class="font-medium text-gray-900 dark:text-white leading-snug">{{ a.titulo }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              {{ a.cuerpo }}
-              <span class="text-gray-400 dark:text-gray-500">· {{ tiempo(a) }}</span>
-            </p>
-          </div>
-          @if (a.accion) {
-            <p-button
-              [label]="a.accion"
-              icon="pi pi-check"
-              size="small"
-              [loading]="confirmando() === a.id"
-              (onClick)="confirmar(a)"
-            />
-          } @else if (a.tipo === 'comida') {
-            <a
-              routerLink="/comidas/contar"
-              [queryParams]="{ tiempo: a.datos['tiempo'], fecha: a.fecha }"
-              class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
-              >Contar lo que comí</a
-            >
-          } @else if (a.tipo === 'proceso') {
-            <a
-              routerLink="/control"
-              class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
-              >Responder en Tu control</a
-            >
-          } @else {
-            <a routerLink="/progreso" class="text-sm font-semibold text-guerrero-red underline"
-              >Resolverlo en Progreso</a
-            >
-          }
-        </div>
-      </article>
-    } @empty {
-      <p
-        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 text-sm text-gray-600 dark:text-gray-300"
+    @if (pendientes().length) {
+      <ul
+        class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-white/5"
       >
-        Estás al día. Cuando llegue la hora de algo, aparece aquí.
-      </p>
+        @for (a of pendientes(); track a.id) {
+          <li class="aviso-entra flex gap-3 p-4">
+            <span
+              class="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center"
+              [class]="estilos[a.tipo]"
+              aria-hidden="true"
+            >
+              <i [class]="iconos[a.tipo] + ' text-lg'"></i>
+            </span>
+            <div class="flex-1 min-w-0 space-y-2">
+              <div>
+                <div class="flex items-start justify-between gap-3">
+                  <p class="font-semibold text-gray-900 dark:text-white leading-snug">
+                    {{ a.titulo }}
+                  </p>
+                  <span
+                    class="shrink-0 flex items-center gap-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400 pt-0.5"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full bg-guerrero-red"
+                      role="img"
+                      aria-label="Sin atender"
+                    ></span>
+                    {{ cuando(a) }}
+                  </span>
+                </div>
+                <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{{ a.cuerpo }}</p>
+              </div>
+              @if (a.accion) {
+                <p-button
+                  [label]="a.accion"
+                  icon="pi pi-check"
+                  size="small"
+                  [loading]="confirmando() === a.id"
+                  (onClick)="confirmar(a)"
+                />
+              } @else if (a.tipo === 'comida') {
+                <a
+                  routerLink="/comidas/contar"
+                  [queryParams]="{ tiempo: a.datos['tiempo'], fecha: a.fecha }"
+                  class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
+                  >Contar lo que comí</a
+                >
+              } @else if (a.tipo === 'proceso') {
+                <a
+                  routerLink="/control"
+                  class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
+                  >Responder en Tu control</a
+                >
+              } @else {
+                <a routerLink="/progreso" class="text-sm font-semibold text-guerrero-red underline"
+                  >Resolverlo en Progreso</a
+                >
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-5 flex items-center gap-3">
+        <span
+          class="w-11 h-11 shrink-0 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <i class="pi pi-check text-lg"></i>
+        </span>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          <strong class="block text-base text-gray-900 dark:text-white">Estás al día</strong>
+          Cuando llegue la hora de algo, aparece aquí.
+        </p>
+      </div>
     }
   </section>
 

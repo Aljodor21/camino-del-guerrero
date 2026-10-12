@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
@@ -33,6 +34,17 @@ const ICONOS: Record<TipoAviso, string> = {
   proceso: 'pi pi-flag',
 };
 
+/** El color de cada tipo de aviso: así se distingue de un vistazo qué es cada uno. */
+const ESTILOS: Record<TipoAviso, string> = {
+  agua: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+  toma: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  dormir: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+  entreno: 'bg-guerrero-red/15 text-guerrero-red',
+  recordatorio: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  comida: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  proceso: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+};
+
 const TIPOS: { id: TipoAviso; label: string }[] = [
   { id: 'agua', label: 'Agua' },
   { id: 'toma', label: 'Proteína' },
@@ -53,10 +65,12 @@ import { Ayuda } from '../shared/ayuda/ayuda';
   imports: [Ayuda, Portada, RouterLink, ButtonModule, InputTextModule, MessageModule, TamanoVaso],
 })
 export class Avisos implements OnInit {
+  private destroyRef = inject(DestroyRef);
   protected servicio = inject(AvisosService);
   protected push = inject(PushService);
 
   protected iconos = ICONOS;
+  protected estilos = ESTILOS;
   protected tipos = TIPOS;
   protected comidas = TIEMPOS_COMIDA;
   protected clasesChip = clasesChip;
@@ -94,7 +108,14 @@ export class Avisos implements OnInit {
     );
   });
 
-  protected pendientes = this.servicio.avisos;
+  /** Se actualiza cada minuto para que "hace 5 min" no se quede viejo. */
+  private ahora = signal(Date.now());
+  /** Lo más nuevo arriba, como una bandeja de notificaciones. */
+  protected pendientes = computed(() =>
+    [...this.servicio.avisos()].sort(
+      (a, b) => new Date(b.programada_para).getTime() - new Date(a.programada_para).getTime(),
+    ),
+  );
   protected hoy = this.servicio.hoy;
   protected faltanVasos = computed(() => {
     const a = this.hoy()?.agua;
@@ -102,6 +123,8 @@ export class Avisos implements OnInit {
   });
 
   ngOnInit(): void {
+    const reloj = window.setInterval(() => this.ahora.set(Date.now()), 60000);
+    this.destroyRef.onDestroy(() => window.clearInterval(reloj));
     this.servicio.cargar().subscribe({
       error: (e) => this.error.set(mensajeError(e, 'No pudimos cargar tus avisos.')),
     });
@@ -118,6 +141,15 @@ export class Avisos implements OnInit {
       error: () => undefined,
     });
     void this.push.iniciar();
+  }
+
+  /** "ahora", "hace 12 min", "hace 2 h" o la hora si ya pasó más de medio día. */
+  protected cuando(aviso: Aviso): string {
+    const minutos = Math.floor((this.ahora() - new Date(aviso.programada_para).getTime()) / 60000);
+    if (minutos < 1) return 'Ahora';
+    if (minutos < 60) return `Hace ${minutos} min`;
+    if (minutos < 12 * 60) return `Hace ${Math.floor(minutos / 60)} h`;
+    return this.tiempo(aviso);
   }
 
   protected tiempo(aviso: Aviso): string {
