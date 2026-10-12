@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { DatePipe, DecimalPipe } from '@angular/common';
 
 import { APK_URL, ApkService } from '../../core/services/apk';
+import { ActualizadorService } from '../../core/services/actualizador';
 
 /**
  * La tarjeta para bajar la app de Android: titular, botón con la versión, el peso y la fecha del
@@ -17,6 +18,7 @@ import { APK_URL, ApkService } from '../../core/services/apk';
 })
 export class DescargaApk {
   protected apk = inject(ApkService);
+  protected actualizador = inject(ActualizadorService);
 
   /** El titular es el h1 de la pantalla; en el home es un h2. */
   readonly titulo1 = input(false);

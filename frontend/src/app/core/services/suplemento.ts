@@ -90,7 +90,10 @@ export class SuplementoService {
 
   /** La IA propone la tabla leyendo la etiqueta subida. No guarda: el usuario la revisa y la confirma. */
   leerTabla(id: number): Observable<{ tabla: TablaNutricional; nota: string }> {
-    return this.http.post<{ tabla: TablaNutricional; nota: string }>(`${API}/${id}/tabla/leer/`, {});
+    return this.http.post<{ tabla: TablaNutricional; nota: string }>(
+      `${API}/${id}/tabla/leer/`,
+      {},
+    );
   }
 
   eliminar(id: number): Observable<void> {

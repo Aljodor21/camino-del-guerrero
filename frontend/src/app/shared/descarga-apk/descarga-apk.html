@@ -28,7 +28,7 @@
             </div>
             <a class="enlace" [href]="url" download="camino-del-guerrero.apk">Descargar de nuevo</a>
           } @else {
-            @if (apk.actualizacion() === 'atrasada') {
+            @if (apk.actualizacion() === 'atrasada' && actualizador.fase() === 'quieto') {
               <div class="estado estado-alerta" role="alert">
                 <span class="estado-icono" aria-hidden="true"
                   ><i class="pi pi-exclamation-triangle"></i
@@ -42,10 +42,91 @@
                 </span>
               </div>
             }
-            <a class="boton" [href]="url" download="camino-del-guerrero.apk">
-              <i class="pi pi-download" aria-hidden="true"></i>
-              {{ etiquetaBoton() }}
-            </a>
+            @if (apk.enLaApp) {
+              <!-- Dentro de la app: se baja y se instala desde aquí, sin abrir el navegador. -->
+              @switch (actualizador.fase()) {
+                @case ('descargando') {
+                  <div class="progreso" role="status" aria-live="polite">
+                    <div class="progreso-texto">
+                      <span>Descargando la actualización…</span>
+                      @if (actualizador.porcentaje() !== null) {
+                        <b>{{ actualizador.porcentaje() }} %</b>
+                      }
+                    </div>
+                    <div
+                      class="progreso-barra"
+                      role="progressbar"
+                      aria-label="Descarga de la actualización"
+                      [attr.aria-valuenow]="actualizador.porcentaje()"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
+                      <span
+                        [style.width.%]="actualizador.porcentaje() ?? 100"
+                        [class.indeterminada]="actualizador.porcentaje() === null"
+                      ></span>
+                    </div>
+                  </div>
+                }
+                @case ('instalando') {
+                  <div class="estado estado-ok" role="status">
+                    <span class="estado-icono" aria-hidden="true"><i class="pi pi-check"></i></span>
+                    <span class="estado-texto">
+                      <strong>Descarga lista</strong>
+                      <span>Toca «Instalar» en la pantalla de Android que se abrió.</span>
+                    </span>
+                  </div>
+                  <button type="button" class="enlace" (click)="actualizador.reiniciar()">
+                    No me salió, volver a intentar
+                  </button>
+                }
+                @case ('permiso') {
+                  <div class="estado estado-alerta" role="alert">
+                    <span class="estado-icono" aria-hidden="true"
+                      ><i class="pi pi-lock-open"></i
+                    ></span>
+                    <span class="estado-texto">
+                      <strong>Falta un permiso</strong>
+                      <span
+                        >Activa «Permitir de esta fuente» en la pantalla que se abrió, vuelve aquí y
+                        toca Actualizar otra vez.</span
+                      >
+                    </span>
+                  </div>
+                  <button type="button" class="boton" (click)="actualizador.actualizar()">
+                    <i class="pi pi-download" aria-hidden="true"></i>
+                    {{ etiquetaBoton() }}
+                  </button>
+                }
+                @default {
+                  @if (actualizador.fase() === 'error') {
+                    <div class="estado estado-alerta" role="alert">
+                      <span class="estado-icono" aria-hidden="true"
+                        ><i class="pi pi-exclamation-triangle"></i
+                      ></span>
+                      <span class="estado-texto">
+                        <strong>No pudimos descargarla</strong>
+                        <span>{{ actualizador.error() }}</span>
+                      </span>
+                    </div>
+                  }
+                  <button type="button" class="boton" (click)="actualizador.actualizar()">
+                    <i class="pi pi-download" aria-hidden="true"></i>
+                    {{ etiquetaBoton() }}
+                  </button>
+                  @if (actualizador.fase() === 'error') {
+                    <a class="enlace" [href]="url" download="camino-del-guerrero.apk"
+                      >Descargarla con el navegador</a
+                    >
+                  }
+                }
+              }
+            } @else {
+              <a class="boton" [href]="url" download="camino-del-guerrero.apk">
+                <i class="pi pi-download" aria-hidden="true"></i>
+                {{ etiquetaBoton() }}
+              </a>
+            }
             @if (apk.version(); as v) {
               <p class="meta" aria-label="Datos de la última versión">
                 <span

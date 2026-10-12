@@ -21,7 +21,9 @@ export class ComidasService {
   private http = inject(HttpClient);
 
   pedido(tiempo: TiempoComida, fecha?: string): Observable<PedidoComida> {
-    return this.http.get<PedidoComida>(`${API}/pedido/`, { params: fecha ? { tiempo, fecha } : { tiempo } });
+    return this.http.get<PedidoComida>(`${API}/pedido/`, {
+      params: fecha ? { tiempo, fecha } : { tiempo },
+    });
   }
 
   contar(datos: {
