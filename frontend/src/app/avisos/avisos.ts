@@ -14,7 +14,7 @@ import { MessageModule } from 'primeng/message';
 
 import { Aviso, TipoAviso } from '../core/models/avisos.model';
 import { AvisosService } from '../core/services/avisos';
-import { NotificacionesLocalesService } from '../core/services/notificaciones-locales';
+import { NotificacionesCelularService } from '../core/services/notificaciones-celular';
 import { PushService } from '../core/services/push';
 import { TIEMPOS_COMIDA } from '../core/constants/nutricion';
 import { TiempoComida } from '../core/models/minuta.model';
@@ -103,7 +103,7 @@ export class Avisos implements OnInit {
   }
   protected servicio = inject(AvisosService);
   protected push = inject(PushService);
-  protected celular = inject(NotificacionesLocalesService);
+  protected celular = inject(NotificacionesCelularService);
 
   protected iconos = ICONOS;
   protected estilos = ESTILOS;
@@ -261,7 +261,7 @@ export class Avisos implements OnInit {
           this.guardando.set(false);
           this.guardado.set(true);
           this.servicio.cargarHoy().subscribe({ error: () => undefined });
-          void this.celular.sincronizar(true);
+          void this.celular.actualizar();
         },
         error: (e) => {
           this.guardando.set(false);
@@ -277,6 +277,27 @@ export class Avisos implements OnInit {
       else await this.celular.activar();
     } catch {
       this.error.set('No pudimos activar las notificaciones en este celular.');
+    }
+  }
+
+  protected probandoCelular = signal(false);
+  protected resultadoPrueba = signal('');
+
+  protected async probarCelular(): Promise<void> {
+    this.error.set('');
+    this.resultadoPrueba.set('');
+    this.probandoCelular.set(true);
+    try {
+      const n = await this.celular.probar();
+      this.resultadoPrueba.set(
+        n
+          ? 'Enviada: debe llegarte en unos segundos.'
+          : 'Firebase no pudo entregarla. Intenta de nuevo.',
+      );
+    } catch (e) {
+      this.error.set(mensajeError(e, 'No pudimos enviar la prueba.'));
+    } finally {
+      this.probandoCelular.set(false);
     }
   }
 

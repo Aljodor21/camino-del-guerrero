@@ -185,3 +185,17 @@ class SuscripcionPush(models.Model):
 
     def __str__(self):
         return f'{self.usuario.email} - {self.endpoint[:40]}'
+
+
+class TokenCelular(models.Model):
+    """Un celular con la app instalada que puede recibir avisos por Firebase (FCM)."""
+
+    usuario        = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='tokens_celular')
+    token          = models.CharField(max_length=400, unique=True)
+    dispositivo    = models.CharField(max_length=80, blank=True)
+    version_app    = models.CharField(max_length=20, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    ultimo_uso     = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.dispositivo or "celular"}'

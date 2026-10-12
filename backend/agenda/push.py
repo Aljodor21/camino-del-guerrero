@@ -1,11 +1,11 @@
-"""Envío de los avisos al celular (web push con llaves VAPID)."""
+"""Envío de los avisos al celular: web push (navegador, llaves VAPID) y Firebase (app instalada)."""
 import json
 import logging
 
 from django.conf import settings
 from pywebpush import WebPushException, webpush
 
-from . import notificaciones
+from . import fcm, notificaciones
 
 logger = logging.getLogger(__name__)
 TTL = 2 * 3600
@@ -29,7 +29,13 @@ def contenido(n):
 
 
 def enviar(n):
-    """Lo manda a cada celular o navegador del usuario. Las suscripciones vencidas se borran."""
+    """Lo manda a cada navegador (web push) y a cada celular con la app (Firebase) del usuario."""
+    enviar_web(n)
+    fcm.enviar(n)
+
+
+def enviar_web(n):
+    """Web push. Las suscripciones vencidas se borran."""
     if not configurado():
         return
     datos = json.dumps(contenido(n))

@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 
 import { AuthResponse, LoginPayload, RegistroPayload, Usuario } from '../models/usuario.model';
 
-import { NotificacionesLocalesService } from './notificaciones-locales';
+import { NotificacionesCelularService } from './notificaciones-celular';
 import { environment } from '../../../environments/environment';
 const API = `${environment.apiUrl}/usuarios`;
 const ACCESS_KEY = 'cdg_access';
@@ -18,7 +18,7 @@ export class AuthService {
   private _usuario = signal<Usuario | null>(this._cargarUsuario());
   private http = inject(HttpClient);
   private router = inject(Router);
-  private celular = inject(NotificacionesLocalesService);
+  private celular = inject(NotificacionesCelularService);
 
   readonly usuario = this._usuario.asReadonly();
   readonly isLoggedIn = computed(() => this._usuario() !== null);
@@ -69,11 +69,12 @@ export class AuthService {
   }
 
   logout(): void {
+    // Primero se avisa al servidor (aún con la sesión puesta) que este celular deja de recibir sus avisos.
+    void this.celular.limpiar();
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem('cdg_usuario');
     this._usuario.set(null);
-    void this.celular.limpiar();
     this.router.navigate(['/']);
   }
 
