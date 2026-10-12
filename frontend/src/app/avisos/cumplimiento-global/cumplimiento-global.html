@@ -1,0 +1,284 @@
+<div class="space-y-4">
+  <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Periodo">
+    @for (p of periodos; track p.id) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="periodo() === p.id"
+        [class]="clasesChip(periodo() === p.id)"
+        (click)="elegirPeriodo(p.id)"
+      >
+        {{ p.label }}
+      </button>
+    }
+  </div>
+
+  <div class="flex items-center justify-between gap-2">
+    <p-button
+      icon="pi pi-chevron-left"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      ariaLabel="Anterior"
+      (onClick)="mover(-1)"
+    />
+    <div class="text-center min-w-0">
+      <p class="font-semibold first-letter:uppercase text-gray-900 dark:text-white">
+        {{ titulo() }}
+      </p>
+      @if (hayMasAdelante()) {
+        <button
+          type="button"
+          class="text-xs text-guerrero-red font-medium focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          (click)="volverAHoy()"
+        >
+          Volver a hoy
+        </button>
+      }
+    </div>
+    <p-button
+      icon="pi pi-chevron-right"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      ariaLabel="Siguiente"
+      [disabled]="!hayMasAdelante()"
+      (onClick)="mover(1)"
+    />
+  </div>
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  @if (cargando() && !datos()) {
+    <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Calculando…</p>
+  } @else if (datos(); as d) {
+    <section
+      aria-labelledby="cg-total"
+      class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-4 transition-opacity"
+      [class.opacity-60]="cargando()"
+    >
+      <h2 id="cg-total" class="sr-only">Cumplimiento de {{ titulo() }}</h2>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        <figure class="relative w-40 h-40 shrink-0 mx-auto sm:mx-0" aria-describedby="cg-mensaje">
+          <svg
+            viewBox="0 0 100 100"
+            class="w-full h-full -rotate-90"
+            role="img"
+            [attr.aria-label]="
+              d.porcentaje === null
+                ? 'Sin datos'
+                : 'Cumplimiento del ' + d.porcentaje + ' por ciento'
+            "
+          >
+            <circle
+              cx="50"
+              cy="50"
+              [attr.r]="radio"
+              fill="none"
+              stroke-width="12"
+              class="stroke-gray-200 dark:stroke-dark-700"
+            />
+            @if (d.porcentaje !== null) {
+              <circle
+                cx="50"
+                cy="50"
+                [attr.r]="radio"
+                fill="none"
+                stroke-width="12"
+                stroke-linecap="round"
+                [class]="trazoColor(d.porcentaje)"
+                [attr.stroke-dasharray]="trazo() + ' ' + perimetro"
+              />
+            }
+          </svg>
+          <figcaption
+            class="absolute inset-0 flex flex-col items-center justify-center text-center"
+          >
+            <span class="text-4xl font-bold tabular-nums" [class]="tono(d.porcentaje)">
+              {{ d.porcentaje === null ? '—' : d.porcentaje + '%' }}
+            </span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">cumplido</span>
+          </figcaption>
+        </figure>
+
+        <div class="flex-1 min-w-0 space-y-3">
+          <p id="cg-mensaje" class="text-sm text-gray-800 dark:text-gray-100">{{ mensaje() }}</p>
+          @if (!esUnDia() && d.porcentaje !== null) {
+            <dl class="grid grid-cols-3 gap-2 text-center">
+              <div class="rounded-xl bg-gray-50 dark:bg-dark-700 py-2">
+                <dt class="text-[11px] text-gray-500 dark:text-gray-400">Racha</dt>
+                <dd class="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+                  {{ d.racha_actual }}
+                </dd>
+              </div>
+              <div class="rounded-xl bg-gray-50 dark:bg-dark-700 py-2">
+                <dt class="text-[11px] text-gray-500 dark:text-gray-400">Mejor racha</dt>
+                <dd class="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+                  {{ d.mejor_racha }}
+                </dd>
+              </div>
+              <div class="rounded-xl bg-gray-50 dark:bg-dark-700 py-2">
+                <dt class="text-[11px] text-gray-500 dark:text-gray-400">
+                  Días ≥ {{ d.umbral_racha }}%
+                </dt>
+                <dd class="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+                  {{ d.dias_cumplidos }}
+                </dd>
+              </div>
+            </dl>
+          }
+        </div>
+      </div>
+
+      <!-- Cómo va cada parte -->
+      @if (esUnDia() && diaElegido(); as dia) {
+        <ul class="space-y-3" aria-label="Cumplimiento por parte">
+          @for (b of dia.bloques; track b.id) {
+            <li>
+              <div class="flex items-baseline justify-between gap-3 text-sm">
+                <span class="font-medium text-gray-900 dark:text-white">{{ b.nombre }}</span>
+                <span class="tabular-nums font-semibold" [class]="tono(b.porcentaje)"
+                  >{{ b.porcentaje }}%</span
+                >
+              </div>
+              <div class="mt-1 h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-[width] duration-500"
+                  [class]="fondo(b.porcentaje)"
+                  [style.width.%]="b.porcentaje"
+                ></div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ b.detalle }}</p>
+            </li>
+          }
+        </ul>
+      } @else if (d.bloques.length) {
+        <ul class="space-y-3" aria-label="Promedio por parte">
+          @for (b of d.bloques; track b.id) {
+            <li>
+              <div class="flex items-baseline justify-between gap-3 text-sm">
+                <span class="font-medium text-gray-900 dark:text-white">{{ b.nombre }}</span>
+                <span class="tabular-nums font-semibold" [class]="tono(b.porcentaje)"
+                  >{{ b.porcentaje }}%</span
+                >
+              </div>
+              <div class="mt-1 h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-[width] duration-500"
+                  [class]="fondo(b.porcentaje)"
+                  [style.width.%]="b.porcentaje"
+                ></div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Promedio de {{ b.dias }} {{ b.dias === 1 ? 'día' : 'días' }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (!esUnDia() && dias().length) {
+      <section
+        aria-labelledby="cg-dias"
+        class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+      >
+        <h2 id="cg-dias" class="font-semibold text-gray-900 dark:text-white">Día por día</h2>
+        <div class="grid grid-cols-7 gap-1.5 text-center">
+          @for (n of ['L', 'M', 'M', 'J', 'V', 'S', 'D']; track $index) {
+            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ n }}</span>
+          }
+          @for (h of huecos(); track $index) {
+            <span aria-hidden="true"></span>
+          }
+          @for (dia of dias(); track dia.fecha) {
+            <button
+              type="button"
+              class="aspect-square rounded-lg text-xs font-semibold tabular-nums transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+              [class]="
+                fondo(dia.porcentaje) +
+                (dia.porcentaje === null ? ' text-gray-500' : ' text-white') +
+                (elegido() === dia.fecha
+                  ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
+                  : '')
+              "
+              [attr.aria-label]="
+                fecha(dia.fecha) +
+                ': ' +
+                (dia.porcentaje === null ? 'sin datos' : dia.porcentaje + ' por ciento')
+              "
+              [attr.aria-pressed]="elegido() === dia.fecha"
+              (click)="elegirDia(dia.fecha)"
+            >
+              {{ numero(dia.fecha) }}
+            </button>
+          }
+        </div>
+        <p
+          class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400"
+        >
+          <span class="flex items-center gap-1.5"
+            ><i class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></i>{{ d.umbral_racha }}% o más</span
+          >
+          <span class="flex items-center gap-1.5"
+            ><i class="w-2.5 h-2.5 rounded-sm bg-amber-500"></i>50 a {{ d.umbral_racha - 1 }}%</span
+          >
+          <span class="flex items-center gap-1.5"
+            ><i class="w-2.5 h-2.5 rounded-sm bg-guerrero-red"></i>Menos de 50%</span
+          >
+        </p>
+
+        @if (diaElegido(); as dia) {
+          <div class="rounded-xl bg-gray-50 dark:bg-dark-700 p-3 space-y-2" aria-live="polite">
+            <p class="text-sm font-semibold first-letter:uppercase text-gray-900 dark:text-white">
+              {{ fecha(dia.fecha) }}
+              <span class="tabular-nums" [class]="tono(dia.porcentaje)">
+                · {{ dia.porcentaje === null ? 'sin datos' : dia.porcentaje + '%' }}</span
+              >
+            </p>
+            @for (b of dia.bloques; track b.id) {
+              <p class="text-sm flex justify-between gap-3">
+                <span class="text-gray-700 dark:text-gray-200">{{ b.nombre }}</span>
+                <span class="tabular-nums font-medium" [class]="tono(b.porcentaje)"
+                  >{{ b.porcentaje }}%</span
+                >
+              </p>
+              <p class="-mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ b.detalle }}</p>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (fallas().length) {
+      <section
+        aria-labelledby="cg-fallas"
+        class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+      >
+        <h2 id="cg-fallas" class="font-semibold text-gray-900 dark:text-white">Dónde se te fue</h2>
+        <ul class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
+          @for (dia of fallas(); track dia.fecha) {
+            <li class="py-2.5 space-y-1">
+              <p class="text-sm font-medium first-letter:uppercase text-gray-900 dark:text-white">
+                {{ fecha(dia.fecha) }}
+              </p>
+              @for (b of dia.bloques; track b.id) {
+                @for (f of b.faltas; track f) {
+                  <p class="text-sm text-gray-600 dark:text-gray-300">
+                    <span class="font-medium">{{ b.nombre }}:</span> {{ f }}
+                  </p>
+                }
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    } @else if (hayDiasCerrados()) {
+      <p class="text-sm text-gray-600 dark:text-gray-300 px-1">
+        Sin fallas en los días ya cerrados: lo que tocaba, lo hiciste.
+      </p>
+    }
+  }
+</div>

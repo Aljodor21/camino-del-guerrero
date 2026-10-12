@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import notificaciones, push
+from . import cumplimiento, notificaciones, push
 from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush
 from .serializers import (HabitosSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
@@ -85,6 +85,18 @@ class ConfirmarNotificacionFirmadaView(APIView):
 class HoyView(APIView):
     def get(self, request):
         return Response(notificaciones.resumen_de_hoy(request.user))
+
+
+class CumplimientoView(APIView):
+    """Cumplimiento global entre dos fechas (por defecto, hoy)."""
+
+    def get(self, request):
+        hoy = timezone.localdate()
+        hasta = parse_date(request.query_params.get('hasta') or '') or hoy
+        desde = parse_date(request.query_params.get('desde') or '') or hasta
+        if desde > hasta:
+            raise ReglaNegocioError('La fecha inicial va antes de la final.')
+        return Response(cumplimiento.calcular(request.user, desde, hasta))
 
 
 class RegistroHabitoListView(generics.ListAPIView):
