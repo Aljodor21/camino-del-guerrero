@@ -149,4 +149,4 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Ajustes de Avisos** dice por dónde llegan: «cada aviso te llega a su hora desde el servidor, aunque pasen los días sin abrir la app» (Firebase) o «tu celular las programa y suenan a su hora…, ahora hay N programadas» (respaldo). Con Firebase activo aparece «Enviar una de prueba» y un mensaje de si se entregó.
 - **Una sola vía a la vez:** con Firebase no se programa nada local, para que un aviso no suene dos veces. Con la app abierta Android no muestra la notificación: la bandeja se actualiza sola.
 - Aún sin botón «Ya lo tomé» dentro de la notificación: al tocarla se abre Avisos.
-
+- **En el navegador, con la app ya instalada:** Ajustes dice «Ya tienes la app instalada: los avisos te llegan ahí y no se repiten en el navegador», en vez de ofrecer activar las notificaciones del navegador.

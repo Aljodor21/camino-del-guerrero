@@ -132,7 +132,8 @@ class PushView(APIView):
     """GET: la llave pública (null si el servidor no manda al celular). POST/DELETE: suscribirse."""
 
     def get(self, request):
-        return Response({'clave': settings.VAPID_PUBLIC_KEY if push.configurado() else None})
+        return Response({'clave': settings.VAPID_PUBLIC_KEY if push.configurado() else None,
+                         'en_la_app': push.tiene_la_app(request.user)})
 
     def post(self, request):
         datos = SuscripcionPushSerializer(data=request.data)

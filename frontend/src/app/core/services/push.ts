@@ -19,6 +19,9 @@ export class PushService {
   private _estado = signal<EstadoPush>('inactivo');
   private clave: string | null = null;
   readonly estado = this._estado.asReadonly();
+  private _enLaApp = signal(false);
+  /** Ya recibe los avisos en la app instalada: el navegador no los repite. */
+  readonly enLaApp = this._enLaApp.asReadonly();
 
   private get soportado(): boolean {
     // En la app instalada el web push no existe: ahí los avisos viven dentro de la app.
@@ -30,7 +33,8 @@ export class PushService {
   async iniciar(): Promise<void> {
     if (!this.soportado) return this._estado.set('no-soportado');
     try {
-      const { clave } = await firstValueFrom(this.avisos.llavePush());
+      const { clave, en_la_app } = await firstValueFrom(this.avisos.llavePush());
+      this._enLaApp.set(en_la_app);
       if (!clave) return this._estado.set('sin-servidor');
       this.clave = clave;
       const registro = await navigator.serviceWorker.register('/sw.js');

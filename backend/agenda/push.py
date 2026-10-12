@@ -34,9 +34,14 @@ def enviar(n):
     fcm.enviar(n)
 
 
+def tiene_la_app(usuario):
+    """Si ya recibe los avisos en la app instalada, el navegador no debe repetirlos."""
+    return usuario.tokens_celular.exists()
+
+
 def enviar_web(n):
-    """Web push. Las suscripciones vencidas se borran."""
-    if not configurado():
+    """Web push. Las suscripciones vencidas se borran. No se manda a quien ya tiene la app."""
+    if not configurado() or tiene_la_app(n.usuario):
         return
     datos = json.dumps(contenido(n))
     for s in n.usuario.suscripciones_push.all():

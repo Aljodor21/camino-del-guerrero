@@ -89,8 +89,8 @@ export class AvisosService {
 
   // ── Notificaciones al celular ─────────────────────────────────────
   /** La llave pública del servidor; null si no manda al celular. */
-  llavePush(): Observable<{ clave: string | null }> {
-    return this.http.get<{ clave: string | null }>(`${API}/avisos/push/`);
+  llavePush(): Observable<{ clave: string | null; en_la_app: boolean }> {
+    return this.http.get<{ clave: string | null; en_la_app: boolean }>(`${API}/avisos/push/`);
   }
 
   suscribirPush(suscripcion: PushSubscriptionJSON): Observable<void> {
