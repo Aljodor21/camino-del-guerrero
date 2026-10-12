@@ -61,3 +61,46 @@ export interface ResumenHoy {
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };
 }
+
+export type BloqueCumplimiento = 'comidas' | 'entreno' | 'tomas' | 'agua' | 'dormir';
+
+/** Una parte del día que se mide: agua, dormir, comidas, proteína o entreno. */
+export interface BloqueDelDia {
+  id: BloqueCumplimiento;
+  nombre: string;
+  peso: number;
+  hecho: number;
+  meta: number;
+  porcentaje: number;
+  detalle: string;
+  /** Lo que faltó, dicho en una frase cada cosa. */
+  faltas: string[];
+}
+
+export interface DiaCumplimiento {
+  fecha: string;
+  porcentaje: number | null;
+  /** false antes de que empiece el proceso: solo cuentan el agua y dormir. */
+  en_proceso: boolean;
+  es_hoy: boolean;
+  bloques: BloqueDelDia[];
+}
+
+export interface CumplimientoGlobal {
+  desde: string;
+  hasta: string;
+  porcentaje: number | null;
+  dias_cumplidos: number;
+  racha_actual: number;
+  mejor_racha: number;
+  umbral_racha: number;
+  /** Promedio de cada bloque en los días en que aplicó. */
+  bloques: {
+    id: BloqueCumplimiento;
+    nombre: string;
+    peso: number;
+    porcentaje: number;
+    dias: number;
+  }[];
+  dias: DiaCumplimiento[];
+}

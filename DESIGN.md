@@ -124,3 +124,11 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **El aviso del agua dice cuánto llevas hoy** ("Llevas 1 de 4 vasos de hoy (600 ml cada uno)"), no el número del recordatorio: el texto se arma al mostrarlo, tanto en la app como en el push.
 - **El aviso de arriba (el que sale en todas las pantallas):** va dentro de la página, nunca flota ni tapa el título. Si pide algo es una tarjeta tranquila con un botón de texto (Registrar, Actualizar…); si solo informa ("Tu proceso inicia el martes") es una línea discreta, sin caja ni botón.
 - **Barra de pestañas:** flecha "›" mientras queden pestañas a la derecha y "‹" cuando se pueda volver a la izquierda; tocarlas desplaza la barra.
+
+## Cumplimiento, en Avisos
+
+- **Vive en Avisos** como cuarta pestaña ("Cumplimiento"), con Día · Semana · Mes · Trimestre y flechas para ir a periodos anteriores ("Volver a hoy" cuando se aleja).
+- **Un anillo con el porcentaje** (verde desde la meta del 80 %, ámbar entre 50 y 79 %, rojo por debajo) y una frase que dice qué significa. En el día, una barra por cada parte (agua, dormir, y con el proceso en marcha comidas, proteína y entreno) con el dato real ("1500 de 2000 ml").
+- **Semana, mes y trimestre:** racha, mejor racha y días que llegaron a la meta; un calendario de casillas de color por día (tocar una muestra su detalle); y "Dónde se te fue", la lista de lo que faltó en los días ya cerrados.
+- **Antes de empezar el proceso** solo cuentan el agua y dormir; así se puede abrir la app desde el primer día y llegar al 100 %. Con el proceso en marcha entran las comidas (40 %), el entreno (20 %), la proteína (15 %), el agua (15 %) y dormir (10 %); lo que no aplica ese día no pesa.
+
