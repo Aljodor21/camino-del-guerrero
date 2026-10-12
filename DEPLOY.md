@@ -35,7 +35,7 @@ Un despliegue a la vez: si llega otro merge, espera al anterior.
    ```bash
    sudo warden runner https://github.com/Aljodor21/camino-del-guerrero <TOKEN>
    ```
-3. **Crear el `.env.docker` de producción** desde el panel de Warden: Catálogo → Camino del Guerrero → **Variables (.env)**. Si todavía no existe, trae el `.env.docker.example` del repo para que cambies los valores por los reales y guardes (nunca va a git; queda en `~/warden/site/env/camino-del-guerrero.env`, solo legible por tu usuario). Hace falta el modo admin. Valores reales en `SECRET_KEY`, `DB_PASSWORD` / `POSTGRES_PASSWORD` (el mismo), `ADMIN_PASSWORD`, las llaves `VAPID_*` (se generan con `python manage.py llaves_push`), el correo, `AI_*` y `OPENAI_API_KEY`. Dejar `DEBUG=False`.
+3. **El `.env.docker` de producción.** Si no existe, el primer despliegue lo crea solo a partir de `.env.docker.example` y se detiene, para que lo completes. Se edita en el panel de Warden: Catálogo → Camino del Guerrero → **Variables (.env)**. Si todavía no existe, trae el `.env.docker.example` del repo para que cambies los valores por los reales y guardes (nunca va a git; queda en `~/warden/site/env/camino-del-guerrero.env`, solo legible por tu usuario). Hace falta el modo admin. Valores reales en `SECRET_KEY`, `DB_PASSWORD` / `POSTGRES_PASSWORD` (el mismo), `ADMIN_PASSWORD`, las llaves `VAPID_*` (se generan con `python manage.py llaves_push`), el correo, `AI_*` y `OPENAI_API_KEY`. Dejar `DEBUG=False`.
 4. **Permitir `warden publish` al runner** (una vez, con sudo):
    ```bash
    echo 'alejo ALL=(root) NOPASSWD: /usr/local/bin/warden publish' | sudo tee /etc/sudoers.d/warden-runner

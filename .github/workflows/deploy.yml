@@ -33,7 +33,11 @@ jobs:
       - name: Revisar el entorno del servidor
         run: |
           if [ ! -f "$ENV_FILE" ]; then
-            echo "::error::Falta $ENV_FILE. Créalo en el panel de Warden: Catálogo → Camino del Guerrero → Variables (.env). Ver DEPLOY.md."
+            # Primera vez: se deja el ejemplo en su sitio para editarlo en el panel de Warden.
+            mkdir -p "$(dirname "$ENV_FILE")"
+            cp .env.docker.example "$ENV_FILE"
+            chmod 600 "$ENV_FILE"
+            echo "::error::Era la primera vez y no había .env: dejé el ejemplo en $ENV_FILE. Cambia los valores por los reales en el panel de Warden (Catálogo → Camino del Guerrero → Variables (.env)) y vuelve a lanzar este despliegue (Actions → deploy → Run workflow)."
             exit 1
           fi
 
