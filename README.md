@@ -29,6 +29,7 @@ La app **no inventa el plan de comida**: la minuta es la de la nutricionista y c
 | **Auditoría** | Solo para el administrador: quién usa la app, desde qué dispositivo (app instalada o navegador, modelo, Android, versión), qué consulta y qué pantallas abre, con errores y tiempos. No guarda lo que se escribe; se borra a los 90 días. |
 
 | **Cumplimiento global** | En Avisos › Cumplimiento: qué tanto del día (y de la semana, el mes o el trimestre) se cumplió, sumando agua, dormir y, con el proceso en marcha, las comidas, la proteína y el entreno. Antes de que empiece el proceso solo cuentan agua y dormir. Muestra la racha, el día por día y dónde se falló. |
+| **Logros** | En Avisos › Logros: tu racha (con un comodín por semana), el guerrero que reacciona a tu día, 24 hitos que se logran con lo que registras (rachas, días completos, agua, entrenos, comidas, proteína, mediciones) y el capítulo de cada semana. Al anotar algo el anillo da un salto, y al cerrar el día al 100 % o lograr un hito hay una celebración. Nada premia comer menos, pasarse de agua ni saltarse comidas. |
 | **Agenda** | Recordatorios propios y los que la app sugiere según los suplementos. |
 | **Rutinas** | Rutinas por implementos disponibles, con videos y sesiones con temporizadores. |
 

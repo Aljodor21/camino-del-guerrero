@@ -60,17 +60,22 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
 import { Ayuda } from '../shared/ayuda/ayuda';
 import { CumplimientoGlobalVista } from './cumplimiento-global/cumplimiento-global';
+import { LogrosVista } from './logros/logros';
+import { CelebracionesService } from '../core/services/celebraciones';
+import { Anillo } from '../shared/anillo/anillo';
 
-type Seccion = 'pendientes' | 'dia' | 'cumplimiento' | 'ajustes';
-const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'ajustes'];
+type Seccion = 'pendientes' | 'dia' | 'cumplimiento' | 'logros' | 'ajustes';
+const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'logros', 'ajustes'];
 
 @Component({
   selector: 'app-avisos',
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    Anillo,
     Ayuda,
     CumplimientoGlobalVista,
+    LogrosVista,
     Pestanas,
     RouterLink,
     ButtonModule,
@@ -95,6 +100,7 @@ export class Avisos implements OnInit {
     },
     { id: 'dia', label: 'Tu día', icon: 'pi pi-sun' },
     { id: 'cumplimiento', label: 'Cumplimiento', icon: 'pi pi-chart-pie' },
+    { id: 'logros', label: 'Logros', icon: 'pi pi-trophy' },
     { id: 'ajustes', label: 'Ajustes', icon: 'pi pi-sliders-h' },
   ]);
 
@@ -104,6 +110,7 @@ export class Avisos implements OnInit {
   protected servicio = inject(AvisosService);
   protected push = inject(PushService);
   protected celular = inject(NotificacionesCelularService);
+  protected celebraciones = inject(CelebracionesService);
 
   protected iconos = ICONOS;
   protected estilos = ESTILOS;
@@ -206,6 +213,7 @@ export class Avisos implements OnInit {
     this.servicio.confirmar(aviso).subscribe({
       next: () => {
         this.confirmando.set(null);
+        this.celebraciones.registro();
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
       },
       error: (e) => {
@@ -221,6 +229,7 @@ export class Avisos implements OnInit {
     this.servicio.registrarAgua().subscribe({
       next: (r) => {
         this.anotado.set(`Vaso de ${r.ml} ml anotado a las ${this.horaDe(r.momento)}`);
+        this.celebraciones.registro();
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
         this.servicio.cargar().subscribe({ error: () => undefined });
       },

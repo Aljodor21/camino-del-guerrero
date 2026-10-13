@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import (ConfirmarNotificacionFirmadaView, ConfirmarNotificacionView, CumplimientoView, HabitosView,
+from .views import (CapituloView, HitosVistosView, LogrosView, ConfirmarNotificacionFirmadaView, ConfirmarNotificacionView, CumplimientoView, HabitosView,
                     HoyView, NotificacionListView, ProximosAvisosView, PushCelularPruebaView, PushCelularView, PushView, RecordatorioDetailView,
                     RecordatorioListCreateView,
                     RegistrarAguaView, RegistroHabitoListView)
@@ -11,6 +11,9 @@ urlpatterns = [
     path('habitos/', HabitosView.as_view(), name='habitos'),
     path('cumplimiento/', CumplimientoView.as_view(), name='cumplimiento-global'),
     path('hoy/', HoyView.as_view(), name='hoy'),
+    path('logros/', LogrosView.as_view(), name='logros'),
+    path('logros/vistos/', HitosVistosView.as_view(), name='logros-vistos'),
+    path('capitulo/', CapituloView.as_view(), name='capitulo'),
     path('avisos/', NotificacionListView.as_view(), name='avisos'),
     path('avisos/proximos/', ProximosAvisosView.as_view(), name='avisos-proximos'),
     path('avisos/<int:pk>/confirmar/', ConfirmarNotificacionView.as_view(), name='aviso-confirmar'),

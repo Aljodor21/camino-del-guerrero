@@ -21,6 +21,8 @@ import { AgendaService } from '../../core/services/agenda';
 import { AvisosService } from '../../core/services/avisos';
 import { ApkService } from '../../core/services/apk';
 import { NotificacionesCelularService } from '../../core/services/notificaciones-celular';
+import { CelebracionesService } from '../../core/services/celebraciones';
+import { Celebracion } from '../celebracion/celebracion';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
@@ -38,7 +40,15 @@ interface Aviso {
   selector: 'app-layout',
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, TooltipModule, Visor],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    ButtonModule,
+    TooltipModule,
+    Visor,
+    Celebracion,
+  ],
 })
 export class Layout implements OnInit, OnDestroy {
   protected authService = inject(AuthService);
@@ -49,6 +59,7 @@ export class Layout implements OnInit, OnDestroy {
   protected avisos = inject(AvisosService);
   protected apk = inject(ApkService);
   private celular = inject(NotificacionesCelularService);
+  private celebraciones = inject(CelebracionesService);
   private router = inject(Router);
   private location = inject(Location);
 
@@ -66,6 +77,8 @@ export class Layout implements OnInit, OnDestroy {
       // Cambiar de pestaña o reescribir la URL no abre una pantalla nueva: no cuenta para "atrás".
       if (ruta !== this.ruta()) this.pantallas++;
       this.ruta.set(ruta);
+      // Cada pantalla que se abre es una oportunidad de celebrar algo que se acaba de lograr.
+      void this.celebraciones.revisar();
       const enAvisos = e.urlAfterRedirects.split('?')[0] === '/avisos';
       this.enAvisos.set(enAvisos);
       if (!enAvisos) this.anterior = e.urlAfterRedirects;
@@ -93,6 +106,7 @@ export class Layout implements OnInit, OnDestroy {
     if (!this.authService.isAdmin()) {
       this.agenda.cargar().subscribe({ error: () => {} });
       this.avisos.iniciar();
+      void this.celebraciones.revisar(true);
       void this.celular.iniciar();
     }
   }

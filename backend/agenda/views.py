@@ -13,7 +13,7 @@ from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, fcm, notificaciones, push
+from . import cumplimiento, fcm, logros, notificaciones, push
 from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
 from .serializers import (HabitosSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
@@ -180,3 +180,28 @@ class PushCelularPruebaView(APIView):
         if not request.user.tokens_celular.exists():
             raise ReglaNegocioError('Este celular aún no está registrado. Activa las notificaciones primero.')
         return Response({'enviadas': fcm.enviar_prueba(request.user)})
+
+
+class LogrosView(APIView):
+    """La racha, los hitos y cuáles son nuevos."""
+
+    def get(self, request):
+        return Response(logros.logros(request.user))
+
+
+class HitosVistosView(APIView):
+    """La persona ya vio celebrar estos hitos."""
+
+    def post(self, request):
+        claves = request.data.get('ids')
+        if not isinstance(claves, list) or len(claves) > 60 or not all(isinstance(c, str) for c in claves):
+            raise ReglaNegocioError('Indica qué hitos viste.')
+        return Response({'vistos': logros.marcar_vistos(request.user, claves)})
+
+
+class CapituloView(APIView):
+    """La semana (de lunes a domingo): `lunes` o, si no, la semana de hoy."""
+
+    def get(self, request):
+        lunes = parse_date(request.query_params.get('lunes') or '') or logros.lunes_de(timezone.localdate())
+        return Response(logros.capitulo(request.user, lunes))
