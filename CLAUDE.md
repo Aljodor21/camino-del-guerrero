@@ -29,7 +29,7 @@ La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/a
 
 ## Sueño
 
-`RegistroHabito` tiene los tipos `dormir` («me acosté») y `levantar` («me levanté», una vez al día; viene del aviso `levantar` a la hora de levantarse de `Habitos` o del botón). `agenda/sueno.py` calcula las noches (de la última hora de acostarse a la de levantarse, entre 1 y 16 horas) y el promedio; no se guarda nada. `POST /api/agenda/registros/levantar|dormir/`, `GET /api/agenda/sueno/?desde=&hasta=`.
+`RegistroHabito` tiene los tipos `dormir` («me acosté») y `levantar` («me levanté», una vez al día; viene del aviso `levantar` a la hora de levantarse de `Habitos` o del botón). Los avisos de levantarse y de acostarse solo valen cerca de su hora (`VIGENCIA_DEL_MOMENTO`, 90 minutos): pasado ese rato no se crean —aunque la app los calcule por primera vez, por ejemplo tras un cambio— y los pendientes se quitan solos sin inventar ningún registro. `agenda/sueno.py` calcula las noches (de la última hora de acostarse a la de levantarse, entre 1 y 16 horas) y el promedio; no se guarda nada. `POST /api/agenda/registros/levantar|dormir/`, `GET /api/agenda/sueno/?desde=&hasta=`.
 
 ## Mis horas
 

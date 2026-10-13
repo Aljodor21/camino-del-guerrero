@@ -97,3 +97,39 @@ class SuenoTest(APITestCase):
         Habitos.objects.filter(usuario=self.usuario).update(avisos_apagados=['levantar'])
         notificaciones.generar(self.usuario, a_las(HOY(), 7))
         self.assertFalse(Notificacion.objects.filter(usuario=self.usuario, tipo='levantar').exists())
+
+
+class SinAvisosRetroactivosTest(APITestCase):
+    """Los avisos de levantarse y de acostarse solo valen cerca de su hora: no aparecen horas después."""
+
+    def setUp(self):
+        SuenoTest.setUp(self)
+
+    def test_no_pregunta_si_ya_te_levantaste_cuando_ya_pasaron_horas(self):
+        # Hora prevista 6:00; la app lo calcula por primera vez a las 11 (se acaba de estrenar o de cambiar la hora).
+        notificaciones.generar(self.usuario, a_las(HOY(), 11))
+        self.assertFalse(Notificacion.objects.filter(usuario=self.usuario, tipo='levantar').exists())
+
+    def test_si_lo_calcula_a_tiempo_si_lo_crea(self):
+        notificaciones.generar(self.usuario, a_las(HOY(), 7, 15))     # 75 minutos después de las 6:00
+        self.assertTrue(Notificacion.objects.filter(usuario=self.usuario, tipo='levantar').exists())
+
+    def test_uno_que_se_quedo_pendiente_se_quita_solo_horas_despues(self):
+        notificaciones.generar(self.usuario, a_las(HOY(), 6, 5))
+        n = Notificacion.objects.get(usuario=self.usuario, tipo='levantar')
+        self.assertIsNone(n.resuelta_en)
+        notificaciones.generar(self.usuario, a_las(HOY(), 11))
+        n.refresh_from_db()
+        self.assertEqual(n.resolucion, 'automatica')
+        # Y no quedó ningún dato inventado: no hay registro de que se levantó.
+        self.assertFalse(RegistroHabito.objects.filter(usuario=self.usuario, tipo='levantar').exists())
+
+    def test_lo_mismo_con_el_aviso_de_dormir(self):
+        notificaciones.generar(self.usuario, a_las(HOY(), 23, 50))    # el aviso era a las 21:30
+        self.assertFalse(Notificacion.objects.filter(usuario=self.usuario, tipo='dormir').exists())
+        notificaciones.generar(self.usuario, a_las(HOY(), 21, 40))
+        self.assertTrue(Notificacion.objects.filter(usuario=self.usuario, tipo='dormir').exists())
+
+    def test_lo_demas_si_aparece_aunque_la_app_lo_calcule_tarde(self):
+        notificaciones.generar(self.usuario, a_las(HOY(), 15))
+        self.assertTrue(Notificacion.objects.filter(usuario=self.usuario, tipo='agua').exists())

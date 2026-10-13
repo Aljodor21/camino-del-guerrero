@@ -32,6 +32,10 @@ HORA_RECORDATORIO = time(8, 0)
 ANTES_DE_DORMIR = timedelta(minutes=30)
 # El aviso de «¿cómo te fue con...?» llega un rato después de la hora de comer, no a la misma hora.
 DESPUES_DE_COMER = timedelta(minutes=45)
+# Hay avisos que solo tienen sentido cerca de su hora («¿ya te levantaste?» a las 11 de la mañana no lo tiene):
+# pasado este rato no se crean, aunque sea la primera vez que la app los calcula (por ejemplo, al cambiar las
+# horas o al estrenar el aviso), y si ya estaban pendientes se quitan solos.
+VIGENCIA_DEL_MOMENTO = {'levantar': timedelta(minutes=90), 'dormir': timedelta(minutes=90)}
 # Lo que se atrasó más de esto no se manda al celular (ej. el servidor estuvo apagado).
 VIGENCIA_PUSH = timedelta(hours=2)
 FIRMA = 'agenda.notificacion'
@@ -272,13 +276,16 @@ def generar(usuario, ahora=None):
     for aviso in programados(usuario, fecha, ahora):
         if aviso['programada_para'] > ahora or aviso['programada_para'] < usuario.date_joined:
             continue
+        vigencia = VIGENCIA_DEL_MOMENTO.get(aviso['tipo'])
+        if vigencia and ahora - aviso['programada_para'] > vigencia:
+            continue
         clave = aviso.pop('clave')
         n, creada = Notificacion.objects.get_or_create(usuario=usuario, clave=clave,
                                                        defaults={**aviso, 'fecha': fecha})
         if creada:
             nuevas.append(n)
             _reemplazar_anteriores(n)
-    resolver_automaticas(usuario)
+    resolver_automaticas(usuario, ahora)
     return nuevas
 
 
@@ -310,13 +317,17 @@ def proximos(usuario, dias=7, ahora=None):
     return sorted(lista, key=lambda a: a['programada_para'])
 
 
-def resolver_automaticas(usuario):
-    """Lo que ya pasó por otro lado: entrenó, completó o movió el recordatorio."""
-    ahora = timezone.now()
+def resolver_automaticas(usuario, ahora=None):
+    """Lo que ya pasó por otro lado: entrenó, completó o movió el recordatorio; o ya no tiene sentido
+    (el aviso de levantarse horas después)."""
+    ahora = ahora or timezone.now()
     pendientes = Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True,
-                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso'])
+                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso',
+                                                       *VIGENCIA_DEL_MOMENTO])
     for n in pendientes.select_related('recordatorio'):
-        if n.tipo == 'entreno':
+        if n.tipo in VIGENCIA_DEL_MOMENTO:
+            hecho = ahora - n.programada_para > VIGENCIA_DEL_MOMENTO[n.tipo]
+        elif n.tipo == 'entreno':
             hecho = RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=n.fecha).exists()
         elif n.tipo == 'proceso':
             proceso = proceso_de_referencia(usuario)
