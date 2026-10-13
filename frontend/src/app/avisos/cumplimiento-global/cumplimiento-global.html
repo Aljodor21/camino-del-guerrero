@@ -67,9 +67,7 @@
             class="w-full h-full -rotate-90"
             role="img"
             [attr.aria-label]="
-              d.porcentaje === null
-                ? 'Sin datos'
-                : 'Cumplimiento del ' + d.porcentaje + ' por ciento'
+              principal() === null ? 'Sin datos' : 'Cumplimiento del ' + principal() + ' por ciento'
             "
           >
             <circle
@@ -80,7 +78,7 @@
               stroke-width="12"
               class="stroke-gray-200 dark:stroke-dark-700"
             />
-            @if (d.porcentaje !== null) {
+            @if (principal() !== null) {
               <circle
                 cx="50"
                 cy="50"
@@ -88,7 +86,7 @@
                 fill="none"
                 stroke-width="12"
                 stroke-linecap="round"
-                [class]="trazoColor(d.porcentaje)"
+                [class]="trazoColor(principal())"
                 [attr.stroke-dasharray]="trazo() + ' ' + perimetro"
               />
             }
@@ -96,10 +94,12 @@
           <figcaption
             class="absolute inset-0 flex flex-col items-center justify-center text-center"
           >
-            <span class="text-4xl font-bold tabular-nums" [class]="tono(d.porcentaje)">
-              {{ d.porcentaje === null ? '—' : d.porcentaje + '%' }}
+            <span class="text-4xl font-bold tabular-nums" [class]="tono(principal())">
+              {{ principal() === null ? '—' : principal() + '%' }}
             </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">cumplido</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{
+              esUnDia() ? 'cumplido' : 'cumplido ' + nombrePeriodo()
+            }}</span>
           </figcaption>
         </figure>
 

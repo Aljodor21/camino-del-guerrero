@@ -215,6 +215,7 @@ def capitulo(usuario, lunes):
         raise ReglaNegocioError('La semana empieza un lunes.')
     domingo = lunes + timedelta(days=6)
     hoy = timezone.localdate()
+    completa = domingo < hoy
     if lunes > hoy:
         raise ReglaNegocioError('Esa semana aún no llega.')
     actual = cumplimiento.calcular(usuario, lunes, domingo)
@@ -222,13 +223,17 @@ def capitulo(usuario, lunes):
     dias = [d for d in actual['dias'] if d['porcentaje'] is not None]
     mejor = max(dias, key=lambda d: d['porcentaje'], default=None)
     flojo = min(actual['bloques'], key=lambda b: b['porcentaje'], default=None)
-    titulo, frase = _titulo(actual['porcentaje'], domingo < hoy)
+    titulo, frase = _titulo(actual['porcentaje'], completa)
+    # Solo una semana terminada se compara con la anterior: una a medias saldría siempre más baja.
     delta = (actual['porcentaje'] - anterior['porcentaje']
-             if actual['porcentaje'] is not None and anterior['porcentaje'] is not None else None)
+             if completa and actual['porcentaje'] is not None and anterior['porcentaje'] is not None else None)
     hitos = [h for h in logros(usuario)['hitos'] if h['logrado'] and lunes <= h['logrado_en'] <= domingo]
     return {
-        'lunes': lunes, 'domingo': domingo, 'completa': domingo < hoy, 'es_actual': lunes <= hoy <= domingo,
-        'porcentaje': actual['porcentaje'], 'anterior': anterior['porcentaje'], 'diferencia': delta,
+        'lunes': lunes, 'domingo': domingo, 'completa': completa, 'es_actual': lunes <= hoy <= domingo,
+        # El promedio de los días que van y lo que lleva de la semana entera (7 días).
+        'porcentaje': actual['porcentaje'], 'porcentaje_semana': actual['porcentaje_periodo'],
+        'dias_que_van': len(actual['dias']),
+        'anterior': anterior['porcentaje'], 'diferencia': delta,
         'titulo': titulo, 'frase': frase,
         'estaciones': [{'fecha': d['fecha'], 'porcentaje': d['porcentaje'], 'es_hoy': d['es_hoy']}
                        for d in actual['dias']],
