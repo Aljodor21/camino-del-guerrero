@@ -470,6 +470,18 @@ class MinutaYMenuTest(APITestCase):
         self.assertEqual(con_tabla['balance_kcal'], con['balance_kcal'] + (120 - 240))
         self.assertTrue(any('Tu proteína aporta 120 kcal y 24 g' in f for f in con_tabla['factores']))
 
+        # Una proteína que empieza mañana también cuenta (casi todo el periodo): ayer y hoy dan lo mismo.
+        sup.fecha_inicio = self.hoy + timedelta(days=1)
+        sup.save(update_fields=['fecha_inicio'])
+        manana = self.client.get(url).data
+        dias = con_tabla['dias']
+        self.assertEqual(manana['proteina']['kcal'], round(120 * (dias - 1) / dias))
+        self.assertTrue(any('en promedio' in f for f in manana['factores']))
+        # Una que empieza después del control no cuenta.
+        sup.fecha_inicio = self.hoy + timedelta(days=dias + 5)
+        sup.save(update_fields=['fecha_inicio'])
+        self.assertIsNone(self.client.get(url).data['proteina'])
+
     def test_el_pedido_de_la_imagen_dice_si_hay_ejercicio_y_si_toma_proteina(self, ai):
         from . import ilustracion
         proy = {'peso_actual_kg': 70.0, 'dias': 40, 'proteina': None,
