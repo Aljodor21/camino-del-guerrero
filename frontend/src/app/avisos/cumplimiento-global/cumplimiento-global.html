@@ -188,6 +188,41 @@
       }
     </section>
 
+    @if (sueno(); as s) {
+      @if (s.promedio_horas !== null) {
+        <section
+          aria-labelledby="cg-sueno"
+          class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+        >
+          <h2 id="cg-sueno" class="font-semibold text-gray-900 dark:text-white">Sueño</h2>
+          <p class="text-sm text-gray-700 dark:text-gray-200">
+            Promedio: <strong>{{ duracion(s.promedio_horas) }}</strong> en {{ s.noches.length }}
+            {{ s.noches.length === 1 ? 'noche' : 'noches' }}.
+          </p>
+          <ul class="flex items-end gap-1.5 h-24" aria-label="Horas dormidas por noche">
+            @for (n of s.noches; track n.fecha) {
+              <li
+                class="flex-1 min-w-0 max-w-10 flex flex-col items-center justify-end gap-1 h-full"
+              >
+                <span class="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">{{
+                  duracion(n.horas)
+                }}</span>
+                <span
+                  class="w-full rounded-t bg-indigo-500/80"
+                  [style.height.%]="altoNoche(n.horas)"
+                  [attr.title]="fecha(n.fecha) + ': ' + duracion(n.horas)"
+                ></span>
+              </li>
+            }
+          </ul>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Va de la hora en que anotas que te acostaste a la hora en que anotas que te levantaste:
+            es aproximado.
+          </p>
+        </section>
+      }
+    }
+
     @if (!esUnDia() && dias().length) {
       <section
         aria-labelledby="cg-dias"

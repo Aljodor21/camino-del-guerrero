@@ -96,6 +96,7 @@ class Notificacion(models.Model):
         ('agua',         'Agua'),
         ('toma',         'Toma de suplemento'),
         ('dormir',       'Dormir'),
+        ('levantar',     'Levantarse'),
         ('entreno',      'Entreno'),
         ('recordatorio', 'Recordatorio'),
         ('comida',       'Contar la comida'),
@@ -145,6 +146,7 @@ class RegistroHabito(models.Model):
         ('agua',   'Vaso de agua'),
         ('toma',   'Toma de suplemento'),
         ('dormir', 'Se acostó'),
+        ('levantar', 'Se levantó'),
     ]
 
     usuario      = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='registros_habito')

@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
-import { Aviso, TipoAviso } from '../core/models/avisos.model';
+import { Aviso, Sueno, TipoAviso } from '../core/models/avisos.model';
 import { AvisosService } from '../core/services/avisos';
 import { NotificacionesCelularService } from '../core/services/notificaciones-celular';
 import { PushService } from '../core/services/push';
@@ -30,6 +30,7 @@ const ICONOS: Record<TipoAviso, string> = {
   agua: 'pi pi-circle-fill',
   toma: 'pi pi-box',
   dormir: 'pi pi-moon',
+  levantar: 'pi pi-sun',
   entreno: 'pi pi-bolt',
   recordatorio: 'pi pi-calendar',
   comida: 'pi pi-camera',
@@ -41,6 +42,7 @@ const ESTILOS: Record<TipoAviso, string> = {
   agua: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
   toma: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
   dormir: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+  levantar: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
   entreno: 'bg-guerrero-red/15 text-guerrero-red',
   recordatorio: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
   comida: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
@@ -51,6 +53,7 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
   { id: 'agua', label: 'Agua' },
   { id: 'toma', label: 'Proteína' },
   { id: 'dormir', label: 'Dormir' },
+  { id: 'levantar', label: 'Levantarme' },
   { id: 'entreno', label: 'Entreno' },
   { id: 'recordatorio', label: 'Agenda' },
   { id: 'comida', label: 'Comidas' },
@@ -160,6 +163,9 @@ export class Avisos implements OnInit {
     ),
   );
   protected hoy = this.servicio.hoy;
+  /** El promedio de sueño de los últimos 7 días. */
+  protected sueno = signal<Sueno | null>(null);
+  protected registrandoSueno = signal(false);
   protected faltanVasos = computed(() => {
     const a = this.hoy()?.agua;
     return a ? Math.max(0, a.meta - a.vasos) : 0;
@@ -172,6 +178,7 @@ export class Avisos implements OnInit {
       error: (e) => this.error.set(mensajeError(e, 'No pudimos cargar tus avisos.')),
     });
     this.servicio.cargarHoy().subscribe({ error: () => undefined });
+    this.cargarSueno();
     this.servicio.cargarHabitos().subscribe({
       next: (h) => {
         this.litros.set(h.agua_ml === null ? null : h.agua_ml / 1000);
@@ -221,6 +228,39 @@ export class Avisos implements OnInit {
         this.error.set(mensajeError(e, 'No pudimos confirmarlo. Intenta de nuevo.'));
       },
     });
+  }
+
+  protected cargarSueno(): void {
+    this.servicio.sueno().subscribe({ next: (s) => this.sueno.set(s), error: () => undefined });
+  }
+
+  /** «Me levanté» o «Me acosté»: se anota la hora y se actualiza el promedio. */
+  protected anotarSueno(que: 'levantar' | 'dormir'): void {
+    this.error.set('');
+    this.registrandoSueno.set(true);
+    const peticion =
+      que === 'levantar' ? this.servicio.registrarLevantar() : this.servicio.registrarDormir();
+    peticion.subscribe({
+      next: () => {
+        this.registrandoSueno.set(false);
+        this.celebraciones.registro();
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+        this.servicio.cargar().subscribe({ error: () => undefined });
+        this.cargarSueno();
+      },
+      error: (e) => {
+        this.registrandoSueno.set(false);
+        this.error.set(mensajeError(e, 'No pudimos anotarlo. Intenta de nuevo.'));
+      },
+    });
+  }
+
+  /** 7,75 → «7 h 45 min». */
+  protected duracion(horas: number): string {
+    const minutos = Math.round(horas * 60);
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
   }
 
   /** Un vaso que ya te tomaste, sin esperar el aviso. */

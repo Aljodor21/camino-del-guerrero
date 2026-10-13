@@ -13,7 +13,7 @@ from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, fcm, logros, notificaciones, push
+from . import cumplimiento, fcm, logros, notificaciones, push, sueno
 from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
 from .serializers import (HabitosSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
@@ -205,3 +205,30 @@ class CapituloView(APIView):
     def get(self, request):
         lunes = parse_date(request.query_params.get('lunes') or '') or logros.lunes_de(timezone.localdate())
         return Response(logros.capitulo(request.user, lunes))
+
+
+class RegistrarLevantarView(APIView):
+    """«Me levanté»: anota la hora (una vez al día) para el promedio de sueño."""
+
+    def post(self, request):
+        registro = notificaciones.registrar_levantar(request.user)
+        return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
+
+
+class RegistrarDormirView(APIView):
+    """«Me acosté»: anota la hora sin esperar el aviso."""
+
+    def post(self, request):
+        registro = notificaciones.registrar_dormir(request.user)
+        return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
+
+
+class SuenoView(APIView):
+    """Cuánto se durmió entre dos fechas (por defecto, los últimos 7 días)."""
+
+    def get(self, request):
+        hasta = parse_date(request.query_params.get('hasta') or '') or timezone.localdate()
+        desde = parse_date(request.query_params.get('desde') or '') or hasta - timedelta(days=6)
+        if desde > hasta or (hasta - desde).days > 92:
+            raise ReglaNegocioError('Pide un periodo válido de hasta un trimestre.')
+        return Response(sueno.resumen(request.user, desde, hasta))

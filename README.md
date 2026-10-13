@@ -30,6 +30,7 @@ La app **no inventa el plan de comida**: la minuta es la de la nutricionista y c
 
 | **Cumplimiento global** | En Avisos › Cumplimiento: qué tanto del día (y de la semana, el mes o el trimestre) se cumplió, sumando agua, dormir y, con el proceso en marcha, las comidas, la proteína y el entreno. Antes de que empiece el proceso solo cuentan agua y dormir. Muestra la racha, el día por día y dónde se falló. |
 | **Logros** | En Avisos › Logros: tu racha (con un comodín por semana), el guerrero que reacciona a tu día, 24 hitos que se logran con lo que registras (rachas, días completos, agua, entrenos, comidas, proteína, mediciones) y el capítulo de cada semana. Al anotar algo el anillo da un salto, y al cerrar el día al 100 % o lograr un hito hay una celebración. Nada premia comer menos, pasarse de agua ni saltarse comidas. |
+| **Sueño** | Cada día se anota a qué hora te levantas («Me levanté», o desde el aviso de la mañana) y a qué hora te acuestas; la app calcula cuánto dormiste cada noche y tu promedio (en Avisos › Tu día y en Cumplimiento). |
 | **Agenda** | Recordatorios propios y los que la app sugiere según los suplementos. |
 | **Rutinas** | Rutinas por implementos disponibles, con videos y sesiones con temporizadores. |
 

@@ -1,5 +1,5 @@
 export type TipoAviso =
-  'agua' | 'toma' | 'dormir' | 'entreno' | 'recordatorio' | 'comida' | 'proceso';
+  'agua' | 'toma' | 'dormir' | 'levantar' | 'entreno' | 'recordatorio' | 'comida' | 'proceso';
 
 /** Un aviso pendiente: sale de la bandeja solo cuando se confirma lo que pide. */
 export interface Aviso {
@@ -60,6 +60,23 @@ export interface ResumenHoy {
   tomas: TomaDeHoy[];
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };
+  /** A qué hora se levantó hoy (si ya lo anotó) y cuánto durmió anoche. */
+  levantar: { hora: string | null; levantado: string | null; dormiste_horas: number | null };
+}
+
+export interface Noche {
+  fecha: string;
+  acostado: string;
+  levantado: string;
+  horas: number;
+}
+
+/** Cuánto se durmió entre dos fechas: de la hora en que anotó que se acostó a la que anotó que se levantó. */
+export interface Sueno {
+  desde: string;
+  hasta: string;
+  promedio_horas: number | null;
+  noches: Noche[];
 }
 
 export type BloqueCumplimiento = 'comidas' | 'entreno' | 'tomas' | 'agua' | 'dormir';

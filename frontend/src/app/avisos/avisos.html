@@ -264,6 +264,65 @@
             </p>
           }
 
+          <!-- Sueño: la hora de acostarte y de levantarte, y cuánto duermes -->
+          <div class="space-y-2 border-t border-gray-100 dark:border-white/5 pt-3">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Sueño</p>
+            <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <i
+                [class]="
+                  h.levantar.levantado
+                    ? 'pi pi-check-circle text-green-600'
+                    : 'pi pi-sun text-gray-400'
+                "
+                aria-hidden="true"
+              ></i>
+              @if (h.levantar.levantado) {
+                Te levantaste a las {{ horaDe(h.levantar.levantado) }}
+              } @else if (h.levantar.hora) {
+                Levantarte a las {{ hora(h.levantar.hora) }}
+              } @else {
+                Aún no anotas a qué hora te levantaste hoy
+              }
+            </p>
+            @if (h.levantar.dormiste_horas) {
+              <p class="text-sm text-gray-700 dark:text-gray-300">
+                Anoche dormiste <strong>{{ duracion(h.levantar.dormiste_horas) }}</strong
+                >.
+              </p>
+            }
+            @if (sueno(); as s) {
+              @if (s.promedio_horas !== null) {
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Promedio de los últimos 7 días: {{ duracion(s.promedio_horas) }} ({{
+                    s.noches.length
+                  }}
+                  {{ s.noches.length === 1 ? 'noche' : 'noches' }})
+                </p>
+              }
+            }
+            <div class="flex flex-wrap gap-2">
+              @if (!h.levantar.levantado) {
+                <p-button
+                  label="Me levanté"
+                  icon="pi pi-sun"
+                  size="small"
+                  [loading]="registrandoSueno()"
+                  (onClick)="anotarSueno('levantar')"
+                />
+              }
+              @if (!h.dormir.acostado) {
+                <p-button
+                  label="Ya me acosté"
+                  icon="pi pi-moon"
+                  size="small"
+                  severity="secondary"
+                  [loading]="registrandoSueno()"
+                  (onClick)="anotarSueno('dormir')"
+                />
+              }
+            </div>
+          </div>
+
           @if (!h.agua.meta && !h.tomas.length && !h.entreno.toca && !h.dormir.hora) {
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Aún no hay nada programado. Configura tu agua y tu hora de dormir abajo.
