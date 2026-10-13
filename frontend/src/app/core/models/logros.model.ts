@@ -39,7 +39,11 @@ export interface Capitulo {
   domingo: string;
   completa: boolean;
   es_actual: boolean;
+  /** Promedio de los días que ya van. */
   porcentaje: number | null;
+  /** Lo que lleva de la semana entera (7 días). */
+  porcentaje_semana: number | null;
+  dias_que_van: number;
   anterior: number | null;
   diferencia: number | null;
   titulo: string;

@@ -142,3 +142,6 @@ class CapituloTest(LogrosBase):
         r = self.client.get(reverse('capitulo')).data
         self.assertFalse(r['completa'])
         self.assertEqual(r['titulo'], 'Así va tu semana')
+        # Lleva la semana entera (7 días), no solo los días que van; y no se compara con la anterior.
+        self.assertEqual(r['porcentaje_semana'], round(100 / 7))   # un solo día al 100 % de los 7
+        self.assertIsNone(r['diferencia'])

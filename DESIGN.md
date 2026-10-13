@@ -182,3 +182,8 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Tu día › Sueño:** debajo de los botones, «Hoy: te levantas a las 6:30 · mañana: a las 5:00 (cambiada)» y dos enlaces, «Cambiar las de hoy» y «Cambiar las de mañana», que abren las dos horas de ese día con «Guardar» y «Volver a la de siempre».
 - **Frente a lo previsto:** «Anoche te acostaste 30 min antes de lo previsto. Hoy te levantaste 15 min después de lo previsto» (a menos de 5 minutos dice «a la hora prevista»). En Cumplimiento, la tarjeta de sueño agrega el promedio de esas diferencias.
 
+## El porcentaje de un periodo
+
+- **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
+- **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+

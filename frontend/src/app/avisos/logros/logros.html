@@ -156,6 +156,12 @@
           }
         </p>
         <p class="text-sm text-gray-600 dark:text-gray-300">{{ c.frase }}</p>
+        @if (!c.completa && c.porcentaje !== null) {
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Van {{ c.dias_que_van }} de 7 días; en los días que van, tu promedio es
+            {{ c.porcentaje }} %.
+          </p>
+        }
         @if (diferencia(c)) {
           <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">{{ diferencia(c) }}</p>
         }

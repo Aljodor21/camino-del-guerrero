@@ -141,6 +141,10 @@ export interface CumplimientoGlobal {
   desde: string;
   hasta: string;
   porcentaje: number | null;
+  /** Cuánto lleva del periodo entero: los días que faltan cuentan como lo que aún no se hace. */
+  porcentaje_periodo: number | null;
+  /** Cuántos días tiene el periodo completo (7 en una semana). */
+  dias_periodo: number;
   dias_cumplidos: number;
   racha_actual: number;
   mejor_racha: number;

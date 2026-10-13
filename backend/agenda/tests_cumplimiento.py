@@ -76,6 +76,23 @@ class CumplimientoGlobalTest(APITestCase):
         agua = next(b for b in datos['bloques'] if b['id'] == 'agua')
         self.assertEqual(agua['porcentaje'], round((25 + 100 * 3 + 0) / 5))
 
+    def test_el_periodo_completo_divide_por_todos_sus_dias_y_no_solo_por_los_que_van(self):
+        # Ayer completo (100 %) y hoy sin nada aún (0 %), en una semana de 7 días.
+        for _ in range(4):
+            RegistroHabito.objects.create(usuario=self.usuario, tipo='agua', fecha=HOY() - timedelta(days=1), ml=500)
+        RegistroHabito.objects.create(usuario=self.usuario, tipo='dormir', fecha=HOY() - timedelta(days=1))
+        datos = self.pedir(HOY() - timedelta(days=1), HOY() + timedelta(days=5))
+        self.assertEqual(len(datos['dias']), 2)
+        self.assertEqual(datos['dias_periodo'], 7)
+        self.assertEqual(datos['porcentaje'], 50)            # promedio de los 2 días que van
+        self.assertEqual(datos['porcentaje_periodo'], 14)    # 100 / 7: lo que lleva de la semana entera
+
+    def test_un_periodo_ya_cerrado_da_lo_mismo_de_las_dos_formas(self):
+        for atras in (3, 2):
+            self.agua(4, HOY() - timedelta(days=atras))
+        datos = self.pedir(HOY() - timedelta(days=3), HOY() - timedelta(days=2))
+        self.assertEqual(datos['porcentaje'], datos['porcentaje_periodo'])
+
     def test_no_pasa_de_un_trimestre_ni_de_hoy(self):
         r = self.client.get(reverse('cumplimiento-global'),
                             {'desde': (HOY() - timedelta(days=200)).isoformat(), 'hasta': HOY().isoformat()})

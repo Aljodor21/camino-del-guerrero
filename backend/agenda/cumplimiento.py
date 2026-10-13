@@ -181,13 +181,19 @@ def _rachas(dias):
 
 
 def calcular(usuario, desde, hasta):
+    """Dos porcentajes: `porcentaje` es el promedio de los días que ya van, y `porcentaje_periodo` es
+    cuánto se lleva de **todo** el periodo (los días que faltan cuentan como lo que aún no se hace):
+    una semana con 2 días al 60 % lleva el 60 % de lo que va, pero apenas el 17 % de la semana."""
     ahora = timezone.localtime()
+    hasta_pedido = hasta
     hasta = min(hasta, ahora.date())
     desde = max(desde, timezone.localtime(usuario.date_joined).date())
+    dias_periodo = max(0, (hasta_pedido - desde).days + 1)
     if hasta - desde > timedelta(days=MAX_DIAS):
         raise ReglaNegocioError(f'Pide máximo {MAX_DIAS} días a la vez.')
     if desde > hasta:
-        return {'desde': desde, 'hasta': hasta, 'porcentaje': None, 'dias': [], 'bloques': [],
+        return {'desde': desde, 'hasta': hasta, 'porcentaje': None, 'porcentaje_periodo': None,
+                'dias_periodo': dias_periodo, 'dias': [], 'bloques': [],
                 'racha_actual': 0, 'mejor_racha': 0, 'umbral_racha': UMBRAL_RACHA, 'dias_cumplidos': 0}
 
     datos = _Datos(usuario, desde, hasta)
@@ -202,6 +208,8 @@ def calcular(usuario, desde, hasta):
     return {
         'desde': desde, 'hasta': hasta,
         'porcentaje': round(sum(con_porcentaje) / len(con_porcentaje)) if con_porcentaje else None,
+        'porcentaje_periodo': round(sum(con_porcentaje) / dias_periodo) if con_porcentaje and dias_periodo else None,
+        'dias_periodo': dias_periodo,
         'dias_cumplidos': sum(1 for p in con_porcentaje if p >= UMBRAL_RACHA),
         'bloques': [{'id': i, 'nombre': NOMBRES[i], 'peso': PESOS[i],
                      'porcentaje': round(sum(por_bloque[i]) / len(por_bloque[i])), 'dias': len(por_bloque[i])}
