@@ -62,7 +62,7 @@ class _Datos:
         self.habitos = habitos_de(usuario)
         self.personalizados = horarios.personalizados_entre(usuario, desde, hasta)
         self.procesos = list(usuario.procesos.all())
-        registros = RegistroHabito.objects.filter(usuario=usuario, fecha__range=(desde, hasta))
+        registros = RegistroHabito.objects.filter(usuario=usuario, fecha__range=(desde, hasta)).order_by('id')
         self.agua = defaultdict(int)
         self.tomas = defaultdict(set)
         self.dormir = {}
@@ -72,7 +72,7 @@ class _Datos:
             elif r.tipo == 'toma':
                 self.tomas[r.fecha].add((r.suplemento_id, r.tiempo))
             elif r.tipo == 'dormir':
-                self.dormir.setdefault(r.fecha, r.momento)
+                self.dormir[r.fecha] = r.momento       # el último registro de la noche (el que quedó)
         self.comidas = defaultdict(dict)
         for r in RegistroComida.objects.filter(usuario=usuario, fecha__range=(desde, hasta)):
             self.comidas[r.fecha][r.tiempo] = r

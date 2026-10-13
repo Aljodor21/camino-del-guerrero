@@ -16,8 +16,8 @@ MAX_HORAS = 16
 def noches(usuario, desde, hasta):
     """Las noches con las dos horas anotadas: {fecha en que se levantó, acostado, levantado, horas}."""
     levantadas = {}
-    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha__range=(desde, hasta)).order_by('momento'):
-        levantadas.setdefault(r.fecha, r)          # la primera del día
+    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha__range=(desde, hasta)).order_by('id'):
+        levantadas[r.fecha] = r                    # la última que dijo la persona ese día
     if not levantadas:
         return []
     from .notificaciones import habitos_de      # evita un import circular
@@ -31,7 +31,7 @@ def noches(usuario, desde, hasta):
         previas = [a for a in acostadas if lev.momento - timedelta(hours=MAX_HORAS) <= a.momento < lev.momento]
         if not previas:
             continue
-        acostado = previas[-1]
+        acostado = max(previas, key=lambda a: a.id)       # lo último que dijo de esa noche
         horas = (lev.momento - acostado.momento).total_seconds() / 3600
         if MIN_HORAS <= horas <= MAX_HORAS:
             metas_noche = horarios.horas_de(habitos, acostado.fecha, personalizados)
