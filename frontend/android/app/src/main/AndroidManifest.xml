@@ -54,6 +54,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Para tomar la foto de la comida o del progreso con la cámara (sin esto solo deja elegir de la galería). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Para la vibración suave al anotar algo. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Para abrir el instalador de Android con la actualización de la propia app. -->

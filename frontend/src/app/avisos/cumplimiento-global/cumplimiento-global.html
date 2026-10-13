@@ -151,6 +151,14 @@
                 ></div>
               </div>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ b.detalle }}</p>
+              @if (b.id === 'comidas') {
+                <a
+                  routerLink="/nutricion"
+                  [queryParams]="{ seccion: 'cumplimiento' }"
+                  class="text-xs font-medium text-guerrero-red"
+                  >Ver qué grupos te faltaron</a
+                >
+              }
             </li>
           }
         </ul>
