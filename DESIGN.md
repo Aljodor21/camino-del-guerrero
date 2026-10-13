@@ -215,4 +215,5 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Tres estados** según cuánto va el día: descansa (menos de la mitad de la meta), firme y, desde el 50 %, celebra.
 - **La racha, en grande** (Avisos › Logros): el número a todo lo alto en dorado, «días de racha», qué falta hoy, la barra hacia la próxima meta (3, 7, 14, 30, 60, 90 días) y los dos pilares del día.
 - **La regla:** un día cuenta para la racha desde el 50 %; por debajo, se pierde (el comodín de la semana perdona un día). El día vale por dos pilares iguales, **alimentación** (comidas, proteína, agua y dormir) y **deporte** (entreno, solo si ese día toca); si no toca entrenar, vale solo la alimentación.
+- **Sin avisos retroactivos:** «Buenos días: ¿ya te levantaste?» y «En media hora, a dormir» solo aparecen cerca de su hora (hasta 90 minutos después). Si la app los calcula tarde —al estrenarlos o al cambiar tus horas— no salen, y uno que se quedó pendiente se quita solo, sin inventar que te levantaste. Para anotar la hora real está el botón «Me levanté» de Tu día.
 
