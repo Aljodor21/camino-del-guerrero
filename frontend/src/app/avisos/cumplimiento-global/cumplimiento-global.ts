@@ -229,20 +229,22 @@ export class CumplimientoGlobalVista implements OnInit {
   /** Color según qué tan bien va: verde desde la meta, ámbar a medias, rojo si poco. */
   protected tono(p: number | null): string {
     if (p === null) return 'text-gray-400 dark:text-gray-500';
-    if (p >= (this.datos()?.umbral_racha ?? 80)) return 'text-emerald-600 dark:text-emerald-400';
-    return p >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-guerrero-red';
+    if (p >= (this.datos()?.umbral_racha ?? 50)) return 'text-emerald-600 dark:text-emerald-400';
+    return p >= (this.datos()?.umbral_racha ?? 50) / 2
+      ? 'text-amber-600 dark:text-amber-400'
+      : 'text-guerrero-red';
   }
 
   protected fondo(p: number | null): string {
     if (p === null) return 'bg-gray-200 dark:bg-dark-700';
-    if (p >= (this.datos()?.umbral_racha ?? 80)) return 'bg-emerald-500';
-    return p >= 50 ? 'bg-amber-500' : 'bg-guerrero-red';
+    if (p >= (this.datos()?.umbral_racha ?? 50)) return 'bg-emerald-500';
+    return p >= (this.datos()?.umbral_racha ?? 50) / 2 ? 'bg-amber-500' : 'bg-guerrero-red';
   }
 
   protected trazoColor(p: number | null): string {
     if (p === null) return 'stroke-gray-300 dark:stroke-dark-600';
-    if (p >= (this.datos()?.umbral_racha ?? 80)) return 'stroke-emerald-500';
-    return p >= 50 ? 'stroke-amber-500' : 'stroke-guerrero-red';
+    if (p >= (this.datos()?.umbral_racha ?? 50)) return 'stroke-emerald-500';
+    return p >= (this.datos()?.umbral_racha ?? 50) / 2 ? 'stroke-amber-500' : 'stroke-guerrero-red';
   }
 
   protected mensaje(): string {

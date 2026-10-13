@@ -34,6 +34,41 @@ const RUTA = ESTACIONES.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y}`
   templateUrl: './logros.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonModule, MessageModule, Anillo, Guerrero, Medalla],
+  styles: `
+    .racha-numero {
+      margin-top: 2px;
+      font:
+        700 clamp(120px, 40vw, 200px) / 0.8 'Barlow Condensed',
+        'Barlow',
+        sans-serif;
+      letter-spacing: -0.02em;
+      color: #d4af37;
+      font-variant-numeric: tabular-nums;
+      animation: llega 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+    .racha-cero {
+      color: #7b7067;
+    }
+    .racha-etiqueta {
+      margin-top: 6px;
+      font:
+        600 26px / 1 'Barlow Condensed',
+        'Barlow',
+        sans-serif;
+      color: #f6f1ea;
+    }
+    @keyframes llega {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.92);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .racha-numero {
+        animation: none;
+      }
+    }
+  `,
 })
 export class LogrosVista implements OnInit {
   private servicio = inject(AvisosService);
@@ -53,15 +88,23 @@ export class LogrosVista implements OnInit {
   protected estado = computed(() =>
     estadoDe(this.datos()?.hoy?.porcentaje, this.datos()?.racha.umbral),
   );
-  protected frase = computed(() => {
-    if (!this.datos()) return 'Cargando tus logros…';
-    const p = this.datos()?.hoy?.porcentaje;
-    if (p == null) return 'Cuando empieces a registrar, el guerrero se pone en marcha.';
-    return {
-      descansa: 'El guerrero descansa: aún queda día para sumar.',
-      firme: 'Va firme. Un registro más y se acerca a la meta.',
-      celebra: 'Meta del día cumplida. Así se camina.',
-    }[this.estado()];
+  /** El próximo hito de racha que aún no se logra. */
+  protected proximoHito = computed(() =>
+    (this.datos()?.hitos ?? []).find((h) => h.grupo === 'racha' && !h.logrado),
+  );
+  protected hoySalvaLaRacha = computed(() => {
+    const d = this.datos();
+    return !!d && (d.hoy?.porcentaje ?? 0) >= d.racha.umbral;
+  });
+  /** Qué falta hoy para que el día cuente: o que ya cuenta. */
+  protected lineaDeHoy = computed(() => {
+    const d = this.datos();
+    const hoy = d?.hoy?.porcentaje;
+    if (!d || hoy == null) return 'Cuando empieces a anotar, el día cuenta.';
+    if (hoy >= d.racha.umbral) return `Hoy llevas ${hoy} %: el día de hoy cuenta para tu racha.`;
+    return d.racha.actual > 0
+      ? `Hoy llevas ${hoy} %. Te faltan ${d.racha.umbral - hoy} puntos para no perder tu racha.`
+      : `Hoy llevas ${hoy} %. Llega al ${d.racha.umbral} % del día para empezar tu racha.`;
   });
   protected visibles = computed(() => {
     const hitos = this.datos()?.hitos ?? [];
@@ -115,8 +158,9 @@ export class LogrosVista implements OnInit {
 
   protected tono(p: number | null): string {
     if (p === null) return '#4a4039';
-    if (p >= (this.datos()?.racha.umbral ?? 80)) return '#27ae60';
-    return p >= 50 ? '#f39c12' : '#c0392b';
+    const umbral = this.datos()?.racha.umbral ?? 50;
+    if (p >= umbral) return '#27ae60';
+    return p >= umbral / 2 ? '#f39c12' : '#c0392b';
   }
 
   protected diferencia(c: Capitulo): string {

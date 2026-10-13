@@ -66,12 +66,22 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
   { id: 'proceso', label: 'Control' },
 ];
 
+/** Qué hace el guerrero cuando se confirma cada tipo de aviso. */
+const ACCION_DE_AVISO: Partial<Record<TipoAviso, AccionGuerrero>> = {
+  agua: 'agua',
+  toma: 'proteina',
+  dormir: 'dormir',
+  levantar: 'levantar',
+  entreno: 'entrenar',
+};
+
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
 import { Ayuda } from '../shared/ayuda/ayuda';
 import { CumplimientoGlobalVista } from './cumplimiento-global/cumplimiento-global';
 import { LogrosVista } from './logros/logros';
 import { CelebracionesService } from '../core/services/celebraciones';
 import { Anillo } from '../shared/anillo/anillo';
+import { AccionGuerrero } from '../shared/guerrero/guerrero';
 
 type Seccion = 'pendientes' | 'dia' | 'cumplimiento' | 'logros' | 'ajustes';
 const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'logros', 'ajustes'];
@@ -257,7 +267,7 @@ export class Avisos implements OnInit {
     this.servicio.confirmar(aviso).subscribe({
       next: () => {
         this.confirmando.set(null);
-        this.celebraciones.registro();
+        this.celebraciones.registro(ACCION_DE_AVISO[aviso.tipo]);
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
       },
       error: (e) => {
@@ -336,7 +346,7 @@ export class Avisos implements OnInit {
     peticion.subscribe({
       next: () => {
         this.registrandoSueno.set(false);
-        this.celebraciones.registro();
+        this.celebraciones.registro(que === 'levantar' ? 'levantar' : 'dormir');
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
         this.servicio.cargar().subscribe({ error: () => undefined });
         this.cargarSueno();
@@ -433,7 +443,7 @@ export class Avisos implements OnInit {
     this.servicio.registrarAgua().subscribe({
       next: (r) => {
         this.anotado.set(`Vaso de ${r.ml} ml anotado a las ${this.horaDe(r.momento)}`);
-        this.celebraciones.registro();
+        this.celebraciones.registro('agua');
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
         this.servicio.cargar().subscribe({ error: () => undefined });
       },

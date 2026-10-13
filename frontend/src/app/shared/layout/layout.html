@@ -157,4 +157,7 @@
 
 <app-visor />
 
+@if (!authService.isAdmin()) {
+  <app-companero />
+}
 <app-celebracion />

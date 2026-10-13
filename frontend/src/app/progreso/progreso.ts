@@ -18,6 +18,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { ThemeService } from '../core/services/theme';
 import { AudioService } from '../core/services/audio';
+import { CelebracionesService } from '../core/services/celebraciones';
 import { RegistroEntrenamiento, EjercicioCompletado } from '../core/models/progreso.model';
 import { ProcesoService } from '../core/services/proceso';
 import { Medidas } from './medidas/medidas';
@@ -78,6 +79,7 @@ export class Progreso implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private theme = inject(ThemeService);
   private audio = inject(AudioService);
+  private celebraciones = inject(CelebracionesService);
   private route = inject(ActivatedRoute);
   private agenda = inject(AgendaService);
 
@@ -540,6 +542,7 @@ export class Progreso implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.audio.sesionFinalizada();
+          this.celebraciones.registro('entrenar');
           this.borrarLocal();
           this.sesion.set(null);
           this.savingSesion.set(false);

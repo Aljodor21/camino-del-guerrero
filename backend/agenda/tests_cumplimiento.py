@@ -58,8 +58,10 @@ class CumplimientoGlobalTest(APITestCase):
         dia = self.pedir()['dias'][0]
         self.assertTrue(dia['en_proceso'])
         self.assertEqual({b['id'] for b in dia['bloques']}, {'agua', 'dormir', 'entreno'})
-        # Sin entrenar: (15 + 10 + 0) / 45.
-        self.assertEqual(dia['porcentaje'], 56)
+        # Alimentación (agua y dormir, completos) vale la mitad y el deporte, sin entrenar, la otra mitad.
+        self.assertEqual(dia['porcentaje'], 50)
+        self.assertEqual({p['id']: p['porcentaje'] for p in dia['pilares']}, {'alimentacion': 100, 'deporte': 0})
+        self.assertEqual([p['peso'] for p in dia['pilares']], [50, 50])
         self.assertIn('No entrenaste', next(b for b in dia['bloques'] if b['id'] == 'entreno')['faltas'])
         RegistroEntrenamiento.objects.create(usuario=self.usuario)
         self.assertEqual(self.pedir()['dias'][0]['porcentaje'], 100)
@@ -137,3 +139,24 @@ class CumplimientoConComidasTest(APITestCase):
         comidas = next(b for b in dia['bloques'] if b['id'] == 'comidas')
         self.assertEqual(comidas['peso'], 40)
         self.assertEqual(comidas['porcentaje'], 0)
+
+
+class PilaresTest(CumplimientoGlobalTest):
+    def test_un_dia_sin_entreno_vale_solo_por_la_alimentacion(self):
+        from users.models import Proceso as P
+        P.objects.create(usuario=self.usuario, objetivo='ganar_musculo', incluye_entrenamiento=True,
+                         fecha_inicio=HOY() - timedelta(days=2))
+        rutina = Rutina.objects.create(usuario=self.usuario, nombre='R')
+        DiaRutina.objects.create(rutina=rutina, dia_semana=(HOY() + timedelta(days=1)).isoweekday())   # mañana, no hoy
+        self.agua(4)
+        dia = self.pedir()['dias'][0]
+        self.assertEqual([p['id'] for p in dia['pilares']], ['alimentacion'])
+        self.assertEqual(dia['pilares'][0]['peso'], 100)
+
+    def test_la_racha_cuenta_desde_el_50_y_un_dia_por_debajo_no_suma(self):
+        self.assertEqual(self.pedir()['umbral_racha'], 50)
+        self.agua(4, HOY() - timedelta(days=3))                      # agua completa, sin dormir: 60 %
+        self.agua(3, HOY() - timedelta(days=2))                      # 3 de 4 vasos, sin dormir: 45 %
+        datos = self.pedir(HOY() - timedelta(days=3), HOY() - timedelta(days=2))
+        self.assertEqual([d['porcentaje'] for d in datos['dias']], [60, 45])
+        self.assertEqual(datos['dias_cumplidos'], 1)
