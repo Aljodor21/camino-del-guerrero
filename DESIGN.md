@@ -162,6 +162,13 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Celebraciones** (una tarjeta con el guerrero o la medalla y un confeti rojo, dorado y crema): al cerrar el día al 100 % (una vez por día) y al lograr un hito nuevo. Se cierran con «Seguir», Escape o tocando fuera. Con «reducir movimiento» no hay confeti ni saltos.
 - **Sin culpa:** el comodín evita que un mal día borre todo; una semana sin terminar no se califica («Así va tu semana»); y ningún hito premia comer menos, pasarse de agua ni saltarse comidas.
 
+
+
+## El porcentaje de un periodo
+
+- **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
+- **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
 ## Sueño
 
 - **Avisos › Tu día** trae una sección «Sueño» con la hora a la que te levantaste (o la que tienes como meta), cuánto dormiste anoche, el promedio de los últimos 7 días y dos botones: **Me levanté** y **Ya me acosté**. Cada botón desaparece cuando ya anotaste esa hora.
@@ -173,6 +180,7 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 
 - **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
 - **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
 
 ## La app siempre al día
 
