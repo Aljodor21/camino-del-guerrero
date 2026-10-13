@@ -54,7 +54,7 @@ export class Nutricion implements OnInit {
     { id: 'menu', label: 'Menú', icon: 'pi pi-calendar' },
     { id: 'mercado', label: 'Mercado', icon: 'pi pi-shopping-cart' },
     { id: 'plan', label: 'Mi plan', icon: 'pi pi-file' },
-    { id: 'cumplimiento', label: 'Cumplimiento', icon: 'pi pi-chart-pie' },
+    { id: 'cumplimiento', label: 'Lo que comí', icon: 'pi pi-check-square' },
     { id: 'alimentos', label: 'Alimentos', icon: 'pi pi-list' },
   ];
 

@@ -162,3 +162,9 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Celebraciones** (una tarjeta con el guerrero o la medalla y un confeti rojo, dorado y crema): al cerrar el día al 100 % (una vez por día) y al lograr un hito nuevo. Se cierran con «Seguir», Escape o tocando fuera. Con «reducir movimiento» no hay confeti ni saltos.
 - **Sin culpa:** el comodín evita que un mal día borre todo; una semana sin terminar no se califica («Así va tu semana»); y ningún hito premia comer menos, pasarse de agua ni saltarse comidas.
 
+## La app siempre al día
+
+- **Sin cerrar y abrir:** la app se vuelve a cargar sola cuando cambia el día (a medianoche con la app abierta, o al volver a ella) y cuando se regresa después de más de 10 minutos en segundo plano. Si en ese momento hay un campo con texto o una ventana abierta, espera a que termine para no borrar lo que se escribe.
+- **Fotos de la comida:** «Tomar foto» abre la cámara y «Galería» deja elegir una que ya exista. La app declara el permiso de cámara (sin él, Android solo ofrecía la galería).
+- **Un solo «Cumplimiento»:** el de Avisos es el del día completo (agua, dormir, comidas, proteína y entreno); el de Nutrición se llama «Lo que comí» y muestra qué grupos de la minuta faltaron. Desde el día, la tarjeta de comidas enlaza a ese detalle.
+
