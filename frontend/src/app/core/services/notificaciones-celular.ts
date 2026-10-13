@@ -57,6 +57,12 @@ export class NotificacionesCelularService {
         this.iniciado = true;
         this.locales.alTocar(() => void this.router.navigateByUrl('/avisos'));
         void App.addListener('resume', () => void this.actualizar()).catch(() => undefined);
+        // Tocar una notificación abre la app en su pantalla (con la app abierta o cerrada).
+        void App.addListener('appUrlOpen', (e) => this.abrir(e.url)).catch(() => undefined);
+        void App.getLaunchUrl().then(
+          (l) => l && this.abrir(l.url),
+          () => undefined,
+        );
       }
       const permiso = await this.locales.permiso();
       if (permiso === 'denied') return this._estado.set('denegado');
@@ -102,6 +108,17 @@ export class NotificacionesCelularService {
     await this.locales.cancelar().catch(() => undefined);
     this._modo.set(null);
     this._estado.set('inactivo');
+  }
+
+  /** La pantalla a la que lleva una notificación: solo rutas de la propia app. */
+  private abrir(url: string): void {
+    try {
+      const { pathname, search } = new URL(url);
+      if (pathname.startsWith('/') && pathname !== '/')
+        void this.router.navigateByUrl(pathname + search);
+    } catch {
+      // Una dirección que no es de la app no se abre.
+    }
   }
 
   private async prender(): Promise<void> {

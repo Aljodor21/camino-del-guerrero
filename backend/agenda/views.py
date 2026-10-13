@@ -162,7 +162,8 @@ class PushCelularView(APIView):
         cliente = datos_del_cliente(request._request)
         TokenCelular.objects.update_or_create(
             token=token, defaults={'usuario': request.user, 'dispositivo': cliente['dispositivo'],
-                                   'version_app': cliente['version_app'], 'ultimo_uso': timezone.now()})
+                                   'version_app': cliente['version_app'], 'ultimo_uso': timezone.now(),
+                                   'con_botones': request.data.get('botones') is True})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request):

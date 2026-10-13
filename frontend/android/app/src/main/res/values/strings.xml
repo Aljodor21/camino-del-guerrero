@@ -4,4 +4,6 @@
     <string name="title_activity_main">Camino del Guerrero</string>
     <string name="package_name">site.servelejo.caminodelguerrero</string>
     <string name="custom_url_scheme">site.servelejo.caminodelguerrero</string>
+    <!-- Donde está el servidor: los botones de las notificaciones le hablan sin abrir la app. -->
+    <string name="sitio_url">https://camino.servelejo.site</string>
 </resources>
