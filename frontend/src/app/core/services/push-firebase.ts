@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { firstValueFrom } from 'rxjs';
 
@@ -86,13 +87,34 @@ export class PushFirebaseService {
         void this.guardarToken(t.value).catch(() => undefined);
       }
     }).catch(() => undefined);
-    // Con la app abierta Android no muestra la notificación: se refresca la bandeja.
-    void PushNotifications.addListener('pushNotificationReceived', () =>
-      this.avisos.cargar().subscribe({ error: () => undefined }),
-    ).catch(() => undefined);
+    // Con la app abierta Android no muestra la notificación de Firebase: se muestra aquí y se refresca la bandeja.
+    void PushNotifications.addListener('pushNotificationReceived', (n) => {
+      this.avisos.cargar().subscribe({ error: () => undefined });
+      void this.mostrar(n.title ?? 'Camino del Guerrero', n.body ?? '');
+    }).catch(() => undefined);
     void PushNotifications.addListener('pushNotificationActionPerformed', (a) => {
       const ruta = String(a.notification.data?.['ruta'] ?? '/avisos');
       void this.router.navigateByUrl(ruta.startsWith('/') ? ruta : '/avisos');
     }).catch(() => undefined);
+  }
+
+  /** La misma notificación, ahora mismo, como cualquier otra: barra de estado, sonido y vibración. */
+  private async mostrar(title: string, body: string): Promise<void> {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: Math.floor(Date.now() % 2_000_000_000),
+            title,
+            body,
+            channelId: CANAL_AVISOS.id,
+            schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true },
+            extra: { ruta: '/avisos' },
+          },
+        ],
+      });
+    } catch {
+      // Sin permiso o sin el componente, queda la bandeja actualizada.
+    }
   }
 }
