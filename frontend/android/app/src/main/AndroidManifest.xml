@@ -54,6 +54,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Para la vibración suave al anotar algo. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Para abrir el instalador de Android con la actualización de la propia app. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Para que los avisos suenen a su hora exacta con la app cerrada (Android 13 o más lo concede solo). -->

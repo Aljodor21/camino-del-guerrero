@@ -73,4 +73,16 @@ export class AudioService {
     const notas = [523, 659, 784, 1047];
     notas.forEach((freq, i) => this.tono(freq, 0.22, i * 0.15, 'sine', 0.3));
   }
+
+  /** Al anotar un vaso, una toma o un entreno — un toque corto y suave. */
+  registro(): void {
+    this.tono(660, 0.09, 0, 'sine', 0.18);
+    this.tono(990, 0.14, 0.08, 'sine', 0.18);
+  }
+
+  /** Al cerrar el día al 100 % — tres notas que suben. */
+  diaCompleto(): void {
+    [523, 659, 784].forEach((freq, i) => this.tono(freq, 0.2, i * 0.13, 'triangle', 0.25));
+    this.tono(1047, 0.45, 0.4, 'triangle', 0.25);
+  }
 }

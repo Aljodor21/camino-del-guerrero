@@ -152,3 +152,13 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **En el navegador, con la app ya instalada:** Ajustes dice «Ya tienes la app instalada: los avisos te llegan ahí y no se repiten en el navegador», en vez de ofrecer activar las notificaciones del navegador.
 - **Con la app abierta o cerrada** la notificación se ve igual: la arma el propio servicio de la app (Android no muestra solo las de Firebase con la app abierta), con el color y la campana de la marca.
 
+## Logros y celebraciones
+
+- **El guerrero** es el del logo, de busto y dibujado a mano en SVG (sin imágenes): casco rojo con cresta, ojos que brillan y filo dorado. Tiene tres estados según el avance del día: descansa (menos del 30 %: cabeza baja, ojos cerrados, colores apagados), firme (de pie, atento) y celebra (desde la meta del 80 %: ojos dorados, un aura y tres saltos).
+- **Avisos › Logros** (quinta pestaña): arriba el guerrero con su frase, los días seguidos de racha, la mejor racha y el anillo del día; un aviso del **comodín de la semana** (disponible o usado; se renueva el lunes); el **capítulo de la semana** como un camino de siete estaciones, una por día, con su color (verde, ámbar o rojo), el título de la semana, lo que subiste o bajaste frente a la anterior, el mejor día y qué mirar la próxima; y la cuadrícula de **hitos** con filtro (todos, logrados, por lograr).
+- **Medallas** en forma de escudo, como el del logo, con un dibujo por grupo (racha, días completos, agua, entreno, comida, proteína, medición) y borde de bronce, plata u oro según el nivel. Las que faltan se ven apagadas y con su borde punteado; debajo dicen cuánto falta o cuándo se lograron.
+- **Anillo del día** en la cabecera de Avisos (toca para ir a Logros): da un salto cada vez que se anota algo y cambia de color con el avance.
+- **Al anotar algo:** salto del anillo, vibración corta y, si se activa, un sonido suave. Ajustes › «Al anotar algo» enciende o apaga vibración (encendida) y sonido (apagado).
+- **Celebraciones** (una tarjeta con el guerrero o la medalla y un confeti rojo, dorado y crema): al cerrar el día al 100 % (una vez por día) y al lograr un hito nuevo. Se cierran con «Seguir», Escape o tocando fuera. Con «reducir movimiento» no hay confeti ni saltos.
+- **Sin culpa:** el comodín evita que un mal día borre todo; una semana sin terminar no se califica («Así va tu semana»); y ningún hito premia comer menos, pasarse de agua ni saltarse comidas.
+

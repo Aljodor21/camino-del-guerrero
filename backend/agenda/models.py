@@ -202,3 +202,18 @@ class TokenCelular(models.Model):
 
     def __str__(self):
         return f'{self.usuario.email} - {self.dispositivo or "celular"}'
+
+
+class HitoVisto(models.Model):
+    """Un hito que la persona ya vio celebrar. Los hitos mismos no se guardan: se calculan de lo
+    registrado, que no se edita."""
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='hitos_vistos')
+    clave   = models.CharField(max_length=40)
+    visto_en = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['usuario', 'clave'], name='hito_visto_unico')]
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.clave}'

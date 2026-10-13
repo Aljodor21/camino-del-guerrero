@@ -10,6 +10,7 @@ import {
   HabitosPayload,
   ResumenHoy,
 } from '../models/avisos.model';
+import { Capitulo, Logros } from '../models/logros.model';
 import { environment } from '../../../environments/environment';
 
 const API = `${environment.apiUrl}/agenda`;
@@ -46,6 +47,21 @@ export class AvisosService {
   /** Cuánto se cumplió entre dos fechas (YYYY-MM-DD): agua, dormir y, con proceso, todo lo demás. */
   cumplimiento(desde: string, hasta: string): Observable<CumplimientoGlobal> {
     return this.http.get<CumplimientoGlobal>(`${API}/cumplimiento/`, { params: { desde, hasta } });
+  }
+
+  /** La racha, los hitos y cuáles son nuevos. */
+  logros(): Observable<Logros> {
+    return this.http.get<Logros>(`${API}/logros/`);
+  }
+
+  /** La persona ya vio celebrar estos hitos. */
+  marcarHitosVistos(ids: string[]): Observable<{ vistos: number }> {
+    return this.http.post<{ vistos: number }>(`${API}/logros/vistos/`, { ids });
+  }
+
+  /** La semana de lunes a domingo (YYYY-MM-DD del lunes); sin fecha, la de hoy. */
+  capitulo(lunes?: string): Observable<Capitulo> {
+    return this.http.get<Capitulo>(`${API}/capitulo/`, { params: lunes ? { lunes } : {} });
   }
 
   cargarHabitos(): Observable<Habitos> {

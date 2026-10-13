@@ -19,6 +19,20 @@
         }
       </p>
     </div>
+    @if (celebraciones.hoy() !== null) {
+      <button
+        type="button"
+        class="ml-auto shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+        aria-label="Ver tus logros"
+        (click)="seccion.set('logros')"
+      >
+        <app-anillo
+          [porcentaje]="celebraciones.hoy()"
+          [pulso]="celebraciones.pulso()"
+          [tamano]="52"
+        />
+      </button>
+    }
   </header>
 
   <app-pestanas [items]="pestanas()" [(activa)]="seccion" etiqueta="Secciones de avisos" />
@@ -30,6 +44,9 @@
   @switch (seccion()) {
     @case ('cumplimiento') {
       <app-cumplimiento-global />
+    }
+    @case ('logros') {
+      <app-logros />
     }
     @case ('pendientes') {
       <app-ayuda
@@ -363,6 +380,38 @@
           @if (guardado()) {
             <span class="text-sm text-green-700 dark:text-green-400" role="status">Guardado</span>
           }
+        </div>
+      </section>
+
+      <!-- Efectos -->
+      <section
+        aria-labelledby="av-efectos"
+        class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3"
+      >
+        <h2 id="av-efectos" class="font-semibold text-gray-900 dark:text-white">Al anotar algo</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Cada vez que anotas un vaso, una toma o un entreno, el anillo da un salto y se celebra el
+          día completo y los hitos.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            role="switch"
+            [attr.aria-checked]="celebraciones.vibracion()"
+            [class]="clasesChip(celebraciones.vibracion())"
+            (click)="celebraciones.fijar({ vibracion: !celebraciones.vibracion() })"
+          >
+            Vibración
+          </button>
+          <button
+            type="button"
+            role="switch"
+            [attr.aria-checked]="celebraciones.sonido()"
+            [class]="clasesChip(celebraciones.sonido())"
+            (click)="celebraciones.fijar({ sonido: !celebraciones.sonido() })"
+          >
+            Sonido
+          </button>
         </div>
       </section>
 
