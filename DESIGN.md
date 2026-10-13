@@ -169,6 +169,11 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Avisos › Cumplimiento** muestra una tarjeta «Sueño» con el promedio del periodo y una barra por noche (10 horas llenan la barra), con la aclaración de que es aproximado.
 - **Sin inventar metas:** no se califica si dormiste «bien» o «mal»; solo se muestra lo que anotaste.
 
+## El porcentaje de un periodo
+
+- **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
+- **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
 ## La app siempre al día
 
 - **Sin cerrar y abrir:** la app se vuelve a cargar sola cuando cambia el día (a medianoche con la app abierta, o al volver a ella) y cuando se regresa después de más de 10 minutos en segundo plano. Si en ese momento hay un campo con texto o una ventana abierta, espera a que termine para no borrar lo que se escribe.
@@ -186,4 +191,5 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 
 - **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
 - **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
 
