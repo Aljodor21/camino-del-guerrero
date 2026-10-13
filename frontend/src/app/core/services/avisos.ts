@@ -9,6 +9,7 @@ import {
   Habitos,
   HabitosPayload,
   ResumenHoy,
+  Sueno,
 } from '../models/avisos.model';
 import { Capitulo, Logros } from '../models/logros.model';
 import { environment } from '../../../environments/environment';
@@ -62,6 +63,24 @@ export class AvisosService {
   /** La semana de lunes a domingo (YYYY-MM-DD del lunes); sin fecha, la de hoy. */
   capitulo(lunes?: string): Observable<Capitulo> {
     return this.http.get<Capitulo>(`${API}/capitulo/`, { params: lunes ? { lunes } : {} });
+  }
+
+  /** «Me levanté»: anota la hora (una vez al día) para el promedio de sueño. */
+  registrarLevantar(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/levantar/`, {});
+  }
+
+  /** «Me acosté», sin esperar el aviso. */
+  registrarDormir(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/dormir/`, {});
+  }
+
+  /** Cuánto se durmió entre dos fechas; sin fechas, los últimos 7 días. */
+  sueno(desde?: string, hasta?: string): Observable<Sueno> {
+    const params: Record<string, string> = {};
+    if (desde) params['desde'] = desde;
+    if (hasta) params['hasta'] = hasta;
+    return this.http.get<Sueno>(`${API}/sueno/`, { params });
   }
 
   cargarHabitos(): Observable<Habitos> {

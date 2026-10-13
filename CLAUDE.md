@@ -27,6 +27,10 @@ Los avisos (agua, tomas de proteína, dormir, entreno, recordatorios) los arma `
 
 La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/api/` (middleware `AuditoriaMiddleware`) y por cada pantalla que abre la persona (`POST /api/auditoria/pantalla/`): quién, ruta (con su forma, para agrupar), resultado, duración, IP y dispositivo (se interpreta del User-Agent y de las cabeceras `X-Cliente` y `X-App-Version` que manda la app). Nunca guarda cuerpos de peticiones, fotos ni claves; la consulta tapa valores sensibles. Solo el administrador la ve (`/api/auditoria/eventos|resumen/`, pantalla `/admin/auditoria`). `limpiar_auditoria` borra lo de más de 90 días y lo corre el servicio `avisos` una vez al día.
 
+## Sueño
+
+`RegistroHabito` tiene los tipos `dormir` («me acosté») y `levantar` («me levanté», una vez al día; viene del aviso `levantar` a la hora de levantarse de `Habitos` o del botón). `agenda/sueno.py` calcula las noches (de la última hora de acostarse a la de levantarse, entre 1 y 16 horas) y el promedio; no se guarda nada. `POST /api/agenda/registros/levantar|dormir/`, `GET /api/agenda/sueno/?desde=&hasta=`.
+
 ## Logros
 
 `agenda/logros.py` calcula siempre (no guarda contadores) la racha con comodín (un día corto por semana lunes a domingo no la rompe), los hitos y el capítulo semanal a partir de lo registrado, que no se edita; solo `HitoVisto` recuerda qué hitos ya se celebraron (los de hace más de 2 días se dan por vistos sin fiesta). Ningún hito premia comer menos, pasarse de agua ni saltarse comidas. Endpoints: `GET /api/agenda/logros/`, `POST /api/agenda/logros/vistos/`, `GET /api/agenda/capitulo/?lunes=`. En el frontend, `CelebracionesService` decide cuándo celebrar y `app-guerrero` (SVG propio con tres estados), `app-medalla` y `app-anillo` lo dibujan.

@@ -9,7 +9,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
-import { CumplimientoGlobal, DiaCumplimiento } from '../../core/models/avisos.model';
+import { CumplimientoGlobal, DiaCumplimiento, Sueno } from '../../core/models/avisos.model';
 import { AvisosService } from '../../core/services/avisos';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
@@ -70,6 +70,8 @@ export class CumplimientoGlobalVista implements OnInit {
   protected periodo = signal<Periodo>('dia');
   protected ancla = signal(hoyISO());
   protected datos = signal<CumplimientoGlobal | null>(null);
+  /** Cuánto durmió en el mismo periodo, a partir de las horas de acostarse y levantarse. */
+  protected sueno = signal<Sueno | null>(null);
   protected cargando = signal(false);
   protected error = signal('');
   protected elegido = signal<string | null>(null);
@@ -158,6 +160,10 @@ export class CumplimientoGlobalVista implements OnInit {
     const { desde, hasta } = this.rango();
     this.cargando.set(true);
     this.error.set('');
+    this.servicio.sueno(desde, hasta).subscribe({
+      next: (s) => this.sueno.set(s),
+      error: () => this.sueno.set(null),
+    });
     this.servicio.cumplimiento(desde, hasta).subscribe({
       next: (d) => {
         this.datos.set(d);
@@ -172,6 +178,19 @@ export class CumplimientoGlobalVista implements OnInit {
         this.error.set(mensajeError(e, 'No pudimos calcular tu cumplimiento.'));
       },
     });
+  }
+
+  /** 7,75 → «7 h 45 min». */
+  protected duracion(horas: number): string {
+    const minutos = Math.round(horas * 60);
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+
+  /** El alto de la barra de una noche: 10 horas llenan la barra. */
+  protected altoNoche(horas: number): number {
+    return Math.max(6, Math.min(100, (horas / 10) * 100));
   }
 
   protected fecha(iso: string): string {
