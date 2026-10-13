@@ -97,8 +97,8 @@ def de_horas(usuario):
     # Levantarse y acostarse.
     horas = horarios.horas_de(habitos, hoy)
     levantadas = {}
-    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha__gte=desde).order_by('momento'):
-        levantadas.setdefault(r.fecha, _min(r.momento))
+    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha__gte=desde).order_by('id'):
+        levantadas[r.fecha] = _min(r.momento)
     if len(levantadas) >= MINIMO_DIAS and horas['levantarse']:
         m = median(levantadas.values())
         if abs(m - _a_min(horas['levantarse'])) >= UMBRAL_MIN:
@@ -111,7 +111,7 @@ def de_horas(usuario):
                 'cambios': {'hora_levantarse': hora},
             })
     acostadas = defaultdict(list)
-    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='dormir', fecha__gte=desde).order_by('momento'):
+    for r in RegistroHabito.objects.filter(usuario=usuario, tipo='dormir', fecha__gte=desde).order_by('id'):
         minutos = _min(r.momento)
         acostadas[r.fecha].append(minutos if minutos >= 12 * 60 else minutos + 1440)   # pasada la medianoche
     if len(acostadas) >= MINIMO_DIAS and horas['dormir']:

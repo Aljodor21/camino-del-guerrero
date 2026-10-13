@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -15,6 +16,7 @@ import { MessageModule } from 'primeng/message';
 import {
   Aviso,
   HoraDeComida,
+  ResumenHoy,
   SugerenciaDeHoras,
   Sueno,
   TipoAviso,
@@ -429,6 +431,66 @@ export class Avisos implements OnInit {
     const m = Math.abs(min);
     const cuanto = m >= 60 ? this.duracion(m / 60) : `${m} min`;
     return `${cuanto} ${min < 0 ? 'antes' : 'después'} de lo previsto`;
+  }
+
+  // ── Decir a qué hora fue de verdad ────────────────────────────────
+  protected editandoSueno = signal(false);
+  protected horaAcostado = signal('');
+  protected horaLevantado = signal('');
+  protected guardandoSueno = signal(false);
+  private acostadoAntes = '';
+  private levantadoAntes = '';
+
+  /** La hora local (HH:MM) de un instante. */
+  private hhmm(instante: string | null | undefined): string {
+    return instante
+      ? new Date(instante).toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
+      : '';
+  }
+
+  protected abrirEditorSueno(h: ResumenHoy): void {
+    this.acostadoAntes = this.hhmm(h.levantar.acostado_anoche);
+    this.levantadoAntes = this.hhmm(h.levantar.levantado);
+    this.horaAcostado.set(this.acostadoAntes);
+    this.horaLevantado.set(this.levantadoAntes);
+    this.editandoSueno.set(true);
+  }
+
+  /** Guarda lo que la persona cambió: cada hora nueva queda como lo último que dijo (lo anterior se conserva). */
+  protected guardarEditorSueno(): void {
+    const peticiones: Observable<unknown>[] = [];
+    if (this.horaAcostado() && this.horaAcostado() !== this.acostadoAntes) {
+      peticiones.push(this.servicio.registrarDormir(this.horaAcostado()));
+    }
+    if (this.horaLevantado() && this.horaLevantado() !== this.levantadoAntes) {
+      peticiones.push(this.servicio.registrarLevantar(this.horaLevantado()));
+    }
+    if (!peticiones.length) return this.editandoSueno.set(false);
+    this.guardandoSueno.set(true);
+    this.error.set('');
+    // Una tras otra: primero cuándo se acostó, luego cuándo se levantó.
+    const hacer = (i: number): void => {
+      if (i >= peticiones.length) {
+        this.guardandoSueno.set(false);
+        this.editandoSueno.set(false);
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+        this.servicio.cargar().subscribe({ error: () => undefined });
+        this.cargarSueno();
+        return;
+      }
+      peticiones[i].subscribe({
+        next: () => hacer(i + 1),
+        error: (e: unknown) => {
+          this.guardandoSueno.set(false);
+          this.error.set(mensajeError(e, 'No pudimos guardar esa hora. Revisa que no sea futura.'));
+        },
+      });
+    };
+    hacer(0);
   }
 
   /** 7,75 → «7 h 45 min». */

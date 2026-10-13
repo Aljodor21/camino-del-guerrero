@@ -293,6 +293,70 @@
                 Aún no anotas a qué hora te levantaste hoy
               }
             </p>
+            @if (!editandoSueno()) {
+              <button
+                type="button"
+                class="text-xs font-medium text-guerrero-red focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                (click)="abrirEditorSueno(h)"
+              >
+                {{
+                  h.levantar.levantado
+                    ? '¿No fue a esa hora? Corrígela'
+                    : '¿Ya te levantaste hace rato? Di a qué hora'
+                }}
+              </button>
+            } @else {
+              <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-2.5 space-y-2">
+                <p class="text-xs font-medium text-gray-700 dark:text-gray-200">
+                  Dime a qué hora fue de verdad
+                </p>
+                <div class="grid grid-cols-2 gap-2">
+                  <label
+                    class="min-w-0 flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-400"
+                  >
+                    Anoche me acosté
+                    <input
+                      pInputText
+                      type="time"
+                      [value]="horaAcostado()"
+                      (change)="horaAcostado.set($any($event.target).value)"
+                      class="w-full min-w-0"
+                    />
+                  </label>
+                  <label
+                    class="min-w-0 flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-400"
+                  >
+                    Hoy me levanté
+                    <input
+                      pInputText
+                      type="time"
+                      [value]="horaLevantado()"
+                      (change)="horaLevantado.set($any($event.target).value)"
+                      class="w-full min-w-0"
+                    />
+                  </label>
+                </div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                  Lo último que digas es lo que cuenta; lo anterior no se borra.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <p-button
+                    label="Guardar"
+                    icon="pi pi-check"
+                    size="small"
+                    [loading]="guardandoSueno()"
+                    (onClick)="guardarEditorSueno()"
+                  />
+                  <p-button
+                    label="Cancelar"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    (onClick)="editandoSueno.set(false)"
+                  />
+                </div>
+              </div>
+            }
             @if (h.levantar.dormiste_horas) {
               <p class="text-sm text-gray-700 dark:text-gray-300">
                 Anoche dormiste <strong>{{ duracion(h.levantar.dormiste_horas) }}</strong

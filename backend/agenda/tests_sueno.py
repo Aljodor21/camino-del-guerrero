@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta
 
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -133,3 +134,84 @@ class SinAvisosRetroactivosTest(APITestCase):
     def test_lo_demas_si_aparece_aunque_la_app_lo_calcule_tarde(self):
         notificaciones.generar(self.usuario, a_las(HOY(), 15))
         self.assertTrue(Notificacion.objects.filter(usuario=self.usuario, tipo='agua').exists())
+
+
+class DecirLaHoraRealTest(SuenoTest):
+    """Si se anota tarde, la persona dice a qué hora fue de verdad; lo último que dice es lo que cuenta."""
+
+    AHORA = a_las(HOY(), 14, 30)
+
+    def ahora(self):
+        from unittest.mock import patch
+        return patch('django.utils.timezone.now', return_value=self.AHORA)
+
+    def test_se_levanto_a_las_cinco_y_lo_dice_a_las_dos_de_la_tarde(self):
+        ayer = HOY() - timedelta(days=1)
+        RegistroHabito.objects.create(usuario=self.usuario, tipo='dormir', fecha=ayer, momento=a_las(ayer, 22, 0))
+        with self.ahora():
+            primero = self.client.post(reverse('registrar-levantar')).data           # lo anotó tarde, «ahora»
+            r = self.client.post(reverse('registrar-levantar'), {'hora': '04:50'}, format='json')
+            self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+            hoy = self.client.get(reverse('hoy')).data['levantar']
+        self.assertNotEqual(primero['id'], r.data['id'])
+        self.assertEqual(timezone.localtime(parse_datetime(r.data['momento'])).strftime('%H:%M'), '04:50')
+        # La última palabra manda: duerme 6 h 50 min y se levantó a las 4:50, no a las 2:30 de la tarde.
+        self.assertEqual(hoy['dormiste_horas'], 6.83)
+        self.assertEqual(timezone.localtime(hoy['acostado_anoche']).strftime('%H:%M'), '22:00')
+        self.assertEqual(timezone.localtime(hoy['levantado']).strftime('%H:%M'), '04:50')
+        # Los dos registros quedan: nada se borra ni se edita.
+        self.assertEqual(RegistroHabito.objects.filter(usuario=self.usuario, tipo='levantar').count(), 2)
+
+    def test_puede_corregir_hacia_adelante_o_hacia_atras(self):
+        with self.ahora():
+            self.client.post(reverse('registrar-levantar'), {'hora': '04:50'}, format='json')
+            self.client.post(reverse('registrar-levantar'), {'hora': '06:15'}, format='json')
+            hoy = self.client.get(reverse('hoy')).data['levantar']
+        self.assertEqual(timezone.localtime(hoy['levantado']).strftime('%H:%M'), '06:15')
+
+    def test_una_hora_futura_o_mal_escrita_se_rechaza(self):
+        with self.ahora():
+            for malo in ({'hora': '16:00'}, {'hora': 'tarde'}, {'hora': '25:00'}):
+                r = self.client.post(reverse('registrar-levantar'), malo, format='json')
+                self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST, malo)
+        self.assertFalse(RegistroHabito.objects.filter(usuario=self.usuario, tipo='levantar').exists())
+
+    def test_el_aviso_pendiente_se_cumple_con_la_hora_dicha(self):
+        notificaciones.generar(self.usuario, a_las(HOY(), 6, 5))
+        n = Notificacion.objects.get(usuario=self.usuario, tipo='levantar')
+        with self.ahora():
+            r = self.client.post(reverse('registrar-levantar'), {'hora': '05:00'}, format='json')
+        n.refresh_from_db()
+        self.assertEqual((n.resolucion, n.registro.id), ('confirmada', r.data['id']))
+
+    def test_acostarse_a_las_once_y_media_dicho_al_dia_siguiente(self):
+        ayer = HOY() - timedelta(days=1)
+        with self.ahora():
+            r = self.client.post(reverse('registrar-dormir'), {'hora': '23:30'}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual(r.data['fecha'], ayer.isoformat())
+        self.assertEqual(timezone.localtime(parse_datetime(r.data['momento'])).strftime('%d %H:%M'),
+                         f'{ayer:%d} 23:30')
+
+    def test_acostarse_pasada_la_medianoche_cuenta_para_la_noche_anterior(self):
+        ayer = HOY() - timedelta(days=1)
+        with self.ahora():
+            r = self.client.post(reverse('registrar-dormir'), {'hora': '00:40'}, format='json')
+        self.assertEqual(r.data['fecha'], ayer.isoformat())
+        self.assertEqual(timezone.localtime(parse_datetime(r.data['momento'])).strftime('%H:%M'), '00:40')
+
+    def test_una_hora_de_acostarse_de_hace_mas_de_un_dia_se_rechaza(self):
+        from unittest.mock import patch
+        con_dos_dias = a_las(HOY(), 3, 0)          # a las 3:00 ya pasaron 20 h desde las 7:00 de ayer
+        with patch('django.utils.timezone.now', return_value=con_dos_dias):
+            r = self.client.post(reverse('registrar-dormir'), {'hora': '06:00'}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_la_ultima_hora_de_acostarse_es_la_que_cuenta_para_el_cumplimiento(self):
+        ayer = HOY() - timedelta(days=1)
+        RegistroHabito.objects.create(usuario=self.usuario, tipo='dormir', fecha=ayer, momento=a_las(ayer, 21, 30))
+        with self.ahora():
+            self.client.post(reverse('registrar-dormir'), {'hora': '23:10'}, format='json')
+        dia = self.client.get(reverse('cumplimiento-global'), {'desde': ayer.isoformat(), 'hasta': ayer.isoformat()}).data['dias'][0]
+        dormir = next(b for b in dia['bloques'] if b['id'] == 'dormir')
+        self.assertIn('23:10', dormir['detalle'])
