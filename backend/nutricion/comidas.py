@@ -110,7 +110,8 @@ def cumplimiento(usuario, desde, hasta):
     minuta = _minuta(usuario)
     ahora = timezone.localtime()
     hasta = min(hasta, ahora.date())
-    desde = max(desde, timezone.localtime(minuta.fecha_creacion).date())
+    # Solo cuenta desde que empezó el reto: antes de eso no había nada que contar.
+    desde = max(desde, timezone.localtime(minuta.fecha_creacion).date(), minuta.proceso.fecha_inicio)
 
     registros = list(RegistroComida.objects.filter(usuario=usuario, fecha__range=(desde, hasta))
                      .order_by('fecha', 'momento'))
