@@ -162,6 +162,13 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Celebraciones** (una tarjeta con el guerrero o la medalla y un confeti rojo, dorado y crema): al cerrar el día al 100 % (una vez por día) y al lograr un hito nuevo. Se cierran con «Seguir», Escape o tocando fuera. Con «reducir movimiento» no hay confeti ni saltos.
 - **Sin culpa:** el comodín evita que un mal día borre todo; una semana sin terminar no se califica («Así va tu semana»); y ningún hito premia comer menos, pasarse de agua ni saltarse comidas.
 
+## Sueño
+
+- **Avisos › Tu día** trae una sección «Sueño» con la hora a la que te levantaste (o la que tienes como meta), cuánto dormiste anoche, el promedio de los últimos 7 días y dos botones: **Me levanté** y **Ya me acosté**. Cada botón desaparece cuando ya anotaste esa hora.
+- **Aviso de la mañana:** «Buenos días: ¿ya te levantaste?» a tu hora de levantarte, con el botón «Ya me levanté» (también dentro de la notificación del celular). Se apaga en Ajustes › Avisos que quiero recibir › Levantarme.
+- **Avisos › Cumplimiento** muestra una tarjeta «Sueño» con el promedio del periodo y una barra por noche (10 horas llenan la barra), con la aclaración de que es aproximado.
+- **Sin inventar metas:** no se califica si dormiste «bien» o «mal»; solo se muestra lo que anotaste.
+
 ## La app siempre al día
 
 - **Sin cerrar y abrir:** la app se vuelve a cargar sola cuando cambia el día (a medianoche con la app abierta, o al volver a ella) y cuando se regresa después de más de 10 minutos en segundo plano. Si en ese momento hay un campo con texto o una ventana abierta, espera a que termine para no borrar lo que se escribe.

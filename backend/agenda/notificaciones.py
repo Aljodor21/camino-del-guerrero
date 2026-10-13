@@ -20,6 +20,7 @@ from progress.models import RegistroEntrenamiento
 from users.procesos import proceso_de_referencia
 from routines.models import DiaRutina
 
+from . import sueno
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 ARTICULO_TIEMPO = {'desayuno': 'el', 'onces': 'las', 'almuerzo': 'el', 'algo': 'el', 'cena': 'la', 'merienda': 'la'}
@@ -126,6 +127,15 @@ def programados(usuario, fecha):
             'titulo': 'En media hora, a dormir',
             'cuerpo': f'Tu hora de acostarte es a las {hora_en_palabras(hora)}',
             'datos': {'hora': hora.isoformat('minutes')},
+        })
+
+    if 'levantar' not in apagados and habitos.hora_levantarse:
+        avisos.append({
+            'tipo': 'levantar', 'clave': f'levantar:{fecha}',
+            'programada_para': _momento(fecha, habitos.hora_levantarse),
+            'titulo': 'Buenos días: ¿ya te levantaste?',
+            'cuerpo': 'Anótalo para llevar tu promedio de sueño.',
+            'datos': {'hora': habitos.hora_levantarse.isoformat('minutes')},
         })
 
     if 'entreno' not in apagados:
@@ -251,7 +261,7 @@ def confirmar(notificacion):
     if n.resuelta_en:
         return n
     ahora = timezone.now()
-    if n.tipo in ('agua', 'toma', 'dormir'):
+    if n.tipo in ('agua', 'toma', 'dormir', 'levantar'):
         datos = n.datos
         RegistroHabito.objects.create(
             usuario=n.usuario, tipo=n.tipo, fecha=n.fecha, momento=ahora, notificacion=n,
@@ -291,6 +301,39 @@ def registrar_agua(usuario):
                                          ml=vaso_ml(habitos_de(usuario)))
 
 
+@transaction.atomic
+def registrar_levantar(usuario):
+    """«Me levanté»: cumple el aviso de hoy si está pendiente; si no, anota la hora. Una vez al día."""
+    hoy = timezone.localdate()
+    ya = RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha=hoy).first()
+    if ya:
+        return ya
+    n = (Notificacion.objects.select_for_update()
+         .filter(usuario=usuario, tipo='levantar', fecha=hoy, resuelta_en__isnull=True).first())
+    if n:
+        return confirmar(n).registro
+    return RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy)
+
+
+# Antes de esta hora, acostarse todavía es del día anterior (se fue a dormir pasada la medianoche).
+HORA_CORTE_DORMIR = time(4, 0)
+
+
+@transaction.atomic
+def registrar_dormir(usuario):
+    """«Me acosté»: cumple el aviso de dormir si está pendiente; si no, anota la hora. Una vez por noche."""
+    ahora = timezone.localtime()
+    fecha = ahora.date() - timedelta(days=1) if ahora.time() < HORA_CORTE_DORMIR else ahora.date()
+    ya = RegistroHabito.objects.filter(usuario=usuario, tipo='dormir', fecha=fecha).first()
+    if ya:
+        return ya
+    n = (Notificacion.objects.select_for_update()
+         .filter(usuario=usuario, tipo='dormir', fecha=fecha, resuelta_en__isnull=True).first())
+    if n:
+        return confirmar(n).registro
+    return RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha)
+
+
 def resumen_de_hoy(usuario):
     """Cómo va el día: vasos, tomas, entreno y la hora de dormir."""
     hoy = timezone.localdate()
@@ -304,6 +347,7 @@ def resumen_de_hoy(usuario):
     toca_entreno = DiaRutina.objects.filter(rutina__usuario=usuario, rutina__activa=True,
                                             dia_semana=hoy.isoweekday()).exists()
     acostado = registros.filter(tipo='dormir').first()
+    levantado = registros.filter(tipo='levantar').first()
     vasos = sorted((r for r in registros if r.tipo == 'agua'), key=lambda r: r.momento)
     return {
         'fecha': hoy,
@@ -316,6 +360,8 @@ def resumen_de_hoy(usuario):
         'entreno': {'toca': toca_entreno,
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},
         'dormir': {'hora': habitos.hora_dormir, 'acostado': acostado.momento if acostado else None},
+        'levantar': {'hora': habitos.hora_levantarse, 'levantado': levantado.momento if levantado else None,
+                     'dormiste_horas': sueno.anoche(usuario)},
     }
 
 
@@ -357,6 +403,7 @@ def accion_de(notificacion):
         'agua': 'Ya lo tomé',
         'toma': 'Ya me la tomé',
         'dormir': 'Ya me acosté',
+        'levantar': 'Ya me levanté',
         'entreno': 'Ya entrené',
         'comida': '',
         'proceso': '',
