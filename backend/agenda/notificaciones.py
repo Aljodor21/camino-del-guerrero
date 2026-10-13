@@ -396,88 +396,43 @@ def registrar_agua(usuario):
                                          ml=vaso_ml(habitos_de(usuario)))
 
 
-def _cumplir_aviso(n):
-    """El aviso pendiente queda cumplido por el registro que la persona acaba de hacer."""
-    n.resuelta_en, n.resolucion = timezone.now(), 'confirmada'
-    n.save(update_fields=['resuelta_en', 'resolucion'])
-
-
 def _la_ultima(usuario, tipo, **filtro):
     """Lo último que la persona dijo: si corrige una hora, manda la nueva (los registros viejos no se tocan)."""
     return RegistroHabito.objects.filter(usuario=usuario, tipo=tipo, **filtro).order_by('-id').first()
 
 
 @transaction.atomic
-def registrar_levantar(usuario, hora=None):
-    """«Me levanté». Sin hora, es ahora (una vez al día; cumple el aviso si está pendiente). Con hora, la
-    persona dice a qué hora fue de verdad (hoy, nunca en el futuro): queda como la última palabra del
-    día y el registro anterior se conserva."""
+def registrar_levantar(usuario):
+    """«Me levanté»: anota la hora de ahora, una sola vez al día, y cumple el aviso si está pendiente. Es un
+    valor y ya: no se cambia a mano (para no engañarse); si hubo más de uno, vale el último."""
     hoy = timezone.localdate()
-    if hora is None:
-        ya = _la_ultima(usuario, 'levantar', fecha=hoy)
-        if ya:
-            return ya
-        n = (Notificacion.objects.select_for_update()
-             .filter(usuario=usuario, tipo='levantar', fecha=hoy, resuelta_en__isnull=True).first())
-        if n:
-            return confirmar(n).registro
-        return RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy)
-
-    momento = _momento(hoy, hora)
-    if momento > timezone.now():
-        raise ReglaNegocioError('Esa hora aún no llega.')
-    ya = RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha=hoy, momento=momento).first()
-    if ya and ya.id == _la_ultima(usuario, 'levantar', fecha=hoy).id:
+    ya = _la_ultima(usuario, 'levantar', fecha=hoy)
+    if ya:
         return ya
     n = (Notificacion.objects.select_for_update()
          .filter(usuario=usuario, tipo='levantar', fecha=hoy, resuelta_en__isnull=True).first())
-    registro = RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy, momento=momento,
-                                             notificacion=n)
     if n:
-        _cumplir_aviso(n)
-    return registro
+        return confirmar(n).registro
+    return RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy)
 
 
 # Antes de esta hora, acostarse todavía es del día anterior (se fue a dormir pasada la medianoche).
 HORA_CORTE_DORMIR = time(4, 0)
-# Cuánto atrás se puede decir a qué hora se acostó la persona.
-MAX_ATRAS_DORMIR = timedelta(hours=20)
 
 
 @transaction.atomic
-def registrar_dormir(usuario, hora=None):
-    """«Me acosté». Sin hora, es ahora (una vez por noche; cumple el aviso si está pendiente). Con hora, la
-    persona dice a qué hora fue de verdad (la última vez que esa hora pasó, hasta 20 horas atrás): queda
-    como la última palabra de la noche y el registro anterior se conserva."""
+def registrar_dormir(usuario):
+    """«Me acosté»: anota la hora de ahora, una sola vez por noche, y cumple el aviso si está pendiente."""
     ahora = timezone.localtime()
-    if hora is None:
-        momento = None
-        fecha = ahora.date() - timedelta(days=1) if ahora.time() < HORA_CORTE_DORMIR else ahora.date()
-    else:
-        momento = _momento(ahora.date(), hora)
-        if momento > timezone.now():
-            momento -= timedelta(days=1)
-        if timezone.now() - momento > MAX_ATRAS_DORMIR:
-            raise ReglaNegocioError('Esa hora es de hace demasiado: di la hora de anoche.')
-        local = timezone.localtime(momento)
-        fecha = local.date() - timedelta(days=1) if local.time() < HORA_CORTE_DORMIR else local.date()
+    fecha = ahora.date() - timedelta(days=1) if ahora.time() < HORA_CORTE_DORMIR else ahora.date()
+    ya = _la_ultima(usuario, 'dormir', fecha=fecha)
+    if ya:
+        return ya
     n = (Notificacion.objects.select_for_update()
          .filter(usuario=usuario, tipo='dormir', fecha=fecha, resuelta_en__isnull=True).first())
-    if hora is None:
-        ya = _la_ultima(usuario, 'dormir', fecha=fecha)
-        if ya:
-            return ya
-        if n:
-            return confirmar(n).registro
-        return RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha)
-    ultimo = _la_ultima(usuario, 'dormir', fecha=fecha)
-    if ultimo and ultimo.momento == momento:
-        return ultimo
-    registro = RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha, momento=momento,
-                                             notificacion=n)
     if n:
-        _cumplir_aviso(n)
-    return registro
+        return confirmar(n).registro
+    return RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha)
 
 
 def resumen_de_hoy(usuario):
@@ -510,7 +465,6 @@ def resumen_de_hoy(usuario):
         'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None},
         'levantar': {'hora': horas_hoy['levantarse'], 'levantado': levantado.momento if levantado else None,
                      'dormiste_horas': (anoche or {}).get('horas'),
-                     'acostado_anoche': (anoche or {}).get('acostado'),
                      # Cuántos minutos antes (−) o después (+) de lo previsto se acostó anoche y se levantó hoy.
                      'acostarse_min': (anoche or {}).get('dif_acostarse_min'),
                      'levantarse_min': (anoche or {}).get('dif_levantarse_min')},

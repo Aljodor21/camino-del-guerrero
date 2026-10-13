@@ -990,6 +990,19 @@ class MinutaYMenuTest(APITestCase):
         with self.assertRaises(DatoInmutableError):
             registro.save()
 
+    def test_lo_de_antes_de_empezar_el_reto_no_cuenta_como_sin_contar(self, ai):
+        from datetime import timedelta
+        from .models import Minuta
+        ai.return_value.proponer_menu.side_effect = Exception('sin IA')
+        self.subir_y_confirmar()
+        # La minuta se cargó hace 3 días, pero el reto empieza hoy.
+        Minuta.objects.update(fecha_creacion=timezone.now() - timedelta(days=3))
+        Proceso.objects.filter(pk=self.proceso.pk).update(fecha_inicio=self.hoy)
+        c = self.client.get(reverse('cumplimiento'),
+                            {'desde': (self.hoy - timedelta(days=3)).isoformat(), 'hasta': self.hoy.isoformat()}).data
+        self.assertEqual(c['desde'], self.hoy)
+        self.assertTrue(all(s['fecha'] >= self.hoy for s in c['sin_contar']))
+
     def test_la_foto_de_la_comida_es_privada_y_se_reduce(self, ai):
         import tempfile
         from io import BytesIO
