@@ -419,6 +419,13 @@ class RegistroComidaCrearSerializer(serializers.Serializer):
     avances = serializers.JSONField()
     nota    = serializers.CharField(max_length=300, required=False, allow_blank=True, default='')
     foto    = serializers.ImageField(required=False, allow_null=True)
+    # Ids de los suplementos que se tomó en esta comida; en multipart llega como JSON en texto.
+    tomas   = serializers.JSONField(required=False, default=list)
+
+    def validate_tomas(self, tomas):
+        if not isinstance(tomas, list) or not all(isinstance(i, int) for i in tomas):
+            raise serializers.ValidationError('Indica qué tomaste.')
+        return tomas
 
     def validate_avances(self, avances):
         if not isinstance(avances, dict):

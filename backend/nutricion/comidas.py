@@ -41,6 +41,11 @@ def pedido(usuario, fecha, tiempo, contexto=None):
     return contexto.requerido(fecha, tiempo)
 
 
+def tomas_de(usuario, fecha, tiempo):
+    """[(suplemento, toma)] de lo que se toma en esa comida ese día."""
+    return Contexto(usuario, _minuta(usuario)).tomas_en(fecha, tiempo)
+
+
 def _validar_fecha(fecha):
     hoy = timezone.localdate()
     if fecha > hoy:

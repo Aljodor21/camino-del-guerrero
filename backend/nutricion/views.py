@@ -418,9 +418,11 @@ class RegistroComidaListCreateView(APIView):
         datos = RegistroComidaCrearSerializer(data=request.data)
         datos.is_valid(raise_exception=True)
         d = datos.validated_data
-        registro = comidas.registrar(
-            request.user, d.get('fecha') or timezone.localdate(), d['tiempo'], d['avances'],
-            nota=d['nota'], archivo=d.get('foto'))
+        fecha = d.get('fecha') or timezone.localdate()
+        with transaction.atomic():
+            registro = comidas.registrar(request.user, fecha, d['tiempo'], d['avances'],
+                                         nota=d['nota'], archivo=d.get('foto'))
+            notificaciones.registrar_tomas_de_comida(request.user, fecha, d['tiempo'], set(d['tomas']))
         notificaciones.resolver_automaticas(request.user)
         return Response(RegistroComidaSerializer(registro).data, status=status.HTTP_201_CREATED)
 
@@ -449,6 +451,13 @@ class PedidoComidaView(APIView):
             'fecha': fecha, 'tiempo': tiempo, 'tiempo_nombre': NOMBRE_TIEMPO.get(tiempo, tiempo),
             'grupos': [{'grupo': g, 'nombre': NOMBRE_GRUPO[g], 'porciones': float(p)} for g, p in pedidos.items()],
             'contada': RegistroComida.objects.filter(usuario=request.user, fecha=fecha, tiempo=tiempo).exists(),
+            # Lo que se toma en esta comida (la proteína va aquí y no en un aviso aparte).
+            'tomas': [{
+                'suplemento': s.id, 'nombre': s.nombre_visible, 'scoops': toma.get('scoops'),
+                'reemplaza': [{'grupo': g, 'nombre': NOMBRE_GRUPO[g], 'porciones': p}
+                              for g, p in toma['reemplaza'].items()],
+                'tomada': notificaciones.toma_registrada(request.user, fecha, s, tiempo),
+            } for s, toma in comidas.tomas_de(request.user, fecha, tiempo)],
         })
 
 

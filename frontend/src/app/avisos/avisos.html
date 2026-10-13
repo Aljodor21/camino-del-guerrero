@@ -105,12 +105,12 @@
                       [loading]="confirmando() === a.id"
                       (onClick)="confirmar(a)"
                     />
-                  } @else if (a.tipo === 'comida') {
+                  } @else if (a.tipo === 'comida' || (a.tipo === 'toma' && a.datos['unida'])) {
                     <a
                       routerLink="/comidas/contar"
                       [queryParams]="{ tiempo: a.datos['tiempo'], fecha: a.fecha }"
                       class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
-                      >Contar lo que comí</a
+                      >{{ a.tipo === 'toma' ? 'Contar con mi comida' : 'Contar lo que comí' }}</a
                     >
                   } @else if (a.tipo === 'proceso') {
                     <a
