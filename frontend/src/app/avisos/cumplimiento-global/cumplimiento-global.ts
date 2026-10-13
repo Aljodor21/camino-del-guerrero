@@ -113,8 +113,25 @@ export class CumplimientoGlobalVista implements OnInit {
   );
   /** Hay algún día ya cerrado: hoy no cuenta hasta que termine. */
   protected hayDiasCerrados = computed(() => this.dias().some((d) => !d.es_hoy));
+  /** Lo que se muestra en el anillo: en un día, su porcentaje; en una semana, un mes o un trimestre,
+   *  lo que lleva del periodo entero (si apenas van 2 días de 7, no puede decir 60 %). */
+  protected principal = computed(() => {
+    const d = this.datos();
+    if (!d) return null;
+    return this.esUnDia() ? d.porcentaje : d.porcentaje_periodo;
+  });
+  protected enCurso = computed(() => {
+    const d = this.datos();
+    return !!d && !this.esUnDia() && d.dias.length < d.dias_periodo;
+  });
+  protected nombrePeriodo = computed(
+    () =>
+      ({ dia: 'del día', semana: 'de la semana', mes: 'del mes', trimestre: 'del trimestre' })[
+        this.periodo()
+      ],
+  );
   protected trazo = computed(() => {
-    const p = this.datos()?.porcentaje;
+    const p = this.principal();
     return p == null ? 0 : (Math.min(p, 100) / 100) * PERIMETRO;
   });
 
@@ -237,6 +254,9 @@ export class CumplimientoGlobalVista implements OnInit {
       return hoy
         ? `Llevas el ${d.porcentaje} % de lo que toca hoy.${previo}`
         : `Cumpliste el ${d.porcentaje} % de lo que tocaba ese día.${previo}`;
+    }
+    if (this.enCurso()) {
+      return `Llevas el ${d.porcentaje_periodo} % ${this.nombrePeriodo()}: van ${d.dias.length} de ${d.dias_periodo} días. En los días que van, tu promedio es ${d.porcentaje} %.${previo}`;
     }
     return `Cumpliste el ${d.porcentaje} % en promedio; ${d.dias_cumplidos} de ${d.dias.length} ${d.dias.length === 1 ? 'día llegó' : 'días llegaron'} al ${d.umbral_racha} % o más.${previo}`;
   }
