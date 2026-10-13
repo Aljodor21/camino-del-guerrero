@@ -134,6 +134,16 @@
 
       <!-- Cómo va cada parte -->
       @if (esUnDia() && diaElegido(); as dia) {
+        @if (dia.pilares.length > 1) {
+          <p class="text-sm text-gray-700 dark:text-gray-200">
+            @for (p of dia.pilares; track p.id) {
+              <span class="mr-3"
+                >{{ p.nombre }} <strong class="tabular-nums">{{ p.porcentaje }} %</strong>
+                <span class="text-gray-500 dark:text-gray-400">(vale {{ p.peso }} %)</span></span
+              >
+            }
+          </p>
+        }
         <ul class="space-y-3" aria-label="Cumplimiento por parte">
           @for (b of dia.bloques; track b.id) {
             <li>
@@ -276,10 +286,12 @@
             ><i class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></i>{{ d.umbral_racha }}% o más</span
           >
           <span class="flex items-center gap-1.5"
-            ><i class="w-2.5 h-2.5 rounded-sm bg-amber-500"></i>50 a {{ d.umbral_racha - 1 }}%</span
+            ><i class="w-2.5 h-2.5 rounded-sm bg-amber-500"></i>{{ d.umbral_racha / 2 }} a
+            {{ d.umbral_racha - 1 }}%</span
           >
           <span class="flex items-center gap-1.5"
-            ><i class="w-2.5 h-2.5 rounded-sm bg-guerrero-red"></i>Menos de 50%</span
+            ><i class="w-2.5 h-2.5 rounded-sm bg-guerrero-red"></i>Menos de
+            {{ d.umbral_racha / 2 }}%</span
           >
         </p>
 

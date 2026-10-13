@@ -37,6 +37,10 @@ La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/a
 
 **Pendientes con hora** (`_avisos_de_recordatorio`): avisan 60, 30 y 15 minutos antes y en el momento (`ETAPAS_RECORDATORIO`); todos llevan `datos.grupo`, y cada uno reemplaza al anterior (se resuelven solos los hermanos pendientes en la bandeja; en el celular comparten `tag`/`clave`). **Sugerencias de horas** (`agenda/sugerencias_de_horas.py`, no confundir con `sugerencias.py`, que arma los recordatorios de suplementos): con 5 o más días de datos en las últimas 3 semanas propone cambiar la hora de una comida, del rango del agua, de levantarse o de acostarse si se aparta 30 minutos o más; solo propone, la persona decide.
 
+## El día y la racha
+
+`agenda/cumplimiento.py` mide el día en dos pilares iguales: alimentación (comidas 40, proteína 15, agua 15, dormir 10, repartidos entre sí) y deporte (el entreno, solo si ese día toca); un día sin entreno vale solo por la alimentación. Un día cuenta para la racha desde `UMBRAL_RACHA = 50`; por debajo se pierde (el comodín de la semana lo perdona una vez). En el frontend, `app-guerrero` (SVG propio, acciones con brazos de dos huesos calculados por cuadro) y `app-companero` (en el layout) lo muestran; `CelebracionesService.registro(accion)` hace que el guerrero actúe lo que se anotó.
+
 ## Logros
 
 `agenda/logros.py` calcula siempre (no guarda contadores) la racha con comodín (un día corto por semana lunes a domingo no la rompe), los hitos y el capítulo semanal a partir de lo registrado, que no se edita; solo `HitoVisto` recuerda qué hitos ya se celebraron (los de hace más de 2 días se dan por vistos sin fiesta). Ningún hito premia comer menos, pasarse de agua ni saltarse comidas. Endpoints: `GET /api/agenda/logros/`, `POST /api/agenda/logros/vistos/`, `GET /api/agenda/capitulo/?lunes=`. En el frontend, `CelebracionesService` decide cuándo celebrar y `app-guerrero` (SVG propio con tres estados), `app-medalla` y `app-anillo` lo dibujan.

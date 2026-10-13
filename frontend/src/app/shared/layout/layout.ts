@@ -23,6 +23,7 @@ import { ApkService } from '../../core/services/apk';
 import { NotificacionesCelularService } from '../../core/services/notificaciones-celular';
 import { CelebracionesService } from '../../core/services/celebraciones';
 import { Celebracion } from '../celebracion/celebracion';
+import { Companero } from '../companero/companero';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
 
@@ -48,6 +49,7 @@ interface Aviso {
     TooltipModule,
     Visor,
     Celebracion,
+    Companero,
   ],
 })
 export class Layout implements OnInit, OnDestroy {

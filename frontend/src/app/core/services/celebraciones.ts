@@ -3,9 +3,20 @@ import { firstValueFrom } from 'rxjs';
 
 import { Hito, Logros } from '../models/logros.model';
 import { hoyISO } from '../../shared/fechas';
+import { AccionGuerrero } from '../../shared/guerrero/guerrero';
 import { AudioService } from './audio';
 import { AuthService } from './auth';
 import { AvisosService } from './avisos';
+
+/** Lo que dice el guerrero al terminar cada acción. */
+const FRASES: Record<AccionGuerrero, string> = {
+  agua: '¡Salud!',
+  proteina: '¡Proteína adentro!',
+  comer: '¡Buen provecho!',
+  dormir: 'A descansar, guerrero',
+  levantar: '¡Buenos días!',
+  entrenar: '¡Una más!',
+};
 
 export type Fiesta = { tipo: 'dia' } | { tipo: 'hitos'; hitos: Hito[] };
 
@@ -48,6 +59,9 @@ export class CelebracionesService {
   /** Sube con cada registro para que el anillo dé un salto. */
   readonly pulso = signal(false);
   readonly fiesta = signal<Fiesta | null>(null);
+  /** Lo que el guerrero está haciendo ahora (tomar agua, comer…) y lo que dice. */
+  readonly accion = signal<AccionGuerrero | null>(null);
+  readonly frase = signal('');
 
   private ultima = 0;
   private enCurso = false;
@@ -67,8 +81,25 @@ export class CelebracionesService {
     if (cambio.vibracion) this.vibrar(30);
   }
 
-  /** Algo se acaba de anotar: se siente y se revisa si hay algo que celebrar. */
-  registro(): void {
+  /** El guerrero hace lo que la persona acaba de hacer. */
+  reaccionar(accion: AccionGuerrero): void {
+    this.accion.set(null);
+    // Un instante para que, si ya estaba haciendo algo, la acción nueva arranque desde cero.
+    setTimeout(() => {
+      this.accion.set(accion);
+      this.frase.set(FRASES[accion]);
+    });
+  }
+
+  /** El guerrero terminó lo que hacía. */
+  terminoDeReaccionar(): void {
+    this.accion.set(null);
+    setTimeout(() => this.frase.set(''), 1800);
+  }
+
+  /** Algo se acaba de anotar: el guerrero lo hace, se siente y se revisa si hay algo que celebrar. */
+  registro(accion?: AccionGuerrero): void {
+    if (accion) this.reaccionar(accion);
     this.pulso.set(true);
     setTimeout(() => this.pulso.set(false), 700);
     this.vibrar([18]);

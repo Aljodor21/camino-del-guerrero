@@ -29,7 +29,12 @@ export interface Racha {
 export interface Logros {
   racha: Racha;
   hitos: Hito[];
-  hoy: { porcentaje: number | null; en_proceso: boolean } | null;
+  hoy: {
+    porcentaje: number | null;
+    en_proceso: boolean;
+    /** Alimentación y deporte (si ese día toca entrenar): cada uno vale la mitad del día. */
+    pilares: { id: 'alimentacion' | 'deporte'; nombre: string; porcentaje: number; peso: number }[];
+  } | null;
   logrados: number;
   total: number;
 }

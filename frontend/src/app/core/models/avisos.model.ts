@@ -132,6 +132,7 @@ export type BloqueCumplimiento = 'comidas' | 'entreno' | 'tomas' | 'agua' | 'dor
 /** Una parte del día que se mide: agua, dormir, comidas, proteína o entreno. */
 export interface BloqueDelDia {
   id: BloqueCumplimiento;
+  pilar: 'alimentacion' | 'deporte';
   nombre: string;
   peso: number;
   hecho: number;
@@ -149,6 +150,7 @@ export interface DiaCumplimiento {
   en_proceso: boolean;
   es_hoy: boolean;
   bloques: BloqueDelDia[];
+  pilares: { id: 'alimentacion' | 'deporte'; nombre: string; porcentaje: number; peso: number }[];
 }
 
 export interface CumplimientoGlobal {

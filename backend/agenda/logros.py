@@ -172,7 +172,8 @@ def logros(usuario):
     hoy = next((d for d in dias if d['es_hoy']), None)
     return {
         'racha': racha, 'hitos': hitos,
-        'hoy': {'porcentaje': hoy['porcentaje'], 'en_proceso': hoy['en_proceso']} if hoy else None,
+        'hoy': ({'porcentaje': hoy['porcentaje'], 'en_proceso': hoy['en_proceso'], 'pilares': hoy['pilares']}
+                if hoy else None),
         'logrados': sum(h['logrado'] for h in hitos), 'total': len(hitos),
     }
 

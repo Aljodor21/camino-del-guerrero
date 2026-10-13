@@ -76,7 +76,7 @@ const PERIMETRO = 2 * Math.PI * RADIO;
 export class Anillo {
   readonly porcentaje = input<number | null>(null);
   readonly tamano = input(64);
-  readonly meta = input(80);
+  readonly meta = input(50);
   /** Cambia cuando algo se acaba de anotar: el anillo da un salto. */
   readonly pulso = input(false);
 
@@ -86,7 +86,7 @@ export class Anillo {
   protected color = computed(() => {
     const p = this.porcentaje() ?? 0;
     if (p >= this.meta()) return 'stroke-emerald-500';
-    return p >= 50 ? 'stroke-amber-500' : 'stroke-guerrero-red';
+    return p >= this.meta() / 2 ? 'stroke-amber-500' : 'stroke-guerrero-red';
   });
   protected etiqueta = computed(() =>
     this.porcentaje() === null

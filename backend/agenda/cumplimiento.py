@@ -7,9 +7,10 @@ acostarse), que no se edita. Cada día suma los bloques que le aplican:
 - Con el proceso en marcha, además, las comidas (si hay plan de comida), las tomas de
   suplemento y el entreno (si tocaba ese día).
 
-Un día pesa lo que lo que aplica: los pesos se reparten solo entre los bloques que
-aplican. Los días de hoy se miden contra la meta completa del día, así que el porcentaje
-sube mientras se va cumpliendo; los días pasados quedan cerrados.
+El día se mide en dos pilares que valen lo mismo: **alimentación** (comidas, proteína, agua y
+dormir, repartidos entre sí) y **deporte** (el entreno, solo si ese día tocaba). Un día sin entreno
+vale solo por la alimentación. Los días de hoy se miden contra la meta completa del día, así que el
+porcentaje sube mientras se va cumpliendo; los días pasados quedan cerrados.
 """
 from collections import defaultdict
 from datetime import time, timedelta
@@ -29,12 +30,16 @@ from . import horarios
 from .models import RegistroHabito
 from .notificaciones import VASO_ML, habitos_de
 
-# Cuánto pesa cada bloque en el día cuando aplica.
-PESOS = {'comidas': 40, 'entreno': 20, 'tomas': 15, 'agua': 15, 'dormir': 10}
+# Cuánto pesa cada bloque dentro de su pilar cuando aplica.
+PESOS = {'comidas': 40, 'tomas': 15, 'agua': 15, 'dormir': 10, 'entreno': 100}
 NOMBRES = {'comidas': 'Comidas', 'entreno': 'Entreno', 'tomas': 'Proteína', 'agua': 'Agua', 'dormir': 'Dormir'}
-ORDEN = list(PESOS)
-# Un día cuenta para la racha desde este porcentaje.
-UMBRAL_RACHA = 80
+ORDEN = ['comidas', 'entreno', 'tomas', 'agua', 'dormir']
+# A qué pilar pertenece cada bloque; cada pilar vale la mitad del día cuando aplican los dos.
+PILARES = {'comidas': 'alimentacion', 'tomas': 'alimentacion', 'agua': 'alimentacion', 'dormir': 'alimentacion',
+           'entreno': 'deporte'}
+NOMBRE_PILAR = {'alimentacion': 'Alimentación', 'deporte': 'Deporte'}
+# Un día cuenta para la racha desde este porcentaje; por debajo, la racha se pierde.
+UMBRAL_RACHA = 50
 MAX_DIAS = 93  # un trimestre
 
 
@@ -45,7 +50,7 @@ def _porcentaje(hecho, meta):
 
 
 def _bloque(id_, hecho, meta, porcentaje, detalle, faltas=()):
-    return {'id': id_, 'nombre': NOMBRES[id_], 'peso': PESOS[id_], 'hecho': hecho, 'meta': meta,
+    return {'id': id_, 'nombre': NOMBRES[id_], 'pilar': PILARES[id_], 'peso': PESOS[id_], 'hecho': hecho, 'meta': meta,
             'porcentaje': porcentaje, 'detalle': detalle, 'faltas': list(faltas)}
 
 
@@ -161,10 +166,19 @@ def _dia(datos, fecha, ahora):
     if proceso is not None:
         bloques += [_comidas(datos, fecha, ahora), _tomas(datos, fecha), _entreno(datos, fecha)]
     bloques = sorted((b for b in bloques if b), key=lambda b: ORDEN.index(b['id']))
-    peso = sum(b['peso'] for b in bloques)
-    porcentaje = round(sum(b['peso'] * b['porcentaje'] for b in bloques) / peso) if peso else None
+    pilares = []
+    for pilar in ('alimentacion', 'deporte'):
+        dentro = [b for b in bloques if b['pilar'] == pilar]
+        peso = sum(b['peso'] for b in dentro)
+        if peso:
+            pilares.append({'id': pilar, 'nombre': NOMBRE_PILAR[pilar],
+                            'porcentaje': round(sum(b['peso'] * b['porcentaje'] for b in dentro) / peso)})
+    # Los pilares que aplican valen lo mismo: con alimentación y deporte, la mitad cada uno.
+    for p in pilares:
+        p['peso'] = round(100 / len(pilares))
+    porcentaje = round(sum(p['porcentaje'] for p in pilares) / len(pilares)) if pilares else None
     return {'fecha': fecha, 'porcentaje': porcentaje, 'en_proceso': proceso is not None,
-            'es_hoy': fecha == ahora.date(), 'bloques': bloques}
+            'es_hoy': fecha == ahora.date(), 'bloques': bloques, 'pilares': pilares}
 
 
 def _rachas(dias):

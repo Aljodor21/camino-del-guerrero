@@ -3,42 +3,78 @@
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }
 
-  <!-- El guerrero y la racha -->
-  <section aria-labelledby="lo-racha" class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4">
+  <!-- La racha, en grande, con el guerrero que acompaña -->
+  <section
+    aria-labelledby="lo-racha"
+    class="rounded-3xl bg-dark-800 text-white shadow-lg overflow-hidden p-5 pt-6"
+  >
     <h2 id="lo-racha" class="sr-only">Tu racha</h2>
-    <div class="flex items-center gap-4">
-      <app-guerrero [estado]="estado()" [tamano]="104" class="shrink-0" />
-      <div class="min-w-0 flex-1">
-        <p class="text-sm text-gray-700 dark:text-gray-200">{{ frase() }}</p>
-        @if (datos(); as d) {
-          <p class="mt-2 flex items-baseline gap-2">
-            <span class="text-4xl font-bold tabular-nums text-gray-900 dark:text-white">{{
-              d.racha.actual
-            }}</span>
-            <span class="text-sm text-gray-600 dark:text-gray-300">{{
-              d.racha.actual === 1 ? 'día seguido' : 'días seguidos'
-            }}</span>
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Mejor racha: {{ d.racha.mejor }} · cuenta desde el {{ d.racha.umbral }} %
-          </p>
-        }
-      </div>
-      <app-anillo
-        [porcentaje]="celebraciones.hoy()"
-        [pulso]="celebraciones.pulso()"
-        [tamano]="68"
-        class="shrink-0"
+    <div class="flex flex-col items-center text-center">
+      <app-guerrero
+        [estado]="estado()"
+        [accion]="celebraciones.accion()"
+        [tamano]="190"
+        (terminada)="celebraciones.terminoDeReaccionar()"
       />
+      @if (celebraciones.frase()) {
+        <p
+          class="-mt-1 mb-1 px-3 py-1 rounded-xl bg-guerrero-gold text-dark-900 font-bold text-sm"
+          role="status"
+        >
+          {{ celebraciones.frase() }}
+        </p>
+      }
+      @if (datos(); as d) {
+        <p class="racha-numero" [class.racha-cero]="d.racha.actual === 0" aria-live="polite">
+          {{ d.racha.actual }}
+        </p>
+        <p class="racha-etiqueta">{{ d.racha.actual === 1 ? 'día de racha' : 'días de racha' }}</p>
+        <p class="mt-3 text-sm" [class]="hoySalvaLaRacha() ? 'text-emerald-300' : 'text-amber-300'">
+          {{ lineaDeHoy() }}
+        </p>
+        @if (proximoHito(); as h) {
+          <div class="mt-4 w-full max-w-xs">
+            <div class="flex justify-between text-xs text-gray-300">
+              <span>Próxima meta: {{ h.meta }} días</span>
+              <span class="tabular-nums">{{ d.racha.actual }} de {{ h.meta }}</span>
+            </div>
+            <div class="mt-1 h-2 rounded-full bg-white/10 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-guerrero-gold transition-[width] duration-700"
+                [style.width.%]="(d.racha.actual / h.meta) * 100"
+              ></div>
+            </div>
+          </div>
+        }
+        @if (d.hoy?.pilares?.length; as n) {
+          <ul
+            class="mt-4 flex flex-wrap justify-center gap-2 text-xs"
+            aria-label="Cómo va hoy por pilar"
+          >
+            @for (p of d.hoy!.pilares; track p.id) {
+              <li class="rounded-full bg-white/10 px-3 py-1">
+                {{ p.nombre }} <strong class="tabular-nums">{{ p.porcentaje }} %</strong>
+                @if (n > 1) {
+                  <span class="text-gray-400">· vale {{ p.peso }} %</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+        <p class="mt-3 text-xs text-gray-400">
+          Mejor racha: {{ d.racha.mejor }} · el día cuenta desde el {{ d.racha.umbral }} %; por
+          debajo, la racha se pierde
+        </p>
+      } @else {
+        <p class="mt-6 text-sm text-gray-300">Cargando tu racha…</p>
+      }
     </div>
 
     @if (datos(); as d) {
       <div
-        class="mt-4 flex items-center gap-3 rounded-xl px-3 py-2.5"
+        class="mt-5 flex items-center gap-3 rounded-xl px-3 py-2.5"
         [class]="
-          d.racha.comodin_disponible
-            ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
-            : 'bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-300'
+          d.racha.comodin_disponible ? 'bg-amber-500/15 text-amber-200' : 'bg-white/5 text-gray-300'
         "
       >
         <svg viewBox="0 0 24 24" class="w-6 h-6 shrink-0" aria-hidden="true">

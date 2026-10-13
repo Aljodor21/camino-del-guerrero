@@ -17,6 +17,7 @@ import { Avances, PedidoComida } from '../../core/models/comidas.model';
 import { GrupoMinuta, TiempoComida } from '../../core/models/minuta.model';
 import { ComidasService } from '../../core/services/comidas';
 import { AvisosService } from '../../core/services/avisos';
+import { CelebracionesService } from '../../core/services/celebraciones';
 import { prepararFoto } from '../../core/services/foto';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
@@ -46,6 +47,7 @@ export class ContarComida implements OnInit {
   private router = inject(Router);
   private comidas = inject(ComidasService);
   private avisos = inject(AvisosService);
+  private celebraciones = inject(CelebracionesService);
 
   protected opciones = OPCIONES;
   protected clasesChip = clasesChip;
@@ -152,6 +154,7 @@ export class ContarComida implements OnInit {
       .subscribe({
         next: () => {
           // El aviso de esta comida ya se resolvió en el servidor.
+          this.celebraciones.registro('comer');
           this.avisos.cargar().subscribe({ error: () => undefined });
           void this.router.navigate(['/cumplimiento'], { queryParams: { listo: p.tiempo } });
         },
