@@ -73,7 +73,7 @@ class FirebaseTest(APITestCase):
 
     @override_settings(FIREBASE_CREDENCIALES_B64='x')
     def test_el_aviso_sale_por_firebase_con_su_canal_y_ruta(self):
-        TokenCelular.objects.create(usuario=self.usuario, token=TOKEN)
+        TokenCelular.objects.create(usuario=self.usuario, token=TOKEN, con_botones=True)
         sesion = MagicMock()
         sesion.post.return_value = respuesta()
         with patch.object(fcm, '_sesion', return_value=(sesion, 'mi-proyecto')):
@@ -165,3 +165,20 @@ class WebPushConLaAppTest(FirebaseTest):
         self.assertFalse(self.client.get(reverse('avisos-push')).data['en_la_app'])
         TokenCelular.objects.create(usuario=self.usuario, token=TOKEN)
         self.assertTrue(self.client.get(reverse('avisos-push')).data['en_la_app'])
+
+    @override_settings(FIREBASE_CREDENCIALES_B64='x')
+    def test_una_app_vieja_recibe_la_notificacion_comun_y_la_nueva_solo_datos(self):
+        TokenCelular.objects.create(usuario=self.usuario, token=TOKEN)   # no sabe armar botones
+        sesion = MagicMock()
+        sesion.post.return_value = respuesta()
+        with patch.object(fcm, '_sesion', return_value=(sesion, 'p')):
+            fcm.enviar(self.aviso)
+        vieja = sesion.post.call_args.kwargs['json']['message']
+        self.assertEqual(vieja['notification']['title'], 'Toma un vaso de agua')
+        self.assertEqual(vieja['android']['notification']['channel_id'], 'avisos')
+
+    def test_la_app_nueva_avisa_que_sabe_hacer_botones(self):
+        self.client.post(reverse('push-celular'), {'token': TOKEN, 'botones': True}, format='json')
+        self.assertTrue(TokenCelular.objects.get().con_botones)
+        self.client.post(reverse('push-celular'), {'token': TOKEN}, format='json')   # una app vieja
+        self.assertFalse(TokenCelular.objects.get().con_botones)

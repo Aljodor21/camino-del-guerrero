@@ -194,6 +194,9 @@ class TokenCelular(models.Model):
     token          = models.CharField(max_length=400, unique=True)
     dispositivo    = models.CharField(max_length=80, blank=True)
     version_app    = models.CharField(max_length=20, blank=True)
+    # La app de este celular sabe armar la notificación con botón (los avisos van solo con datos).
+    # Las versiones anteriores no: a esas se les manda la notificación común.
+    con_botones    = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     ultimo_uso     = models.DateTimeField(default=timezone.now)
 

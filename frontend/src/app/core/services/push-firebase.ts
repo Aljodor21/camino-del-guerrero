@@ -71,7 +71,7 @@ export class PushFirebaseService {
 
   private async guardarToken(token: string): Promise<void> {
     this.token = token;
-    await firstValueFrom(this.http.post<void>(API, { token }));
+    await firstValueFrom(this.http.post<void>(API, { token, botones: true }));
   }
 
   private escuchar(): void {
