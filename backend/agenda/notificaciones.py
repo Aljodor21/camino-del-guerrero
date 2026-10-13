@@ -13,14 +13,14 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.exceptions import ReglaNegocioError
-from nutricion.grupos import HORA_TIEMPO, NOMBRE_GRUPO, NOMBRE_TIEMPO
+from nutricion.grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from nutricion import minutas
 from nutricion.models import RegistroComida, Suplemento
 from progress.models import RegistroEntrenamiento
 from users.procesos import proceso_de_referencia
 from routines.models import DiaRutina
 
-from . import sueno
+from . import horarios, sueno
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 ARTICULO_TIEMPO = {'desayuno': 'el', 'onces': 'las', 'almuerzo': 'el', 'algo': 'el', 'cena': 'la', 'merienda': 'la'}
@@ -30,6 +30,8 @@ HORA_DORMIR = time(22, 0)
 HORA_ENTRENO = time(7, 0)
 HORA_RECORDATORIO = time(8, 0)
 ANTES_DE_DORMIR = timedelta(minutes=30)
+# El aviso de «¿cómo te fue con...?» llega un rato después de la hora de comer, no a la misma hora.
+DESPUES_DE_COMER = timedelta(minutes=45)
 # Lo que se atrasó más de esto no se manda al celular (ej. el servidor estuvo apagado).
 VIGENCIA_PUSH = timedelta(hours=2)
 FIRMA = 'agenda.notificacion'
@@ -57,13 +59,14 @@ def vasos_meta(habitos):
     return math.ceil(habitos.agua_ml / vaso_ml(habitos)) if habitos.agua_ml else 0
 
 
-def _horas_agua(habitos, fecha):
-    """La meta de vasos repartida entre una hora después de levantarse y una antes de dormir."""
+def _horas_agua(habitos, fecha, horas):
+    """La meta de vasos repartida entre una hora después de levantarse y una antes de dormir
+    (con las horas de ese día)."""
     vasos = vasos_meta(habitos)
     if not vasos:
         return []
-    inicio = _momento(fecha, habitos.hora_levantarse or HORA_LEVANTARSE) + timedelta(hours=1)
-    fin = _momento(fecha, habitos.hora_dormir or HORA_DORMIR) - timedelta(hours=1)
+    inicio = _momento(fecha, horas['levantarse'] or HORA_LEVANTARSE) + timedelta(hours=1)
+    fin = _momento(fecha, horas['dormir'] or HORA_DORMIR) - timedelta(hours=1)
     if fin <= inicio:
         fin = inicio + timedelta(hours=12)
     paso = (fin - inicio) / max(vasos - 1, 1)
@@ -86,9 +89,10 @@ def programados(usuario, fecha):
     habitos = habitos_de(usuario)
     apagados = set(habitos.avisos_apagados)
     avisos = []
+    horas_dia = horarios.horas_de(habitos, fecha)
 
     if 'agua' not in apagados:
-        horas = _horas_agua(habitos, fecha)
+        horas = _horas_agua(habitos, fecha, horas_dia)
         for i, cuando in enumerate(horas, start=1):
             avisos.append({
                 'tipo': 'agua', 'clave': f'agua:{fecha}:{i}', 'programada_para': cuando,
@@ -110,7 +114,8 @@ def programados(usuario, fecha):
                 if toma.get('nota'):
                     cuerpo += f' {toma["nota"]}'
                 # Si la persona dijo a qué hora la toma, avisa a esa hora; si no, a la de la comida.
-                hora_toma = time.fromisoformat(toma['hora']) if toma.get('hora') else time(*HORA_TIEMPO[toma['tiempo']])
+                hora_toma = (time.fromisoformat(toma['hora']) if toma.get('hora')
+                             else horarios.hora_comida(habitos, toma['tiempo']))
                 avisos.append({
                     'tipo': 'toma', 'clave': f'toma:{s.id}:{fecha}:{tiempo}',
                     'programada_para': _momento(fecha, hora_toma),
@@ -119,8 +124,8 @@ def programados(usuario, fecha):
                     'datos': {'tiempo': tiempo, 'scoops': scoops},
                 })
 
-    if 'dormir' not in apagados and habitos.hora_dormir:
-        hora = habitos.hora_dormir
+    if 'dormir' not in apagados and horas_dia['dormir']:
+        hora = horas_dia['dormir']
         avisos.append({
             'tipo': 'dormir', 'clave': f'dormir:{fecha}',
             'programada_para': _momento(fecha, hora) - ANTES_DE_DORMIR,
@@ -129,13 +134,13 @@ def programados(usuario, fecha):
             'datos': {'hora': hora.isoformat('minutes')},
         })
 
-    if 'levantar' not in apagados and habitos.hora_levantarse:
+    if 'levantar' not in apagados and horas_dia['levantarse']:
         avisos.append({
             'tipo': 'levantar', 'clave': f'levantar:{fecha}',
-            'programada_para': _momento(fecha, habitos.hora_levantarse),
+            'programada_para': _momento(fecha, horas_dia['levantarse']),
             'titulo': 'Buenos días: ¿ya te levantaste?',
             'cuerpo': 'Anótalo para llevar tu promedio de sueño.',
-            'datos': {'hora': habitos.hora_levantarse.isoformat('minutes')},
+            'datos': {'hora': horas_dia['levantarse'].isoformat('minutes')},
         })
 
     if 'entreno' not in apagados:
@@ -157,7 +162,7 @@ def programados(usuario, fecha):
         for tiempo in (minuta.tiempos() if minuta else []):
             avisos.append({
                 'tipo': 'comida', 'clave': f'comida:{fecha}:{tiempo}',
-                'programada_para': _momento(fecha, time(*HORA_TIEMPO[tiempo])),
+                'programada_para': _momento(fecha, horarios.hora_comida(habitos, tiempo)) + DESPUES_DE_COMER,
                 'titulo': f'¿Cómo te fue con {ARTICULO_TIEMPO[tiempo]} {NOMBRE_TIEMPO[tiempo].lower()}?',
                 'cuerpo': 'Cuéntanos qué comiste, con foto si quieres, para ver si vas cumpliendo tu plan.',
                 'datos': {'tiempo': tiempo},
@@ -348,6 +353,8 @@ def resumen_de_hoy(usuario):
                                             dia_semana=hoy.isoweekday()).exists()
     acostado = registros.filter(tipo='dormir').first()
     levantado = registros.filter(tipo='levantar').first()
+    horas_hoy = horarios.horas_de(habitos, hoy)
+    anoche = sueno.anoche(usuario)
     vasos = sorted((r for r in registros if r.tipo == 'agua'), key=lambda r: r.momento)
     return {
         'fecha': hoy,
@@ -359,10 +366,22 @@ def resumen_de_hoy(usuario):
         'tomas': tomas,
         'entreno': {'toca': toca_entreno,
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},
-        'dormir': {'hora': habitos.hora_dormir, 'acostado': acostado.momento if acostado else None},
-        'levantar': {'hora': habitos.hora_levantarse, 'levantado': levantado.momento if levantado else None,
-                     'dormiste_horas': sueno.anoche(usuario)},
+        'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None},
+        'levantar': {'hora': horas_hoy['levantarse'], 'levantado': levantado.momento if levantado else None,
+                     'dormiste_horas': (anoche or {}).get('horas'),
+                     # Cuántos minutos antes (−) o después (+) de lo previsto se acostó anoche y se levantó hoy.
+                     'acostarse_min': (anoche or {}).get('dif_acostarse_min'),
+                     'levantarse_min': (anoche or {}).get('dif_levantarse_min')},
+        # Las horas de hoy y de mañana, para poder cambiarlas solo por ese día.
+        'horario': {'hoy': {**_en_texto(horas_hoy)},
+                    'manana': {**_en_texto(horarios.horas_de(habitos, hoy + timedelta(days=1)))}},
     }
+
+
+def _en_texto(horas):
+    return {'levantarse': horas['levantarse'].isoformat('minutes') if horas['levantarse'] else None,
+            'dormir': horas['dormir'].isoformat('minutes') if horas['dormir'] else None,
+            'personalizado': horas['personalizado']}
 
 
 # ── Confirmar desde el celular ──────────────────────────────────────────────

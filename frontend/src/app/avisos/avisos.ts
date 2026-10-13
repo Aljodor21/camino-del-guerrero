@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
-import { Aviso, Sueno, TipoAviso } from '../core/models/avisos.model';
+import { Aviso, HoraDeComida, Sueno, TipoAviso } from '../core/models/avisos.model';
 import { AvisosService } from '../core/services/avisos';
 import { NotificacionesCelularService } from '../core/services/notificaciones-celular';
 import { PushService } from '../core/services/push';
@@ -22,7 +22,7 @@ import { clasesChip } from '../shared/chip';
 import { TamanoVaso, vasoValido } from '../shared/tamano-vaso';
 import { parsearDecimal } from '../shared/decimal-input';
 import { mensajeError } from '../shared/errores';
-import { formatearHora, formatearNumero } from '../shared/fechas';
+import { formatearHora, formatearNumero, hoyISO, sumarDias } from '../shared/fechas';
 import { Pestana, Pestanas } from '../shared/pestanas/pestanas';
 import { guardarSeccionEnUrl } from '../shared/seccion-en-url';
 
@@ -136,6 +136,19 @@ export class Avisos implements OnInit {
   protected levantarse = signal('');
   protected dormir = signal('');
   protected entreno = signal('');
+  /** Horas distintas por día de la semana (1 = lunes): lo vacío usa la hora general. */
+  protected horasSemana = signal<Record<string, { levantarse: string; dormir: string }>>({});
+  /** A qué hora come cada tiempo del plan (la de referencia si no la cambió). */
+  protected tiemposComida = signal<HoraDeComida[]>([]);
+  protected diasSemana = [
+    { id: '1', nombre: 'Lunes' },
+    { id: '2', nombre: 'Martes' },
+    { id: '3', nombre: 'Miércoles' },
+    { id: '4', nombre: 'Jueves' },
+    { id: '5', nombre: 'Viernes' },
+    { id: '6', nombre: 'Sábado' },
+    { id: '7', nombre: 'Domingo' },
+  ];
   protected apagados = signal<TipoAviso[]>([]);
 
   protected vasosMeta = computed(() => {
@@ -186,6 +199,15 @@ export class Avisos implements OnInit {
         this.levantarse.set(h.hora_levantarse?.slice(0, 5) ?? '');
         this.dormir.set(h.hora_dormir?.slice(0, 5) ?? '');
         this.entreno.set(h.hora_entreno?.slice(0, 5) ?? '');
+        this.horasSemana.set(
+          Object.fromEntries(
+            Object.entries(h.horas_semana ?? {}).map(([d, v]) => [
+              d,
+              { levantarse: v.levantarse ?? '', dormir: v.dormir ?? '' },
+            ]),
+          ),
+        );
+        this.tiemposComida.set(h.tiempos_comida ?? []);
         this.apagados.set(h.avisos_apagados);
       },
       error: () => undefined,
@@ -255,6 +277,77 @@ export class Avisos implements OnInit {
     });
   }
 
+  protected fijarHoraSemana(dia: string, campo: 'levantarse' | 'dormir', valor: string): void {
+    this.horasSemana.update((h) => {
+      const actual = h[dia] ?? { levantarse: '', dormir: '' };
+      return { ...h, [dia]: { ...actual, [campo]: valor } };
+    });
+  }
+
+  protected fijarHoraComida(tiempo: string, valor: string): void {
+    this.tiemposComida.update((l) =>
+      l.map((t) =>
+        t.tiempo === tiempo && valor
+          ? { ...t, hora: valor, personalizada: valor !== t.referencia }
+          : t,
+      ),
+    );
+  }
+
+  protected restablecerHoraComida(tiempo: string): void {
+    this.tiemposComida.update((l) =>
+      l.map((t) => (t.tiempo === tiempo ? { ...t, hora: t.referencia, personalizada: false } : t)),
+    );
+  }
+
+  // ── Cambiar las horas de un solo día (hoy o mañana) ───────────────
+  protected cambiandoDia = signal<'hoy' | 'manana' | null>(null);
+  protected cambioLevantarse = signal('');
+  protected cambioDormir = signal('');
+  protected guardandoDia = signal(false);
+
+  protected abrirCambioDia(cual: 'hoy' | 'manana'): void {
+    const horas = this.hoy()?.horario[cual];
+    this.cambioLevantarse.set(horas?.levantarse ?? '');
+    this.cambioDormir.set(horas?.dormir ?? '');
+    this.cambiandoDia.set(cual);
+  }
+
+  protected guardarCambioDia(quitar = false): void {
+    const cual = this.cambiandoDia();
+    if (!cual) return;
+    const fecha = cual === 'hoy' ? hoyISO() : sumarDias(hoyISO(), 1);
+    this.guardandoDia.set(true);
+    this.error.set('');
+    this.servicio
+      .guardarHorario(fecha, {
+        hora_levantarse: quitar ? null : this.cambioLevantarse() || null,
+        hora_dormir: quitar ? null : this.cambioDormir() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoDia.set(false);
+          this.cambiandoDia.set(null);
+          this.servicio.cargarHoy().subscribe({ error: () => undefined });
+          this.servicio.cargar().subscribe({ error: () => undefined });
+          void this.celular.actualizar();
+        },
+        error: (e) => {
+          this.guardandoDia.set(false);
+          this.error.set(mensajeError(e, 'No pudimos guardar las horas de ese día.'));
+        },
+      });
+  }
+
+  /** «30 min antes de lo previsto», «15 min después…» o «a la hora prevista». */
+  protected frenteALoPrevisto(min: number | null): string {
+    if (min === null) return '';
+    if (Math.abs(min) < 5) return 'a la hora prevista';
+    const m = Math.abs(min);
+    const cuanto = m >= 60 ? this.duracion(m / 60) : `${m} min`;
+    return `${cuanto} ${min < 0 ? 'antes' : 'después'} de lo previsto`;
+  }
+
   /** 7,75 → «7 h 45 min». */
   protected duracion(horas: number): string {
     const minutos = Math.round(horas * 60);
@@ -304,6 +397,22 @@ export class Avisos implements OnInit {
         hora_dormir: this.dormir() || null,
         hora_entreno: this.entreno() || null,
         avisos_apagados: this.apagados(),
+        horas_semana: Object.fromEntries(
+          Object.entries(this.horasSemana())
+            .filter(([, v]) => v.levantarse || v.dormir)
+            .map(([d, v]) => [
+              d,
+              {
+                ...(v.levantarse ? { levantarse: v.levantarse } : {}),
+                ...(v.dormir ? { dormir: v.dormir } : {}),
+              },
+            ]),
+        ),
+        horas_comida: Object.fromEntries(
+          this.tiemposComida()
+            .filter((t) => t.hora !== t.referencia)
+            .map((t) => [t.tiempo, t.hora]),
+        ),
       })
       .subscribe({
         next: () => {

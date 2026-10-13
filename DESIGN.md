@@ -162,6 +162,8 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Celebraciones** (una tarjeta con el guerrero o la medalla y un confeti rojo, dorado y crema): al cerrar el día al 100 % (una vez por día) y al lograr un hito nuevo. Se cierran con «Seguir», Escape o tocando fuera. Con «reducir movimiento» no hay confeti ni saltos.
 - **Sin culpa:** el comodín evita que un mal día borre todo; una semana sin terminar no se califica («Así va tu semana»); y ningún hito premia comer menos, pasarse de agua ni saltarse comidas.
 
+
+
 ## El porcentaje de un periodo
 
 - **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
@@ -174,9 +176,28 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Avisos › Cumplimiento** muestra una tarjeta «Sueño» con el promedio del periodo y una barra por noche (10 horas llenan la barra), con la aclaración de que es aproximado.
 - **Sin inventar metas:** no se califica si dormiste «bien» o «mal»; solo se muestra lo que anotaste.
 
+## El porcentaje de un periodo
+
+- **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
+- **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
+
 ## La app siempre al día
 
 - **Sin cerrar y abrir:** la app se vuelve a cargar sola cuando cambia el día (a medianoche con la app abierta, o al volver a ella) y cuando se regresa después de más de 10 minutos en segundo plano. Si en ese momento hay un campo con texto o una ventana abierta, espera a que termine para no borrar lo que se escribe.
 - **Fotos de la comida:** «Tomar foto» abre la cámara y «Galería» deja elegir una que ya exista. La app declara el permiso de cámara (sin él, Android solo ofrecía la galería).
 - **Un solo «Cumplimiento»:** el de Avisos es el del día completo (agua, dormir, comidas, proteína y entreno); el de Nutrición se llama «Lo que comí» y muestra qué grupos de la minuta faltaron. Desde el día, la tarjeta de comidas enlaza a ese detalle.
+
+## Mis horas
+
+- **Ajustes › A qué hora comes:** una hora por cada comida del plan (con «Volver a las 7:00» si la cambiaste). El aviso «¿Cómo te fue con…?» llega **45 minutos después** de esa hora, no a la hora de comer.
+- **Ajustes › Horas distintas según el día:** una fila por día de la semana, con una hora de levantarte y otra de acostarte; lo vacío usa la de siempre. Está plegado para no estorbar.
+- **Tu día › Sueño:** debajo de los botones, «Hoy: te levantas a las 6:30 · mañana: a las 5:00 (cambiada)» y dos enlaces, «Cambiar las de hoy» y «Cambiar las de mañana», que abren las dos horas de ese día con «Guardar» y «Volver a la de siempre».
+- **Frente a lo previsto:** «Anoche te acostaste 30 min antes de lo previsto. Hoy te levantaste 15 min después de lo previsto» (a menos de 5 minutos dice «a la hora prevista»). En Cumplimiento, la tarjeta de sueño agrega el promedio de esas diferencias.
+
+## El porcentaje de un periodo
+
+- **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
+- **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
+
 

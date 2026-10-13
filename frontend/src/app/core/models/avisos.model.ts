@@ -27,9 +27,30 @@ export interface Habitos {
   hora_dormir: string | null;
   hora_entreno: string | null;
   avisos_apagados: TipoAviso[];
+  /** Horas distintas por día de la semana (1 = lunes): lo que falta usa la hora general. */
+  horas_semana: Record<string, { levantarse?: string; dormir?: string }>;
+  /** A qué hora come la persona cada tiempo; lo que falta usa la de referencia. */
+  horas_comida: Record<string, string>;
+  tiempos_comida: HoraDeComida[];
 }
 
-export type HabitosPayload = Partial<Omit<Habitos, 'vasos_meta'>>;
+/** Una comida del plan con la hora a la que se come (la suya o la de referencia). */
+export interface HoraDeComida {
+  tiempo: string;
+  nombre: string;
+  hora: string;
+  referencia: string;
+  personalizada: boolean;
+}
+
+export interface HorasDelDia {
+  levantarse: string | null;
+  dormir: string | null;
+  /** Se cambiaron solo para ese día. */
+  personalizado: boolean;
+}
+
+export type HabitosPayload = Partial<Omit<Habitos, 'vasos_meta' | 'tiempos_comida'>>;
 
 export interface TomaDeHoy {
   suplemento: number;
@@ -61,7 +82,16 @@ export interface ResumenHoy {
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };
   /** A qué hora se levantó hoy (si ya lo anotó) y cuánto durmió anoche. */
-  levantar: { hora: string | null; levantado: string | null; dormiste_horas: number | null };
+  levantar: {
+    hora: string | null;
+    levantado: string | null;
+    dormiste_horas: number | null;
+    /** Minutos antes (−) o después (+) de lo previsto: anoche al acostarte y hoy al levantarte. */
+    acostarse_min: number | null;
+    levantarse_min: number | null;
+  };
+  /** Las horas previstas de hoy y de mañana (se pueden cambiar solo por ese día). */
+  horario: { hoy: HorasDelDia; manana: HorasDelDia };
 }
 
 export interface Noche {
@@ -69,6 +99,8 @@ export interface Noche {
   acostado: string;
   levantado: string;
   horas: number;
+  dif_acostarse_min: number | null;
+  dif_levantarse_min: number | null;
 }
 
 /** Cuánto se durmió entre dos fechas: de la hora en que anotó que se acostó a la que anotó que se levantó. */
@@ -77,6 +109,8 @@ export interface Sueno {
   hasta: string;
   promedio_horas: number | null;
   noches: Noche[];
+  promedio_acostarse_min: number | null;
+  promedio_levantarse_min: number | null;
 }
 
 export type BloqueCumplimiento = 'comidas' | 'entreno' | 'tomas' | 'agua' | 'dormir';

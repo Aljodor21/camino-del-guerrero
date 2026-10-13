@@ -13,9 +13,9 @@ from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, fcm, logros, notificaciones, push, sueno
-from .models import Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
-from .serializers import (HabitosSerializer, NotificacionSerializer, RecordatorioSerializer,
+from . import cumplimiento, fcm, horarios, logros, notificaciones, push, sueno
+from .models import HorarioDia, Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
+from .serializers import (HabitosSerializer, HorarioDiaSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
 
 
@@ -232,3 +232,34 @@ class SuenoView(APIView):
         if desde > hasta or (hasta - desde).days > 92:
             raise ReglaNegocioError('Pide un periodo válido de hasta un trimestre.')
         return Response(sueno.resumen(request.user, desde, hasta))
+
+
+class HorarioDiaView(APIView):
+    """Las horas de levantarse y acostarse de un solo día («mañana me levanto a las 5»)."""
+
+    def _respuesta(self, usuario, fecha):
+        horas = horarios.horas_de(notificaciones.habitos_de(usuario), fecha)
+        return {'fecha': fecha, 'levantarse': horas['levantarse'], 'dormir': horas['dormir'],
+                'personalizado': horas['personalizado']}
+
+    def put(self, request, fecha):
+        dia = parse_date(fecha)
+        hoy = timezone.localdate()
+        if dia is None or not hoy - timedelta(days=7) <= dia <= hoy + timedelta(days=60):
+            raise ReglaNegocioError('Esa fecha no se puede cambiar: elige entre la última semana y los próximos dos meses.')
+        datos = HorarioDiaSerializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+        valores = datos.validated_data
+        if not valores.get('hora_levantarse') and not valores.get('hora_dormir'):
+            HorarioDia.objects.filter(usuario=request.user, fecha=dia).delete()
+        else:
+            HorarioDia.objects.update_or_create(usuario=request.user, fecha=dia, defaults={
+                'hora_levantarse': valores.get('hora_levantarse'), 'hora_dormir': valores.get('hora_dormir')})
+        return Response(self._respuesta(request.user, dia))
+
+    def delete(self, request, fecha):
+        dia = parse_date(fecha)
+        if dia is None:
+            raise ReglaNegocioError('Fecha no válida.')
+        HorarioDia.objects.filter(usuario=request.user, fecha=dia).delete()
+        return Response(self._respuesta(request.user, dia))

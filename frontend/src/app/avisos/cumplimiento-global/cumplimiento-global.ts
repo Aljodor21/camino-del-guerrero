@@ -198,6 +198,13 @@ export class CumplimientoGlobalVista implements OnInit {
     });
   }
 
+  /** «30 min antes de lo previsto», «15 min después…» o «a la hora prevista». */
+  protected frenteALoPrevisto(min: number): string {
+    if (Math.abs(min) < 5) return 'a la hora prevista';
+    const m = Math.abs(min);
+    return `${m >= 60 ? this.duracion(m / 60) : m + ' min'} ${min < 0 ? 'antes' : 'después'} de lo previsto`;
+  }
+
   /** 7,75 → «7 h 45 min». */
   protected duracion(horas: number): string {
     const minutos = Math.round(horas * 60);

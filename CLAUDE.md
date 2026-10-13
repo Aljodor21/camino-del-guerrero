@@ -31,6 +31,10 @@ La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/a
 
 `RegistroHabito` tiene los tipos `dormir` («me acosté») y `levantar` («me levanté», una vez al día; viene del aviso `levantar` a la hora de levantarse de `Habitos` o del botón). `agenda/sueno.py` calcula las noches (de la última hora de acostarse a la de levantarse, entre 1 y 16 horas) y el promedio; no se guarda nada. `POST /api/agenda/registros/levantar|dormir/`, `GET /api/agenda/sueno/?desde=&hasta=`.
 
+## Mis horas
+
+`agenda/horarios.py` resuelve las horas de cada día: manda lo de ese día (`HorarioDia`), luego el día de la semana (`Habitos.horas_semana`) y luego la hora general (`hora_levantarse` / `hora_dormir`); las comidas usan `Habitos.horas_comida` o la hora de referencia de `nutricion.grupos.HORA_TIEMPO`. El aviso de contar una comida sale 45 minutos después de esa hora (`DESPUES_DE_COMER`), no a la hora de comer. `PUT /api/agenda/horario/<fecha>/` cambia un solo día. El sueño se compara con lo previsto de ese día (`dif_acostarse_min`, `dif_levantarse_min`).
+
 ## Logros
 
 `agenda/logros.py` calcula siempre (no guarda contadores) la racha con comodín (un día corto por semana lunes a domingo no la rompe), los hitos y el capítulo semanal a partir de lo registrado, que no se edita; solo `HitoVisto` recuerda qué hitos ya se celebraron (los de hace más de 2 días se dan por vistos sin fiesta). Ningún hito premia comer menos, pasarse de agua ni saltarse comidas. Endpoints: `GET /api/agenda/logros/`, `POST /api/agenda/logros/vistos/`, `GET /api/agenda/capitulo/?lunes=`. En el frontend, `CelebracionesService` decide cuándo celebrar y `app-guerrero` (SVG propio con tres estados), `app-medalla` y `app-anillo` lo dibujan.

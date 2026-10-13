@@ -77,6 +77,11 @@ class Habitos(models.Model):
     hora_entreno    = models.TimeField(null=True, blank=True)
     # Tipos de aviso que el usuario apagó (ej. ['agua']).
     avisos_apagados = models.JSONField(default=list, blank=True)
+    # Horas distintas según el día de la semana: {'1': {'levantarse': '05:30', 'dormir': '21:30'}, ...}
+    # (1 = lunes). Lo que falta usa la hora general.
+    horas_semana    = models.JSONField(default=dict, blank=True)
+    # A qué hora come la persona cada tiempo: {'desayuno': '07:30', ...}. Lo que falta usa la de referencia.
+    horas_comida    = models.JSONField(default=dict, blank=True)
 
     class Meta:
         constraints = [
@@ -219,3 +224,19 @@ class HitoVisto(models.Model):
 
     def __str__(self):
         return f'{self.usuario.email} - {self.clave}'
+
+
+class HorarioDia(models.Model):
+    """Las horas de un solo día («mañana me levanto a las 5»). Pisan a las del día de la semana y a las
+    generales; lo que se deja vacío usa lo de siempre."""
+
+    usuario         = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='horarios_dia')
+    fecha           = models.DateField()
+    hora_levantarse = models.TimeField(null=True, blank=True)
+    hora_dormir     = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['usuario', 'fecha'], name='horario_dia_unico')]
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.fecha}'

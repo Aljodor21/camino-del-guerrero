@@ -8,6 +8,7 @@ import {
   CumplimientoGlobal,
   Habitos,
   HabitosPayload,
+  HorasDelDia,
   ResumenHoy,
   Sueno,
 } from '../models/avisos.model';
@@ -73,6 +74,14 @@ export class AvisosService {
   /** «Me acosté», sin esperar el aviso. */
   registrarDormir(): Observable<{ momento: string }> {
     return this.http.post<{ momento: string }>(`${API}/registros/dormir/`, {});
+  }
+
+  /** Cambia las horas de levantarse y acostarse de un solo día; con las dos vacías vuelve a lo de siempre. */
+  guardarHorario(
+    fecha: string,
+    horas: { hora_levantarse: string | null; hora_dormir: string | null },
+  ): Observable<HorasDelDia & { fecha: string }> {
+    return this.http.put<HorasDelDia & { fecha: string }>(`${API}/horario/${fecha}/`, horas);
   }
 
   /** Cuánto se durmió entre dos fechas; sin fechas, los últimos 7 días. */

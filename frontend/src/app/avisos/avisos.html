@@ -290,6 +290,16 @@
                 >.
               </p>
             }
+            @if (h.levantar.acostarse_min !== null || h.levantar.levantarse_min !== null) {
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                @if (h.levantar.acostarse_min !== null) {
+                  Anoche te acostaste {{ frenteALoPrevisto(h.levantar.acostarse_min) }}.
+                }
+                @if (h.levantar.levantarse_min !== null) {
+                  Hoy te levantaste {{ frenteALoPrevisto(h.levantar.levantarse_min) }}.
+                }
+              </p>
+            }
             @if (sueno(); as s) {
               @if (s.promedio_horas !== null) {
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -300,6 +310,97 @@
                 </p>
               }
             }
+            <!-- Cambiar las horas de un solo día -->
+            <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-2.5 space-y-2">
+              @if (cambiandoDia(); as cual) {
+                <p class="text-xs font-medium text-gray-700 dark:text-gray-200">
+                  Mis horas de {{ cual === 'hoy' ? 'hoy' : 'mañana' }}
+                </p>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="flex flex-col gap-1">
+                    <label for="av-cd-lev" class="text-xs text-gray-600 dark:text-gray-400"
+                      >Me levanto</label
+                    >
+                    <input
+                      pInputText
+                      id="av-cd-lev"
+                      type="time"
+                      [value]="cambioLevantarse()"
+                      (change)="cambioLevantarse.set($any($event.target).value)"
+                      class="w-full"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label for="av-cd-dor" class="text-xs text-gray-600 dark:text-gray-400"
+                      >Me acuesto</label
+                    >
+                    <input
+                      pInputText
+                      id="av-cd-dor"
+                      type="time"
+                      [value]="cambioDormir()"
+                      (change)="cambioDormir.set($any($event.target).value)"
+                      class="w-full"
+                    />
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <p-button
+                    label="Guardar"
+                    icon="pi pi-check"
+                    size="small"
+                    [loading]="guardandoDia()"
+                    (onClick)="guardarCambioDia()"
+                  />
+                  @if (h.horario[cual].personalizado) {
+                    <p-button
+                      label="Volver a la de siempre"
+                      severity="secondary"
+                      variant="outlined"
+                      size="small"
+                      [loading]="guardandoDia()"
+                      (onClick)="guardarCambioDia(true)"
+                    />
+                  }
+                  <p-button
+                    label="Cancelar"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    (onClick)="cambiandoDia.set(null)"
+                  />
+                </div>
+              } @else {
+                <p class="text-xs text-gray-600 dark:text-gray-300">
+                  Hoy: te levantas
+                  {{ h.horario.hoy.levantarse ? 'a las ' + hora(h.horario.hoy.levantarse) : '—' }} ·
+                  mañana:
+                  {{
+                    h.horario.manana.levantarse ? 'a las ' + hora(h.horario.manana.levantarse) : '—'
+                  }}
+                  @if (h.horario.manana.personalizado) {
+                    (cambiada)
+                  }
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-guerrero-red focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                    (click)="abrirCambioDia('hoy')"
+                  >
+                    Cambiar las de hoy
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-guerrero-red focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                    (click)="abrirCambioDia('manana')"
+                  >
+                    Cambiar las de mañana
+                  </button>
+                </div>
+              }
+            </div>
+
             <div class="flex flex-wrap gap-2">
               @if (!h.levantar.levantado) {
                 <p-button
@@ -402,6 +503,81 @@
             />
           </div>
         </div>
+
+        @if (tiemposComida().length) {
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              A qué hora comes
+            </legend>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              El aviso «¿Cómo te fue con…?» te llega 45 minutos después de esa hora.
+            </p>
+            <ul class="grid grid-cols-2 gap-x-3 gap-y-2">
+              @for (t of tiemposComida(); track t.tiempo) {
+                <li class="flex flex-col gap-1">
+                  <label
+                    [for]="'av-comida-' + t.tiempo"
+                    class="text-sm text-gray-700 dark:text-gray-300"
+                    >{{ t.nombre }}</label
+                  >
+                  <input
+                    pInputText
+                    [id]="'av-comida-' + t.tiempo"
+                    type="time"
+                    [value]="t.hora"
+                    (change)="fijarHoraComida(t.tiempo, $any($event.target).value)"
+                    class="w-full"
+                  />
+                  @if (t.personalizada) {
+                    <button
+                      type="button"
+                      class="self-start text-xs text-guerrero-red font-medium"
+                      (click)="restablecerHoraComida(t.tiempo)"
+                    >
+                      Volver a las {{ hora(t.referencia) }}
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          </fieldset>
+        }
+
+        <details class="rounded-xl border border-gray-200 dark:border-dark-700 px-3 py-2">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-200">
+            Horas distintas según el día
+          </summary>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Si algunos días te levantas o te acuestas a otra hora, ponla aquí. Lo que dejes vacío
+            usa tu hora de siempre. Para cambiar solo un día (hoy o mañana) hazlo desde «Tu día».
+          </p>
+          <ul class="mt-2 space-y-2">
+            @for (d of diasSemana; track d.id) {
+              <li class="grid grid-cols-[5.5rem_1fr_1fr] items-center gap-2">
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ d.nombre }}</span>
+                <input
+                  pInputText
+                  type="time"
+                  [attr.aria-label]="'Me levanto el ' + d.nombre.toLowerCase()"
+                  [value]="horasSemana()[d.id]?.levantarse ?? ''"
+                  (change)="fijarHoraSemana(d.id, 'levantarse', $any($event.target).value)"
+                  class="w-full"
+                />
+                <input
+                  pInputText
+                  type="time"
+                  [attr.aria-label]="'Me acuesto el ' + d.nombre.toLowerCase()"
+                  [value]="horasSemana()[d.id]?.dormir ?? ''"
+                  (change)="fijarHoraSemana(d.id, 'dormir', $any($event.target).value)"
+                  class="w-full"
+                />
+              </li>
+            }
+          </ul>
+          <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+            Primera columna: te levantas · segunda: te acuestas.
+          </p>
+        </details>
 
         <fieldset class="space-y-2">
           <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">

@@ -1,9 +1,12 @@
-from datetime import timedelta
+from datetime import time, timedelta
 
 from django.utils import timezone
 from rest_framework import serializers
 
-from . import notificaciones
+from nutricion import minutas
+from nutricion.grupos import HORA_TIEMPO, NOMBRE_TIEMPO
+
+from . import horarios, notificaciones
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 MAX_DIAS_ADELANTE = 730
@@ -60,17 +63,63 @@ class RecordatorioSerializer(serializers.ModelSerializer):
         return super().update(instance, self._aplicar_completado(validated_data))
 
 
+def _hora_texto(valor, campo):
+    hora = horarios.a_hora(valor)
+    if hora is None:
+        raise serializers.ValidationError(f'«{campo}» no es una hora válida (ej. 06:30).')
+    return hora.isoformat('minutes')
+
+
 class HabitosSerializer(serializers.ModelSerializer):
     vasos_meta = serializers.SerializerMethodField()
+    tiempos_comida = serializers.SerializerMethodField()
 
     class Meta:
         model  = Habitos
-        fields = ['agua_ml', 'vaso_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno', 'avisos_apagados']
+        fields = ['agua_ml', 'vaso_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno',
+                  'avisos_apagados', 'horas_semana', 'horas_comida', 'tiempos_comida']
         extra_kwargs = {'agua_ml': {'min_value': 250, 'max_value': 8000},
                         'vaso_ml': {'min_value': 50, 'max_value': 1500}}
 
     def get_vasos_meta(self, habitos):
         return notificaciones.vasos_meta(habitos)
+
+    def get_tiempos_comida(self, habitos):
+        """Las comidas de su plan con la hora a la que come cada una (la suya o la de referencia)."""
+        minuta = minutas.vigente_de(habitos.usuario) if habitos.usuario_id else None
+        return [{'tiempo': t, 'nombre': NOMBRE_TIEMPO[t],
+                 'hora': horarios.hora_comida(habitos, t).isoformat('minutes'),
+                 'referencia': time(*HORA_TIEMPO[t]).isoformat('minutes'),
+                 'personalizada': t in (habitos.horas_comida or {})}
+                for t in (minuta.tiempos() if minuta else [])]
+
+    def validate_horas_semana(self, valor):
+        if not isinstance(valor, dict):
+            raise serializers.ValidationError('Formato no válido.')
+        limpio = {}
+        for dia, horas in valor.items():
+            if dia not in {'1', '2', '3', '4', '5', '6', '7'} or not isinstance(horas, dict):
+                raise serializers.ValidationError('Día de la semana no válido.')
+            entrada = {}
+            for clave in ('levantarse', 'dormir'):
+                if horas.get(clave):
+                    entrada[clave] = _hora_texto(horas[clave], clave)
+            if entrada.get('levantarse') and entrada.get('levantarse') == entrada.get('dormir'):
+                raise serializers.ValidationError('Levantarte y acostarte no pueden ser a la misma hora.')
+            if entrada:
+                limpio[dia] = entrada
+        return limpio
+
+    def validate_horas_comida(self, valor):
+        if not isinstance(valor, dict):
+            raise serializers.ValidationError('Formato no válido.')
+        limpio = {}
+        for tiempo, hora in valor.items():
+            if tiempo not in HORA_TIEMPO:
+                raise serializers.ValidationError('Esa comida no existe.')
+            if hora:
+                limpio[tiempo] = _hora_texto(hora, tiempo)
+        return limpio
 
     def validate_avisos_apagados(self, apagados):
         tipos = dict(Notificacion.TIPOS)
@@ -83,6 +132,17 @@ class HabitosSerializer(serializers.ModelSerializer):
         dormir = datos.get('hora_dormir', getattr(self.instance, 'hora_dormir', None))
         if levantarse and dormir and levantarse == dormir:
             raise serializers.ValidationError({'hora_dormir': 'No puede ser la misma hora en que te levantas.'})
+        return datos
+
+
+class HorarioDiaSerializer(serializers.Serializer):
+    """Las horas de un solo día. Vacío = usar la de siempre."""
+    hora_levantarse = serializers.TimeField(allow_null=True, required=False)
+    hora_dormir     = serializers.TimeField(allow_null=True, required=False)
+
+    def validate(self, datos):
+        if datos.get('hora_levantarse') and datos.get('hora_levantarse') == datos.get('hora_dormir'):
+            raise serializers.ValidationError('Levantarte y acostarte no pueden ser a la misma hora.')
         return datos
 
 
