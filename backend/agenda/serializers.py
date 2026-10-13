@@ -1,4 +1,4 @@
-from datetime import time, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -77,7 +77,7 @@ class HabitosSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Habitos
         fields = ['agua_ml', 'vaso_ml', 'vasos_meta', 'hora_levantarse', 'hora_dormir', 'hora_entreno',
-                  'avisos_apagados', 'horas_semana', 'horas_comida', 'tiempos_comida']
+                  'avisos_apagados', 'horas_semana', 'horas_comida', 'horas_agua', 'tiempos_comida']
         extra_kwargs = {'agua_ml': {'min_value': 250, 'max_value': 8000},
                         'vaso_ml': {'min_value': 50, 'max_value': 1500}}
 
@@ -85,13 +85,17 @@ class HabitosSerializer(serializers.ModelSerializer):
         return notificaciones.vasos_meta(habitos)
 
     def get_tiempos_comida(self, habitos):
-        """Las comidas de su plan con la hora a la que come cada una (la suya o la de referencia)."""
+        """Las comidas de su plan (solo las que tiene) con la hora a la que come cada una: la suya o, si
+        no puso una, la que sale de repartirlas entre levantarse y acostarse."""
         minuta = minutas.vigente_de(habitos.usuario) if habitos.usuario_id else None
-        return [{'tiempo': t, 'nombre': NOMBRE_TIEMPO[t],
-                 'hora': horarios.hora_comida(habitos, t).isoformat('minutes'),
-                 'referencia': time(*HORA_TIEMPO[t]).isoformat('minutes'),
+        tiempos = list(minuta.tiempos()) if minuta else []
+        hoy = timezone.localdate()
+        efectivas = horarios.horas_de_comidas(habitos, hoy, tiempos)
+        repartidas = horarios.horas_de_comidas(habitos, hoy, tiempos, propias=False)
+        return [{'tiempo': t, 'nombre': NOMBRE_TIEMPO[t], 'hora': efectivas[t].isoformat('minutes'),
+                 'referencia': repartidas[t].isoformat('minutes'),
                  'personalizada': t in (habitos.horas_comida or {})}
-                for t in (minuta.tiempos() if minuta else [])]
+                for t in tiempos]
 
     def validate_horas_semana(self, valor):
         if not isinstance(valor, dict):
@@ -108,6 +112,14 @@ class HabitosSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Levantarte y acostarte no pueden ser a la misma hora.')
             if entrada:
                 limpio[dia] = entrada
+        return limpio
+
+    def validate_horas_agua(self, valor):
+        if not isinstance(valor, dict):
+            raise serializers.ValidationError('Formato no válido.')
+        limpio = {clave: _hora_texto(valor[clave], clave) for clave in ('inicio', 'fin') if valor.get(clave)}
+        if len(limpio) == 2 and limpio['inicio'] >= limpio['fin']:
+            raise serializers.ValidationError('El agua debe empezar antes de la hora en que termina.')
         return limpio
 
     def validate_horas_comida(self, valor):

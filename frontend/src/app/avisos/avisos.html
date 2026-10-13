@@ -433,6 +433,47 @@
       }
     }
     @case ('ajustes') {
+      <!-- Lo que la app aprendió de cómo usas tu día -->
+      @if (sugerencias().length) {
+        <section
+          aria-labelledby="av-sugerencias"
+          class="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4 space-y-3"
+        >
+          <div>
+            <h2 id="av-sugerencias" class="font-semibold text-gray-900 dark:text-white">
+              Según cómo usas la app
+            </h2>
+            <p class="text-xs text-gray-600 dark:text-gray-300">
+              Estas horas no coinciden con las que usas de verdad. Tú decides si las cambiamos.
+            </p>
+          </div>
+          <ul class="space-y-3">
+            @for (s of sugerencias(); track s.id) {
+              <li class="rounded-lg bg-white/70 dark:bg-dark-800 p-3 space-y-2">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ s.titulo }}</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300">{{ s.texto }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <p-button
+                    label="Cambiar"
+                    icon="pi pi-check"
+                    size="small"
+                    [loading]="aplicando() === s.id"
+                    (onClick)="aplicarSugerencia(s)"
+                  />
+                  <p-button
+                    label="Así está bien"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    (onClick)="descartarSugerencia(s)"
+                  />
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
       <!-- Ajustes -->
       <section
         aria-labelledby="av-ajustes"
@@ -504,13 +545,42 @@
           </div>
         </div>
 
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+            Tomar agua entre (opcional)
+          </legend>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Vacío: de una hora después de levantarte a una hora antes de acostarte.
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <input
+              pInputText
+              type="time"
+              aria-label="Tomar agua desde las"
+              [value]="aguaDesde()"
+              (change)="aguaDesde.set($any($event.target).value)"
+              class="w-full"
+            />
+            <input
+              pInputText
+              type="time"
+              aria-label="Tomar agua hasta las"
+              [value]="aguaHasta()"
+              (change)="aguaHasta.set($any($event.target).value)"
+              class="w-full"
+            />
+          </div>
+        </fieldset>
+
         @if (tiemposComida().length) {
           <fieldset class="space-y-2">
             <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              A qué hora comes
+              A qué hora comes (opcional)
             </legend>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              El aviso «¿Cómo te fue con…?» te llega 45 minutos después de esa hora.
+              Si no pones una hora, tus comidas se reparten solas: el desayuno una hora después de
+              levantarte y la última dos horas antes de acostarte, solo las de tu plan. El aviso
+              «¿Cómo te fue con…?» te llega 45 minutos después de cada una.
             </p>
             <ul class="grid grid-cols-2 gap-x-3 gap-y-2">
               @for (t of tiemposComida(); track t.tiempo) {

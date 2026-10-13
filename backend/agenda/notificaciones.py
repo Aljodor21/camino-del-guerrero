@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.exceptions import ReglaNegocioError
+from . import horarios, sueno
 from nutricion.grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from nutricion import minutas
 from nutricion.models import RegistroComida, Suplemento
@@ -20,13 +21,12 @@ from progress.models import RegistroEntrenamiento
 from users.procesos import proceso_de_referencia
 from routines.models import DiaRutina
 
-from . import horarios, sueno
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 ARTICULO_TIEMPO = {'desayuno': 'el', 'onces': 'las', 'almuerzo': 'el', 'algo': 'el', 'cena': 'la', 'merienda': 'la'}
 VASO_ML = 250  # tamaño por defecto; cada persona puede indicar el suyo (Habitos.vaso_ml)
-HORA_LEVANTARSE = time(6, 0)
-HORA_DORMIR = time(22, 0)
+HORA_LEVANTARSE = horarios.LEVANTARSE_POR_DEFECTO
+HORA_DORMIR = horarios.DORMIR_POR_DEFECTO
 HORA_ENTRENO = time(7, 0)
 HORA_RECORDATORIO = time(8, 0)
 ANTES_DE_DORMIR = timedelta(minutes=30)
@@ -65,8 +65,10 @@ def _horas_agua(habitos, fecha, horas):
     vasos = vasos_meta(habitos)
     if not vasos:
         return []
-    inicio = _momento(fecha, horas['levantarse'] or HORA_LEVANTARSE) + timedelta(hours=1)
-    fin = _momento(fecha, horas['dormir'] or HORA_DORMIR) - timedelta(hours=1)
+    propias = habitos.horas_agua or {}
+    desde, hasta = horarios.a_hora(propias.get('inicio')), horarios.a_hora(propias.get('fin'))
+    inicio = _momento(fecha, desde) if desde else _momento(fecha, horas['levantarse'] or HORA_LEVANTARSE) + timedelta(hours=1)
+    fin = _momento(fecha, hasta) if hasta else _momento(fecha, horas['dormir'] or HORA_DORMIR) - timedelta(hours=1)
     if fin <= inicio:
         fin = inicio + timedelta(hours=12)
     paso = (fin - inicio) / max(vasos - 1, 1)
@@ -84,12 +86,87 @@ def _suplementos_del_dia(usuario, fecha):
             .select_related('proceso') if s.proceso.estado != 'finalizado' and s.activo_en(fecha)]
 
 
-def programados(usuario, fecha):
-    """Los avisos que corresponden a ese día, con su hora: [dict]."""
+def _levantado_ese_dia(usuario, fecha):
+    """La hora a la que la persona anotó que se levantó ese día, o None."""
+    registro = (RegistroHabito.objects.filter(usuario=usuario, tipo='levantar', fecha=fecha)
+                .order_by('momento').first())
+    return timezone.localtime(registro.momento).time() if registro else None
+
+
+def _comidas_del_dia(usuario, habitos, fecha, horas_dia, apagados, ahora):
+    """(tiempos del plan, {tiempo: hora}, retenidas).
+
+    Solo las comidas que el plan tiene. Si la persona aún no anota que se levantó y todavía no pasa
+    la hora en que dijo que lo haría (más un rato de gracia), las comidas de hoy se retienen: no
+    tiene sentido preguntar por el desayuno a quien sigue dormido."""
+    minuta = minutas.vigente_de(usuario)
+    if minuta and minuta.proceso.fecha_inicio > fecha:
+        minuta = None
+    tiempos = list(minuta.tiempos()) if minuta else []
+    hoy = timezone.localdate(ahora) if ahora else None
+    levantado = _levantado_ese_dia(usuario, fecha) if fecha == hoy else None
+    horas = horarios.horas_de_comidas(habitos, fecha, tiempos, levantado=levantado)
+    retenidas = bool(
+        ahora and fecha == hoy and levantado is None and 'levantar' not in apagados and horas_dia['levantarse']
+        and ahora < _momento(fecha, horas_dia['levantarse']) + horarios.GRACIA_LEVANTARSE)
+    return tiempos, horas, retenidas
+
+
+# Un pendiente con hora avisa una hora, media hora y un cuarto de hora antes, y en el momento. Cada
+# aviso reemplaza al anterior (en la bandeja y en la barra de notificaciones del celular).
+ETAPAS_RECORDATORIO = (60, 30, 15, 0)
+
+
+def _con_punto(texto):
+    """Cierra la frase con un punto, salvo que ya termine en uno (las horas terminan en «a. m.»)."""
+    return texto if texto.endswith('.') else texto + '.'
+
+
+def _texto_de_etapa(minutos):
+    return {60: 'En 1 hora', 30: 'En 30 minutos', 15: 'En 15 minutos', 0: 'Ahora'}[minutos]
+
+
+def _avisos_de_recordatorio(r, fecha):
+    """Los avisos de un pendiente o de la agenda para ese día."""
+    avisos = []
+    grupo = f'recordatorio:{r.id}:{r.fecha}'
+    # Días antes: un aviso por la mañana.
+    if r.avisar_dias_antes and r.fecha - timedelta(days=r.avisar_dias_antes) == fecha:
+        avisos.append({
+            'tipo': 'recordatorio', 'clave': grupo, 'programada_para': _momento(fecha, HORA_RECORDATORIO),
+            'titulo': r.titulo[:120], 'cuerpo': f'Es el {r.fecha.strftime("%d/%m")}.',
+            'recordatorio': r, 'datos': {'fecha': r.fecha.isoformat()},
+        })
+    if r.fecha != fecha:
+        return avisos
+    if not r.hora:
+        avisos.append({
+            'tipo': 'recordatorio', 'clave': f'{grupo}:hoy', 'programada_para': _momento(fecha, HORA_RECORDATORIO),
+            'titulo': r.titulo[:120], 'cuerpo': 'Es hoy.',
+            'recordatorio': r, 'datos': {'fecha': r.fecha.isoformat()},
+        })
+        return avisos
+    for minutos in ETAPAS_RECORDATORIO:
+        cuando = _momento(fecha, r.hora) - timedelta(minutes=minutos)
+        if timezone.localtime(cuando).date() != fecha:
+            continue                        # a las 00:30 la «1 hora antes» caería el día anterior
+        avisos.append({
+            'tipo': 'recordatorio', 'clave': f'{grupo}:{minutos}', 'programada_para': cuando,
+            'titulo': f'{_texto_de_etapa(minutos)}: {r.titulo}'[:120],
+            'cuerpo': _con_punto(f'A las {hora_en_palabras(r.hora)}') + (f' {r.nota}' if r.nota else ''),
+            'recordatorio': r, 'datos': {'fecha': r.fecha.isoformat(), 'grupo': grupo, 'minutos': minutos},
+        })
+    return avisos
+
+
+def programados(usuario, fecha, ahora=None):
+    """Los avisos que corresponden a ese día, con su hora: [dict]. `ahora` (solo para hoy) permite
+    retener las comidas hasta que la persona diga que se levantó."""
     habitos = habitos_de(usuario)
     apagados = set(habitos.avisos_apagados)
     avisos = []
     horas_dia = horarios.horas_de(habitos, fecha)
+    tiempos_plan, horas_comida, retenidas = _comidas_del_dia(usuario, habitos, fecha, horas_dia, apagados, ahora)
 
     if 'agua' not in apagados:
         horas = _horas_agua(habitos, fecha, horas_dia)
@@ -107,15 +184,19 @@ def programados(usuario, fecha):
                 tiempo = Suplemento.clave_toma(toma)
                 scoops = toma.get('scoops')
                 cantidad = f'{scoops:g} {"scoop" if scoops == 1 else "scoops"} de ' if scoops else ''
-                cuerpo = (f'A las {hora_en_palabras(time.fromisoformat(toma["hora"]))}.' if toma['tiempo'] == 'otro'
+                cuerpo = (_con_punto(f'A las {hora_en_palabras(time.fromisoformat(toma["hora"]))}') if toma['tiempo'] == 'otro'
                           else f'En {NOMBRE_TIEMPO[tiempo].lower()}.')
                 if toma['reemplaza']:
                     cuerpo += f' Va en lugar de {_reemplaza_en_palabras(toma["reemplaza"])}.'
                 if toma.get('nota'):
                     cuerpo += f' {toma["nota"]}'
                 # Si la persona dijo a qué hora la toma, avisa a esa hora; si no, a la de la comida.
-                hora_toma = (time.fromisoformat(toma['hora']) if toma.get('hora')
-                             else horarios.hora_comida(habitos, toma['tiempo']))
+                if toma.get('hora'):
+                    hora_toma = time.fromisoformat(toma['hora'])
+                elif retenidas:
+                    continue            # va con una comida y la persona sigue dormida
+                else:
+                    hora_toma = horas_comida.get(toma['tiempo']) or horarios.hora_comida(habitos, toma['tiempo'])
                 avisos.append({
                     'tipo': 'toma', 'clave': f'toma:{s.id}:{fecha}:{tiempo}',
                     'programada_para': _momento(fecha, hora_toma),
@@ -155,14 +236,11 @@ def programados(usuario, fecha):
                 'datos': {'dia_rutina': dia.id},
             })
 
-    if 'comida' not in apagados:
-        minuta = minutas.vigente_de(usuario)
-        if minuta and minuta.proceso.fecha_inicio > fecha:
-            minuta = None
-        for tiempo in (minuta.tiempos() if minuta else []):
+    if 'comida' not in apagados and not retenidas:
+        for tiempo in tiempos_plan:
             avisos.append({
                 'tipo': 'comida', 'clave': f'comida:{fecha}:{tiempo}',
-                'programada_para': _momento(fecha, horarios.hora_comida(habitos, tiempo)) + DESPUES_DE_COMER,
+                'programada_para': _momento(fecha, horas_comida[tiempo]) + DESPUES_DE_COMER,
                 'titulo': f'¿Cómo te fue con {ARTICULO_TIEMPO[tiempo]} {NOMBRE_TIEMPO[tiempo].lower()}?',
                 'cuerpo': 'Cuéntanos qué comiste, con foto si quieres, para ver si vas cumpliendo tu plan.',
                 'datos': {'tiempo': tiempo},
@@ -181,18 +259,7 @@ def programados(usuario, fecha):
 
     if 'recordatorio' not in apagados:
         for r in Recordatorio.objects.pendientes().filter(usuario=usuario, fecha__gte=fecha):
-            aviso = r.fecha - timedelta(days=r.avisar_dias_antes)
-            if aviso != fecha:
-                continue
-            hora = r.hora if r.hora and aviso == r.fecha else HORA_RECORDATORIO
-            cuando = r.fecha.strftime('%d/%m')
-            avisos.append({
-                'tipo': 'recordatorio', 'clave': f'recordatorio:{r.id}:{r.fecha}',
-                'programada_para': _momento(fecha, hora),
-                'titulo': r.titulo[:120],
-                'cuerpo': 'Es hoy.' if aviso == r.fecha else f'Es el {cuando}.',
-                'recordatorio': r, 'datos': {'fecha': r.fecha.isoformat()},
-            })
+            avisos.extend(_avisos_de_recordatorio(r, fecha))
     return avisos
 
 
@@ -202,7 +269,7 @@ def generar(usuario, ahora=None):
     ahora = ahora or timezone.now()
     fecha = timezone.localdate(ahora)
     nuevas = []
-    for aviso in programados(usuario, fecha):
+    for aviso in programados(usuario, fecha, ahora):
         if aviso['programada_para'] > ahora or aviso['programada_para'] < usuario.date_joined:
             continue
         clave = aviso.pop('clave')
@@ -210,8 +277,19 @@ def generar(usuario, ahora=None):
                                                        defaults={**aviso, 'fecha': fecha})
         if creada:
             nuevas.append(n)
+            _reemplazar_anteriores(n)
     resolver_automaticas(usuario)
     return nuevas
+
+
+def _reemplazar_anteriores(n):
+    """Un aviso del mismo grupo (el de «en 15 minutos» tras el de «en 30») deja sin pendiente al anterior:
+    en la bandeja queda solo el último."""
+    grupo = n.datos.get('grupo')
+    if not grupo:
+        return
+    (Notificacion.objects.filter(usuario=n.usuario, resuelta_en__isnull=True, datos__grupo=grupo)
+     .exclude(pk=n.pk).update(resuelta_en=timezone.now(), resolucion='automatica'))
 
 
 def proximos(usuario, dias=7, ahora=None):
@@ -226,7 +304,8 @@ def proximos(usuario, dias=7, ahora=None):
         for aviso in programados(usuario, hoy + timedelta(days=i)):
             if aviso['programada_para'] <= ahora or aviso['clave'] in ya_creados:
                 continue
-            lista.append({'clave': aviso['clave'], 'tipo': aviso['tipo'], 'titulo': aviso['titulo'],
+            lista.append({'clave': aviso['clave'], 'grupo': aviso.get('datos', {}).get('grupo'),
+                          'tipo': aviso['tipo'], 'titulo': aviso['titulo'],
                           'cuerpo': aviso['cuerpo'], 'programada_para': aviso['programada_para']})
     return sorted(lista, key=lambda a: a['programada_para'])
 

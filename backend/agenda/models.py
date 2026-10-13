@@ -82,6 +82,9 @@ class Habitos(models.Model):
     horas_semana    = models.JSONField(default=dict, blank=True)
     # A qué hora come la persona cada tiempo: {'desayuno': '07:30', ...}. Lo que falta usa la de referencia.
     horas_comida    = models.JSONField(default=dict, blank=True)
+    # Entre qué horas se reparte el agua: {'inicio': '09:00', 'fin': '20:00'}. Lo que falte: una hora
+    # después de levantarse y una antes de acostarse.
+    horas_agua      = models.JSONField(default=dict, blank=True)
 
     class Meta:
         constraints = [

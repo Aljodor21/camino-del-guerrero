@@ -12,7 +12,13 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
-import { Aviso, HoraDeComida, Sueno, TipoAviso } from '../core/models/avisos.model';
+import {
+  Aviso,
+  HoraDeComida,
+  SugerenciaDeHoras,
+  Sueno,
+  TipoAviso,
+} from '../core/models/avisos.model';
 import { AvisosService } from '../core/services/avisos';
 import { NotificacionesCelularService } from '../core/services/notificaciones-celular';
 import { PushService } from '../core/services/push';
@@ -138,6 +144,12 @@ export class Avisos implements OnInit {
   protected entreno = signal('');
   /** Horas distintas por día de la semana (1 = lunes): lo vacío usa la hora general. */
   protected horasSemana = signal<Record<string, { levantarse: string; dormir: string }>>({});
+  /** Entre qué horas se reparte el agua; vacío usa levantarse + 1 h y acostarse − 1 h. */
+  protected aguaDesde = signal('');
+  protected aguaHasta = signal('');
+  /** Cambios de horas que la app propone según cuándo la persona anota sus cosas. */
+  protected sugerencias = signal<SugerenciaDeHoras[]>([]);
+  protected aplicando = signal<string | null>(null);
   /** A qué hora come cada tiempo del plan (la de referencia si no la cambió). */
   protected tiemposComida = signal<HoraDeComida[]>([]);
   protected diasSemana = [
@@ -192,6 +204,7 @@ export class Avisos implements OnInit {
     });
     this.servicio.cargarHoy().subscribe({ error: () => undefined });
     this.cargarSueno();
+    this.cargarSugerencias();
     this.servicio.cargarHabitos().subscribe({
       next: (h) => {
         this.litros.set(h.agua_ml === null ? null : h.agua_ml / 1000);
@@ -208,6 +221,8 @@ export class Avisos implements OnInit {
           ),
         );
         this.tiemposComida.set(h.tiempos_comida ?? []);
+        this.aguaDesde.set(h.horas_agua?.inicio ?? '');
+        this.aguaHasta.set(h.horas_agua?.fin ?? '');
         this.apagados.set(h.avisos_apagados);
       },
       error: () => undefined,
@@ -250,6 +265,62 @@ export class Avisos implements OnInit {
         this.error.set(mensajeError(e, 'No pudimos confirmarlo. Intenta de nuevo.'));
       },
     });
+  }
+
+  private descartadas(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem('cdg_sugerencias_descartadas') ?? '[]') as string[];
+    } catch {
+      return [];
+    }
+  }
+
+  protected cargarSugerencias(): void {
+    this.servicio.sugerenciasDeHoras().subscribe({
+      next: (l) =>
+        this.sugerencias.set(
+          l.filter((s) => !this.descartadas().includes(`${s.id}:${s.sugerida}`)),
+        ),
+      error: () => undefined,
+    });
+  }
+
+  /** La persona acepta el cambio: se guarda y se actualiza todo lo que depende de esas horas. */
+  protected aplicarSugerencia(s: SugerenciaDeHoras): void {
+    this.aplicando.set(s.id);
+    this.error.set('');
+    this.servicio.guardarHabitos(s.cambios).subscribe({
+      next: (h) => {
+        this.aplicando.set(null);
+        this.sugerencias.update((l) => l.filter((x) => x.id !== s.id));
+        this.cargarSugerencias();
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+        this.servicio.cargar().subscribe({ error: () => undefined });
+        this.tiemposComida.set(h.tiempos_comida ?? []);
+        this.levantarse.set(h.hora_levantarse?.slice(0, 5) ?? '');
+        this.dormir.set(h.hora_dormir?.slice(0, 5) ?? '');
+        this.aguaDesde.set(h.horas_agua?.inicio ?? '');
+        this.aguaHasta.set(h.horas_agua?.fin ?? '');
+        void this.celular.actualizar();
+      },
+      error: (e) => {
+        this.aplicando.set(null);
+        this.error.set(mensajeError(e, 'No pudimos aplicar ese cambio.'));
+      },
+    });
+  }
+
+  /** «Así está bien»: no se vuelve a proponer ese mismo cambio. */
+  protected descartarSugerencia(s: SugerenciaDeHoras): void {
+    try {
+      localStorage.setItem(
+        'cdg_sugerencias_descartadas',
+        JSON.stringify([...this.descartadas(), `${s.id}:${s.sugerida}`]),
+      );
+    } catch {
+      // Sin almacenamiento puede volver a salir: no pasa nada.
+    }
+    this.sugerencias.update((l) => l.filter((x) => x.id !== s.id));
   }
 
   protected cargarSueno(): void {
@@ -397,6 +468,10 @@ export class Avisos implements OnInit {
         hora_dormir: this.dormir() || null,
         hora_entreno: this.entreno() || null,
         avisos_apagados: this.apagados(),
+        horas_agua: {
+          ...(this.aguaDesde() ? { inicio: this.aguaDesde() } : {}),
+          ...(this.aguaHasta() ? { fin: this.aguaHasta() } : {}),
+        },
         horas_semana: Object.fromEntries(
           Object.entries(this.horasSemana())
             .filter(([, v]) => v.levantarse || v.dormir)

@@ -19,6 +19,8 @@ def contenido(n):
     return {
         'id': n.id,
         'tipo': n.tipo,
+        # Los avisos de un mismo pendiente comparten grupo: el nuevo reemplaza al anterior en la barra.
+        'grupo': n.datos.get('grupo') or f'{n.tipo}-{n.id}',
         'momento': n.programada_para.isoformat(),
         'titulo': n.titulo,
         'cuerpo': notificaciones.cuerpo_de(n),

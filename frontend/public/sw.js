@@ -22,8 +22,9 @@ self.addEventListener('push', (evento) => {
     // La hora en que tocaba el aviso (no la de cuando el celular lo recibió).
     timestamp: aviso.momento ? Date.parse(aviso.momento) : Date.now(),
     vibrate: [140, 70, 140],
-    // Un aviso nuevo del mismo tipo no apila: reemplaza al anterior sin confirmar.
-    tag: `${aviso.tipo}-${aviso.id}`,
+    // Un aviso nuevo del mismo grupo (el pendiente de «en 15 minutos» tras el de «en 30») no apila:
+    // reemplaza al anterior.
+    tag: aviso.grupo || `${aviso.tipo}-${aviso.id}`,
     renotify: true,
     requireInteraction: true,
     data: { id: aviso.id, firma: aviso.firma, url: aviso.url },

@@ -13,7 +13,7 @@ from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, fcm, horarios, logros, notificaciones, push, sueno
+from . import cumplimiento, fcm, horarios, logros, notificaciones, push, sueno, sugerencias_de_horas
 from .models import HorarioDia, Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
 from .serializers import (HabitosSerializer, HorarioDiaSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
@@ -263,3 +263,10 @@ class HorarioDiaView(APIView):
             raise ReglaNegocioError('Fecha no válida.')
         HorarioDia.objects.filter(usuario=request.user, fecha=dia).delete()
         return Response(self._respuesta(request.user, dia))
+
+
+class SugerenciasView(APIView):
+    """Horas que podrían ajustarse según cómo usa la persona la app (solo propone; ella decide)."""
+
+    def get(self, request):
+        return Response(sugerencias_de_horas.de_horas(request.user))

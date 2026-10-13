@@ -200,4 +200,10 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **En una semana, un mes o un trimestre el anillo muestra lo que llevas del periodo entero**, no el promedio de los días que van: dos días al 100 % en una semana son el 29 % de la semana (2 de 7), y debajo dice «En los días que van, tu promedio es 100 %». Así el porcentaje sube a medida que pasan los días y nunca engaña. En un día, o en un periodo ya cerrado, las dos cuentas dan lo mismo.
 - **El capítulo de la semana** hace igual: una semana a medias dice «N % de la semana» y «Van X de 7 días», y no se compara con la anterior hasta que termina.
 
+## Avisos que siguen tu día
+
+- **Las comidas no tienen hora fija:** el desayuno es una hora después de levantarte, la última comida dos horas antes de acostarte y las demás se reparten entre las dos, solo con las comidas de tu plan. Si hoy te levantaste tarde y lo anotaste, todo se corre. Mientras no digas que te levantaste (y no pase tu hora más 3 horas), la app no te pregunta por el desayuno.
+- **Todo lo anterior es opcional:** en Ajustes puedes poner tu hora para cada comida («A qué hora comes (opcional)»), el rango del agua («Tomar agua entre», vacío = de una hora después de levantarte a una antes de acostarte) y tus horas por día.
+- **Pendientes de la agenda y obligatorios:** con hora, avisan una hora, media hora y un cuarto de hora antes y en el momento («En 1 hora: Control…», «En 30 minutos…», «En 15 minutos…», «Ahora…»). Cada aviso reemplaza al anterior: en la bandeja queda solo el último y en la barra del celular se cambia la misma notificación. Sin hora, avisan a las 8:00 de ese día (y el día antes, si lo pediste).
+- **«Según cómo usas la app»:** en Ajustes, una tarjeta ámbar con cambios que la app propone (p. ej. «Sueles contar el desayuno cerca de las 9:30, así que comes hacia las 8:45; hoy lo tienes a las 7:00») con «Cambiar» y «Así está bien». Solo aparece con datos suficientes y si la diferencia es de 30 minutos o más.
 
