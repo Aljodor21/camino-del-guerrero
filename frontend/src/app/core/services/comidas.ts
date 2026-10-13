@@ -30,6 +30,8 @@ export class ComidasService {
     tiempo: TiempoComida;
     fecha?: string;
     avances: Avances;
+    /** Ids de los suplementos que se tomó en esta comida. */
+    tomas?: number[];
     nota: string;
     foto: Blob | null;
   }): Observable<RegistroComida> {
@@ -37,6 +39,7 @@ export class ComidasService {
     cuerpo.append('tiempo', datos.tiempo);
     if (datos.fecha) cuerpo.append('fecha', datos.fecha);
     cuerpo.append('avances', JSON.stringify(datos.avances));
+    cuerpo.append('tomas', JSON.stringify(datos.tomas ?? []));
     if (datos.nota) cuerpo.append('nota', datos.nota);
     if (datos.foto) cuerpo.append('foto', datos.foto, 'comida.jpg');
     return this.http.post<RegistroComida>(`${API}/registros/`, cuerpo);

@@ -47,6 +47,25 @@ class RecordatorioTest(APITestCase):
         self.assertEqual(self.crear(titulo='   ').status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(self.crear(avisar_dias_antes=31).status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_repetirlo_crea_uno_por_vez_y_se_borran_esta_y_las_siguientes(self):
+        r = self.crear(fecha='2027-01-31', repetir='mes', veces=3)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        fechas = list(Recordatorio.objects.filter(serie=r.data['serie']).values_list('fecha', flat=True))
+        self.assertEqual([f.isoformat() for f in fechas], ['2027-01-31', '2027-02-28', '2027-03-31'])
+        semanal = self.crear(fecha=HOY().isoformat(), repetir='semana', veces=4).data
+        self.assertEqual(Recordatorio.objects.filter(serie=semanal['serie']).count(), 4)
+        # Dejarlo a medias o pasarse de dos años no se acepta.
+        self.assertEqual(self.crear(repetir='semana').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.crear(veces=3).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.crear(repetir='mes', veces=60).status_code, status.HTTP_400_BAD_REQUEST)
+        # Borrar solo uno, o esta y las siguientes.
+        segundo = Recordatorio.objects.filter(serie=semanal['serie']).order_by('fecha')[1]
+        self.client.delete(reverse('recordatorio-detail', args=[segundo.id]))
+        self.assertEqual(Recordatorio.objects.filter(serie=semanal['serie']).count(), 3)
+        tercero = Recordatorio.objects.filter(serie=semanal['serie']).order_by('fecha')[1]
+        self.client.delete(reverse('recordatorio-detail', args=[tercero.id]) + '?siguientes=1')
+        self.assertEqual(Recordatorio.objects.filter(serie=semanal['serie']).count(), 1)
+
     def test_se_marca_como_hecho_cuando_llega_su_fecha_no_antes(self):
         url = reverse('recordatorio-detail', args=[self.crear().data['id']])
         r = self.client.patch(url, {'completado': True}, format='json')

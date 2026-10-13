@@ -47,6 +47,54 @@
           />
         </div>
 
+        @for (t of p.tomas; track t.suplemento) {
+          <fieldset class="space-y-2 rounded-xl bg-amber-500/10 p-3">
+            <legend class="text-sm font-medium text-gray-800 dark:text-gray-100 px-1">
+              {{ t.nombre }}
+              @if (t.scoops) {
+                <span class="font-normal text-gray-500 dark:text-gray-400"
+                  >· {{ t.scoops }} {{ t.scoops === 1 ? 'scoop' : 'scoops' }}</span
+                >
+              }
+            </legend>
+            @if (t.reemplaza.length) {
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                Va en lugar de {{ reemplaza(t) }} de esta comida.
+              </p>
+            }
+            @if (t.tomada) {
+              <p class="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                Ya anotaste que te la tomaste.
+              </p>
+            } @else {
+              <div
+                role="radiogroup"
+                [attr.aria-label]="'¿Te tomaste ' + t.nombre + '?'"
+                class="flex gap-2"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="tomas()[t.suplemento] === true"
+                  [class]="clasesChip(tomas()[t.suplemento] === true)"
+                  (click)="tomar(t.suplemento, true)"
+                >
+                  Me la tomé
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="tomas()[t.suplemento] === false"
+                  [class]="clasesChip(tomas()[t.suplemento] === false)"
+                  (click)="tomar(t.suplemento, false)"
+                >
+                  No me la tomé
+                </button>
+              </div>
+            }
+          </fieldset>
+        }
+
         @for (g of p.grupos; track g.grupo) {
           <fieldset class="space-y-2">
             <legend class="text-sm font-medium text-gray-800 dark:text-gray-100">
@@ -96,7 +144,8 @@
 
         <div class="space-y-2">
           <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
-            Foto <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span>
+            Foto de lo que comiste y tomaste
+            <span class="font-normal text-gray-500 dark:text-gray-400">(opcional)</span>
           </p>
           @if (vista(); as url) {
             <div class="relative w-40">
@@ -164,7 +213,7 @@
         />
         @if (!completo()) {
           <span class="text-xs text-gray-500 dark:text-gray-400">
-            Marca cuánto comiste de cada grupo.
+            Marca cuánto comiste de cada grupo y si te tomaste la proteína.
           </span>
         }
       </div>

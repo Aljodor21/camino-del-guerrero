@@ -206,7 +206,9 @@ def programados(usuario, fecha, ahora=None):
                     'programada_para': _momento(fecha, hora_toma),
                     'titulo': f'Tómate {cantidad}{s.nombre_visible}'[:120],
                     'cuerpo': cuerpo, 'suplemento': s,
-                    'datos': {'tiempo': tiempo, 'scoops': scoops},
+                    # Si reemplaza algo de la comida, se cuenta junto con ella (una sola confirmación, con foto).
+                    'datos': {'tiempo': tiempo, 'scoops': scoops,
+                              **({'unida': True} if toma['reemplaza'] and toma['tiempo'] != 'otro' else {})},
                 })
 
     if 'dormir' not in apagados and horas_dia['dormir']:
@@ -356,6 +358,8 @@ def confirmar(notificacion):
     if n.resuelta_en:
         return n
     ahora = timezone.now()
+    if n.tipo == 'toma' and n.datos.get('unida'):
+        raise ReglaNegocioError('Esta toma va con tu comida: cuéntala desde ahí para guardar también la foto.')
     if n.tipo in ('agua', 'toma', 'dormir', 'levantar'):
         datos = n.datos
         RegistroHabito.objects.create(
@@ -512,11 +516,36 @@ def cuerpo_de(n):
     return f'Llevas {llevas} de {meta} vasos de hoy ({vaso_ml(habitos)} ml cada uno).'
 
 
+def toma_registrada(usuario, fecha, suplemento, tiempo):
+    return RegistroHabito.objects.filter(usuario=usuario, tipo='toma', fecha=fecha,
+                                         suplemento=suplemento, tiempo=tiempo).exists()
+
+
+@transaction.atomic
+def registrar_tomas_de_comida(usuario, fecha, tiempo, suplementos):
+    """Las tomas que la persona dice haber hecho al contar su comida: quedan registradas y su aviso, cumplido."""
+    ahora = timezone.now()
+    for s in _suplementos_del_dia(usuario, fecha):
+        toma = s.toma_en(tiempo)
+        if toma is None or s.id not in suplementos:
+            continue
+        if toma_registrada(usuario, fecha, s, tiempo):
+            continue
+        n = (Notificacion.objects.select_for_update()
+             .filter(usuario=usuario, clave=f'toma:{s.id}:{fecha}:{tiempo}', resuelta_en__isnull=True).first())
+        RegistroHabito.objects.create(
+            usuario=usuario, tipo='toma', fecha=fecha, momento=ahora, notificacion=n,
+            cantidad=toma.get('scoops') or 1, suplemento=s, tiempo=tiempo)
+        if n:
+            n.resuelta_en, n.resolucion = ahora, 'confirmada'
+            n.save(update_fields=['resuelta_en', 'resolucion'])
+
+
 def accion_de(notificacion):
     """Texto del botón para confirmar, o vacío si se resuelve en otra parte."""
     return {
         'agua': 'Ya lo tomé',
-        'toma': 'Ya me la tomé',
+        'toma': '' if notificacion.datos.get('unida') else 'Ya me la tomé',
         'dormir': 'Ya me acosté',
         'levantar': 'Ya me levanté',
         'entreno': 'Ya entrené',
@@ -528,7 +557,7 @@ def accion_de(notificacion):
 
 def url_de(notificacion):
     """Adónde lleva el aviso al tocarlo."""
-    if notificacion.tipo == 'comida':
+    if notificacion.tipo == 'comida' or (notificacion.tipo == 'toma' and notificacion.datos.get('unida')):
         return f'/comidas/contar?tiempo={notificacion.datos.get("tiempo", "")}&fecha={notificacion.fecha}'
     if notificacion.tipo == 'proceso':
         return '/control'

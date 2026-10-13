@@ -24,7 +24,14 @@ import {
   TipoRecordatorio,
 } from '../../core/models/agenda.model';
 import { AVISOS_RECORDATORIO, TIPOS_RECORDATORIO } from '../../core/constants/proceso';
-import { cuandoEs, diasEntre, formatearFecha, formatearHora, hoyISO, sumarDias } from '../../shared/fechas';
+import {
+  cuandoEs,
+  diasEntre,
+  formatearFecha,
+  formatearHora,
+  hoyISO,
+  sumarDias,
+} from '../../shared/fechas';
 import { mensajeError } from '../../shared/errores';
 import { Suplementos } from '../suplementos/suplementos';
 
@@ -35,7 +42,8 @@ import { Ayuda } from '../../shared/ayuda/ayuda';
   selector: 'app-agenda',
   templateUrl: './agenda.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, 
+  imports: [
+    Ayuda,
     NgTemplateOutlet,
     ReactiveFormsModule,
     ButtonModule,
@@ -88,7 +96,15 @@ export class Agenda implements OnInit {
     hora: this.fb.control(''),
     avisar_dias_antes: this.fb.control(1),
     nota: this.fb.control('', Validators.maxLength(300)),
+    repetir: this.fb.control<'' | 'dia' | 'semana' | 'mes'>(''),
+    veces: this.fb.control(4, [Validators.min(2), Validators.max(60)]),
   });
+  protected repeticiones = [
+    { label: 'No', value: '' },
+    { label: 'Cada día', value: 'dia' },
+    { label: 'Cada semana', value: 'semana' },
+    { label: 'Cada mes', value: 'mes' },
+  ];
 
   ngOnInit(): void {
     this.agenda.cargar(true).subscribe({
@@ -129,6 +145,8 @@ export class Agenda implements OnInit {
       hora: '',
       avisar_dias_antes: 1,
       nota: '',
+      repetir: '',
+      veces: 4,
     });
     this.editando.set('nuevo');
   }
@@ -166,8 +184,10 @@ export class Agenda implements OnInit {
     const editando = this.editando();
     if (editando === null || this.form.invalid) return;
     const v = this.form.getRawValue();
+    const { repetir, veces, ...resto } = v;
     const payload: RecordatorioPayload = {
-      ...v,
+      ...resto,
+      ...(editando === 'nuevo' && repetir ? { repetir, veces } : {}),
       titulo: v.titulo.trim(),
       nota: v.nota.trim(),
       hora: v.hora || null,
@@ -198,10 +218,16 @@ export class Agenda implements OnInit {
     });
   }
 
-  protected eliminar(): void {
+  /** La serie a la que pertenece el que se edita, si se creó repitiéndolo. */
+  protected enSerie = computed(() => {
+    const id = this.editando();
+    return typeof id === 'number' && !!this.agenda.recordatorios().find((r) => r.id === id)?.serie;
+  });
+
+  protected eliminar(siguientes = false): void {
     const id = this.editando();
     if (typeof id !== 'number') return;
-    this.agenda.eliminar(id).subscribe({
+    this.agenda.eliminar(id, siguientes).subscribe({
       next: () => this.cerrar(),
       error: (err) => this.error.set(mensajeError(err, 'No pudimos eliminar el recordatorio.')),
     });

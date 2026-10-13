@@ -7,6 +7,14 @@ export interface PedidoComida {
   tiempo_nombre: string;
   grupos: { grupo: GrupoMinuta; nombre: string; porciones: number }[];
   contada: boolean;
+  /** Lo que se toma en esta comida (la proteína) y lo que reemplaza de ella. */
+  tomas: {
+    suplemento: number;
+    nombre: string;
+    scoops: number | null;
+    reemplaza: { grupo: GrupoMinuta; nombre: string; porciones: number }[];
+    tomada: boolean;
+  }[];
 }
 
 /** De 0 a 1 de lo que pedía la minuta para ese grupo. */
