@@ -40,6 +40,11 @@ class RecordatorioDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if instance.automatico:
             raise ReglaNegocioError('Este recordatorio lo maneja la app según tu suplemento.')
+        # «Esta y las siguientes»: lo que se repitió junto, desde esta fecha en adelante.
+        if instance.serie and self.request.query_params.get('siguientes') == '1':
+            Recordatorio.objects.filter(usuario=instance.usuario, serie=instance.serie,
+                                        fecha__gte=instance.fecha).delete()
+            return
         instance.delete()
 
 
