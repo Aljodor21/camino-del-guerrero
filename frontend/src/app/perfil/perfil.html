@@ -1,6 +1,16 @@
 <div class="p-4 max-w-2xl mx-auto space-y-6 pb-8">
   <app-portada foto="agenda" titulo="Mi perfil" subtitulo="Tus datos personales y tu proceso." />
 
+  <app-que-es
+    titulo="¿Qué hay en mi perfil?"
+    para="Tus datos personales y tu proceso. Los datos con los que empezaste tu proceso quedan guardados y no se modifican."
+    [puedes]="[
+      'Actualizar tus datos personales',
+      'Ver tu proceso y sus fechas',
+      'Descargar o actualizar la app de Android',
+    ]"
+  />
+
   @if (apk.enLaApp || apk.plataforma !== 'ios') {
     <a
       routerLink="/descargar-app"

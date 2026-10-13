@@ -82,6 +82,7 @@ import { LogrosVista } from './logros/logros';
 import { CelebracionesService } from '../core/services/celebraciones';
 import { Anillo } from '../shared/anillo/anillo';
 import { AccionGuerrero } from '../shared/guerrero/guerrero';
+import { QueEs } from '../shared/que-es/que-es';
 
 type Seccion = 'pendientes' | 'dia' | 'cumplimiento' | 'logros' | 'ajustes';
 const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'logros', 'ajustes'];
@@ -91,6 +92,7 @@ const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'logros', 'aj
   templateUrl: './avisos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    QueEs,
     Anillo,
     Ayuda,
     CumplimientoGlobalVista,

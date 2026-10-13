@@ -7,6 +7,12 @@
     subtitulo="Videos y consejos para mejorar tu entrenamiento."
   />
 
+  <app-que-es
+    titulo="¿Para qué sirven los consejos?"
+    para="Videos y consejos de técnica, físico, nutrición y mente que agrega el equipo, para entrenar mejor."
+    [puedes]="['Filtrar por categoría', 'Ver el video de cada consejo']"
+  />
+
   @if (loading()) {
     <div class="flex justify-center py-12">
       <p-progressspinner class="w-10 h-10" />

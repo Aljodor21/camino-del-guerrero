@@ -27,6 +27,16 @@
         </p>
       </div>
 
+      <app-que-es
+        titulo="¿Para qué sirve esta lista?"
+        para="La lista de intercambios que usa tu nutricionista: de aquí sale todo lo que come tu menú. Un alimento vale lo mismo que otro de su grupo."
+        [puedes]="[
+          'Buscar un alimento y ver qué es una porción (en medida casera y en gramos)',
+          'Abrir cada grupo para ver todos sus alimentos',
+          'Descargar la lista en CSV',
+        ]"
+      />
+
       <div class="flex flex-col gap-1">
         <label for="la-buscar" class="text-sm font-medium text-gray-600 dark:text-gray-400"
           >Buscar un alimento</label

@@ -31,6 +31,7 @@ import { Portada } from '../shared/portada/portada';
 import { guardarSeccionEnUrl } from '../shared/seccion-en-url';
 import { Pestana, Pestanas } from '../shared/pestanas/pestanas';
 import { Proyeccion } from '../nutricion/proyeccion/proyeccion';
+import { QueEs } from '../shared/que-es/que-es';
 
 const API = environment.apiUrl;
 const LOCAL_KEY = 'cdg_sesion';
@@ -61,6 +62,7 @@ interface SesionGuardada {
   templateUrl: './progreso.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    QueEs,
     Portada,
     ButtonModule,
     ChartModule,

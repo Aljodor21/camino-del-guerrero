@@ -24,6 +24,12 @@
   <!-- Con rutina -->
   @if (!loading() && rutina(); as r) {
 
+    <app-que-es
+      titulo="¿Qué es mi rutina?"
+      para="Tu rutina de la semana, armada con lo que tienes para entrenar y con la configuración de tu proceso."
+      [puedes]="['Ver los ejercicios de cada día, con su video', 'Regenerarla si cambias de implementos', 'Empezar la sesión desde Progreso']"
+    />
+
     <!-- Header -->
     <div class="flex items-start justify-between gap-3">
       <div>

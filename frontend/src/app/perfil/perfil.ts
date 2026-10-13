@@ -20,6 +20,7 @@ import { PAISES } from '../core/constants/paises';
 import { environment } from '../../environments/environment';
 import { Portada } from '../shared/portada/portada';
 import { ApkService } from '../core/services/apk';
+import { QueEs } from '../shared/que-es/que-es';
 const API = environment.apiUrl;
 
 @Component({
@@ -27,6 +28,7 @@ const API = environment.apiUrl;
   templateUrl: './perfil.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    QueEs,
     Portada,
     RouterLink,
     ReactiveFormsModule,
