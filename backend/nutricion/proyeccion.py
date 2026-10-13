@@ -85,18 +85,31 @@ def calorias_de_entreno(entreno, peso_kg):
     return round(por_sesion * entreno.dias_entrenamiento / 7)
 
 
-def _proteina(proceso, hoy):
-    """Lo que aporta la proteína con tabla confirmada frente a lo que reemplaza de la minuta."""
-    suplementos = [s for s in proceso.suplementos.all() if s.activo_en(hoy) and s.tipo == 'proteina']
+def _dias_activo(s, hoy, dias):
+    """Cuántos de los `dias` del periodo (desde hoy) va el suplemento: puede empezar mañana, o
+    terminar antes del control, y la estimación debe contar solo lo que de verdad se toma."""
+    fin_periodo = hoy + timedelta(days=dias - 1)
+    fin = min(s.fecha_fin or s.fin_estimado or fin_periodo, fin_periodo)
+    inicio = max(hoy, s.fecha_inicio)
+    return max(0, (fin - inicio).days + 1)
+
+
+def _proteina(proceso, hoy, dias):
+    """Lo que aporta la proteína con tabla confirmada frente a lo que reemplaza de la minuta, en
+    promedio por día del periodo (si empieza o termina dentro del periodo, cuenta solo esos días)."""
+    suplementos = [(s, _dias_activo(s, hoy, dias)) for s in proceso.suplementos.all() if s.tipo == 'proteina']
+    suplementos = [(s, d) for s, d in suplementos if d > 0]
     if not suplementos:
         return None
-    con_tabla = [s for s in suplementos if s.tabla_nutricional]
+    con_tabla = [(s, d) for s, d in suplementos if s.tabla_nutricional]
     if not con_tabla:
         return {'sin_tabla': True}
     kcal = proteina_g = reemplazadas = 0.0
     leche_sin_tabla = False
-    for s in con_tabla:
-        porciones = float(s.porciones_dia)
+    parcial = any(d < dias for _, d in con_tabla)
+    for s, activos in con_tabla:
+        fraccion = activos / dias
+        porciones = float(s.porciones_dia) * fraccion
         kcal += s.tabla_nutricional['kcal'] * porciones
         proteina_g += s.tabla_nutricional['proteina_g'] * porciones
         if s.leche_ml:
@@ -108,9 +121,10 @@ def _proteina(proceso, hoy):
             else:
                 leche_sin_tabla = True
         for toma in s.tomas:
-            reemplazadas += sum(calculadora.KCAL_PORCION.get(g, 0) * p for g, p in toma['reemplaza'].items())
+            reemplazadas += (sum(calculadora.KCAL_PORCION.get(g, 0) * p for g, p in toma['reemplaza'].items())
+                             * fraccion)
     return {'sin_tabla': False, 'kcal': round(kcal), 'proteina_g': round(proteina_g),
-            'reemplaza_kcal': round(reemplazadas), 'leche_sin_tabla': leche_sin_tabla}
+            'reemplaza_kcal': round(reemplazadas), 'leche_sin_tabla': leche_sin_tabla, 'parcial': parcial}
 
 
 def proyectar(usuario, hoy=None):
@@ -136,16 +150,16 @@ def proyectar(usuario, hoy=None):
     extra_entreno = calorias_de_entreno(entreno, medicion.peso_kg) if entreno else 0
     gasto = round(gasto_de(medicion.peso_kg))
 
-    proteina = _proteina(proceso, hoy)
+    hasta = proceso.fecha_fin_plan
+    dias = (hasta - hoy).days if hasta and hasta > hoy else DIAS_SIN_FECHA
+    con_fecha = bool(hasta and hasta > hoy)
+
+    proteina = _proteina(proceso, hoy, dias)
     ajuste_proteina = 0
     if proteina and not proteina['sin_tabla']:
         ajuste_proteina = proteina['kcal'] - proteina['reemplaza_kcal']
     kcal_dia = minuta.kcal + ajuste_proteina
     balance = kcal_dia - gasto
-
-    hasta = proceso.fecha_fin_plan
-    dias = (hasta - hoy).days if hasta and hasta > hoy else DIAS_SIN_FECHA
-    con_fecha = bool(hasta and hasta > hoy)
 
     cumplimiento = comidas.cumplimiento(usuario, hoy - timedelta(days=VENTANA_CUMPLIMIENTO), hoy)
     adherencia = cumplimiento['porcentaje']
@@ -187,7 +201,8 @@ def proyectar(usuario, hoy=None):
     else:
         factores.append(
             f'Tu proteína aporta {proteina["kcal"]} kcal y {proteina["proteina_g"]} g de proteína al día y reemplaza '
-            f'{proteina["reemplaza_kcal"]} kcal de comida: {"+" if ajuste_proteina >= 0 else "−"}{abs(ajuste_proteina)} kcal')
+            f'{proteina["reemplaza_kcal"]} kcal de comida: {"+" if ajuste_proteina >= 0 else "−"}{abs(ajuste_proteina)} kcal'
+            + (' (en promedio: no la tomas todos los días de este periodo)' if proteina['parcial'] else ''))
     if proteina and not proteina['sin_tabla'] and proteina['leche_sin_tabla']:
         factores.append('La leche con la que mezclas tu proteína no tiene tabla nutricional: no suma calorías. '
                         'Agrégala en la proteína para afinar la estimación')
