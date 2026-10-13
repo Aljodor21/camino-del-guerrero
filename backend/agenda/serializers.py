@@ -112,6 +112,10 @@ class HabitosSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Levantarte y acostarte no pueden ser a la misma hora.')
             if entrada:
                 limpio[dia] = entrada
+        # Una hora por día es todo o nada: si no, unos días mandarían una hora y otros otra.
+        if limpio and not all(set(limpio.get(str(d), {})) == {'levantarse', 'dormir'} for d in range(1, 8)):
+            raise serializers.ValidationError(
+                'Con una hora distinta por día, llena levantarse y acostarse de los siete días.')
         return limpio
 
     def validate_horas_agua(self, valor):

@@ -156,6 +156,14 @@ export class Avisos implements OnInit {
   protected entreno = signal('');
   /** Horas distintas por día de la semana (1 = lunes): lo vacío usa la hora general. */
   protected horasSemana = signal<Record<string, { levantarse: string; dormir: string }>>({});
+  /** Una hora para todos los días, o una por cada día de la semana: es una cosa o la otra. */
+  protected modoHoras = signal<'general' | 'por_dia'>('general');
+  protected semanaCompleta = computed(() =>
+    this.diasSemana.every((d) => {
+      const h = this.horasSemana()[d.id];
+      return !!h?.levantarse && !!h?.dormir && h.levantarse !== h.dormir;
+    }),
+  );
   /** Entre qué horas se reparte el agua; vacío usa levantarse + 1 h y acostarse − 1 h. */
   protected aguaDesde = signal('');
   protected aguaHasta = signal('');
@@ -187,7 +195,9 @@ export class Avisos implements OnInit {
     return (
       aguaBien &&
       vasoValido(this.vasoMl()) &&
-      !(this.dormir() && this.dormir() === this.levantarse())
+      (this.modoHoras() === 'por_dia'
+        ? this.semanaCompleta()
+        : !(this.dormir() && this.dormir() === this.levantarse()))
     );
   });
 
@@ -232,6 +242,7 @@ export class Avisos implements OnInit {
             ]),
           ),
         );
+        this.modoHoras.set(Object.keys(h.horas_semana ?? {}).length ? 'por_dia' : 'general');
         this.tiemposComida.set(h.tiempos_comida ?? []);
         this.aguaDesde.set(h.horas_agua?.inicio ?? '');
         this.aguaHasta.set(h.horas_agua?.fin ?? '');
@@ -360,6 +371,24 @@ export class Avisos implements OnInit {
     });
   }
 
+  protected elegirModoHoras(modo: 'general' | 'por_dia'): void {
+    this.modoHoras.set(modo);
+    // Al pasar a una hora por día, cada día parte de la hora de siempre para que solo cambie lo que difiere.
+    if (modo === 'por_dia') {
+      this.horasSemana.update((h) =>
+        Object.fromEntries(
+          this.diasSemana.map((d) => [
+            d.id,
+            {
+              levantarse: h[d.id]?.levantarse || this.levantarse(),
+              dormir: h[d.id]?.dormir || this.dormir(),
+            },
+          ]),
+        ),
+      );
+    }
+  }
+
   protected fijarHoraSemana(dia: string, campo: 'levantarse' | 'dormir', valor: string): void {
     this.horasSemana.update((h) => {
       const actual = h[dia] ?? { levantarse: '', dormir: '' };
@@ -484,17 +513,19 @@ export class Avisos implements OnInit {
           ...(this.aguaDesde() ? { inicio: this.aguaDesde() } : {}),
           ...(this.aguaHasta() ? { fin: this.aguaHasta() } : {}),
         },
-        horas_semana: Object.fromEntries(
-          Object.entries(this.horasSemana())
-            .filter(([, v]) => v.levantarse || v.dormir)
-            .map(([d, v]) => [
-              d,
-              {
-                ...(v.levantarse ? { levantarse: v.levantarse } : {}),
-                ...(v.dormir ? { dormir: v.dormir } : {}),
-              },
-            ]),
-        ),
+        // Con una hora para todos los días no queda ninguna por día: es una cosa o la otra.
+        horas_semana:
+          this.modoHoras() === 'general'
+            ? {}
+            : Object.fromEntries(
+                this.diasSemana.map((d) => [
+                  d.id,
+                  {
+                    levantarse: this.horasSemana()[d.id].levantarse,
+                    dormir: this.horasSemana()[d.id].dormir,
+                  },
+                ]),
+              ),
         horas_comida: Object.fromEntries(
           this.tiemposComida()
             .filter((t) => t.hora !== t.referencia)
