@@ -46,7 +46,7 @@ class SuenoTest(APITestCase):
         ayer = HOY() - timedelta(days=1)
         RegistroHabito.objects.create(usuario=self.usuario, tipo='dormir', fecha=ayer, momento=a_las(HOY(), 0, 30))
         RegistroHabito.objects.create(usuario=self.usuario, tipo='levantar', fecha=HOY(), momento=a_las(HOY(), 6, 30))
-        self.assertEqual(sueno.anoche(self.usuario), 6.0)
+        self.assertEqual(sueno.anoche(self.usuario)['horas'], 6.0)
 
     def test_sin_una_de_las_dos_horas_o_con_horas_absurdas_no_cuenta(self):
         RegistroHabito.objects.create(usuario=self.usuario, tipo='levantar', fecha=HOY() - timedelta(days=2),

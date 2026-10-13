@@ -175,3 +175,10 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Fotos de la comida:** «Tomar foto» abre la cámara y «Galería» deja elegir una que ya exista. La app declara el permiso de cámara (sin él, Android solo ofrecía la galería).
 - **Un solo «Cumplimiento»:** el de Avisos es el del día completo (agua, dormir, comidas, proteína y entreno); el de Nutrición se llama «Lo que comí» y muestra qué grupos de la minuta faltaron. Desde el día, la tarjeta de comidas enlaza a ese detalle.
 
+## Mis horas
+
+- **Ajustes › A qué hora comes:** una hora por cada comida del plan (con «Volver a las 7:00» si la cambiaste). El aviso «¿Cómo te fue con…?» llega **45 minutos después** de esa hora, no a la hora de comer.
+- **Ajustes › Horas distintas según el día:** una fila por día de la semana, con una hora de levantarte y otra de acostarte; lo vacío usa la de siempre. Está plegado para no estorbar.
+- **Tu día › Sueño:** debajo de los botones, «Hoy: te levantas a las 6:30 · mañana: a las 5:00 (cambiada)» y dos enlaces, «Cambiar las de hoy» y «Cambiar las de mañana», que abren las dos horas de ese día con «Guardar» y «Volver a la de siempre».
+- **Frente a lo previsto:** «Anoche te acostaste 30 min antes de lo previsto. Hoy te levantaste 15 min después de lo previsto» (a menos de 5 minutos dice «a la hora prevista»). En Cumplimiento, la tarjeta de sueño agrega el promedio de esas diferencias.
+

@@ -25,6 +25,7 @@ from nutricion.models import RegistroComida, Suplemento
 from progress.models import RegistroEntrenamiento
 from routines.models import DiaRutina
 
+from . import horarios
 from .models import RegistroHabito
 from .notificaciones import VASO_ML, habitos_de
 
@@ -54,6 +55,7 @@ class _Datos:
     def __init__(self, usuario, desde, hasta):
         self.usuario = usuario
         self.habitos = habitos_de(usuario)
+        self.personalizados = horarios.personalizados_entre(usuario, desde, hasta)
         self.procesos = list(usuario.procesos.all())
         registros = RegistroHabito.objects.filter(usuario=usuario, fecha__range=(desde, hasta))
         self.agua = defaultdict(int)
@@ -96,7 +98,7 @@ def _agua(datos, fecha):
 
 
 def _dormir(datos, fecha):
-    hora = datos.habitos.hora_dormir
+    hora = horarios.horas_de(datos.habitos, fecha, datos.personalizados)['dormir']
     if not hora:
         return None
     momento = datos.dormir.get(fecha)

@@ -215,6 +215,16 @@
               </li>
             }
           </ul>
+          @if (s.promedio_acostarse_min !== null || s.promedio_levantarse_min !== null) {
+            <p class="text-sm text-gray-700 dark:text-gray-200">
+              @if (s.promedio_acostarse_min !== null) {
+                En promedio te acuestas {{ frenteALoPrevisto(s.promedio_acostarse_min) }}.
+              }
+              @if (s.promedio_levantarse_min !== null) {
+                Te levantas {{ frenteALoPrevisto(s.promedio_levantarse_min) }}.
+              }
+            </p>
+          }
           <p class="text-xs text-gray-500 dark:text-gray-400">
             Va de la hora en que anotas que te acostaste a la hora en que anotas que te levantaste:
             es aproximado.
