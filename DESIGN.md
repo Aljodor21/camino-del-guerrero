@@ -169,3 +169,9 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **Avisos › Cumplimiento** muestra una tarjeta «Sueño» con el promedio del periodo y una barra por noche (10 horas llenan la barra), con la aclaración de que es aproximado.
 - **Sin inventar metas:** no se califica si dormiste «bien» o «mal»; solo se muestra lo que anotaste.
 
+## La app siempre al día
+
+- **Sin cerrar y abrir:** la app se vuelve a cargar sola cuando cambia el día (a medianoche con la app abierta, o al volver a ella) y cuando se regresa después de más de 10 minutos en segundo plano. Si en ese momento hay un campo con texto o una ventana abierta, espera a que termine para no borrar lo que se escribe.
+- **Fotos de la comida:** «Tomar foto» abre la cámara y «Galería» deja elegir una que ya exista. La app declara el permiso de cámara (sin él, Android solo ofrecía la galería).
+- **Un solo «Cumplimiento»:** el de Avisos es el del día completo (agua, dormir, comidas, proteína y entreno); el de Nutrición se llama «Lo que comí» y muestra qué grupos de la minuta faltaron. Desde el día, la tarjeta de comidas enlaza a ese detalle.
+

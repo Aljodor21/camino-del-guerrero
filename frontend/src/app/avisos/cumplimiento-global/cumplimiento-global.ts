@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -57,7 +58,7 @@ function rangoDe(periodo: Periodo, ancla: string): { desde: string; hasta: strin
   selector: 'app-cumplimiento-global',
   templateUrl: './cumplimiento-global.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, MessageModule],
+  imports: [ButtonModule, MessageModule, RouterLink],
 })
 export class CumplimientoGlobalVista implements OnInit {
   private servicio = inject(AvisosService);

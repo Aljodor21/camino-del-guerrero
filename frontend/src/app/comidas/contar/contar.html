@@ -115,20 +115,38 @@
               </button>
             </div>
           } @else {
-            <label
-              for="co-foto"
-              class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:border-guerrero-red"
-            >
-              <i class="pi pi-camera" aria-hidden="true"></i>
-              {{ leyendoFoto() ? 'Preparando…' : 'Tomar o elegir foto' }}
-            </label>
-            <input
-              id="co-foto"
-              type="file"
-              accept="image/*"
-              class="sr-only"
-              (change)="elegirFoto($event)"
-            />
+            <div class="flex flex-wrap gap-2">
+              <!-- «Tomar foto» abre la cámara; «Galería» deja elegir una que ya tengas -->
+              <label
+                for="co-foto-camara"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:border-guerrero-red has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-guerrero-red"
+              >
+                <i class="pi pi-camera" aria-hidden="true"></i>
+                {{ leyendoFoto() ? 'Preparando…' : 'Tomar foto' }}
+                <input
+                  id="co-foto-camara"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  class="sr-only"
+                  (change)="elegirFoto($event)"
+                />
+              </label>
+              <label
+                for="co-foto"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 dark:border-dark-700 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:border-guerrero-red has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-guerrero-red"
+              >
+                <i class="pi pi-images" aria-hidden="true"></i>
+                Galería
+                <input
+                  id="co-foto"
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                  (change)="elegirFoto($event)"
+                />
+              </label>
+            </div>
           }
           <p class="text-xs text-gray-500 dark:text-gray-400">
             La foto es solo tuya. El porcentaje sale de lo que marcas arriba, no de la imagen.

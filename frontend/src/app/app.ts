@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuditoriaService } from './core/services/auditoria';
+import { RefrescoService } from './core/services/refresco';
 import { ThemeService } from './core/services/theme';
 import { ServidorCaido } from './shared/servidor-caido/servidor-caido';
 
@@ -16,5 +17,6 @@ export class App {
   constructor() {
     inject(ThemeService);
     inject(AuditoriaService);
+    inject(RefrescoService).iniciar();
   }
 }
