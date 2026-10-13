@@ -12,11 +12,11 @@ import { MessageModule } from 'primeng/message';
 import { Capitulo, Hito } from '../../core/models/logros.model';
 import { AvisosService } from '../../core/services/avisos';
 import { CelebracionesService } from '../../core/services/celebraciones';
-import { Anillo } from '../../shared/anillo/anillo';
 import { mensajeError } from '../../shared/errores';
 import { formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 import { Guerrero, estadoDe } from '../../shared/guerrero/guerrero';
 import { Medalla } from '../../shared/medalla/medalla';
+import { QueEs } from '../../shared/que-es/que-es';
 
 type Filtro = 'todos' | 'logrados' | 'pendientes';
 
@@ -33,7 +33,7 @@ const RUTA = ESTACIONES.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y}`
   selector: 'app-logros',
   templateUrl: './logros.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, MessageModule, Anillo, Guerrero, Medalla],
+  imports: [QueEs, ButtonModule, MessageModule, Guerrero, Medalla],
   styles: `
     .racha-numero {
       margin-top: 2px;

@@ -3,6 +3,17 @@
     <p-message severity="error" [text]="error()" styleClass="w-full" />
   }
 
+  <app-que-es
+    titulo="¿Qué son los logros?"
+    para="Tu racha, tus hitos y el resumen de cada semana. Un día suma a tu racha desde el 50 %; el guerrero te acompaña y hace lo que tú haces."
+    [puedes]="[
+      'Ver cuántos días seguidos llevas y qué te falta hoy para no perderla',
+      'Revisar las medallas que ya lograste y las que vienen',
+      'Repasar cómo te fue en semanas anteriores',
+      'Mover al guerrero a un lado si te estorba: arrástralo',
+    ]"
+  />
+
   <!-- La racha, en grande, con el guerrero que acompaña -->
   <section
     aria-labelledby="lo-racha"
@@ -185,9 +196,13 @@
       <div>
         <p class="text-lg font-bold text-gray-900 dark:text-white">
           {{ c.titulo }}
-          @if (c.porcentaje !== null) {
+          @if (c.completa && c.porcentaje !== null) {
             <span class="font-normal text-gray-500 dark:text-gray-400">
               · {{ c.porcentaje }} %</span
+            >
+          } @else if (!c.completa && c.porcentaje_semana !== null) {
+            <span class="font-normal text-gray-500 dark:text-gray-400">
+              · {{ c.porcentaje_semana }} % de la semana</span
             >
           }
         </p>

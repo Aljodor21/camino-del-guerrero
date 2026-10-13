@@ -13,13 +13,14 @@ import { Implemento, Rutina } from '../core/models/rutina.model';
 
 import { environment } from '../../environments/environment';
 import { Portada } from '../shared/portada/portada';
+import { QueEs } from '../shared/que-es/que-es';
 const API = environment.apiUrl;
 
 @Component({
   selector: 'app-rutinas',
   templateUrl: './rutinas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule, InputTextModule],
+  imports: [QueEs, Portada, DatePipe, ButtonModule, ProgressSpinnerModule, TooltipModule, DialogModule, InputTextModule],
 })
 export class Rutinas implements OnInit {
   private http      = inject(HttpClient);

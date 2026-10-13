@@ -1,3 +1,14 @@
+<app-que-es
+  titulo="¿Cómo se calcula esto?"
+  para="Cuánto cumples de lo que te toca: el día, la semana, el mes o el trimestre. Cada día vale por dos partes iguales, la alimentación y el deporte (si ese día toca entrenar)."
+  [puedes]="[
+    'Cambiar de periodo y moverte con las flechas',
+    'Tocar un día del calendario para ver su detalle',
+    'Ver en «Dónde se te fue» qué faltó cada día',
+    'Ver cuánto duermes en promedio',
+  ]"
+/>
+
 <div class="space-y-4">
   <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Periodo">
     @for (p of periodos; track p.id) {

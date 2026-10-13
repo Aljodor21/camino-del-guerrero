@@ -147,6 +147,15 @@
     }
     @case ('dia') {
       <!-- Tu día -->
+      <app-que-es
+        titulo="¿Qué es Tu día?"
+        para="Lo que te toca hoy y lo que ya hiciste: tu agua, tus tomas de proteína, tu entreno y tu sueño."
+        [puedes]="[
+          'Anotar un vaso de agua con un toque',
+          'Decir a qué hora te levantas y te acuestas, y cambiar esas horas solo para hoy o para mañana',
+          'Ver cuánto dormiste y tu promedio de los últimos días',
+        ]"
+      />
       @if (hoy(); as h) {
         <section
           aria-labelledby="av-dia"
@@ -327,7 +336,7 @@
                       type="time"
                       [value]="cambioLevantarse()"
                       (change)="cambioLevantarse.set($any($event.target).value)"
-                      class="w-full"
+                      class="w-full min-w-0"
                     />
                   </div>
                   <div class="flex flex-col gap-1">
@@ -340,7 +349,7 @@
                       type="time"
                       [value]="cambioDormir()"
                       (change)="cambioDormir.set($any($event.target).value)"
-                      class="w-full"
+                      class="w-full min-w-0"
                     />
                   </div>
                 </div>
@@ -475,6 +484,16 @@
       }
 
       <!-- Ajustes -->
+      <app-que-es
+        titulo="¿Qué hay en Ajustes?"
+        para="Aquí decides cuándo y qué te avisamos. Todo es opcional: si no pones tus horas, la app usa unas razonables."
+        [puedes]="[
+          'Poner tu meta de agua y el tamaño de tu vaso',
+          'Poner a qué hora te levantas, te acuestas, entrenas y comes (también distinta por día)',
+          'Elegir qué avisos quieres recibir',
+          'Activar las notificaciones del celular y probar que llegan',
+        ]"
+      />
       <section
         aria-labelledby="av-ajustes"
         class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-4"
@@ -492,7 +511,7 @@
             placeholder="Ej. 2,5"
             [value]="litros() === null ? '' : num(litros())"
             (change)="leerLitros($any($event.target).value)"
-            class="w-full"
+            class="w-full min-w-0"
           />
           @if (vasosMeta(); as v) {
             <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -503,8 +522,8 @@
 
         <app-tamano-vaso [(valor)]="vasoMl" id="av-vaso" />
 
-        <div class="grid grid-cols-3 gap-3">
-          <div class="flex flex-col gap-1">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="flex flex-col gap-1 min-w-0">
             <label for="av-levantarse" class="text-sm font-medium text-gray-600 dark:text-gray-400"
               >Me levanto</label
             >
@@ -514,10 +533,10 @@
               type="time"
               [value]="levantarse()"
               (change)="levantarse.set($any($event.target).value)"
-              class="w-full"
+              class="w-full min-w-0"
             />
           </div>
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 min-w-0">
             <label for="av-dormir" class="text-sm font-medium text-gray-600 dark:text-gray-400"
               >Me acuesto</label
             >
@@ -527,10 +546,10 @@
               type="time"
               [value]="dormir()"
               (change)="dormir.set($any($event.target).value)"
-              class="w-full"
+              class="w-full min-w-0"
             />
           </div>
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 min-w-0 col-span-2 sm:col-span-1">
             <label for="av-entreno" class="text-sm font-medium text-gray-600 dark:text-gray-400"
               >Entreno</label
             >
@@ -540,7 +559,7 @@
               type="time"
               [value]="entreno()"
               (change)="entreno.set($any($event.target).value)"
-              class="w-full"
+              class="w-full min-w-0"
             />
           </div>
         </div>
@@ -559,7 +578,7 @@
               aria-label="Tomar agua desde las"
               [value]="aguaDesde()"
               (change)="aguaDesde.set($any($event.target).value)"
-              class="w-full"
+              class="w-full min-w-0"
             />
             <input
               pInputText
@@ -567,7 +586,7 @@
               aria-label="Tomar agua hasta las"
               [value]="aguaHasta()"
               (change)="aguaHasta.set($any($event.target).value)"
-              class="w-full"
+              class="w-full min-w-0"
             />
           </div>
         </fieldset>
@@ -596,7 +615,7 @@
                     type="time"
                     [value]="t.hora"
                     (change)="fijarHoraComida(t.tiempo, $any($event.target).value)"
-                    class="w-full"
+                    class="w-full min-w-0"
                   />
                   @if (t.personalizada) {
                     <button
@@ -621,32 +640,39 @@
             Si algunos días te levantas o te acuestas a otra hora, ponla aquí. Lo que dejes vacío
             usa tu hora de siempre. Para cambiar solo un día (hoy o mañana) hazlo desde «Tu día».
           </p>
-          <ul class="mt-2 space-y-2">
+          <ul class="mt-3 space-y-2">
             @for (d of diasSemana; track d.id) {
-              <li class="grid grid-cols-[5.5rem_1fr_1fr] items-center gap-2">
-                <span class="text-sm text-gray-700 dark:text-gray-300">{{ d.nombre }}</span>
-                <input
-                  pInputText
-                  type="time"
-                  [attr.aria-label]="'Me levanto el ' + d.nombre.toLowerCase()"
-                  [value]="horasSemana()[d.id]?.levantarse ?? ''"
-                  (change)="fijarHoraSemana(d.id, 'levantarse', $any($event.target).value)"
-                  class="w-full"
-                />
-                <input
-                  pInputText
-                  type="time"
-                  [attr.aria-label]="'Me acuesto el ' + d.nombre.toLowerCase()"
-                  [value]="horasSemana()[d.id]?.dormir ?? ''"
-                  (change)="fijarHoraSemana(d.id, 'dormir', $any($event.target).value)"
-                  class="w-full"
-                />
+              <li class="rounded-lg bg-gray-50 dark:bg-dark-700/60 p-2.5 space-y-1.5">
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ d.nombre }}</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <label
+                    class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
+                  >
+                    Me levanto
+                    <input
+                      pInputText
+                      type="time"
+                      [value]="horasSemana()[d.id]?.levantarse ?? ''"
+                      (change)="fijarHoraSemana(d.id, 'levantarse', $any($event.target).value)"
+                      class="w-full min-w-0 text-sm"
+                    />
+                  </label>
+                  <label
+                    class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
+                  >
+                    Me acuesto
+                    <input
+                      pInputText
+                      type="time"
+                      [value]="horasSemana()[d.id]?.dormir ?? ''"
+                      (change)="fijarHoraSemana(d.id, 'dormir', $any($event.target).value)"
+                      class="w-full min-w-0 text-sm"
+                    />
+                  </label>
+                </div>
               </li>
             }
           </ul>
-          <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            Primera columna: te levantas · segunda: te acuestas.
-          </p>
         </details>
 
         <fieldset class="space-y-2">

@@ -15,6 +15,7 @@ import { AvisosService } from '../../core/services/avisos';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 import { aISO, fechaLocal, formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
+import { QueEs } from '../../shared/que-es/que-es';
 
 type Periodo = 'dia' | 'semana' | 'mes' | 'trimestre';
 
@@ -58,7 +59,7 @@ function rangoDe(periodo: Periodo, ancla: string): { desde: string; hasta: strin
   selector: 'app-cumplimiento-global',
   templateUrl: './cumplimiento-global.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, MessageModule, RouterLink],
+  imports: [QueEs, ButtonModule, MessageModule, RouterLink],
 })
 export class CumplimientoGlobalVista implements OnInit {
   private servicio = inject(AvisosService);

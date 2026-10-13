@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { environment } from '../../../environments/environment';
 import { mensajeError } from '../../shared/errores';
 import { Portada } from '../../shared/portada/portada';
+import { QueEs } from '../../shared/que-es/que-es';
 
 interface Alimento {
   id: number;
@@ -47,7 +48,7 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
   selector: 'app-lista-alimentos',
   templateUrl: './lista-alimentos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, InputTextModule, MessageModule, ProgressSpinnerModule, ButtonModule],
+  imports: [QueEs, Portada, InputTextModule, MessageModule, ProgressSpinnerModule, ButtonModule],
 })
 export class ListaAlimentos implements OnInit {
   /** Dentro de las pestañas de otra sección: sin portada ni margen propios. */

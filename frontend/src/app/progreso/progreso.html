@@ -29,6 +29,16 @@
   @if (seccion() === 'entrenamiento' && tieneEntrenamiento()) {
     <!-- LISTA -->
     @if (vistaEntrenamiento() === 'lista') {
+      <app-que-es
+        titulo="¿Cómo funcionan las sesiones?"
+        para="Tus entrenos: empiezas una sesión de uno de los días de tu rutina, con temporizador, y queda guardada."
+        [puedes]="[
+          'Empezar una sesión nueva',
+          'Marcar cada serie y llevar el descanso entre ellas',
+          'Revisar tus sesiones anteriores',
+        ]"
+      />
+
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Entrenamientos</h2>
         @if (!sinRutina() && rutina()) {

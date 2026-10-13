@@ -217,3 +217,10 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **La regla:** un día cuenta para la racha desde el 50 %; por debajo, se pierde (el comodín de la semana perdona un día). El día vale por dos pilares iguales, **alimentación** (comidas, proteína, agua y dormir) y **deporte** (entreno, solo si ese día toca); si no toca entrenar, vale solo la alimentación.
 - **Sin avisos retroactivos:** «Buenos días: ¿ya te levantaste?» y «En media hora, a dormir» solo aparecen cerca de su hora (hasta 90 minutos después). Si la app los calcula tarde —al estrenarlos o al cambiar tus horas— no salen, y uno que se quedó pendiente se quita solo, sin inventar que te levantaste. Para anotar la hora real está el botón «Me levanté» de Tu día.
 
+## Cada módulo dice para qué sirve (sin estorbar)
+
+- **Una línea discreta, cerrada:** arriba de cada módulo hay un «¿Para qué sirve esto?» pequeño, con un icono de información y sin caja. Al tocarlo se abre una tarjeta suave con una o dos frases de para qué sirve y una lista «Aquí puedes» con lo que se puede hacer. No se abre sola ni recuerda nada: está para quien la busque. Está en Avisos (Tu día, Cumplimiento, Logros, Ajustes), Nutrición › Alimentos, Progreso › Sesiones, Rutinas, Consejos y Perfil; el resto de módulos ya tenía su ayuda con animación.
+- **El guerrero no estorba:** se puede **arrastrar** a cualquier lado (se pega al borde izquierdo o derecho y recuerda dónde lo dejaste), se hace a un lado y se atenúa mientras se desplaza la página, y las pantallas dejan espacio abajo para que lo último siempre se pueda tocar. Un toque abre su panel; un arrastre no.
+- **Las horas por día caben en el celular:** cada día de la semana es una tarjetita con «Me levanto» y «Me acuesto» etiquetados, sin salirse de la pantalla.
+- **La semana a medias** (capítulo de Logros) dice «N % de la semana», dividido por los 7 días.
+

@@ -6,6 +6,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Recomendacion } from '../core/models/rutina.model';
 import { environment } from '../../environments/environment';
 import { Portada } from '../shared/portada/portada';
+import { QueEs } from '../shared/que-es/que-es';
 
 const API = environment.apiUrl;
 
@@ -21,7 +22,7 @@ const CATEGORIAS: Record<string, { label: string; badge: string }> = {
   selector: 'app-recomendaciones',
   templateUrl: './recomendaciones.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Portada, ProgressSpinnerModule],
+  imports: [QueEs, Portada, ProgressSpinnerModule],
 })
 export class Recomendaciones implements OnInit {
   private http      = inject(HttpClient);
