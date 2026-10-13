@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 
 from users.models import Usuario
 
-from . import fcm, push
+from . import fcm, notificaciones, push
 from .models import Notificacion, TokenCelular
 
 WEBVIEW = ('Mozilla/5.0 (Linux; Android 13; SM-A546E Build/TP1A.220624.014; wv) AppleWebKit/537.36 '
@@ -82,10 +82,15 @@ class FirebaseTest(APITestCase):
         mensaje = sesion.post.call_args.kwargs['json']['message']
         self.assertEqual(url, 'https://fcm.googleapis.com/v1/projects/mi-proyecto/messages:send')
         self.assertEqual(mensaje['token'], TOKEN)
-        self.assertEqual(mensaje['notification']['title'], 'Toma un vaso de agua')
-        self.assertEqual(mensaje['data']['ruta'], '/avisos')
-        self.assertEqual(mensaje['android']['notification']['channel_id'], 'avisos')
+        # Solo datos: así la app arma la notificación con su botón, esté abierta o cerrada.
+        self.assertNotIn('notification', mensaje)
         self.assertEqual(mensaje['android']['priority'], 'HIGH')
+        datos = mensaje['data']
+        self.assertEqual((datos['titulo'], datos['ruta'], datos['clave'], datos['tipo']),
+                         ('Toma un vaso de agua', '/avisos', self.aviso.clave, 'agua'))
+        self.assertEqual(datos['accion'], 'Ya lo tomé')
+        # La firma del botón confirma ese aviso sin sesión.
+        self.assertEqual(notificaciones.desde_firma(datos['firma']), self.aviso)
 
     @override_settings(FIREBASE_CREDENCIALES_B64='x')
     def test_el_envio_general_usa_firebase(self):
@@ -130,8 +135,8 @@ class FirebaseTest(APITestCase):
         with patch.object(fcm, '_sesion', return_value=(sesion, 'p')):
             r = self.client.post(reverse('push-celular-probar'))
         self.assertEqual(r.data, {'enviadas': 1})
-        self.assertEqual(sesion.post.call_args.kwargs['json']['message']['notification']['title'],
-                         'Prueba de notificaciones')
+        datos = sesion.post.call_args.kwargs['json']['message']['data']
+        self.assertEqual((datos['titulo'], datos.get('accion', '')), ('Prueba de notificaciones', ''))
 
     @override_settings(FIREBASE_CREDENCIALES_B64='x')
     def test_la_prueba_con_credenciales_malas_responde_cero_sin_romper(self):

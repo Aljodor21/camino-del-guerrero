@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 ALCANCE = 'https://www.googleapis.com/auth/firebase.messaging'
 URL = 'https://fcm.googleapis.com/v1/projects/{proyecto}/messages:send'
 TTL = '7200s'
-CANAL = 'avisos'
 
 
 def configurado():
@@ -34,16 +33,13 @@ def _sesion():
     return AuthorizedSession(credenciales), info['project_id']
 
 
-def _mensaje(token, titulo, cuerpo, datos, clave):
+def _mensaje(token, datos):
+    """Un mensaje solo de datos: la app arma la notificación (con su botón de confirmar), con la
+    app abierta o cerrada. Con «notification» el sistema la mostraría sin botones."""
     return {'message': {
         'token': token,
-        'notification': {'title': titulo, 'body': cuerpo},
         'data': {k: str(v) for k, v in datos.items()},
-        'android': {
-            'priority': 'HIGH', 'ttl': TTL,
-            'notification': {'channel_id': CANAL, 'icon': 'ic_stat_camino', 'color': '#C0392B',
-                             'tag': clave},
-        },
+        'android': {'priority': 'HIGH', 'ttl': TTL},
     }}
 
 
@@ -72,8 +68,10 @@ def enviar(n):
     enviados = 0
     for t in n.usuario.tokens_celular.all():
         try:
-            datos = {'id': n.id, 'tipo': n.tipo, 'ruta': notificaciones.url_de(n)}
-            enviados += _mandar(t, _mensaje(t.token, n.titulo, notificaciones.cuerpo_de(n), datos, n.clave))
+            datos = {'id': n.id, 'tipo': n.tipo, 'clave': n.clave, 'titulo': n.titulo,
+                     'cuerpo': notificaciones.cuerpo_de(n), 'ruta': notificaciones.url_de(n),
+                     'accion': notificaciones.accion_de(n), 'firma': notificaciones.firmar(n)}
+            enviados += _mandar(t, _mensaje(t.token, datos))
         except Exception:
             logger.exception('Falló el envío por Firebase del aviso %s', n.id)
     return enviados
@@ -85,9 +83,9 @@ def enviar_prueba(usuario):
         return 0
     enviados = 0
     for t in usuario.tokens_celular.all():
-        mensaje = _mensaje(t.token, 'Prueba de notificaciones',
-                           'Si ves esto, los avisos te van a llegar a este celular.', {'ruta': '/avisos'},
-                           'prueba')
+        mensaje = _mensaje(t.token, {
+            'tipo': 'prueba', 'clave': 'prueba', 'titulo': 'Prueba de notificaciones',
+            'cuerpo': 'Si ves esto, los avisos te van a llegar a este celular.', 'ruta': '/avisos'})
         try:
             enviados += _mandar(t, mensaje)
         except Exception:
