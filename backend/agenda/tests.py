@@ -119,7 +119,7 @@ class AvisosTest(APITestCase):
         self.habitos(agua_ml=2000, vaso_ml=500)
         r = self.client.get(reverse('avisos-proximos'), {'dias': 3})
         self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertEqual(set(r.data[0]), {'clave', 'tipo', 'titulo', 'cuerpo', 'programada_para'})
+        self.assertEqual(set(r.data[0]), {'clave', 'grupo', 'tipo', 'titulo', 'cuerpo', 'programada_para'})
         self.assertEqual(self.client.get(reverse('avisos-proximos'), {'dias': 30}).status_code,
                          status.HTTP_400_BAD_REQUEST)
 

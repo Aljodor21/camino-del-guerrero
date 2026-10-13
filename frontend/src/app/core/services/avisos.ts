@@ -10,6 +10,7 @@ import {
   HabitosPayload,
   HorasDelDia,
   ResumenHoy,
+  SugerenciaDeHoras,
   Sueno,
 } from '../models/avisos.model';
 import { Capitulo, Logros } from '../models/logros.model';
@@ -82,6 +83,11 @@ export class AvisosService {
     horas: { hora_levantarse: string | null; hora_dormir: string | null },
   ): Observable<HorasDelDia & { fecha: string }> {
     return this.http.put<HorasDelDia & { fecha: string }>(`${API}/horario/${fecha}/`, horas);
+  }
+
+  /** Horas que podrían ajustarse según cómo usa la persona la app (solo propone). */
+  sugerenciasDeHoras(): Observable<SugerenciaDeHoras[]> {
+    return this.http.get<SugerenciaDeHoras[]>(`${API}/sugerencias/`);
   }
 
   /** Cuánto se durmió entre dos fechas; sin fechas, los últimos 7 días. */

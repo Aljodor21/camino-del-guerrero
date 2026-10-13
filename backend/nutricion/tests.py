@@ -1021,7 +1021,9 @@ class MinutaYMenuTest(APITestCase):
         from agenda.models import Notificacion
         ai.return_value.proponer_menu.side_effect = Exception('sin IA')
         self.subir_y_confirmar()
-        ahora = timezone.make_aware(datetime.combine(self.hoy, time(14, 0)))
+        # Sin horas puestas, las comidas se reparten entre las 7:00 y las 20:00 (desayuno, onces, almuerzo
+        # 13:30, algo y cena) y cada aviso llega 45 minutos después: a las 15:00 van tres.
+        ahora = timezone.make_aware(datetime.combine(self.hoy, time(15, 0)))
         notificaciones.generar(self.usuario, ahora)
         avisos = {n.datos['tiempo']: n for n in Notificacion.objects.filter(tipo='comida')}
         self.assertTrue({'desayuno', 'onces', 'almuerzo'} <= set(avisos))

@@ -74,7 +74,7 @@ def enviar(n):
     enviados = 0
     for t in n.usuario.tokens_celular.all():
         try:
-            datos = {'id': n.id, 'tipo': n.tipo, 'clave': n.clave, 'titulo': n.titulo,
+            datos = {'id': n.id, 'tipo': n.tipo, 'clave': n.datos.get('grupo') or n.clave, 'titulo': n.titulo,
                      'cuerpo': notificaciones.cuerpo_de(n), 'ruta': notificaciones.url_de(n),
                      'accion': notificaciones.accion_de(n), 'firma': notificaciones.firmar(n)}
             enviados += _mandar(t, _mensaje(t, datos))

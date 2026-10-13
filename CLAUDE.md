@@ -33,7 +33,9 @@ La app `auditoria` deja una huella (`Evento`, inmutable) por cada consulta a `/a
 
 ## Mis horas
 
-`agenda/horarios.py` resuelve las horas de cada día: manda lo de ese día (`HorarioDia`), luego el día de la semana (`Habitos.horas_semana`) y luego la hora general (`hora_levantarse` / `hora_dormir`); las comidas usan `Habitos.horas_comida` o la hora de referencia de `nutricion.grupos.HORA_TIEMPO`. El aviso de contar una comida sale 45 minutos después de esa hora (`DESPUES_DE_COMER`), no a la hora de comer. `PUT /api/agenda/horario/<fecha>/` cambia un solo día. El sueño se compara con lo previsto de ese día (`dif_acostarse_min`, `dif_levantarse_min`).
+`agenda/horarios.py` resuelve las horas de cada día. Levantarse y acostarse: manda lo de ese día (`HorarioDia`), luego el día de la semana (`Habitos.horas_semana`) y luego la hora general. **Comidas** (`horas_de_comidas`): solo las del plan; el desayuno es una hora después de levantarse (la hora real anotada hoy, si la hay) y la última dos horas antes de acostarse, con el mismo espacio entre una y otra (como el agua); lo que la persona puso en `Habitos.horas_comida` manda. Mientras no anote que se levantó (y no pasen 3 horas de su hora prevista), las comidas y tomas de hoy ligadas a una comida se retienen. El aviso de contar una comida sale 45 minutos después. El agua usa `Habitos.horas_agua` o levantarse + 1 h / acostarse − 1 h.
+
+**Pendientes con hora** (`_avisos_de_recordatorio`): avisan 60, 30 y 15 minutos antes y en el momento (`ETAPAS_RECORDATORIO`); todos llevan `datos.grupo`, y cada uno reemplaza al anterior (se resuelven solos los hermanos pendientes en la bandeja; en el celular comparten `tag`/`clave`). **Sugerencias de horas** (`agenda/sugerencias_de_horas.py`, no confundir con `sugerencias.py`, que arma los recordatorios de suplementos): con 5 o más días de datos en las últimas 3 semanas propone cambiar la hora de una comida, del rango del agua, de levantarse o de acostarse si se aparta 30 minutos o más; solo propone, la persona decide.
 
 ## Logros
 

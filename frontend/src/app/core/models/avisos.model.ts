@@ -31,7 +31,21 @@ export interface Habitos {
   horas_semana: Record<string, { levantarse?: string; dormir?: string }>;
   /** A qué hora come la persona cada tiempo; lo que falta usa la de referencia. */
   horas_comida: Record<string, string>;
+  /** Entre qué horas se reparte el agua (vacío: de una hora después de levantarte a una antes de acostarte). */
+  horas_agua: { inicio?: string; fin?: string };
   tiempos_comida: HoraDeComida[];
+}
+
+/** Un cambio de horas que la app propone según cómo usa la persona su día. */
+export interface SugerenciaDeHoras {
+  id: string;
+  tipo: 'comida' | 'agua' | 'levantarse' | 'acostarse';
+  titulo: string;
+  texto: string;
+  actual: string;
+  sugerida: string;
+  /** Lo que se guarda en los hábitos si la persona acepta. */
+  cambios: Partial<Habitos>;
 }
 
 /** Una comida del plan con la hora a la que se come (la suya o la de referencia). */
