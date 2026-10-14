@@ -243,13 +243,27 @@ def programados(usuario, fecha, ahora=None):
             })
 
     if 'comida' not in apagados and not retenidas:
+        contadas = set(RegistroComida.objects.filter(usuario=usuario, fecha=fecha).values_list('tiempo', flat=True))
         for tiempo in tiempos_plan:
+            if tiempo in contadas:
+                continue                    # ya la contó (por ejemplo antes de la hora): no hay nada que avisar
+            hora_de_comer = _momento(fecha, horas_comida[tiempo])
+            # A la hora de la comida: «es hora de comer». Si el de «¿cómo te fue?» ya le tocaba, ese basta.
+            if ahora is None or ahora <= hora_de_comer + DESPUES_DE_COMER:
+                avisos.append({
+                    'tipo': 'comida', 'clave': f'comida:{fecha}:{tiempo}:hora',
+                    'programada_para': hora_de_comer,
+                    'titulo': f'Es hora {"del" if ARTICULO_TIEMPO[tiempo] == "el" else "de la"} {NOMBRE_TIEMPO[tiempo].lower()}',
+                    'cuerpo': 'Cuando termines, cuéntanos qué comiste; si comes antes, también puedes contarla ya.',
+                    'datos': {'tiempo': tiempo, 'grupo': f'comida:{fecha}:{tiempo}'},
+                })
             avisos.append({
                 'tipo': 'comida', 'clave': f'comida:{fecha}:{tiempo}',
-                'programada_para': _momento(fecha, horas_comida[tiempo]) + DESPUES_DE_COMER,
+                'programada_para': hora_de_comer + DESPUES_DE_COMER,
                 'titulo': f'¿Cómo te fue con {ARTICULO_TIEMPO[tiempo]} {NOMBRE_TIEMPO[tiempo].lower()}?',
                 'cuerpo': 'Cuéntanos qué comiste, con foto si quieres, para ver si vas cumpliendo tu plan.',
-                'datos': {'tiempo': tiempo},
+                # Mismo grupo que el de la hora: el de «¿cómo te fue?» lo reemplaza en la bandeja.
+                'datos': {'tiempo': tiempo, 'grupo': f'comida:{fecha}:{tiempo}'},
             })
 
     if 'proceso' not in apagados:
