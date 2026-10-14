@@ -99,9 +99,13 @@ export interface ResumenHoy {
   dormir: {
     hora: string | null;
     acostado: string | null;
-    /** «Ya me acosté» se habilita 2 horas antes de la hora de acostarse. */
+    /** «Ya me acosté» vale desde 2 h antes de acostarse hasta 2 h antes de levantarse; después, «no respondió». */
+    ventana: 'libre' | 'antes' | 'abierta' | 'cerrada';
     abierta: boolean;
     desde: string | null;
+    hasta: string | null;
+    /** Anoche no lo dijo y ya pasó el rato para decirlo. */
+    anoche_sin_respuesta: boolean;
   };
   siesta: {
     en_curso: string | null;

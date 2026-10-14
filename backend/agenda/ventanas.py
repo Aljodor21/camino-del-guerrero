@@ -1,9 +1,11 @@
 """Cuándo se puede decir «me levanté» y «ya me acosté», y cuándo ya no caben más siestas.
 
 «Me levanté» solo vale desde 2 horas antes hasta 2 horas después de la hora prevista de levantarse; si
-no se dice en ese rato, el día queda como «no respondió» y se puede responder una sola vez con la hora
-(es la única vez que se escribe una hora). «Ya me acosté» abre 2 horas antes de la hora de acostarse:
-desde ahí empieza la jornada de dormir y no se pueden empezar más siestas.
+no se dice en ese rato, el día queda como «no respondió» y el mismo botón deja responder una sola vez con
+la hora (es la única vez que se escribe una hora). «Ya me acosté» vale desde 2 horas antes de la hora de
+acostarse hasta 2 horas antes de la hora de levantarse del día siguiente; pasado eso queda «no respondió»
+y no se puede decir una hora. Las horas de sueño (fuera de ellas se puede «ir a dormir» un rato, la siesta)
+van desde que abre ese «ya me acosté» hasta que termina el rato para decir «me levanté».
 """
 from datetime import datetime, time, timedelta
 
@@ -37,12 +39,30 @@ def levantar(habitos, ahora):
 
 
 def dormir(habitos, ahora):
-    """{'noche', 'abierta', 'desde'}: si ya se puede decir «ya me acosté» esta noche y desde cuándo."""
+    """{'noche', 'estado', 'abierta', 'desde', 'hasta'}: si ya se puede decir «ya me acosté» esta noche
+    ('antes', 'abierta' o 'cerrada' si pasaron 2 horas antes de levantarse sin decirlo; 'libre' sin horas)."""
     noche = noche_de(ahora)
     hora = horarios.horas_de(habitos, noche)['dormir']
     if hora is None:
-        return {'noche': noche, 'abierta': True, 'desde': None}
+        return {'noche': noche, 'estado': 'libre', 'abierta': True, 'desde': None, 'hasta': None}
     # Si se acuesta pasada la medianoche, la hora cae al día siguiente de esa noche.
     dia = noche + timedelta(days=1) if hora < HORA_CORTE_DORMIR else noche
     desde = _momento(dia, hora) - MARGEN
-    return {'noche': noche, 'abierta': ahora >= desde, 'desde': desde}
+    manana = horarios.horas_de(habitos, noche + timedelta(days=1))['levantarse']
+    hasta = _momento(noche + timedelta(days=1), manana) - MARGEN if manana else None
+    if ahora < desde:
+        estado = 'antes'
+    elif hasta is not None and ahora > hasta:
+        estado = 'cerrada'
+    else:
+        estado = 'abierta'
+    return {'noche': noche, 'estado': estado, 'abierta': estado in ('abierta', 'libre'), 'desde': desde, 'hasta': hasta}
+
+
+def en_horas_de_sueno(habitos, ahora, acostado, levantado):
+    """Desde que abre el «ya me acosté» hasta que la persona se levanta (o pasa el rato para decirlo): ahí no
+    se empieza una siesta."""
+    d = dormir(habitos, ahora)
+    if acostado or (d['desde'] is not None and ahora >= d['desde']):
+        return True
+    return not levantado and levantar(habitos, ahora)['estado'] in ('antes', 'abierta')
