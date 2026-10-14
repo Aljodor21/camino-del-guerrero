@@ -43,7 +43,7 @@ const FUENTES: { id: FuenteProceso; label: string }[] = [
 /** Cuánto lleva un proyecto libre: lo marca la persona. */
 const AVANCES = [0, 25, 50, 75, 100];
 
-type Formulario = 'area' | 'proceso' | 'proyecto' | null;
+type Formulario = 'area' | 'proceso' | null;
 
 /**
  * Crecimiento personal: cada persona arma sus áreas («Educación financiera»), dentro lleva procesos
@@ -93,7 +93,6 @@ export class Crecimiento implements OnInit {
 
   /** Los programas del catálogo y si el proceso nuevo sale de uno o es propio. */
   protected programas = signal<ProgramaCrecimiento[]>([]);
-  protected origen = signal<'catalogo' | 'propio'>('catalogo');
   /** La pantalla propia del tipo del proyecto abierto (si tiene). */
   protected pantalla = signal<Type<unknown> | null>(null);
   protected entradasPantalla = computed(() => ({ proyecto: this.proyecto() }));
@@ -104,16 +103,6 @@ export class Crecimiento implements OnInit {
 
   protected formArea = this.fb.group({
     nombre: this.fb.control('', [Validators.required, Validators.maxLength(80)]),
-  });
-  protected formProceso = this.fb.group({
-    titulo: this.fb.control('', [Validators.required, Validators.maxLength(140)]),
-    fuente: this.fb.control<FuenteProceso>('libro'),
-    fuente_titulo: this.fb.control('', Validators.maxLength(160)),
-    autor: this.fb.control('', Validators.maxLength(120)),
-  });
-  protected formProyecto = this.fb.group({
-    titulo: this.fb.control('', [Validators.required, Validators.maxLength(140)]),
-    detalle: this.fb.control('', Validators.maxLength(300)),
   });
   protected formNota = this.fb.group({
     texto: this.fb.control('', [Validators.required, Validators.maxLength(2000)]),
@@ -234,11 +223,8 @@ export class Crecimiento implements OnInit {
     this.formulario.set(cual);
     if (cual === 'proceso' && !this.programas().length) {
       this.servicio.programas().subscribe({
-        next: (l) => {
-          this.programas.set(l);
-          if (!l.length) this.origen.set('propio');
-        },
-        error: () => this.origen.set('propio'),
+        next: (l) => this.programas.set(l),
+        error: this.fallo('No pudimos cargar los programas.'),
       });
     }
   }
@@ -262,8 +248,6 @@ export class Crecimiento implements OnInit {
     this.formulario.set(null);
     this.confirmarBorrar.set(false);
     this.formArea.reset();
-    this.formProceso.reset({ fuente: 'libro' });
-    this.formProyecto.reset();
   }
 
   protected guardarArea(): void {
@@ -277,38 +261,6 @@ export class Crecimiento implements OnInit {
       },
       error: this.fallo('No pudimos guardar el área.'),
     });
-  }
-
-  protected guardarProceso(): void {
-    const area = this.area();
-    if (!area || this.formProceso.invalid) return;
-    const v = this.formProceso.getRawValue();
-    this.guardando.set(true);
-    this.servicio.crearProceso({ ...v, titulo: v.titulo.trim(), area: area.id }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.cerrarFormulario();
-        this.abrirArea(area);
-      },
-      error: this.fallo('No pudimos guardar el proceso.'),
-    });
-  }
-
-  protected guardarProyecto(): void {
-    const proceso = this.proceso();
-    if (!proceso || this.formProyecto.invalid) return;
-    const v = this.formProyecto.getRawValue();
-    this.guardando.set(true);
-    this.servicio
-      .crearProyecto({ titulo: v.titulo.trim(), detalle: v.detalle.trim(), proceso: proceso.id })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.cerrarFormulario();
-          this.abrirProceso(proceso);
-        },
-        error: this.fallo('No pudimos guardar el proyecto.'),
-      });
   }
 
   protected marcarAvance(avance: number): void {
@@ -343,26 +295,21 @@ export class Crecimiento implements OnInit {
     });
   }
 
-  /** Borra lo que se está viendo (área, proceso o proyecto) con todo lo que tiene dentro. */
+  /** Borra lo que se está viendo (el área o el programa) con todo lo que tiene dentro. */
   protected borrar(): void {
     const nivel = this.nivel();
     const peticion =
-      nivel === 'proyecto'
-        ? this.servicio.borrarProyecto(this.proyecto()!.id)
-        : nivel === 'proceso'
-          ? this.servicio.borrarProceso(this.proceso()!.id)
-          : this.servicio.borrarArea(this.area()!.id);
+      nivel === 'proceso'
+        ? this.servicio.borrarProceso(this.proceso()!.id)
+        : this.servicio.borrarArea(this.area()!.id);
     peticion.subscribe({
       next: () => {
         this.confirmarBorrar.set(false);
         // El elemento ya no existe: se vuelve al nivel de arriba sin abrirlo otra vez.
-        if (nivel === 'proyecto') this.proyecto.set(null);
-        else if (nivel === 'proceso') this.proceso.set(null);
+        if (nivel === 'proceso') this.proceso.set(null);
         else this.area.set(null);
         const a = this.area();
-        const p = this.proceso();
-        if (nivel === 'proyecto' && p) this.abrirProceso(p);
-        else if (nivel === 'proceso' && a) this.abrirArea(a);
+        if (nivel === 'proceso' && a) this.abrirArea(a);
         else this.cargarAreas();
       },
       error: this.fallo('No pudimos borrarlo.'),

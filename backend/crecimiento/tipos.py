@@ -13,6 +13,8 @@ nieve…) se registra en `TIPOS` con lo que el resto de la app necesita saber de
   a la bandeja y al celular como cualquier otro aviso (`crecimiento/avisos.py` los pasa a `agenda`).
 - `confirmar(proyecto, clave, fecha)`: lo que se guarda cuando la persona toca la acción del aviso.
 - `resuelto(proyecto, clave, fecha)`: si el aviso ya no hace falta (porque la persona lo hizo por otro lado).
+- `del_servidor`: llaves de `datos` que la app no puede cambiar (lo cumplido no se escribe a mano).
+- `acciones`: lo que se hace desde la pantalla (`POST /proyectos/<id>/accion/<nombre>/`).
 
 Lo demás (pantallas, cálculos, sus propias tablas) vive en el módulo del tipo. Un tipo nuevo es una entrada
 más en `TIPOS`: no cambia el resto de la app.
@@ -21,10 +23,11 @@ from .tipos_base import Tipo
 
 
 def _registrar():
-    from . import diario
+    from . import creencias, diario
     return {
         # El básico: título y notas; el avance lo marca la persona.
         'libre': Tipo(nombre='Libre'),
+        'taller_creencias': creencias.TIPO,
         'diario_gastos': diario.TIPO,
     }
 

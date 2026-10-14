@@ -1,8 +1,8 @@
 """Catálogo de programas: un proceso ya armado según una fuente (un libro y su autor), con sus proyectos.
 
-Agregar un programa es agregar una entrada en `PROGRAMAS`. Cada proyecto lleva una `clave` estable dentro del
-programa; si todavía no tiene pantalla propia va como `libre` y, cuando la tenga, los que ya existen se pasan a
-su tipo por esa clave.
+Los programas son solo los que se registran aquí: la persona elige uno y le llega con sus proyectos. Agregar un
+programa es agregar una entrada en `PROGRAMAS`; agregar una actividad a un programa es agregar un `ProyectoBase`
+con un tipo ya registrado en `tipos.py`. Cada proyecto lleva una `clave` estable dentro del programa.
 """
 from dataclasses import dataclass
 
@@ -33,14 +33,10 @@ PROGRAMAS = {
         fuente_titulo='Sana tus finanzas, transforma tu vida',
         autor='Jaime Jaramillo',
         area='Educación financiera',
-        descripcion='Los ejercicios del libro, capítulo por capítulo.',
+        descripcion='El taller de creencias del capítulo 1 y el diario de gastos del capítulo 2.',
         proyectos=(
-            ProyectoBase('taller_creencias', 'libre', 'Taller de creencias', 'Capítulo 1'),
-            ProyectoBase('vision_futuro', 'libre', 'Mi visión a futuro', 'Ejercicio del libro'),
+            ProyectoBase('taller_creencias', 'taller_creencias', 'Taller de creencias', 'Capítulo 1'),
             ProyectoBase('diario_gastos', 'diario_gastos', 'Diario de gastos', 'Capítulo 2 · Paso 1'),
-            ProyectoBase('presupuesto', 'libre', 'Presupuesto personal', 'Capítulo 2'),
-            ProyectoBase('mapa_suenos', 'libre', 'Mapa de sueños', 'Capítulo 2'),
-            ProyectoBase('bola_nieve', 'libre', 'Bola de nieve: pagar deudas', 'Capítulo 2'),
         ),
     ),
 }

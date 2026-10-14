@@ -71,14 +71,13 @@ export class CrecimientoService {
       params: { proceso: String(proceso) },
     });
   }
-  crearProyecto(datos: ProyectoPayload): Observable<ProyectoCrecimiento> {
-    return this.http.post<ProyectoCrecimiento>(`${API}/proyectos/`, datos);
-  }
   actualizarProyecto(id: number, datos: ProyectoPayload): Observable<ProyectoCrecimiento> {
     return this.http.patch<ProyectoCrecimiento>(`${API}/proyectos/${id}/`, datos);
   }
-  borrarProyecto(id: number): Observable<void> {
-    return this.http.delete<void>(`${API}/proyectos/${id}/`);
+
+  /** Una acción propia del tipo del proyecto (por ejemplo, «hoy ya las leí»). */
+  accion(id: number, accion: string): Observable<ProyectoCrecimiento> {
+    return this.http.post<ProyectoCrecimiento>(`${API}/proyectos/${id}/accion/${accion}/`, {});
   }
 
   notas(proyecto: number): Observable<NotaCrecimiento[]> {

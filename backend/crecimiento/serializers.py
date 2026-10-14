@@ -56,8 +56,8 @@ class ProcesoSerializer(serializers.ModelSerializer):
         if programa:
             for campo in ('titulo', 'fuente', 'fuente_titulo', 'autor'):
                 validated_data.setdefault(campo, getattr(programa, campo))
-        if not validated_data.get('titulo'):
-            raise serializers.ValidationError({'titulo': 'Escribe un título.'})
+        if not programa:
+            raise serializers.ValidationError({'programa': 'Elige un programa del catálogo.'})
         proceso = super().create(validated_data)
         if programa:
             for i, base in enumerate(programa.proyectos):
@@ -128,9 +128,15 @@ class ProyectoSerializer(serializers.ModelSerializer):
         tipo = attrs.get('tipo') or getattr(self.instance, 'tipo', 'libre')
         if 'datos' in attrs or not self.instance:
             try:
-                attrs['datos'] = TIPOS[tipo].valida(attrs.get('datos', {}))
+                datos = TIPOS[tipo].valida(attrs.get('datos', {}))
             except ReglaNegocioError as e:
                 raise serializers.ValidationError({'datos': str(e)})
+            # Lo que solo cambia el servidor (lo cumplido) se queda como estaba.
+            for llave in TIPOS[tipo].del_servidor:
+                datos.pop(llave, None)
+                if self.instance and llave in self.instance.datos:
+                    datos[llave] = self.instance.datos[llave]
+            attrs['datos'] = datos
         # Si el tipo calcula su avance, sale de lo que hizo la persona y no se manda a mano.
         if TIPOS[tipo].avance is not None:
             attrs.pop('avance', None)

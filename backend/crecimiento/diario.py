@@ -1,17 +1,16 @@
-"""Diario de gastos («Sana tus finanzas», capítulo 2, paso 1), mes a mes.
+"""Diario de gastos («Sana tus finanzas», capítulo 2, paso 1).
 
-Tiene cuatro partes, como el ejercicio:
-- **La relación del mes** (`RubroMes`): los gastos que se tienen cada mes, por categoría, con cuánto vale cada
-  uno y cuánto es cerebral (lo demás es emocional; un gasto mixto se parte así).
-- **Los gastos no mensuales** (`GastoNoMensual`): anuales o semestrales; se suman en el año, se dividen entre 12
-  para saber cuánto aprovisionar al mes y entre los meses que faltan para el pago para saber cuánto ahorrar.
-- **Los gastos hormiga** (`GastoHormiga`): lo de todos los días, por 30 días al mes y por 12 meses.
-- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad cada día, sin engañarse; un día está «al
-  día» si tiene gastos anotados o si la persona dijo que no gastó.
+Es el ejercicio tal cual, con dos mejoras:
+- **La lista de gastos** (`Rubro`): las categorías y rubros del libro, con su valor y cuánto es cerebral (lo
+  demás es emocional; un gasto mixto se parte así). Cada rubro dice cada cuánto se paga: los de cada mes van
+  tal cual; los anuales (o semestrales) se suman en el año y se dividen entre 12; los hormiga (de todos los
+  días) se multiplican por los días del mes. Al final todo es **un solo gasto mensual**.
+- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad cada día de este mes, sin engañarse; un día
+  está «al día» si tiene gastos anotados o si la persona dijo que no gastó.
 """
 import calendar
 import math
-from datetime import date, time, timedelta
+from datetime import time, timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -19,7 +18,7 @@ from django.utils import timezone
 from agenda.horarios import a_hora
 from core.exceptions import ReglaNegocioError
 
-from .models import DiaSinGasto, Gasto, GastoHormiga, GastoNoMensual, RubroMes
+from .models import DiaSinGasto, Gasto, Rubro
 from .tipos_base import Tipo
 
 # Las categorías y los rubros del diario de gastos del libro.
@@ -47,126 +46,116 @@ CATEGORIAS = [
     ('otros', 'Otros', []),
 ]
 NOMBRE_CATEGORIA = {c: n for c, n, _ in CATEGORIAS}
-# Hasta cuántos días atrás se puede anotar un gasto que se olvidó.
+# Los rubros de la lista que se pagan una vez al año (se pueden cambiar).
+ANUALES = {'SOAT', 'Revisión tecnomecánica', 'Impuesto de rodamiento', 'Vacaciones', 'Impuestos nacionales',
+           'Impuestos locales'}
+FRECUENCIAS = {f for f, _ in Rubro.FRECUENCIAS}
 DIAS_ATRAS = 7
 HORA_AVISO = time(20, 0)
+MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre',
+         'noviembre', 'diciembre']
 
 
 def pesos(valor):
     return '$' + f'{round(valor):,}'.replace(',', '.')
 
 
-def mes_de(fecha):
-    return fecha.replace(day=1)
+def _mes_actual():
+    hoy = timezone.localdate()
+    return hoy.replace(day=1), hoy.replace(day=calendar.monthrange(hoy.year, hoy.month)[1])
 
 
-def fin_de_mes(mes):
-    return mes.replace(day=calendar.monthrange(mes.year, mes.month)[1])
+# ── La lista de gastos ─────────────────────────────────────────────────────────
+def _factor(frecuencia, dias_mes):
+    """Cuánto de un pago cae en un mes."""
+    return {'mensual': 1, 'anual': 1 / 12, 'semestral': 2 / 12, 'hormiga': dias_mes}[frecuencia]
 
 
-def leer_mes(texto):
-    """'2026-10' → date(2026, 10, 1); vacío → el mes de hoy."""
-    if not texto:
-        return mes_de(timezone.localdate())
-    try:
-        anio, mes = (int(x) for x in str(texto).split('-')[:2])
-        return date(anio, mes, 1)
-    except (TypeError, ValueError):
-        raise ReglaNegocioError('El mes va así: 2026-10.')
+def meses_que_faltan(mes_pago, frecuencia, mes):
+    """Meses que faltan para el próximo pago contando este (marzo visto desde octubre: 5). 0 si toca este mes."""
+    pagos = [mes_pago] if frecuencia == 'anual' else [mes_pago, (mes_pago + 5) % 12 + 1]
+    return min((p - mes) % 12 for p in pagos)
 
 
-# ── La relación del mes ────────────────────────────────────────────────────────
-def rubros_del_mes(proyecto, mes):
-    """(rubros, de_donde): los guardados de ese mes; si no hay, los del último mes que tenga (para no empezar de
-    cero) o la lista del libro en blanco. `de_donde` es 'guardado', el mes copiado ('2026-09') o 'plantilla'."""
-    guardados = list(proyecto.rubros.filter(mes=mes))
+def rubro(r):
+    """Un rubro con su parte del mes: lo que se suma a «cuánto se va a gastar este mes»."""
+    factor = _factor(r['frecuencia'], r['dias_mes'])
+    mensual = math.ceil(r['valor'] * factor)
+    cerebral = math.ceil(r['cerebral'] * factor)
+    datos = {**r, 'emocional': r['valor'] - r['cerebral'],
+             'mensual': mensual, 'mensual_cerebral': cerebral, 'mensual_emocional': mensual - cerebral}
+    if r['frecuencia'] in ('anual', 'semestral'):
+        datos['al_anio'] = r['valor'] * (2 if r['frecuencia'] == 'semestral' else 1)
+        if r.get('mes_pago'):
+            faltan = meses_que_faltan(r['mes_pago'], r['frecuencia'], timezone.localdate().month)
+            datos['meses_faltan'] = faltan
+            datos['ahorro_hasta_pago'] = math.ceil(r['valor'] / faltan) if faltan else r['valor']
+    if r['frecuencia'] == 'hormiga':
+        datos['al_anio'] = mensual * 12
+    return datos
+
+
+def _de_modelo(r):
+    return {'categoria': r.categoria, 'nombre': r.nombre, 'frecuencia': r.frecuencia, 'valor': r.valor,
+            'cerebral': r.cerebral, 'dias_mes': r.dias_mes, 'mes_pago': r.mes_pago}
+
+
+def rubros_de(proyecto):
+    """(rubros, guardados): los de la persona o, si aún no ha guardado, la lista del libro en blanco."""
+    guardados = [_de_modelo(r) for r in proyecto.rubros.all()]
     if guardados:
-        return [_rubro(r.categoria, r.nombre, r.valor, r.cerebral) for r in guardados], 'guardado'
-    anterior = proyecto.rubros.filter(mes__lt=mes).order_by('-mes').values_list('mes', flat=True).first()
-    if anterior:
-        return ([_rubro(r.categoria, r.nombre, r.valor, r.cerebral) for r in proyecto.rubros.filter(mes=anterior)],
-                anterior.strftime('%Y-%m'))
-    return [_rubro(c, nombre, 0, 0) for c, _, rubros in CATEGORIAS for nombre in rubros], 'plantilla'
+        return guardados, True
+    return [{'categoria': c, 'nombre': n, 'frecuencia': 'anual' if n in ANUALES else 'mensual', 'valor': 0,
+             'cerebral': 0, 'dias_mes': 30, 'mes_pago': None}
+            for c, _, nombres in CATEGORIAS for n in nombres], False
 
 
-def _rubro(categoria, nombre, valor, cerebral):
-    return {'categoria': categoria, 'nombre': nombre, 'valor': valor, 'cerebral': cerebral,
-            'emocional': valor - cerebral}
-
-
-@transaction.atomic
-def guardar_rubros(proyecto, mes, rubros):
-    """Reemplaza la relación de ese mes con la que manda la persona."""
-    limpios = []
-    for i, r in enumerate(rubros):
-        if not isinstance(r, dict):
-            raise ReglaNegocioError('Cada gasto del mes va con su categoría, su nombre y su valor.')
-        categoria, nombre = r.get('categoria'), str(r.get('nombre') or '').strip()
-        if categoria not in NOMBRE_CATEGORIA or not nombre or len(nombre) > 80:
-            raise ReglaNegocioError('Cada gasto del mes va con su categoría y su nombre.')
-        valor, cerebral = _entero(r.get('valor')), _entero(r.get('cerebral'))
-        if cerebral > valor:
-            raise ReglaNegocioError(f'En «{nombre}», lo cerebral no puede pasar del valor.')
-        limpios.append(RubroMes(proyecto=proyecto, mes=mes, categoria=categoria, nombre=nombre, valor=valor,
-                                cerebral=cerebral, orden=i))
-    proyecto.rubros.filter(mes=mes).delete()
-    RubroMes.objects.bulk_create(limpios)
-
-
-def _entero(valor):
+def _entero(valor, minimo=0, maximo=10**12):
     try:
         n = int(valor or 0)
     except (TypeError, ValueError):
         raise ReglaNegocioError('Los valores van en pesos, sin puntos ni comas.')
-    if n < 0 or n > 10**12:
+    if not minimo <= n <= maximo:
         raise ReglaNegocioError('Ese valor no es válido.')
     return n
 
 
-# ── No mensuales y hormiga ─────────────────────────────────────────────────────
-def meses_que_faltan(gasto, mes):
-    """Cuántos meses faltan para el próximo pago, contando este: si se paga en marzo y estamos en octubre, son 5
-    (oct, nov, dic, ene y feb). Si toca este mes, 0."""
-    pagos = [gasto.mes_pago] if gasto.periodicidad == 'anual' else [gasto.mes_pago, (gasto.mes_pago + 5) % 12 + 1]
-    return min((p - mes.month) % 12 for p in pagos)
-
-
-def no_mensual(gasto, mes):
-    veces = 2 if gasto.periodicidad == 'semestral' else 1
-    total = gasto.valor * veces
-    faltan = meses_que_faltan(gasto, mes)
-    return {
-        'id': gasto.id, 'nombre': gasto.nombre, 'valor': gasto.valor, 'periodicidad': gasto.periodicidad,
-        'mes_pago': gasto.mes_pago, 'clase': gasto.clase,
-        'total_anual': total,
-        # Lo que hay que apartar cada mes para tenerlo cuando llegue (el total del año entre 12).
-        'mensual': math.ceil(total / 12),
-        'meses_faltan': faltan,
-        # Si se empieza ahora: el próximo pago entre los meses que faltan para él.
-        'ahorro_hasta_pago': math.ceil(gasto.valor / faltan) if faltan else gasto.valor,
-    }
-
-
-def hormiga(gasto):
-    mensual = gasto.valor_dia * gasto.dias_mes
-    return {'id': gasto.id, 'nombre': gasto.nombre, 'valor_dia': gasto.valor_dia, 'dias_mes': gasto.dias_mes,
-            'clase': gasto.clase, 'mensual': mensual, 'anual': mensual * 12}
+@transaction.atomic
+def guardar_rubros(proyecto, rubros):
+    """Reemplaza la lista de gastos con la que manda la persona."""
+    limpios = []
+    for i, r in enumerate(rubros):
+        if not isinstance(r, dict):
+            raise ReglaNegocioError('Cada gasto va con su categoría, su nombre y su valor.')
+        categoria, nombre = r.get('categoria'), str(r.get('nombre') or '').strip()
+        if categoria not in NOMBRE_CATEGORIA or not nombre or len(nombre) > 80:
+            raise ReglaNegocioError('Cada gasto va con su categoría y su nombre.')
+        frecuencia = r.get('frecuencia') or 'mensual'
+        if frecuencia not in FRECUENCIAS:
+            raise ReglaNegocioError(f'En «{nombre}», di cada cuánto se paga.')
+        valor, cerebral = _entero(r.get('valor')), _entero(r.get('cerebral'))
+        if cerebral > valor:
+            raise ReglaNegocioError(f'En «{nombre}», lo cerebral no puede pasar del valor.')
+        mes_pago = r.get('mes_pago') or None
+        if mes_pago is not None:
+            mes_pago = _entero(mes_pago, 1, 12)
+        limpios.append(Rubro(proyecto=proyecto, categoria=categoria, nombre=nombre, frecuencia=frecuencia,
+                             valor=valor, cerebral=cerebral, dias_mes=_entero(r.get('dias_mes') or 30, 1, 31),
+                             mes_pago=mes_pago if frecuencia in ('anual', 'semestral') else None, orden=i))
+    proyecto.rubros.all().delete()
+    Rubro.objects.bulk_create(limpios)
 
 
 # ── El registro ────────────────────────────────────────────────────────────────
-def _inicio(proyecto, mes):
-    return max(mes, proyecto.creado)
-
-
-def dias_al_dia(proyecto, mes, hoy=None):
-    """(al_dia, transcurridos) del mes hasta hoy, desde que empezó el diario."""
+def dias_al_dia(proyecto, hoy=None):
+    """(al_dia, transcurridos) de este mes hasta hoy, desde que empezó el diario."""
     hoy = hoy or timezone.localdate()
-    inicio, fin = _inicio(proyecto, mes), min(fin_de_mes(mes), hoy)
-    if fin < inicio:
+    inicio = max(hoy.replace(day=1), proyecto.creado)
+    if hoy < inicio:
         return 0, 0
-    con_gasto = set(proyecto.gastos.filter(fecha__range=(inicio, fin)).values_list('fecha', flat=True))
-    sin_gasto = set(proyecto.dias_sin_gasto.filter(fecha__range=(inicio, fin)).values_list('fecha', flat=True))
-    return len(con_gasto | sin_gasto), (fin - inicio).days + 1
+    con_gasto = set(proyecto.gastos.filter(fecha__range=(inicio, hoy)).values_list('fecha', flat=True))
+    sin_gasto = set(proyecto.dias_sin_gasto.filter(fecha__range=(inicio, hoy)).values_list('fecha', flat=True))
+    return len(con_gasto | sin_gasto), (hoy - inicio).days + 1
 
 
 def dia_al_dia(proyecto, fecha):
@@ -215,55 +204,43 @@ def marcar_sin_gasto(proyecto, fecha):
     DiaSinGasto.objects.get_or_create(proyecto=proyecto, fecha=fecha)
 
 
-def _por_clase(items, valor='valor'):
-    total = sum(i[valor] for i in items)
-    cerebral = sum(i[valor] for i in items if i['clase'] == 'cerebral')
-    return {'total': total, 'cerebral': cerebral, 'emocional': total - cerebral}
-
-
-def estado_del_mes(proyecto, mes):
-    """Todo lo del diario para ese mes: la relación, los no mensuales, la hormiga, el registro y el resumen."""
+def estado(proyecto):
+    """Todo el diario: la lista de gastos con lo que cae en el mes, el registro de este mes y el resumen."""
     hoy = timezone.localdate()
-    rubros, de_donde = rubros_del_mes(proyecto, mes)
-    no_mensuales = [no_mensual(g, mes) for g in proyecto.no_mensuales.all()]
-    hormigas = [hormiga(g) for g in proyecto.hormiga.all()]
-    gastos = list(proyecto.gastos.filter(fecha__range=(mes, fin_de_mes(mes))))
+    inicio, fin = _mes_actual()
+    lista, guardados = rubros_de(proyecto)
+    rubros = [rubro(r) for r in lista]
+    gastos = list(proyecto.gastos.filter(fecha__range=(inicio, fin)))
     registro = [{'id': g.id, 'fecha': g.fecha, 'valor': g.valor, 'descripcion': g.descripcion,
                  'categoria': g.categoria, 'clase': g.clase,
                  'se_puede_borrar': timezone.localtime(g.anotado).date() == hoy} for g in gastos]
-    al_dia, transcurridos = dias_al_dia(proyecto, mes, hoy)
+    al_dia, transcurridos = dias_al_dia(proyecto, hoy)
 
-    relacion = {'total': sum(r['valor'] for r in rubros), 'cerebral': sum(r['cerebral'] for r in rubros)}
-    relacion['emocional'] = relacion['total'] - relacion['cerebral']
-    provision = {'mensual': sum(n['mensual'] for n in no_mensuales),
-                 'cerebral': sum(n['mensual'] for n in no_mensuales if n['clase'] == 'cerebral')}
-    provision['emocional'] = provision['mensual'] - provision['cerebral']
-    hormiga_mes = _por_clase(hormigas, 'mensual')
-    anotado = _por_clase(registro)
-    por_categoria = {}
-    for g in registro:
-        c = por_categoria.setdefault(g['categoria'], {'categoria': g['categoria'],
-                                                      'nombre': NOMBRE_CATEGORIA[g['categoria']],
-                                                      'total': 0, 'cerebral': 0, 'emocional': 0})
-        c['total'] += g['valor']
-        c[g['clase']] += g['valor']
-    estimado = relacion['total'] + provision['mensual'] + hormiga_mes['total']
+    def suma(items, campo):
+        return sum(i[campo] for i in items)
+
+    por_frecuencia = {f: suma([r for r in rubros if r['frecuencia'] == f], 'mensual') for f in FRECUENCIAS}
+    plan = {'total': suma(rubros, 'mensual'), 'cerebral': suma(rubros, 'mensual_cerebral')}
+    plan['emocional'] = plan['total'] - plan['cerebral']
+    anotado = {'total': suma(registro, 'valor'),
+               'cerebral': suma([g for g in registro if g['clase'] == 'cerebral'], 'valor')}
+    anotado['emocional'] = anotado['total'] - anotado['cerebral']
+    por_categoria = []
+    for c, nombre, _ in CATEGORIAS:
+        del_mes = [r for r in rubros if r['categoria'] == c]
+        reg = [g for g in registro if g['categoria'] == c]
+        if del_mes or reg:
+            por_categoria.append({'categoria': c, 'nombre': nombre, 'plan': suma(del_mes, 'mensual'),
+                                  'anotado': suma(reg, 'valor')})
     return {
-        'mes': mes.strftime('%Y-%m'),
-        'categorias': [{'id': c, 'nombre': n, 'rubros': r} for c, n, r in CATEGORIAS],
-        'rubros': rubros, 'rubros_de': de_donde,
-        'no_mensuales': no_mensuales, 'hormiga': hormigas, 'registro': registro,
-        'sin_gasto': [d.isoformat() for d in proyecto.dias_sin_gasto
-                      .filter(fecha__range=(mes, fin_de_mes(mes))).values_list('fecha', flat=True)],
+        'mes': f'{MESES[hoy.month - 1]} {hoy.year}',
+        'categorias': [{'id': c, 'nombre': n} for c, n, _ in CATEGORIAS],
+        'rubros': rubros, 'guardados': guardados, 'registro': registro,
         'hoy_al_dia': dia_al_dia(proyecto, hoy),
         'resumen': {
-            'relacion': relacion, 'provision': provision, 'hormiga': hormiga_mes,
-            # Lo que se espera gastar el mes: lo de cada mes + lo que hay que apartar + la hormiga.
-            'estimado': {'total': estimado,
-                         'cerebral': relacion['cerebral'] + provision['cerebral'] + hormiga_mes['cerebral'],
-                         'emocional': relacion['emocional'] + provision['emocional'] + hormiga_mes['emocional']},
-            'anotado': {**anotado, 'por_categoria': sorted(por_categoria.values(), key=lambda c: -c['total'])},
-            'dias_al_dia': al_dia, 'dias_transcurridos': transcurridos,
+            # Lo que se va a gastar este mes: lo de cada mes + la parte del mes de lo anual + la hormiga.
+            'plan': plan, 'por_frecuencia': por_frecuencia, 'anotado': anotado,
+            'por_categoria': por_categoria, 'dias_al_dia': al_dia, 'dias_transcurridos': transcurridos,
         },
         'ajustes': {'avisar': proyecto.datos.get('avisar', True),
                     'hora_aviso': proyecto.datos.get('hora_aviso', HORA_AVISO.isoformat('minutes'))},
@@ -281,25 +258,21 @@ def _valida(datos):
 
 
 def _avance(proyecto):
-    al_dia, transcurridos = dias_al_dia(proyecto, mes_de(timezone.localdate()))
+    al_dia, transcurridos = dias_al_dia(proyecto)
     return round(al_dia / transcurridos * 100) if transcurridos else 0
 
 
-MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre',
-         'noviembre', 'diciembre']
-
-
 def _resumen(proyecto):
-    mes = mes_de(timezone.localdate())
-    al_dia, transcurridos = dias_al_dia(proyecto, mes)
-    gastos = list(proyecto.gastos.filter(fecha__range=(mes, fin_de_mes(mes))).values('valor', 'clase'))
+    hoy = timezone.localdate()
+    al_dia, transcurridos = dias_al_dia(proyecto, hoy)
+    gastos = list(proyecto.gastos.filter(fecha__range=_mes_actual()).values('valor', 'clase'))
     dias = f'{al_dia} de {transcurridos} {"día" if transcurridos == 1 else "días"} al día'
+    mes = MESES[hoy.month - 1].capitalize()
     if not gastos:
-        return f'{MESES[mes.month - 1].capitalize()}: {dias}'
+        return f'{mes}: {dias}'
     total = sum(g['valor'] for g in gastos)
     emocional = sum(g['valor'] for g in gastos if g['clase'] == 'emocional')
-    return (f'{MESES[mes.month - 1].capitalize()}: {pesos(total)} anotados · '
-            f'{round(emocional / total * 100)} % emocional · {dias}')
+    return f'{mes}: {pesos(total)} anotados · {round(emocional / total * 100)} % emocional · {dias}'
 
 
 def _avisos(proyecto, fecha):
@@ -313,13 +286,7 @@ def _avisos(proyecto, fecha):
     }]
 
 
-def _confirmar(proyecto, clave, fecha):
-    marcar_sin_gasto(proyecto, fecha)
-
-
-def _resuelto(proyecto, clave, fecha):
-    return fecha < timezone.localdate() or dia_al_dia(proyecto, fecha)
-
-
 TIPO = Tipo(nombre='Diario de gastos', valida=_valida, avance=_avance, resumen=_resumen, avisos=_avisos,
-            confirmar=_confirmar, resuelto=_resuelto)
+            confirmar=lambda proyecto, clave, fecha: marcar_sin_gasto(proyecto, fecha),
+            resuelto=lambda proyecto, clave, fecha: fecha < timezone.localdate() or dia_al_dia(proyecto, fecha),
+            acciones={'sin_gasto': marcar_sin_gasto})

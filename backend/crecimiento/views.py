@@ -1,10 +1,16 @@
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Area, Nota, Proceso, Proyecto
 from .programas import PROGRAMAS
-from .serializers import AreaSerializer, NotaSerializer, ProcesoSerializer, ProyectoSerializer, _promedio
+from core.exceptions import ReglaNegocioError
+
+from .serializers import (AreaSerializer, NotaSerializer, ProcesoSerializer, ProyectoSerializer, _calcular_avance,
+                          _promedio)
+from .tipos import TIPOS
 
 
 class AreaListCreateView(generics.ListCreateAPIView):
@@ -45,7 +51,8 @@ class ProcesoDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Proceso.objects.filter(area__usuario=self.request.user)
 
 
-class ProyectoListCreateView(generics.ListCreateAPIView):
+class ProyectoListView(generics.ListAPIView):
+    """Los proyectos llegan con su programa: no se crean sueltos."""
     serializer_class = ProyectoSerializer
     pagination_class = None
 
@@ -56,9 +63,9 @@ class ProyectoListCreateView(generics.ListCreateAPIView):
         return proyectos
 
 
-class ProyectoDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ProyectoDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ProyectoSerializer
-    http_method_names = ['get', 'patch', 'delete']
+    http_method_names = ['get', 'patch']
 
     def get_queryset(self):
         return Proyecto.objects.filter(proceso__area__usuario=self.request.user)
@@ -122,3 +129,16 @@ class ProgramasView(APIView):
             'autor': p.autor, 'area': p.area, 'descripcion': p.descripcion,
             'proyectos': [{'clave': x.clave, 'titulo': x.titulo, 'detalle': x.detalle} for x in p.proyectos],
         } for clave, p in PROGRAMAS.items()])
+
+
+class AccionProyectoView(APIView):
+    """Una acción propia del tipo del proyecto (por ejemplo, «hoy ya las leí»)."""
+
+    def post(self, request, pk, accion):
+        proyecto = get_object_or_404(Proyecto, pk=pk, proceso__area__usuario=request.user)
+        hacer = TIPOS[proyecto.tipo].acciones.get(accion) if proyecto.tipo in TIPOS else None
+        if hacer is None:
+            raise ReglaNegocioError('Ese proyecto no tiene esa acción.')
+        hacer(proyecto, timezone.localdate())
+        _calcular_avance(proyecto)
+        return Response(ProyectoSerializer(proyecto, context={'request': request}).data)

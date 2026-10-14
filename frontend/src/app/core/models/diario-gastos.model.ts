@@ -1,37 +1,30 @@
 export type ClaseGasto = 'cerebral' | 'emocional';
+/** Cada cuánto se paga un gasto: lo anual se divide entre 12 y lo hormiga se multiplica por los días del mes. */
+export type Frecuencia = 'mensual' | 'anual' | 'semestral' | 'hormiga';
 
-export interface RubroMes {
+/** Una línea del diario, como en el ejercicio, con lo que cae en el mes. */
+export interface Rubro {
   categoria: string;
   nombre: string;
+  frecuencia: Frecuencia;
+  /** Lo que vale cada pago (o cada día, si es hormiga). */
   valor: number;
   cerebral: number;
   emocional: number;
-}
-
-export interface NoMensual {
-  id: number;
-  nombre: string;
-  valor: number;
-  periodicidad: 'anual' | 'semestral';
-  mes_pago: number;
-  clase: ClaseGasto;
-  total_anual: number;
-  /** El total del año entre 12: lo que hay que apartar cada mes. */
-  mensual: number;
-  /** Meses que faltan para el próximo pago, contando este (0 si toca este mes). */
-  meses_faltan: number;
-  ahorro_hasta_pago: number;
-}
-
-export interface Hormiga {
-  id: number;
-  nombre: string;
-  valor_dia: number;
   dias_mes: number;
-  clase: ClaseGasto;
+  mes_pago: number | null;
   mensual: number;
-  anual: number;
+  mensual_cerebral: number;
+  mensual_emocional: number;
+  al_anio?: number;
+  meses_faltan?: number;
+  ahorro_hasta_pago?: number;
 }
+
+export type RubroPayload = Pick<
+  Rubro,
+  'categoria' | 'nombre' | 'frecuencia' | 'valor' | 'cerebral' | 'dias_mes' | 'mes_pago'
+>;
 
 export interface GastoAnotado {
   id: number;
@@ -50,24 +43,19 @@ export interface PorClase {
 }
 
 export interface EstadoDiario {
+  /** «octubre 2026». */
   mes: string;
-  categorias: { id: string; nombre: string; rubros: string[] }[];
-  rubros: RubroMes[];
-  /** 'guardado', el mes del que se copió ('2026-09') o 'plantilla' (la lista del libro en blanco). */
-  rubros_de: string;
-  no_mensuales: NoMensual[];
-  hormiga: Hormiga[];
+  categorias: { id: string; nombre: string }[];
+  rubros: Rubro[];
+  /** Falso mientras la lista es la del libro en blanco. */
+  guardados: boolean;
   registro: GastoAnotado[];
-  sin_gasto: string[];
   hoy_al_dia: boolean;
   resumen: {
-    relacion: PorClase;
-    provision: { mensual: number; cerebral: number; emocional: number };
-    hormiga: PorClase;
-    estimado: PorClase;
-    anotado: PorClase & {
-      por_categoria: (PorClase & { categoria: string; nombre: string })[];
-    };
+    plan: PorClase;
+    por_frecuencia: Record<Frecuencia, number>;
+    anotado: PorClase;
+    por_categoria: { categoria: string; nombre: string; plan: number; anotado: number }[];
     dias_al_dia: number;
     dias_transcurridos: number;
   };

@@ -109,60 +109,32 @@ class Nota(models.Model):
 CLASES_GASTO = [('cerebral', 'Cerebral'), ('emocional', 'Emocional')]
 
 
-class RubroMes(models.Model):
-    """Una línea de la relación de gastos de un mes: cuánto vale y cuánto de eso es cerebral (lo demás es
-    emocional; así un gasto mixto se parte en dos)."""
+class Rubro(models.Model):
+    """Una línea del diario de gastos, como en el ejercicio: categoría, rubro, valor y cuánto es cerebral (lo
+    demás es emocional; así un gasto mixto se parte). Cada rubro dice cada cuánto se paga: lo anual se divide
+    entre 12 y lo hormiga (de todos los días) se multiplica por los días del mes, y todo se suma al mes."""
 
-    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='rubros')
-    mes       = models.DateField(help_text='Primer día del mes')
-    categoria = models.CharField(max_length=20)
-    nombre    = models.CharField(max_length=80)
-    valor     = models.PositiveBigIntegerField(default=0)
-    cerebral  = models.PositiveBigIntegerField(default=0)
-    orden     = models.PositiveSmallIntegerField(default=0)
+    FRECUENCIAS = [('mensual', 'Cada mes'), ('anual', 'Una vez al año'), ('semestral', 'Dos veces al año'),
+                   ('hormiga', 'Todos los días')]
 
-    class Meta:
-        ordering = ['mes', 'orden', 'id']
-        indexes = [models.Index(fields=['proyecto', 'mes'])]
-        constraints = [models.CheckConstraint(condition=models.Q(cerebral__lte=models.F('valor')),
-                                              name='rubro_cerebral_no_pasa_del_valor')]
-
-    @property
-    def emocional(self):
-        return self.valor - self.cerebral
-
-
-class GastoNoMensual(models.Model):
-    """Un gasto que no llega cada mes (SOAT, matrícula, vacaciones…): se aprovisiona mes a mes."""
-
-    PERIODOS = [('anual', 'Una vez al año'), ('semestral', 'Dos veces al año')]
-
-    proyecto     = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='no_mensuales')
-    nombre       = models.CharField(max_length=80)
-    valor        = models.PositiveBigIntegerField(help_text='Lo que vale cada pago')
-    periodicidad = models.CharField(max_length=10, choices=PERIODOS, default='anual')
-    mes_pago     = models.PositiveSmallIntegerField(help_text='Mes del (primer) pago, de 1 a 12')
-    clase        = models.CharField(max_length=10, choices=CLASES_GASTO, default='cerebral')
+    proyecto   = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='rubros')
+    categoria  = models.CharField(max_length=20)
+    nombre     = models.CharField(max_length=80)
+    frecuencia = models.CharField(max_length=10, choices=FRECUENCIAS, default='mensual')
+    # Lo que vale cada pago (o cada día, si es hormiga) y cuánto de eso es cerebral.
+    valor      = models.PositiveBigIntegerField(default=0)
+    cerebral   = models.PositiveBigIntegerField(default=0)
+    dias_mes   = models.PositiveSmallIntegerField(default=30, help_text='Solo para los gastos hormiga')
+    mes_pago   = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Mes del pago (anual/semestral)')
+    orden      = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['mes_pago', 'id']
-        constraints = [models.CheckConstraint(condition=models.Q(mes_pago__gte=1, mes_pago__lte=12),
-                                              name='no_mensual_mes_valido')]
-
-
-class GastoHormiga(models.Model):
-    """Un gasto pequeño de todos los días (el tinto, el mecato): lo que suma al mes y al año."""
-
-    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='hormiga')
-    nombre    = models.CharField(max_length=80)
-    valor_dia = models.PositiveBigIntegerField()
-    dias_mes  = models.PositiveSmallIntegerField(default=30)
-    clase     = models.CharField(max_length=10, choices=CLASES_GASTO, default='emocional')
-
-    class Meta:
-        ordering = ['id']
-        constraints = [models.CheckConstraint(condition=models.Q(dias_mes__gte=1, dias_mes__lte=31),
-                                              name='hormiga_dias_validos')]
+        ordering = ['orden', 'id']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(cerebral__lte=models.F('valor')),
+                                   name='rubro_cerebral_no_pasa_del_valor'),
+            models.CheckConstraint(condition=models.Q(dias_mes__gte=1, dias_mes__lte=31), name='rubro_dias_validos'),
+        ]
 
 
 class Gasto(models.Model):

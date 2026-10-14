@@ -152,7 +152,7 @@
           @if (formulario() !== 'proceso') {
             <p-button
               icon="pi pi-plus"
-              label="Proceso"
+              label="Programa"
               size="small"
               (onClick)="abrirFormulario('proceso')"
             />
@@ -160,153 +160,39 @@
         </div>
 
         @if (formulario() === 'proceso') {
-          <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="De dónde sale el proceso">
-            <button
-              type="button"
-              role="radio"
-              [attr.aria-checked]="origen() === 'catalogo'"
-              class="px-3 py-1.5 rounded-full text-sm border transition-colors"
-              [class]="
-                origen() === 'catalogo'
-                  ? 'bg-guerrero-red text-white border-guerrero-red'
-                  : 'border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-200'
-              "
-              (click)="origen.set('catalogo')"
-            >
-              Del catálogo
-            </button>
-            <button
-              type="button"
-              role="radio"
-              [attr.aria-checked]="origen() === 'propio'"
-              class="px-3 py-1.5 rounded-full text-sm border transition-colors"
-              [class]="
-                origen() === 'propio'
-                  ? 'bg-guerrero-red text-white border-guerrero-red'
-                  : 'border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-200'
-              "
-              (click)="origen.set('propio')"
-            >
-              Uno propio
-            </button>
-          </div>
-          @if (origen() === 'catalogo') {
-            <ul class="space-y-2">
-              @for (pr of programas(); track pr.id) {
-                <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
-                  <p class="font-semibold text-gray-900 dark:text-white">{{ pr.fuente_titulo }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ fuenteTexto(pr) }} · {{ pr.descripcion }}
-                  </p>
-                  <ul class="text-xs text-gray-600 dark:text-gray-300 list-disc pl-4">
-                    @for (y of pr.proyectos; track y.clave) {
-                      <li>
-                        {{ y.titulo }} <span class="text-gray-400">· {{ y.detalle }}</span>
-                      </li>
-                    }
-                  </ul>
-                  <div class="flex justify-end gap-2">
-                    <p-button
-                      label="Cancelar"
-                      variant="outlined"
-                      severity="secondary"
-                      (onClick)="cerrarFormulario()"
-                    />
-                    <p-button
-                      label="Empezar este"
-                      icon="pi pi-play"
-                      [loading]="guardando()"
-                      (onClick)="empezarPrograma(pr)"
-                    />
-                  </div>
-                </li>
-              } @empty {
-                <li class="text-sm text-gray-500 dark:text-gray-400">Cargando el catálogo…</li>
-              }
-            </ul>
-          } @else {
-            <form
-              [formGroup]="formProceso"
-              (ngSubmit)="guardarProceso()"
-              class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
-            >
-              <div class="flex flex-col gap-1">
-                <label for="cr-ptitulo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                  >¿Qué proceso vas a llevar?</label
-                >
-                <input
-                  pInputText
-                  id="cr-ptitulo"
-                  formControlName="titulo"
-                  maxlength="140"
-                  class="w-full"
-                />
-              </div>
-              <fieldset class="flex flex-col gap-1">
-                <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Con base en
-                </legend>
-                <div class="flex flex-wrap gap-2" role="radiogroup">
-                  @for (f of fuentes; track f.id) {
-                    <button
-                      type="button"
-                      role="radio"
-                      [attr.aria-checked]="formProceso.controls.fuente.value === f.id"
-                      class="px-3 py-1.5 rounded-full text-sm border transition-colors"
-                      [class]="
-                        formProceso.controls.fuente.value === f.id
-                          ? 'bg-guerrero-red text-white border-guerrero-red'
-                          : 'border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-200'
-                      "
-                      (click)="formProceso.controls.fuente.setValue(f.id)"
-                    >
-                      {{ f.label }}
-                    </button>
+          <ul class="space-y-2">
+            @for (pr of programas(); track pr.id) {
+              <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+                <p class="font-semibold text-gray-900 dark:text-white">{{ pr.fuente_titulo }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ fuenteTexto(pr) }} · {{ pr.descripcion }}
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-300 list-disc pl-4">
+                  @for (y of pr.proyectos; track y.clave) {
+                    <li>
+                      {{ y.titulo }} <span class="text-gray-400">· {{ y.detalle }}</span>
+                    </li>
                   }
+                </ul>
+                <div class="flex justify-end gap-2">
+                  <p-button
+                    label="Cancelar"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="cerrarFormulario()"
+                  />
+                  <p-button
+                    label="Empezar este"
+                    icon="pi pi-play"
+                    [loading]="guardando()"
+                    (onClick)="empezarPrograma(pr)"
+                  />
                 </div>
-              </fieldset>
-              <div class="flex flex-col gap-1">
-                <label for="cr-fuente" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                  >Nombre del libro, curso o mentor
-                  <span class="text-xs font-normal text-gray-400">opcional</span></label
-                >
-                <input
-                  pInputText
-                  id="cr-fuente"
-                  formControlName="fuente_titulo"
-                  maxlength="160"
-                  class="w-full"
-                />
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="cr-autor" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                  >Autor <span class="text-xs font-normal text-gray-400">opcional</span></label
-                >
-                <input
-                  pInputText
-                  id="cr-autor"
-                  formControlName="autor"
-                  maxlength="120"
-                  class="w-full"
-                />
-              </div>
-              <div class="flex justify-end gap-2">
-                <p-button
-                  label="Cancelar"
-                  variant="outlined"
-                  severity="secondary"
-                  (onClick)="cerrarFormulario()"
-                />
-                <p-button
-                  type="submit"
-                  label="Guardar"
-                  icon="pi pi-check"
-                  [loading]="guardando()"
-                  [disabled]="formProceso.invalid"
-                />
-              </div>
-            </form>
-          }
+              </li>
+            } @empty {
+              <li class="text-sm text-gray-500 dark:text-gray-400">Cargando el catálogo…</li>
+            }
+          </ul>
         }
 
         @if (procesos().length) {
@@ -345,7 +231,7 @@
           </ul>
         } @else if (formulario() !== 'proceso') {
           <p class="text-sm text-gray-600 dark:text-gray-300 text-center py-8">
-            Aún no hay procesos en esta área.
+            Aún no llevas ningún programa en esta área.
           </p>
         }
 
@@ -388,65 +274,7 @@
 
         <div class="flex items-center justify-between gap-3">
           <h3 class="font-semibold text-gray-900 dark:text-white">Proyectos</h3>
-          @if (formulario() !== 'proyecto') {
-            <p-button
-              icon="pi pi-plus"
-              label="Proyecto"
-              size="small"
-              (onClick)="abrirFormulario('proyecto')"
-            />
-          }
         </div>
-
-        @if (formulario() === 'proyecto') {
-          <form
-            [formGroup]="formProyecto"
-            (ngSubmit)="guardarProyecto()"
-            class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
-          >
-            <div class="flex flex-col gap-1">
-              <label for="cr-yt" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                >Nombre del proyecto</label
-              >
-              <input
-                pInputText
-                id="cr-yt"
-                formControlName="titulo"
-                maxlength="140"
-                class="w-full"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label for="cr-yd" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                >De dónde sale
-                <span class="text-xs font-normal text-gray-400">opcional</span></label
-              >
-              <input
-                pInputText
-                id="cr-yd"
-                formControlName="detalle"
-                maxlength="300"
-                placeholder="Ej. Capítulo 2 · Paso 1"
-                class="w-full"
-              />
-            </div>
-            <div class="flex justify-end gap-2">
-              <p-button
-                label="Cancelar"
-                variant="outlined"
-                severity="secondary"
-                (onClick)="cerrarFormulario()"
-              />
-              <p-button
-                type="submit"
-                label="Guardar"
-                icon="pi pi-check"
-                [loading]="guardando()"
-                [disabled]="formProyecto.invalid"
-              />
-            </div>
-          </form>
-        }
 
         @if (proyectos().length) {
           <ul class="space-y-2">
@@ -486,9 +314,9 @@
               </li>
             }
           </ul>
-        } @else if (formulario() !== 'proyecto') {
+        } @else {
           <p class="text-sm text-gray-600 dark:text-gray-300 text-center py-8">
-            Aún no hay proyectos en este proceso.
+            Este programa no tiene actividades.
           </p>
         }
 
@@ -622,31 +450,6 @@
               <p class="text-sm text-gray-500 dark:text-gray-400">Aún no has dejado notas.</p>
             }
           </section>
-
-          <div class="flex items-center gap-3 pt-2">
-            @if (confirmarBorrar()) {
-              <p class="text-xs text-gray-600 dark:text-gray-300">
-                Se borra el proyecto con sus notas.
-              </p>
-              <p-button label="Borrar" severity="danger" size="small" (onClick)="borrar()" />
-              <p-button
-                label="No"
-                variant="text"
-                severity="secondary"
-                size="small"
-                (onClick)="confirmarBorrar.set(false)"
-              />
-            } @else {
-              <p-button
-                label="Borrar proyecto"
-                icon="pi pi-trash"
-                variant="text"
-                severity="secondary"
-                size="small"
-                (onClick)="confirmarBorrar.set(true)"
-              />
-            }
-          </div>
         }
       }
     }

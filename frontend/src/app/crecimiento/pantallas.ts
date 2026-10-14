@@ -6,5 +6,7 @@ import { Type } from '@angular/core';
  * muestra como libre.
  */
 export const PANTALLAS: Record<string, () => Promise<Type<unknown>>> = {
+  taller_creencias: () =>
+    import('./taller-creencias/taller-creencias').then((m) => m.TallerCreencias),
   diario_gastos: () => import('./diario-gastos/diario-gastos').then((m) => m.DiarioGastos),
 };
