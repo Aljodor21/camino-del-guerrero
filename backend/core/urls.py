@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/nutricion/', include('nutricion.urls')),
     path('api/agenda/', include('agenda.urls')),
     path('api/auditoria/', include('auditoria.urls')),
+    path('api/crecimiento/', include('crecimiento.urls')),
 ]

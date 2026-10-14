@@ -37,6 +37,11 @@ export const routes: Routes = [
         loadComponent: () => import('./rutinas/rutinas').then((m) => m.Rutinas),
       },
       {
+        path: 'crecimiento',
+        canActivate: [userGuard],
+        loadComponent: () => import('./crecimiento/crecimiento').then((m) => m.Crecimiento),
+      },
+      {
         path: 'progreso',
         canActivate: [userGuard],
         loadComponent: () => import('./progreso/progreso').then((m) => m.Progreso),

@@ -1,0 +1,82 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+import {
+  AreaCrecimiento,
+  NotaCrecimiento,
+  ProcesoCrecimiento,
+  ProcesoPayload,
+  ProyectoCrecimiento,
+  ProyectoPayload,
+  ResumenCrecimiento,
+} from '../models/crecimiento.model';
+import { environment } from '../../../environments/environment';
+
+const API = `${environment.apiUrl}/crecimiento`;
+
+/** Crecimiento personal: áreas, procesos (con su fuente), proyectos y notas de cada persona. */
+@Injectable({ providedIn: 'root' })
+export class CrecimientoService {
+  private http = inject(HttpClient);
+
+  areas(): Observable<AreaCrecimiento[]> {
+    return this.http.get<AreaCrecimiento[]>(`${API}/areas/`);
+  }
+  crearArea(nombre: string): Observable<AreaCrecimiento> {
+    return this.http.post<AreaCrecimiento>(`${API}/areas/`, { nombre });
+  }
+  renombrarArea(id: number, nombre: string): Observable<AreaCrecimiento> {
+    return this.http.patch<AreaCrecimiento>(`${API}/areas/${id}/`, { nombre });
+  }
+  borrarArea(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/areas/${id}/`);
+  }
+
+  procesos(area: number): Observable<ProcesoCrecimiento[]> {
+    return this.http.get<ProcesoCrecimiento[]>(`${API}/procesos/`, {
+      params: { area: String(area) },
+    });
+  }
+  crearProceso(datos: ProcesoPayload): Observable<ProcesoCrecimiento> {
+    return this.http.post<ProcesoCrecimiento>(`${API}/procesos/`, datos);
+  }
+  actualizarProceso(id: number, datos: ProcesoPayload): Observable<ProcesoCrecimiento> {
+    return this.http.patch<ProcesoCrecimiento>(`${API}/procesos/${id}/`, datos);
+  }
+  borrarProceso(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/procesos/${id}/`);
+  }
+
+  proyectos(proceso: number): Observable<ProyectoCrecimiento[]> {
+    return this.http.get<ProyectoCrecimiento[]>(`${API}/proyectos/`, {
+      params: { proceso: String(proceso) },
+    });
+  }
+  crearProyecto(datos: ProyectoPayload): Observable<ProyectoCrecimiento> {
+    return this.http.post<ProyectoCrecimiento>(`${API}/proyectos/`, datos);
+  }
+  actualizarProyecto(id: number, datos: ProyectoPayload): Observable<ProyectoCrecimiento> {
+    return this.http.patch<ProyectoCrecimiento>(`${API}/proyectos/${id}/`, datos);
+  }
+  borrarProyecto(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/proyectos/${id}/`);
+  }
+
+  notas(proyecto: number): Observable<NotaCrecimiento[]> {
+    return this.http.get<NotaCrecimiento[]>(`${API}/notas/`, {
+      params: { proyecto: String(proyecto) },
+    });
+  }
+  crearNota(proyecto: number, texto: string, titulo = ''): Observable<NotaCrecimiento> {
+    return this.http.post<NotaCrecimiento>(`${API}/notas/`, { proyecto, texto, titulo });
+  }
+  borrarNota(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/notas/${id}/`);
+  }
+
+  /** Lo que la app principal puede traer: avance por área y las últimas notas. */
+  resumen(): Observable<ResumenCrecimiento> {
+    return this.http.get<ResumenCrecimiento>(`${API}/resumen/`);
+  }
+}

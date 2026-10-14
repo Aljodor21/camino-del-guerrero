@@ -220,6 +220,7 @@ export class Layout implements OnInit, OnDestroy {
       ...(p?.incluye_entrenamiento
         ? [{ path: '/rutinas', icon: 'pi pi-bolt', label: 'Rutinas' }]
         : []),
+      { path: '/crecimiento', icon: 'pi pi-compass', label: 'Crecimiento' },
       { path: '/progreso', icon: 'pi pi-chart-line', label: 'Progreso' },
       { path: '/recomendaciones', icon: 'pi pi-play-circle', label: 'Consejos' },
       { path: '/perfil', icon: 'pi pi-user', label: 'Perfil' },
