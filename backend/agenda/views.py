@@ -213,10 +213,11 @@ class CapituloView(APIView):
 
 
 class RegistrarLevantarView(APIView):
-    """«Me levanté»: anota la hora de ahora para el promedio de sueño. Es un valor y no se cambia."""
+    """«Me levanté»: anota la hora de ahora (desde 2 h antes hasta 2 h después de la prevista). Solo si no se
+    anotó a tiempo se acepta `hora`, una vez: es la única vez que se dice una hora."""
 
     def post(self, request):
-        registro = notificaciones.registrar_levantar(request.user)
+        registro = notificaciones.registrar_levantar(request.user, request.data.get('hora'))
         return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
 
 
@@ -225,6 +226,18 @@ class RegistrarDormirView(APIView):
 
     def post(self, request):
         registro = notificaciones.registrar_dormir(request.user)
+        return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
+
+
+class IniciarSiestaView(APIView):
+    def post(self, request):
+        registro = notificaciones.iniciar_siesta(request.user)
+        return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
+
+
+class TerminarSiestaView(APIView):
+    def post(self, request):
+        registro = notificaciones.terminar_siesta(request.user)
         return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
 
 

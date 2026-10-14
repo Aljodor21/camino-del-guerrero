@@ -157,6 +157,8 @@ class RegistroHabito(models.Model):
         ('toma',   'Toma de suplemento'),
         ('dormir', 'Se acostó'),
         ('levantar', 'Se levantó'),
+        ('siesta_inicio', 'Empezó una siesta'),
+        ('siesta_fin', 'Terminó una siesta'),
     ]
 
     usuario      = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='registros_habito')
