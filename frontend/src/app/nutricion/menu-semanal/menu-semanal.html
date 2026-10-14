@@ -88,84 +88,206 @@
       </p>
     }
 
-    @for (c of comidas(); track c.id) {
-      <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
-        <header class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-guerrero-red">
-              {{ c.tiempo_nombre }}
-            </h3>
-            @if (c.nombre) {
-              <p class="font-semibold text-gray-900 dark:text-white">{{ c.nombre }}</p>
-            }
-          </div>
-          @if (c.por_fuera) {
-            <span
-              class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
-              >Por fuera</span
-            >
-          } @else if (c.cambiada) {
-            <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">Cambiada</span>
-          }
-        </header>
-
-        @if (c.por_fuera) {
-          <div class="space-y-1.5">
-            <p class="text-sm text-gray-600 dark:text-gray-300">Pide algo que tenga:</p>
-            <ul class="space-y-1">
-              @for (r of c.requerido; track r.grupo) {
-                <li class="text-sm">
-                  <span class="font-medium text-gray-900 dark:text-white">{{
-                    porcionesDe(r.grupo, r.porciones)
-                  }}</span>
-                  @if (r.ejemplo) {
-                    <span class="text-gray-500 dark:text-gray-400"> · ej. {{ r.ejemplo }}</span>
-                  }
-                </li>
+    @if (avance(); as a) {
+      @if (a.total) {
+        <section
+          class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 flex items-center gap-4"
+          aria-label="Cómo va el día"
+        >
+          <app-anillo [porcentaje]="a.porcentaje" [tamano]="92" />
+          <div class="min-w-0 flex-1 space-y-1">
+            <p class="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+              @if (!a.puedeContar) {
+                {{ a.total }} {{ a.total === 1 ? 'comida' : 'comidas' }}
+              } @else {
+                {{ diaSeleccionado() === hoy ? 'Vamos' : 'Cumpliste' }}
+                {{ a.hechas }} de {{ a.total }}
               }
-            </ul>
-          </div>
-        } @else {
-          <ul class="divide-y divide-gray-100 dark:divide-dark-700 -my-1">
-            @for (comp of c.componentes; track comp.id) {
-              <li class="flex items-baseline justify-between gap-3 py-1.5">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ comp.alimento }}
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ comp.cantidad }}</p>
-                </div>
-                @if (comp.gramos && !comp.cantidad.endsWith(' g')) {
-                  <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums"
-                    >{{ comp.gramos }} g</span
-                  >
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              @if (!a.puedeContar) {
+                Se cuentan cuando llegue el día.
+              } @else if (a.hechas === a.total) {
+                {{ diaSeleccionado() === hoy ? 'Día de comida completo.' : 'Día completo.' }}
+              } @else if (siguiente(); as s) {
+                Sigue: <strong>{{ s.tiempo_nombre }}</strong>
+                @if (horas()[s.tiempo]) {
+                  · {{ formatearHora(horas()[s.tiempo]) }}
                 }
-              </li>
-            }
-          </ul>
-        }
-
-        @for (s of c.suplementos; track s.id) {
-          <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-            <i class="pi pi-box text-gray-400" aria-hidden="true"></i>
-            <span
-              ><span class="font-medium">{{ s.nombre }}</span>
-              <span class="text-gray-500 dark:text-gray-400"> {{ reemplazoTexto(s) }}</span></span
-            >
-          </p>
-        }
-
-        <footer class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1">
-          <button
-            type="button"
-            class="text-sm font-semibold text-guerrero-red py-1 rounded hover:underline underline-offset-2"
-            (click)="abrirCambio(c)"
-          >
-            No puedo con esta comida
-          </button>
-        </footer>
-      </article>
+              } @else {
+                Cuenta lo que ya comiste con «Ya comí».
+              }
+            </p>
+          </div>
+          <app-guerrero
+            class="shrink-0"
+            [estado]="a.puedeContar && a.hechas === a.total ? 'celebra' : 'firme'"
+            [tamano]="64"
+          />
+        </section>
+      }
     }
+
+    <ol class="relative" aria-label="Comidas del día">
+      @for (c of comidas(); track c.id; let primera = $first; let ultima = $last) {
+        @let hecha = avance().porTiempo.has(c.tiempo);
+        @let ahora = siguiente()?.id === c.id;
+        @let abierta = abiertas().includes(c.id) || (ahora && !cerradas().includes(c.id));
+        <li class="relative pl-11 pb-3">
+          <!-- La línea del día y su punto -->
+          <span
+            class="absolute left-[15px] w-0.5 bg-gray-200 dark:bg-dark-700"
+            [class.top-0]="!primera"
+            [class.top-5]="primera"
+            [class.bottom-0]="!ultima"
+            [class.bottom-auto]="ultima"
+            [class.h-5]="ultima"
+            [class.bg-emerald-500]="hecha"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="absolute left-0 top-3 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+            [class]="
+              hecha
+                ? 'nodo-hecho bg-emerald-500 text-white'
+                : ahora
+                  ? 'nodo-ahora bg-guerrero-red text-white'
+                  : 'bg-white dark:bg-dark-800 border-2 border-gray-300 dark:border-dark-600 text-gray-400'
+            "
+            aria-hidden="true"
+          >
+            <i [class]="hecha ? 'pi pi-check' : ahora ? 'pi pi-clock' : 'pi pi-circle'"></i>
+          </span>
+
+          <article
+            class="rounded-xl bg-white dark:bg-dark-800 shadow-sm transition-shadow"
+            [class.ring-2]="ahora"
+            [class.ring-guerrero-red]="ahora"
+          >
+            <button
+              type="button"
+              class="w-full flex items-start justify-between gap-3 p-4 text-left rounded-xl focus-visible:outline-2 focus-visible:outline-guerrero-red"
+              [attr.aria-expanded]="abierta"
+              (click)="alternar(c.id, abierta)"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs font-semibold uppercase tracking-wide text-guerrero-red">
+                  {{ c.tiempo_nombre }}
+                  @if (horas()[c.tiempo]) {
+                    <span class="text-gray-500 dark:text-gray-400 normal-case tracking-normal">
+                      · {{ formatearHora(horas()[c.tiempo]) }}</span
+                    >
+                  }
+                </span>
+                @if (c.nombre) {
+                  <span class="block font-semibold text-gray-900 dark:text-white">{{
+                    c.nombre
+                  }}</span>
+                }
+              </span>
+              <span class="shrink-0 flex items-center gap-2">
+                @if (hecha) {
+                  <span
+                    class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300"
+                    >Contada · {{ avance().porTiempo.get(c.tiempo) }}%</span
+                  >
+                } @else if (c.por_fuera) {
+                  <span
+                    class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
+                    >Por fuera</span
+                  >
+                } @else if (c.cambiada) {
+                  <span class="text-xs text-gray-400 dark:text-gray-500">Cambiada</span>
+                }
+                <i
+                  class="pi text-xs text-gray-400 transition-transform"
+                  [class.pi-chevron-down]="!abierta"
+                  [class.pi-chevron-up]="abierta"
+                  aria-hidden="true"
+                ></i>
+              </span>
+            </button>
+
+            @if (abierta) {
+              <div class="px-4 pb-4 space-y-3 detalle-comida">
+                @if (c.por_fuera) {
+                  <div class="space-y-1.5">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Pide algo que tenga:</p>
+                    <ul class="space-y-1">
+                      @for (r of c.requerido; track r.grupo) {
+                        <li class="text-sm">
+                          <span class="font-medium text-gray-900 dark:text-white">{{
+                            porcionesDe(r.grupo, r.porciones)
+                          }}</span>
+                          @if (r.ejemplo) {
+                            <span class="text-gray-500 dark:text-gray-400">
+                              · ej. {{ r.ejemplo }}</span
+                            >
+                          }
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                } @else {
+                  <ul class="divide-y divide-gray-100 dark:divide-dark-700 -my-1">
+                    @for (comp of c.componentes; track comp.id) {
+                      <li class="flex items-baseline justify-between gap-3 py-1.5">
+                        <div class="min-w-0">
+                          <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ comp.alimento }}
+                          </p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ comp.cantidad }}
+                          </p>
+                        </div>
+                        @if (comp.gramos && !comp.cantidad.endsWith(' g')) {
+                          <span
+                            class="shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums"
+                            >{{ comp.gramos }} g</span
+                          >
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @for (s of c.suplementos; track s.id) {
+                  <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                    <i class="pi pi-box text-gray-400" aria-hidden="true"></i>
+                    <span
+                      ><span class="font-medium">{{ s.nombre }}</span>
+                      <span class="text-gray-500 dark:text-gray-400">
+                        {{ reemplazoTexto(s) }}</span
+                      ></span
+                    >
+                  </p>
+                }
+
+                <footer
+                  class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1 flex flex-wrap items-center gap-x-4"
+                >
+                  @if (avance().puedeContar && !avance().porTiempo.has(c.tiempo)) {
+                    <a
+                      routerLink="/comidas/contar"
+                      [queryParams]="{ tiempo: c.tiempo, fecha: c.fecha }"
+                      class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 py-1 underline underline-offset-2"
+                      >Ya comí</a
+                    >
+                  }
+                  <button
+                    type="button"
+                    class="text-sm font-semibold text-guerrero-red py-1 rounded hover:underline underline-offset-2"
+                    (click)="abrirCambio(c)"
+                  >
+                    No puedo con esta comida
+                  </button>
+                </footer>
+              </div>
+            }
+          </article>
+        </li>
+      }
+    </ol>
 
     <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
       <p class="text-xs text-gray-500 dark:text-gray-400">
