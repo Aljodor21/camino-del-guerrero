@@ -61,7 +61,8 @@ Commit messages are in Spanish and carry only the author's own name — do **not
 
 `django-expert` (models, DRF, ORM), `db-schema-conventions` + `postgresql-database-engineering` (schema/migrations), `ui-design-quality` (Angular + PrimeNG + Tailwind screens), `post-sprint-review` (after long AI-coding sessions), `pre-deploy-security-checklist` (before deploying).
 
-**Contar una comida antes del aviso:** `GET /api/agenda/hoy/` trae `comidas` (las del plan de hoy, con su hora y si ya se contaron) y «Tu día» las lista con «Ya comí», que abre `/comidas/contar`; contar antes de la hora del aviso resuelve el aviso cuando llega.
 ## Proteína con su comida, horas por día y repeticiones
 
 Una toma que reemplaza algo de su comida (`toma.reemplaza` no vacío, comida del plan) sale del aviso con `datos.unida`: sin botón de confirmar (`accion_de` vacío, `confirmar` la rechaza) y lleva a `/comidas/contar`, donde la misma pantalla pregunta por la proteína (`tomas`), por el resto de la comida y pide una sola foto; `notificaciones.registrar_tomas_de_comida` guarda la toma y cierra su aviso en la misma transacción. Las horas de levantarse y acostarse son **una general o una por cada día** (`Habitos.horas_semana` vacío o con los siete días completos; el serializador lo exige) y la pantalla bloquea la que no se usa. Los recordatorios de la agenda se pueden repetir al crearlos (`repetir`: dia/semana/mes y `veces`, hasta 60 y dos años): cada repetición es un recordatorio propio que comparte `serie`; se borra uno o «este y los siguientes» (`?siguientes=1`).
+
+**Contar una comida antes del aviso:** `GET /api/agenda/hoy/` trae `comidas` (las del plan de hoy, con su hora y si ya se contaron) y «Tu día» las lista con «Ya comí», que abre `/comidas/contar`; contar antes de la hora del aviso resuelve el aviso cuando llega.
