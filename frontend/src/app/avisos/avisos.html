@@ -220,6 +220,37 @@
             </div>
           }
 
+          @if (h.comidas.length) {
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Comidas</p>
+              <ul class="space-y-1.5">
+                @for (c of h.comidas; track c.tiempo) {
+                  <li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <i
+                      [class]="
+                        c.contada
+                          ? 'pi pi-check-circle text-green-600'
+                          : 'pi pi-circle text-gray-400'
+                      "
+                      aria-hidden="true"
+                    ></i>
+                    <span class="flex-1">{{ c.nombre }} · {{ hora(c.hora) }}</span>
+                    @if (c.contada) {
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Contada</span>
+                    } @else {
+                      <a
+                        routerLink="/comidas/contar"
+                        [queryParams]="{ tiempo: c.tiempo, fecha: h.fecha }"
+                        class="text-sm font-semibold text-guerrero-red underline"
+                        >Ya comí</a
+                      >
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           @if (h.tomas.length) {
             <div class="space-y-2">
               <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Proteína</p>
@@ -497,7 +528,13 @@
             </div>
           </div>
 
-          @if (!h.agua.meta && !h.tomas.length && !h.entreno.toca && !h.dormir.hora) {
+          @if (
+            !h.agua.meta &&
+            !h.comidas.length &&
+            !h.tomas.length &&
+            !h.entreno.toca &&
+            !h.dormir.hora
+          ) {
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Aún no hay nada programado. Configura tu agua y tu hora de dormir abajo.
             </p>

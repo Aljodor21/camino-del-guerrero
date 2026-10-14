@@ -93,6 +93,8 @@ export interface ResumenHoy {
     registros: VasoTomado[];
   };
   tomas: TomaDeHoy[];
+  /** Las comidas del plan de hoy y si ya se contaron. */
+  comidas: { tiempo: string; nombre: string; hora: string; contada: boolean }[];
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };
   /** A qué hora se levantó hoy (si ya lo anotó) y cuánto durmió anoche. */

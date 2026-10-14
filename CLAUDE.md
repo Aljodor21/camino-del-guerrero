@@ -60,3 +60,5 @@ Commit messages are in Spanish and carry only the author's own name — do **not
 ## Relevant skills (installed, auto-activate)
 
 `django-expert` (models, DRF, ORM), `db-schema-conventions` + `postgresql-database-engineering` (schema/migrations), `ui-design-quality` (Angular + PrimeNG + Tailwind screens), `post-sprint-review` (after long AI-coding sessions), `pre-deploy-security-checklist` (before deploying).
+
+**Contar una comida antes del aviso:** `GET /api/agenda/hoy/` trae `comidas` (las del plan de hoy, con su hora y si ya se contaron) y «Tu día» las lista con «Ya comí», que abre `/comidas/contar`; contar antes de la hora del aviso resuelve el aviso cuando llega.

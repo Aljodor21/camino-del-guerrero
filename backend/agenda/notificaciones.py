@@ -505,6 +505,7 @@ def resumen_de_hoy(usuario):
                  'ml_total': sum(r.ml or VASO_ML for r in vasos),
                  'registros': [{'momento': r.momento, 'ml': r.ml or VASO_ML} for r in vasos]},
         'tomas': tomas,
+        'comidas': _comidas_de_hoy(usuario, habitos, hoy),
         'entreno': {'toca': toca_entreno,
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},
         'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None},
@@ -518,6 +519,18 @@ def resumen_de_hoy(usuario):
         'horario': {'hoy': {**_en_texto(horas_hoy)},
                     'manana': {**_en_texto(horarios.horas_de(habitos, hoy + timedelta(days=1)))}},
     }
+
+
+def _comidas_de_hoy(usuario, habitos, hoy):
+    """Las comidas del plan de hoy con su hora y si ya se contaron: así se puede contar una antes del aviso."""
+    minuta = minutas.vigente_de(usuario)
+    if minuta is None:
+        return []
+    tiempos = list(minuta.tiempos())
+    horas = horarios.horas_de_comidas(habitos, hoy, tiempos)
+    contadas = set(RegistroComida.objects.filter(usuario=usuario, fecha=hoy).values_list('tiempo', flat=True))
+    return [{'tiempo': t, 'nombre': NOMBRE_TIEMPO[t], 'hora': horas[t].isoformat('minutes'),
+             'contada': t in contadas} for t in tiempos]
 
 
 def _en_texto(horas):
