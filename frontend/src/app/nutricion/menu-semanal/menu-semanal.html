@@ -88,6 +88,41 @@
       </p>
     }
 
+    @if (avance(); as a) {
+      @if (a.puedeContar && a.total) {
+        <section
+          class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2"
+          aria-label="Cómo vamos"
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <p class="font-semibold text-gray-900 dark:text-white">
+              {{ diaSeleccionado() === hoy ? 'Vamos' : 'Cumpliste' }}
+              {{ a.hechas }} de {{ a.total }}
+              {{ a.total === 1 ? 'comida' : 'comidas' }}
+            </p>
+            @if (a.porcentaje !== null) {
+              <span
+                class="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400"
+                >{{ a.porcentaje }}%</span
+              >
+            }
+          </div>
+          <div
+            class="h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden"
+            role="progressbar"
+            [attr.aria-valuenow]="a.hechas"
+            aria-valuemin="0"
+            [attr.aria-valuemax]="a.total"
+          >
+            <div
+              class="h-full rounded-full bg-emerald-500 transition-[width] duration-500"
+              [style.width.%]="(a.hechas / a.total) * 100"
+            ></div>
+          </div>
+        </section>
+      }
+    }
+
     @for (c of comidas(); track c.id) {
       <article class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-4 space-y-3">
         <header class="flex items-start justify-between gap-3">
@@ -99,7 +134,17 @@
               <p class="font-semibold text-gray-900 dark:text-white">{{ c.nombre }}</p>
             }
           </div>
-          @if (c.por_fuera) {
+          @if (avance().porTiempo.get(c.tiempo); as p) {
+            <span
+              class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300"
+              ><i class="pi pi-check" aria-hidden="true"></i>Contada · {{ p }}%</span
+            >
+          } @else if (avance().porTiempo.has(c.tiempo)) {
+            <span
+              class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300"
+              ><i class="pi pi-check" aria-hidden="true"></i>Contada · 0%</span
+            >
+          } @else if (c.por_fuera) {
             <span
               class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
               >Por fuera</span
@@ -155,7 +200,17 @@
           </p>
         }
 
-        <footer class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1">
+        <footer
+          class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1 flex flex-wrap items-center gap-x-4"
+        >
+          @if (avance().puedeContar && !avance().porTiempo.has(c.tiempo)) {
+            <a
+              routerLink="/comidas/contar"
+              [queryParams]="{ tiempo: c.tiempo, fecha: c.fecha }"
+              class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 py-1 underline underline-offset-2"
+              >Ya comí</a
+            >
+          }
           <button
             type="button"
             class="text-sm font-semibold text-guerrero-red py-1 rounded hover:underline underline-offset-2"

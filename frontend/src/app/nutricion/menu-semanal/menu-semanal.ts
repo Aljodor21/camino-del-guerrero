@@ -13,6 +13,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
+import { RouterLink } from '@angular/router';
+
+import { ComidasService } from '../../core/services/comidas';
+import { RegistroComida } from '../../core/models/comidas.model';
 import { MenuService } from '../../core/services/menu';
 import {
   ComidaMenu,
@@ -46,6 +50,7 @@ import { Ayuda } from '../../shared/ayuda/ayuda';
   templateUrl: './menu-semanal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    RouterLink,
     Ayuda,
     ButtonModule,
     DialogModule,
@@ -56,6 +61,9 @@ import { Ayuda } from '../../shared/ayuda/ayuda';
 })
 export class MenuSemanal implements OnInit {
   protected servicio = inject(MenuService);
+  private contadas = inject(ComidasService);
+  /** Lo que ya se contó de la semana que se ve. */
+  protected registros = signal<RegistroComida[]>([]);
 
   protected motivos = MOTIVOS_CAMBIO;
   protected porcionesDe = porcionesDe;
@@ -66,6 +74,7 @@ export class MenuSemanal implements OnInit {
 
   private semanaActual = lunesDe(hoyISO());
   protected semana = signal(this.semanaActual);
+  protected hoy = hoyISO();
   protected diaSeleccionado = signal(hoyISO());
   protected cargando = signal(true);
   protected armando = signal(false);
@@ -93,6 +102,31 @@ export class MenuSemanal implements OnInit {
   protected comidas = computed(() =>
     (this.servicio.menu()?.comidas ?? []).filter((c) => c.fecha === this.diaSeleccionado()),
   );
+  /** De cada comida del día que se ve: su registro, si ya se contó, y cuánto de lo pedido se comió. */
+  protected avance = computed(() => {
+    const dia = this.diaSeleccionado();
+    const delDia = this.registros().filter((r) => r.fecha === dia);
+    const porTiempo = new Map(
+      delDia.map((r) => {
+        const g = Object.values(r.grupos ?? {});
+        const pedido = g.reduce((s, x) => s + (x?.pedido ?? 0), 0);
+        const comido = g.reduce((s, x) => s + (x?.comido ?? 0), 0);
+        return [r.tiempo, pedido ? Math.round((comido / pedido) * 100) : 100] as const;
+      }),
+    );
+    const todas = this.comidas();
+    const hechas = todas.filter((c) => porTiempo.has(c.tiempo)).length;
+    const valores = [...porTiempo.values()];
+    return {
+      porTiempo,
+      hechas,
+      total: todas.length,
+      porcentaje: valores.length
+        ? Math.round(valores.reduce((a, b) => a + b, 0) / valores.length)
+        : null,
+      puedeContar: dia <= hoyISO(),
+    };
+  });
   protected delDia = computed(() =>
     (this.servicio.menu()?.durante_el_dia ?? []).map((p) => porcionesDe(p.grupo, p.porciones)),
   );
@@ -122,6 +156,10 @@ export class MenuSemanal implements OnInit {
   protected cargar(): void {
     this.cargando.set(true);
     this.error.set('');
+    this.contadas.registros(this.semana(), sumarDias(this.semana(), 6)).subscribe({
+      next: (r) => this.registros.set(r),
+      error: () => this.registros.set([]),
+    });
     this.servicio.cargar(this.semana()).subscribe({
       next: (menu) => {
         this.cargando.set(false);

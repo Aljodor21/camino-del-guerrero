@@ -45,6 +45,11 @@ export class ComidasService {
     return this.http.post<RegistroComida>(`${API}/registros/`, cuerpo);
   }
 
+  /** Lo contado entre dos fechas (YYYY-MM-DD). */
+  registros(desde: string, hasta: string): Observable<RegistroComida[]> {
+    return this.http.get<RegistroComida[]>(`${API}/registros/`, { params: { desde, hasta } });
+  }
+
   cumplimiento(periodo: PeriodoCumplimiento): Observable<Cumplimiento> {
     return this.http.get<Cumplimiento>(`${API}/cumplimiento/`, { params: { periodo } });
   }

@@ -27,6 +27,8 @@ export interface RegistroComida {
   tiempo_nombre: string;
   tiene_foto: boolean;
   nota: string;
+  /** Por grupo: lo que pedía la minuta y lo que se comió. */
+  grupos: Partial<Record<GrupoMinuta, { pedido: number; comido: number }>>;
 }
 
 export interface FaltanteComida {
