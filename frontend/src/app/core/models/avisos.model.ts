@@ -102,8 +102,6 @@ export interface ResumenHoy {
     hora: string | null;
     levantado: string | null;
     dormiste_horas: number | null;
-    /** A qué hora se acostó anoche (la última que dijo). */
-    acostado_anoche: string | null;
     /** Minutos antes (−) o después (+) de lo previsto: anoche al acostarte y hoy al levantarte. */
     acostarse_min: number | null;
     levantarse_min: number | null;

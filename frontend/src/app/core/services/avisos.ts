@@ -68,13 +68,13 @@ export class AvisosService {
   }
 
   /** «Me levanté»: anota la hora (una vez al día) para el promedio de sueño. */
-  registrarLevantar(hora?: string): Observable<{ momento: string }> {
-    return this.http.post<{ momento: string }>(`${API}/registros/levantar/`, hora ? { hora } : {});
+  registrarLevantar(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/levantar/`, {});
   }
 
   /** «Me acosté», sin esperar el aviso. */
-  registrarDormir(hora?: string): Observable<{ momento: string }> {
-    return this.http.post<{ momento: string }>(`${API}/registros/dormir/`, hora ? { hora } : {});
+  registrarDormir(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/dormir/`, {});
   }
 
   /** Cambia las horas de levantarse y acostarse de un solo día; con las dos vacías vuelve a lo de siempre. */

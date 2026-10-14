@@ -39,6 +39,8 @@ class Recordatorio(models.Model):
                                           related_name='recordatorios')
     motivo            = models.CharField(max_length=20, choices=MOTIVOS, blank=True)
     completado_en     = models.DateTimeField(null=True, blank=True)
+    # Los que se crearon juntos al repetir un recordatorio comparten la serie.
+    serie             = models.UUIDField(null=True, blank=True, db_index=True)
     fecha_creacion    = models.DateTimeField(auto_now_add=True)
 
     objects = RecordatorioQuerySet.as_manager()

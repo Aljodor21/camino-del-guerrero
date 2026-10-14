@@ -19,6 +19,8 @@ export interface Recordatorio {
   automatico: boolean;
   suplemento: number | null;
   motivo: MotivoSugerido | '';
+  /** Los que se crearon juntos al repetirlo comparten la serie. */
+  serie: string | null;
 }
 
 export interface RecordatorioPayload {
@@ -28,4 +30,7 @@ export interface RecordatorioPayload {
   hora: string | null;
   nota: string;
   avisar_dias_antes: number;
+  /** Solo al crear: repetirlo cada día, semana o mes, `veces` en total. */
+  repetir?: 'dia' | 'semana' | 'mes';
+  veces?: number;
 }

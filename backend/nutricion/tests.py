@@ -990,6 +990,19 @@ class MinutaYMenuTest(APITestCase):
         with self.assertRaises(DatoInmutableError):
             registro.save()
 
+    def test_lo_de_antes_de_empezar_el_reto_no_cuenta_como_sin_contar(self, ai):
+        from datetime import timedelta
+        from .models import Minuta
+        ai.return_value.proponer_menu.side_effect = Exception('sin IA')
+        self.subir_y_confirmar()
+        # La minuta se cargó hace 3 días, pero el reto empieza hoy.
+        Minuta.objects.update(fecha_creacion=timezone.now() - timedelta(days=3))
+        Proceso.objects.filter(pk=self.proceso.pk).update(fecha_inicio=self.hoy)
+        c = self.client.get(reverse('cumplimiento'),
+                            {'desde': (self.hoy - timedelta(days=3)).isoformat(), 'hasta': self.hoy.isoformat()}).data
+        self.assertEqual(c['desde'], self.hoy)
+        self.assertTrue(all(s['fecha'] >= self.hoy for s in c['sin_contar']))
+
     def test_la_foto_de_la_comida_es_privada_y_se_reduce(self, ai):
         import tempfile
         from io import BytesIO
@@ -1050,3 +1063,39 @@ class MinutaYMenuTest(APITestCase):
         self.assertEqual(avisos['almuerzo'].resolucion, 'automatica')
         avisos['desayuno'].refresh_from_db()
         self.assertIsNone(avisos['desayuno'].resuelta_en)
+
+    def test_la_proteina_que_reemplaza_algo_se_cuenta_con_su_comida(self, ai):
+        from datetime import datetime, time
+        from agenda import notificaciones
+        from agenda.models import Notificacion, RegistroHabito
+        ai.return_value.proponer_menu.side_effect = Exception('sin IA')
+        self.subir_y_confirmar()
+        r = self.client.post(reverse('suplementos'), {
+            'tipo': 'hipercalorico', 'peso_envase_g': 2268, 'porcion_g': 150, 'scoops_porcion': 6,
+            'duracion_confirmada': True,
+            'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {'lacteos': 1}},
+                      {'tiempo': 'algo', 'scoops': 3, 'reemplaza': {}}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        notificaciones.generar(self.usuario, timezone.make_aware(datetime.combine(self.hoy, time(20, 0))))
+        tomas = {n.datos['tiempo']: n for n in Notificacion.objects.filter(tipo='toma')}
+        # La que reemplaza algo va con su comida: sin botón aparte y sin confirmarse a ciegas.
+        self.assertTrue(tomas['onces'].datos['unida'])
+        self.assertNotIn('unida', tomas['algo'].datos)
+        self.assertEqual(notificaciones.accion_de(tomas['onces']), '')
+        self.assertIn('/comidas/contar?tiempo=onces', notificaciones.url_de(tomas['onces']))
+        r = self.client.post(reverse('aviso-confirmar', args=[tomas['onces'].id]))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+
+        pedido = self.client.get(reverse('pedido-comida'), {'tiempo': 'onces'}).data
+        self.assertEqual([(t['scoops'], t['tomada'], t['reemplaza'][0]['grupo']) for t in pedido['tomas']],
+                         [(3, False, 'lacteos')])
+        self.assertNotIn('lacteos', [g['grupo'] for g in pedido['grupos']])
+        grupos = {g['grupo']: 1 for g in pedido['grupos']}
+        r = self.client.post(reverse('registros-comida'), {
+            'tiempo': 'onces', 'avances': grupos, 'tomas': [pedido['tomas'][0]['suplemento']]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        toma = RegistroHabito.objects.get(tipo='toma')
+        self.assertEqual((toma.tiempo, toma.cantidad, toma.notificacion_id), ('onces', 3, tomas['onces'].id))
+        tomas['onces'].refresh_from_db()
+        self.assertEqual(tomas['onces'].resolucion, 'confirmada')
+        self.assertTrue(self.client.get(reverse('pedido-comida'), {'tiempo': 'onces'}).data['tomas'][0]['tomada'])

@@ -108,6 +108,50 @@ export class CumplimientoGlobalVista implements OnInit {
     const primero = this.dias()[0];
     return primero ? Array.from({ length: (fechaLocal(primero.fecha).getDay() + 6) % 7 }) : [];
   });
+  /** La semana en columnas, de lunes a domingo; los días sin datos quedan vacíos. */
+  protected columnasSemana = computed(() => {
+    const { desde } = this.rango();
+    const porFecha = new Map(this.dias().map((d) => [d.fecha, d]));
+    return Array.from({ length: 7 }, (_, i) => {
+      const fecha = sumarDias(desde, i);
+      const dia = porFecha.get(fecha);
+      return {
+        fecha,
+        letra: ['L', 'M', 'M', 'J', 'V', 'S', 'D'][i],
+        porcentaje: dia?.porcentaje ?? null,
+        hoy: fecha === hoyISO(),
+      };
+    });
+  });
+  /** El trimestre en columnas, una por semana, con el promedio de sus días. */
+  protected columnasSemanas = computed(() => {
+    const semanas = new Map<string, number[]>();
+    for (const d of this.dias()) {
+      if (d.porcentaje === null) continue;
+      const f = fechaLocal(d.fecha);
+      const lunes = sumarDias(d.fecha, -((f.getDay() + 6) % 7));
+      semanas.set(lunes, [...(semanas.get(lunes) ?? []), d.porcentaje]);
+    }
+    return [...semanas].map(([lunes, ps]) => ({
+      fecha: lunes,
+      porcentaje: Math.round(ps.reduce((a, b) => a + b, 0) / ps.length),
+      etiqueta: `${fechaLocal(lunes).getDate()}/${fechaLocal(lunes).getMonth() + 1}`,
+    }));
+  });
+  /** Un cuadrito por día con lo que cumplió esa parte: se ve el ritmo, no solo el promedio. */
+  protected tira(bloque: string): { fecha: string; porcentaje: number | null }[] {
+    return this.dias().map((d) => ({
+      fecha: d.fecha,
+      porcentaje: d.bloques.find((b) => b.id === bloque)?.porcentaje ?? null,
+    }));
+  }
+  /** El mejor y el más flojo de los días medidos. */
+  protected extremos = computed(() => {
+    const con = this.dias().filter((d) => d.porcentaje !== null && !d.es_hoy);
+    if (con.length < 2) return null;
+    const orden = [...con].sort((a, b) => b.porcentaje! - a.porcentaje!);
+    return { mejor: orden[0], peor: orden.at(-1)! };
+  });
   /** Dónde se falló, lo más reciente primero. */
   protected fallas = computed(() =>
     [...this.dias()].filter((d) => !d.es_hoy && d.bloques.some((b) => b.faltas.length)).reverse(),
@@ -221,6 +265,10 @@ export class CumplimientoGlobalVista implements OnInit {
 
   protected fecha(iso: string): string {
     return formatearFecha(iso, 'dia');
+  }
+
+  protected max(a: number, b: number): number {
+    return Math.max(a, b);
   }
 
   protected numero(iso: string): number {

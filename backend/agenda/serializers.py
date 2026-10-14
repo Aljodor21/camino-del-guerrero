@@ -1,4 +1,6 @@
-from datetime import timedelta
+import calendar
+import uuid
+from datetime import date, timedelta
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -10,18 +12,35 @@ from . import horarios, notificaciones
 from .models import Habitos, Notificacion, Recordatorio, RegistroHabito
 
 MAX_DIAS_ADELANTE = 730
+MAX_REPETICIONES = 60
+REPETICIONES = [('dia', 'Cada día'), ('semana', 'Cada semana'), ('mes', 'Cada mes')]
+
+
+def _repetida(inicio, cada, n):
+    """La fecha de la repetición número `n` (0 es la primera): cada día, semana o mes (el 31 cae a fin de mes)."""
+    if cada == 'dia':
+        return inicio + timedelta(days=n)
+    if cada == 'semana':
+        return inicio + timedelta(weeks=n)
+    mes = inicio.month - 1 + n
+    anio, mes = inicio.year + mes // 12, mes % 12 + 1
+    return date(anio, mes, min(inicio.day, calendar.monthrange(anio, mes)[1]))
 
 
 class RecordatorioSerializer(serializers.ModelSerializer):
     tipo_nombre = serializers.CharField(source='get_tipo_display', read_only=True)
     completado  = serializers.BooleanField(required=False, write_only=True)
     automatico  = serializers.BooleanField(read_only=True)
+    # Solo al crear: repetirlo cada día, semana o mes, `veces` veces en total (con la primera).
+    repetir     = serializers.ChoiceField(choices=REPETICIONES, required=False, write_only=True)
+    veces       = serializers.IntegerField(min_value=2, max_value=MAX_REPETICIONES, required=False, write_only=True)
 
     class Meta:
         model  = Recordatorio
         fields = ['id', 'tipo', 'tipo_nombre', 'titulo', 'fecha', 'hora', 'nota', 'avisar_dias_antes',
-                  'completado', 'completado_en', 'proceso', 'suplemento', 'motivo', 'automatico']
-        read_only_fields = ['completado_en', 'proceso', 'suplemento', 'motivo']
+                  'completado', 'completado_en', 'proceso', 'suplemento', 'motivo', 'automatico', 'serie',
+                  'repetir', 'veces']
+        read_only_fields = ['completado_en', 'proceso', 'suplemento', 'motivo', 'serie']
         extra_kwargs = {'avisar_dias_antes': {'min_value': 0, 'max_value': 30}}
 
     def validate_titulo(self, titulo):
@@ -43,6 +62,13 @@ class RecordatorioSerializer(serializers.ModelSerializer):
         # Los sugeridos se resuelven con las acciones de su suplemento, que los recalculan.
         if self.instance is not None and self.instance.automatico:
             raise serializers.ValidationError('Este recordatorio se resuelve desde su suplemento.')
+        if bool(attrs.get('repetir')) != bool(attrs.get('veces')):
+            raise serializers.ValidationError('Para repetirlo di cada cuánto y cuántas veces.')
+        if attrs.get('repetir') and self.instance is not None:
+            raise serializers.ValidationError('Solo se puede repetir al crearlo.')
+        if attrs.get('repetir') and (_repetida(attrs['fecha'], attrs['repetir'], attrs['veces'] - 1)
+                                     > timezone.localdate() + timedelta(days=MAX_DIAS_ADELANTE)):
+            raise serializers.ValidationError('La última repetición puede estar máximo a dos años.')
         # Se marca como hecho cuando llega su fecha, no antes.
         if attrs.get('completado'):
             fecha = attrs.get('fecha') or getattr(self.instance, 'fecha', None)
@@ -57,7 +83,18 @@ class RecordatorioSerializer(serializers.ModelSerializer):
         return validated_data
 
     def create(self, validated_data):
-        return super().create(self._aplicar_completado(validated_data))
+        cada, veces = validated_data.pop('repetir', None), validated_data.pop('veces', None)
+        validated_data = self._aplicar_completado(validated_data)
+        if not cada:
+            return super().create(validated_data)
+        # Cada repetición es un recordatorio con su propia fecha; juntos comparten la serie.
+        validated_data['serie'] = uuid.uuid4()
+        primero = None
+        for n in range(veces):
+            r = super().create({**validated_data, 'fecha': _repetida(validated_data['fecha'], cada, n)}
+                               if n else validated_data)
+            primero = primero or r
+        return primero
 
     def update(self, instance, validated_data):
         return super().update(instance, self._aplicar_completado(validated_data))
@@ -112,6 +149,10 @@ class HabitosSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Levantarte y acostarte no pueden ser a la misma hora.')
             if entrada:
                 limpio[dia] = entrada
+        # Una hora por día es todo o nada: si no, unos días mandarían una hora y otros otra.
+        if limpio and not all(set(limpio.get(str(d), {})) == {'levantarse', 'dormir'} for d in range(1, 8)):
+            raise serializers.ValidationError(
+                'Con una hora distinta por día, llena levantarse y acostarse de los siete días.')
         return limpio
 
     def validate_horas_agua(self, valor):

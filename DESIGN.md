@@ -223,5 +223,5 @@ Dentro de la app instalada el botón "Actualizar a la X" no abre el navegador: u
 - **El guerrero no estorba:** se puede **arrastrar** a cualquier lado (se pega al borde izquierdo o derecho y recuerda dónde lo dejaste), se hace a un lado y se atenúa mientras se desplaza la página, y las pantallas dejan espacio abajo para que lo último siempre se pueda tocar. Un toque abre su panel; un arrastre no.
 - **Las horas por día caben en el celular:** cada día de la semana es una tarjetita con «Me levanto» y «Me acuesto» etiquetados, sin salirse de la pantalla.
 - **La semana a medias** (capítulo de Logros) dice «N % de la semana», dividido por los 7 días.
-- **Decir a qué hora fue de verdad:** debajo de «Te levantaste a las…» hay un enlace «¿No fue a esa hora? Corrígela» (o «¿Ya te levantaste hace rato? Di a qué hora» si aún no lo anotaste) que abre «Anoche me acosté» y «Hoy me levanté» con las horas actuales; no deja poner una hora futura. Lo último que digas es lo que cuenta para el sueño, el cumplimiento y las sugerencias; lo anterior no se borra.
+- **La hora es un valor, sin editar:** «Me levanté» y «Ya me acosté» anotan la hora de ese momento y no se pueden cambiar a mano, para no engañarse; el promedio de sueño sale de ahí.
 
