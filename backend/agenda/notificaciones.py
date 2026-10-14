@@ -470,9 +470,11 @@ def registrar_dormir(usuario):
     ya = _la_ultima(usuario, 'dormir', fecha=fecha)
     if ya:
         return ya
-    if not ventana['abierta']:
+    if ventana['estado'] == 'antes':
         raise ReglaNegocioError(
             f'Podrás anotarlo desde las {hora_en_palabras(timezone.localtime(ventana["desde"]).time())}.')
+    if ventana['estado'] == 'cerrada':
+        raise ReglaNegocioError('Ya pasó el rato para anotarlo: esa noche queda sin respuesta.')
     n = (Notificacion.objects.select_for_update()
          .filter(usuario=usuario, tipo='dormir', fecha=fecha, resuelta_en__isnull=True).first())
     if n:
@@ -502,9 +504,8 @@ def iniciar_siesta(usuario):
     _, en_curso = _siestas_de(usuario, hoy)
     if en_curso:
         raise ReglaNegocioError('Ya tienes una siesta en curso.')
-    dormir = ventanas.dormir(habitos_de(usuario), ahora)
-    if dormir['abierta'] or _la_ultima(usuario, 'dormir', fecha=dormir['noche']):
-        raise ReglaNegocioError('Ya empezó tu jornada de dormir: no hay más siestas hoy.')
+    if _en_horas_de_sueno(usuario, habitos_de(usuario), ahora):
+        raise ReglaNegocioError('Estás en tus horas de sueño: la siesta es para fuera de ellas.')
     return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_inicio', fecha=hoy, momento=ahora)
 
 
@@ -518,14 +519,30 @@ def terminar_siesta(usuario):
     return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_fin', fecha=hoy, momento=ahora)
 
 
+def _en_horas_de_sueno(usuario, habitos, ahora):
+    noche = ventanas.noche_de(ahora)
+    return ventanas.en_horas_de_sueno(
+        habitos, ahora, bool(_la_ultima(usuario, 'dormir', fecha=noche)),
+        bool(_la_ultima(usuario, 'levantar', fecha=ahora.date())))
+
+
+def _anoche_sin_respuesta(usuario, habitos, ahora):
+    """Anoche no dijo «ya me acosté» y ya pasó el rato para decirlo (hasta 2 horas antes de levantarse hoy)."""
+    ayer = ahora.date() - timedelta(days=1)
+    if usuario.date_joined.astimezone(ahora.tzinfo).date() > ayer or _la_ultima(usuario, 'dormir', fecha=ayer):
+        return False
+    hoy_levantarse = horarios.horas_de(habitos, ahora.date())['levantarse']
+    return hoy_levantarse is None or ahora > ventanas._momento(ahora.date(), hoy_levantarse) - ventanas.MARGEN
+
+
 def _estado_siesta(usuario, habitos, ahora):
     hechas, en_curso = _siestas_de(usuario, ahora.date())
     dormir = ventanas.dormir(habitos, ahora)
-    jornada = dormir['abierta'] or bool(_la_ultima(usuario, 'dormir', fecha=dormir['noche']))
+    jornada = _en_horas_de_sueno(usuario, habitos, ahora)
     return {
         'en_curso': en_curso,
         'hechas': [{**s, 'minutos': round((s['fin'] - s['inicio']).total_seconds() / 60)} for s in hechas],
-        # Desde que empieza la jornada de dormir no se pueden empezar más.
+        # En las horas de sueño no se empiezan siestas.
         'puede_iniciar': en_curso is None and not jornada,
         'hasta': dormir['desde'],
     }
@@ -563,7 +580,8 @@ def resumen_de_hoy(usuario):
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},
         'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None,
                    # Se puede anotar desde 2 horas antes de la hora de acostarse.
-                   'abierta': _dormir['abierta'], 'desde': _dormir['desde']},
+                   'ventana': _dormir['estado'], 'abierta': _dormir['abierta'], 'desde': _dormir['desde'],
+                   'hasta': _dormir['hasta'], 'anoche_sin_respuesta': _anoche_sin_respuesta(usuario, habitos, ahora)},
         'siesta': _estado_siesta(usuario, habitos, ahora),
         'levantar': {'hora': horas_hoy['levantarse'], 'levantado': levantado.momento if levantado else None,
                      # 'antes', 'abierta', 'cerrada' (no respondió: se puede responder una vez con la hora) o 'libre'.
