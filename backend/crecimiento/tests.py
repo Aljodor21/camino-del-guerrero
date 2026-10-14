@@ -101,8 +101,8 @@ class CrecimientoTest(APITestCase):
             return {'dias': sorted(set(datos['dias']))}
 
         TIPOS['lectura'] = Tipo(nombre='Lectura', valida=valida,
-                                avance=lambda d: round(len(d.get('dias', [])) / 21 * 100),
-                                resumen=lambda d: f'{len(d.get("dias", []))} de 21 días')
+                                avance=lambda p: round(len(p.datos.get('dias', [])) / 21 * 100),
+                                resumen=lambda p: f'{len(p.datos.get("dias", []))} de 21 días')
         self.addCleanup(TIPOS.pop, 'lectura')
         proceso = self.crear_proceso(self.crear_area())
         proyecto = self.crear_proyecto(proceso, tipo='lectura', datos={'dias': [1, 1, 2]})
@@ -121,3 +121,22 @@ class CrecimientoTest(APITestCase):
         self.assertEqual(self.client.delete(reverse('crecimiento-area', args=[area['id']])).status_code,
                          status.HTTP_204_NO_CONTENT)
         self.assertEqual(self.client.get(reverse('crecimiento-notas')).data, [])
+
+
+class ProgramaTest(CrecimientoTest):
+    def test_un_programa_del_catalogo_trae_su_fuente_y_sus_proyectos(self):
+        programas = self.client.get(reverse('crecimiento-programas')).data
+        self.assertEqual(programas[0]['id'], 'sana_tus_finanzas')
+        area = self.crear_area()
+        r = self.client.post(reverse('crecimiento-procesos'), {'area': area['id'], 'programa': 'sana_tus_finanzas'},
+                             format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual((r.data['fuente_titulo'], r.data['autor'], r.data['proyectos']),
+                         ('Sana tus finanzas, transforma tu vida', 'Jaime Jaramillo', 6))
+        proyectos = self.client.get(reverse('crecimiento-proyectos'), {'proceso': r.data['id']}).data
+        diario = next(p for p in proyectos if p['clave'] == 'diario_gastos')
+        self.assertEqual((diario['tipo'], diario['calcula_avance']), ('diario_gastos', True))
+        self.assertEqual(self.client.post(reverse('crecimiento-procesos'), {'area': area['id'], 'programa': 'nada'},
+                                          format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.post(reverse('crecimiento-procesos'), {'area': area['id']},
+                                          format='json').status_code, status.HTTP_400_BAD_REQUEST)

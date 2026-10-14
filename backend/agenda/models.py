@@ -111,6 +111,7 @@ class Notificacion(models.Model):
         ('recordatorio', 'Recordatorio'),
         ('comida',       'Contar la comida'),
         ('proceso',      'Control del proceso'),
+        ('crecimiento',  'Crecimiento personal'),
     ]
 
     usuario         = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='notificaciones')

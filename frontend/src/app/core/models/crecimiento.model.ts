@@ -21,6 +21,8 @@ export interface ProcesoCrecimiento {
   autor: string;
   nota: string;
   estado: EstadoProceso;
+  /** El programa del catálogo del que salió, o vacío si es propio. */
+  programa: string;
   fecha_inicio: string;
   fecha_fin: string | null;
   proyectos: number;
@@ -30,9 +32,21 @@ export interface ProcesoCrecimiento {
 export type ProcesoPayload = Partial<
   Pick<
     ProcesoCrecimiento,
-    'area' | 'titulo' | 'fuente' | 'fuente_titulo' | 'autor' | 'nota' | 'estado'
+    'area' | 'titulo' | 'fuente' | 'fuente_titulo' | 'autor' | 'nota' | 'estado' | 'programa'
   >
 >;
+
+/** Un programa del catálogo: un proceso ya armado según una fuente, con sus proyectos. */
+export interface ProgramaCrecimiento {
+  id: string;
+  titulo: string;
+  fuente: FuenteProceso;
+  fuente_titulo: string;
+  autor: string;
+  area: string;
+  descripcion: string;
+  proyectos: { clave: string; titulo: string; detalle: string }[];
+}
 
 /**
  * Un ejercicio de un proceso. Todos los tipos de proyecto cumplen el mismo estándar: título, estado, avance (0 a
@@ -43,14 +57,19 @@ export interface ProyectoCrecimiento {
   proceso: number;
   tipo: string;
   tipo_nombre: string;
+  /** Cuál proyecto del programa es (vacío si lo creó la persona). */
+  clave: string;
   titulo: string;
   detalle: string;
   orden: number;
   estado: EstadoProyecto;
   avance: number;
+  /** Si el tipo calcula su avance (si no, lo marca la persona). */
+  calcula_avance: boolean;
   datos: Record<string, unknown>;
   resumen: string;
   notas: number;
+  creado: string;
   actualizado: string;
 }
 

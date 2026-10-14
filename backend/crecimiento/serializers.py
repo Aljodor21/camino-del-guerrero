@@ -4,6 +4,7 @@ from rest_framework import serializers
 from core.exceptions import ReglaNegocioError
 
 from .models import Area, Nota, Proceso, Proyecto
+from .programas import PROGRAMAS
 from .tipos import TIPOS
 
 
@@ -37,9 +38,34 @@ class ProcesoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Proceso
-        fields = ['id', 'area', 'titulo', 'fuente', 'fuente_titulo', 'autor', 'nota', 'estado',
+        fields = ['id', 'area', 'titulo', 'fuente', 'fuente_titulo', 'autor', 'nota', 'estado', 'programa',
                   'fecha_inicio', 'fecha_fin', 'proyectos', 'avance']
         read_only_fields = ['proyectos', 'avance']
+        extra_kwargs = {'titulo': {'required': False}}
+
+    def validate_programa(self, programa):
+        if self.instance and programa != self.instance.programa:
+            raise serializers.ValidationError('Un proceso no cambia de programa.')
+        if programa and programa not in PROGRAMAS:
+            raise serializers.ValidationError('Ese programa no existe.')
+        return programa
+
+    def create(self, validated_data):
+        # Un programa del catálogo trae su fuente y sus proyectos ya puestos.
+        programa = PROGRAMAS.get(validated_data.get('programa') or '')
+        if programa:
+            for campo in ('titulo', 'fuente', 'fuente_titulo', 'autor'):
+                validated_data.setdefault(campo, getattr(programa, campo))
+        if not validated_data.get('titulo'):
+            raise serializers.ValidationError({'titulo': 'Escribe un título.'})
+        proceso = super().create(validated_data)
+        if programa:
+            for i, base in enumerate(programa.proyectos):
+                proyecto = Proyecto.objects.create(proceso=proceso, tipo=base.tipo, clave=base.clave,
+                                                   titulo=base.titulo, detalle=base.detalle, orden=i,
+                                                   datos=TIPOS[base.tipo].valida({}))
+                _calcular_avance(proyecto)
+        return proceso
 
     def validate_area(self, area):
         if area.usuario_id != self.context['request'].user.id:
@@ -68,13 +94,14 @@ class ProcesoSerializer(serializers.ModelSerializer):
 class ProyectoSerializer(serializers.ModelSerializer):
     tipo_nombre = serializers.SerializerMethodField()
     resumen     = serializers.SerializerMethodField()
+    calcula_avance = serializers.SerializerMethodField()
     notas       = serializers.IntegerField(source='notas.count', read_only=True)
 
     class Meta:
         model  = Proyecto
-        fields = ['id', 'proceso', 'tipo', 'tipo_nombre', 'titulo', 'detalle', 'orden', 'estado', 'avance',
-                  'datos', 'resumen', 'notas', 'actualizado']
-        read_only_fields = ['tipo_nombre', 'resumen', 'notas', 'actualizado']
+        fields = ['id', 'proceso', 'tipo', 'tipo_nombre', 'clave', 'titulo', 'detalle', 'orden', 'estado', 'avance',
+                  'calcula_avance', 'datos', 'resumen', 'notas', 'creado', 'actualizado']
+        read_only_fields = ['tipo_nombre', 'clave', 'calcula_avance', 'resumen', 'notas', 'creado', 'actualizado']
         extra_kwargs = {'avance': {'min_value': 0, 'max_value': 100}}
 
     def validate_proceso(self, proceso):
@@ -99,27 +126,37 @@ class ProyectoSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         tipo = attrs.get('tipo') or getattr(self.instance, 'tipo', 'libre')
-        if 'datos' in attrs:
+        if 'datos' in attrs or not self.instance:
             try:
-                attrs['datos'] = TIPOS[tipo].valida(attrs['datos'])
+                attrs['datos'] = TIPOS[tipo].valida(attrs.get('datos', {}))
             except ReglaNegocioError as e:
                 raise serializers.ValidationError({'datos': str(e)})
-        # El avance sale de lo que hizo la persona; un tipo sin cálculo propio deja que ella lo marque.
-        avance = attrs.get('avance', getattr(self.instance, 'avance', 0))
-        datos = attrs.get('datos', getattr(self.instance, 'datos', {}))
-        if tipo != 'libre':
-            avance = TIPOS[tipo].avance(datos)
-        attrs['avance'] = avance
-        if attrs.get('estado') is None and not self.instance:
-            attrs['estado'] = 'terminado' if avance >= 100 else 'en_curso' if avance else 'por_empezar'
+        # Si el tipo calcula su avance, sale de lo que hizo la persona y no se manda a mano.
+        if TIPOS[tipo].avance is not None:
+            attrs.pop('avance', None)
+            attrs.pop('estado', None)
         attrs['actualizado'] = timezone.now()
         return attrs
+
+    def create(self, validated_data):
+        proyecto = super().create(validated_data)
+        if 'estado' not in validated_data:
+            avance = proyecto.avance
+            proyecto.estado = 'terminado' if avance >= 100 else 'en_curso' if avance else 'por_empezar'
+            proyecto.save(update_fields=['estado'])
+        return _calcular_avance(proyecto)
+
+    def update(self, instance, validated_data):
+        return _calcular_avance(super().update(instance, validated_data))
+
+    def get_calcula_avance(self, proyecto):
+        return proyecto.tipo in TIPOS and TIPOS[proyecto.tipo].avance is not None
 
     def get_tipo_nombre(self, proyecto):
         return TIPOS[proyecto.tipo].nombre if proyecto.tipo in TIPOS else proyecto.tipo
 
     def get_resumen(self, proyecto):
-        return TIPOS[proyecto.tipo].resumen(proyecto.datos) if proyecto.tipo in TIPOS else ''
+        return TIPOS[proyecto.tipo].resumen(proyecto) if proyecto.tipo in TIPOS else ''
 
 
 class NotaSerializer(serializers.ModelSerializer):
@@ -142,6 +179,18 @@ class NotaSerializer(serializers.ModelSerializer):
         if not texto:
             raise serializers.ValidationError('Escribe la nota.')
         return texto
+
+
+def _calcular_avance(proyecto):
+    """Si el tipo calcula su avance, se pone al día (y el estado con él)."""
+    calculo = TIPOS[proyecto.tipo].avance if proyecto.tipo in TIPOS else None
+    if calculo is not None:
+        avance = max(0, min(100, int(calculo(proyecto))))
+        estado = 'terminado' if avance >= 100 else 'en_curso' if avance else 'por_empezar'
+        if (avance, estado) != (proyecto.avance, proyecto.estado):
+            proyecto.avance, proyecto.estado = avance, estado
+            proyecto.save(update_fields=['avance', 'estado'])
+    return proyecto
 
 
 def _promedio(valores):

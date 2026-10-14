@@ -1,0 +1,745 @@
+<div class="space-y-4">
+  <!-- El mes que se ve -->
+  <div class="flex items-center justify-between gap-2">
+    <p-button
+      icon="pi pi-chevron-left"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      ariaLabel="Mes anterior"
+      (onClick)="moverMes(-1)"
+    />
+    <p class="font-semibold first-letter:uppercase text-gray-900 dark:text-white">
+      {{ tituloMes() }}
+    </p>
+    <p-button
+      icon="pi pi-chevron-right"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      ariaLabel="Mes siguiente"
+      [disabled]="esMesActual()"
+      (onClick)="moverMes(1)"
+    />
+  </div>
+
+  <app-pestanas [items]="pestanas" [(activa)]="seccion" etiqueta="Partes del diario" />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+  @if (aviso()) {
+    <p class="text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ aviso() }}</p>
+  }
+
+  @if (cargando() && !estado()) {
+    <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Cargando tu diario…</p>
+  } @else if (estado(); as e) {
+    @switch (seccion()) {
+      <!-- ── Registro: el diario sincero ── -->
+      @case ('registro') {
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Anotar un gasto</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+              {{ e.resumen.dias_al_dia }} de {{ e.resumen.dias_transcurridos }} días al día
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Cuánto?
+              <input
+                pInputText
+                inputmode="numeric"
+                placeholder="$ 0"
+                [value]="gValor()"
+                (input)="gValor.set(leer($event))"
+                class="w-full min-w-0"
+              />
+            </label>
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Qué día?
+              <input
+                pInputText
+                type="date"
+                [min]="haceUnaSemana"
+                [max]="hoy"
+                [value]="gFecha()"
+                (change)="gFecha.set(leer($event) || hoy)"
+                class="w-full min-w-0"
+              />
+            </label>
+          </div>
+          <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+            ¿En qué?
+            <input
+              pInputText
+              maxlength="120"
+              placeholder="Ej. Tinto y pastel en la cafetería"
+              [value]="gDescripcion()"
+              (input)="gDescripcion.set(leer($event))"
+              class="w-full"
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+            Categoría
+            <select
+              class="w-full rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+              [value]="gCategoria()"
+              (change)="gCategoria.set(leer($event))"
+            >
+              <option value="" disabled>Elige una</option>
+              @for (c of e.categorias; track c.id) {
+                <option [value]="c.id">{{ c.nombre }}</option>
+              }
+            </select>
+          </label>
+          <fieldset class="space-y-1.5">
+            <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              ¿Pasa algo grave si no haces este gasto?
+            </legend>
+            <div class="flex flex-wrap items-center gap-2" role="radiogroup">
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="gClase() === 'cerebral'"
+                [class]="clasesChip(gClase() === 'cerebral')"
+                (click)="gClase.set('cerebral')"
+              >
+                Sí: cerebral
+              </button>
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="gClase() === 'emocional'"
+                [class]="clasesChip(gClase() === 'emocional')"
+                (click)="gClase.set('emocional')"
+              >
+                No: emocional
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Si es mixto (una parte necesaria y otra por gusto), anótalo en dos.
+            </p>
+          </fieldset>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            @if (esMesActual() && !e.hoy_al_dia) {
+              <p-button
+                label="Hoy no gasté"
+                variant="outlined"
+                severity="secondary"
+                [loading]="guardando()"
+                (onClick)="hoyNoGaste()"
+              />
+            }
+            <p-button
+              label="Anotar"
+              icon="pi pi-check"
+              [loading]="guardando()"
+              [disabled]="!puedeAnotar()"
+              (onClick)="anotar()"
+            />
+          </div>
+        </section>
+
+        @if (porDia().length) {
+          <ul class="space-y-3" aria-label="Lo anotado este mes">
+            @for (d of porDia(); track d.fecha) {
+              <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-3 space-y-2">
+                <p class="flex justify-between text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="first-letter:uppercase">{{ fecha(d.fecha) }}</span>
+                  <span class="tabular-nums">{{ pesos(d.total) }}</span>
+                </p>
+                @for (g of d.gastos; track g.id) {
+                  <div class="flex items-center gap-2 text-sm">
+                    <span
+                      class="shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded"
+                      [class]="
+                        g.clase === 'cerebral'
+                          ? 'bg-sky-500/15 text-sky-700 dark:text-sky-300'
+                          : 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                      "
+                      >{{ g.clase === 'cerebral' ? 'Cerebral' : 'Emocional' }}</span
+                    >
+                    <span class="min-w-0 flex-1 truncate text-gray-700 dark:text-gray-200">
+                      {{ g.descripcion }}
+                      <span class="text-xs text-gray-500 dark:text-gray-400">
+                        · {{ nombreCategoria().get(g.categoria) }}</span
+                      >
+                    </span>
+                    <span class="tabular-nums text-gray-900 dark:text-white">{{
+                      pesos(g.valor)
+                    }}</span>
+                    @if (g.se_puede_borrar) {
+                      <p-button
+                        icon="pi pi-trash"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        size="small"
+                        ariaLabel="Borrar este gasto"
+                        (onClick)="borrarGasto(g)"
+                      />
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            Aún no hay gastos anotados en {{ tituloMes() }}.
+          </p>
+        }
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Lo anotado no se cambia; solo se puede borrar el mismo día, por si fue un error. Puedes
+          anotar lo de los últimos 7 días.
+        </p>
+      }
+
+      <!-- ── La relación de gastos del mes ── -->
+      @case ('mes') {
+        @if (deDonde()) {
+          <p class="text-sm text-gray-600 dark:text-gray-300">{{ deDonde() }}</p>
+        }
+        <p class="text-sm text-gray-700 dark:text-gray-200">
+          Total del mes <strong class="tabular-nums">{{ pesos(totalesBorrador().total) }}</strong> ·
+          cerebral {{ pesos(totalesBorrador().cerebral) }} · emocional
+          {{ pesos(totalesBorrador().emocional) }}
+        </p>
+        @for (c of e.categorias; track c.id) {
+          <details
+            class="rounded-xl bg-white dark:bg-dark-800 shadow-sm"
+            [open]="totalDe(c.id) > 0"
+          >
+            <summary
+              class="cursor-pointer list-none flex items-center justify-between gap-3 p-4 font-medium text-gray-900 dark:text-white"
+            >
+              <span>{{ c.nombre }}</span>
+              <span class="text-sm tabular-nums text-gray-600 dark:text-gray-300">{{
+                pesos(totalDe(c.id))
+              }}</span>
+            </summary>
+            <ul class="px-4 pb-4 space-y-3">
+              @for (x of rubrosDe(c.id); track x.i) {
+                <li class="space-y-1.5 border-t border-gray-100 dark:border-white/5 pt-3">
+                  <div class="flex items-center gap-2">
+                    <span class="min-w-0 flex-1 text-sm text-gray-800 dark:text-gray-100">{{
+                      x.r.nombre
+                    }}</span>
+                    <input
+                      pInputText
+                      inputmode="numeric"
+                      class="w-32 text-right tabular-nums"
+                      [attr.aria-label]="'Valor de ' + x.r.nombre"
+                      [value]="x.r.valor ? x.r.valor : ''"
+                      placeholder="$ 0"
+                      (change)="fijarValor(x.i, leer($event))"
+                    />
+                    <p-button
+                      icon="pi pi-times"
+                      [text]="true"
+                      [rounded]="true"
+                      severity="secondary"
+                      size="small"
+                      [ariaLabel]="'Quitar ' + x.r.nombre"
+                      (onClick)="quitarRubro(x.i)"
+                    />
+                  </div>
+                  @if (x.r.valor) {
+                    <div class="flex flex-wrap items-center gap-1.5" role="radiogroup">
+                      @for (m of ['cerebral', 'emocional', 'mixto']; track m) {
+                        <button
+                          type="button"
+                          role="radio"
+                          [attr.aria-checked]="modos()[x.i] === m"
+                          [class]="
+                            clasesChip(modos()[x.i] === m) + ' !py-1 !px-2 !text-xs capitalize'
+                          "
+                          (click)="fijarModo(x.i, $any(m))"
+                        >
+                          {{ m }}
+                        </button>
+                      }
+                      @if (modos()[x.i] === 'mixto') {
+                        <label
+                          class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300"
+                        >
+                          Cerebral
+                          <input
+                            pInputText
+                            inputmode="numeric"
+                            class="w-28 text-right tabular-nums !py-1"
+                            [value]="x.r.cerebral"
+                            (change)="fijarCerebral(x.i, leer($event))"
+                          />
+                          · emocional {{ pesos(x.r.emocional) }}
+                        </label>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+              <li class="flex items-center gap-2 border-t border-gray-100 dark:border-white/5 pt-3">
+                <input
+                  pInputText
+                  maxlength="80"
+                  class="min-w-0 flex-1"
+                  placeholder="Otro gasto de esta categoría"
+                  [attr.aria-label]="'Otro gasto de ' + c.nombre"
+                  [value]="nuevoRubro()[c.id] ?? ''"
+                  (input)="escribirNuevo(c.id, leer($event))"
+                />
+                <p-button
+                  icon="pi pi-plus"
+                  size="small"
+                  severity="secondary"
+                  [ariaLabel]="'Agregar a ' + c.nombre"
+                  (onClick)="agregarRubro(c.id)"
+                />
+              </li>
+            </ul>
+          </details>
+        }
+        <div class="sticky bottom-24 flex justify-end">
+          <p-button
+            label="Guardar el mes"
+            icon="pi pi-check"
+            [loading]="guardando()"
+            [disabled]="!cambiado() && e.rubros_de === 'guardado'"
+            (onClick)="guardarMes()"
+          />
+        </div>
+      }
+
+      <!-- ── Gastos que no son de cada mes ── -->
+      @case ('no_mensuales') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Lo que no pagas cada mes pero tarde o temprano llega: impuestos, seguros, matrícula,
+          vacaciones, regalos, llantas… Se suma en el año y se divide entre 12 para apartarlo mes a
+          mes.
+        </p>
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <label
+              class="col-span-2 flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Qué es?
+              <input
+                pInputText
+                maxlength="80"
+                placeholder="Ej. SOAT"
+                [value]="nNombre()"
+                (input)="nNombre.set(leer($event))"
+              />
+            </label>
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              Valor de cada pago
+              <input
+                pInputText
+                inputmode="numeric"
+                placeholder="$ 0"
+                class="w-full min-w-0"
+                [value]="nValor()"
+                (input)="nValor.set(leer($event))"
+              />
+            </label>
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              {{ nPeriodo() === 'anual' ? 'Mes del pago' : 'Mes del primer pago' }}
+              <select
+                class="w-full rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-900 px-3 py-2 text-sm text-gray-900 dark:text-white capitalize"
+                [value]="nMes()"
+                (change)="nMes.set(+leer($event))"
+              >
+                @for (m of meses; track $index) {
+                  <option [value]="$index + 1">{{ m }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Cada cuánto">
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="nPeriodo() === 'anual'"
+              [class]="clasesChip(nPeriodo() === 'anual')"
+              (click)="nPeriodo.set('anual')"
+            >
+              Una vez al año
+            </button>
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="nPeriodo() === 'semestral'"
+              [class]="clasesChip(nPeriodo() === 'semestral')"
+              (click)="nPeriodo.set('semestral')"
+            >
+              Dos veces al año
+            </button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2" role="radiogroup">
+            <span class="text-sm text-gray-600 dark:text-gray-400"
+              >¿Pasa algo grave si no lo pagas?</span
+            >
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="nClase() === 'cerebral'"
+              [class]="clasesChip(nClase() === 'cerebral')"
+              (click)="nClase.set('cerebral')"
+            >
+              Sí
+            </button>
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="nClase() === 'emocional'"
+              [class]="clasesChip(nClase() === 'emocional')"
+              (click)="nClase.set('emocional')"
+            >
+              No
+            </button>
+          </div>
+          <div class="flex justify-end">
+            <p-button
+              label="Agregar"
+              icon="pi pi-plus"
+              [loading]="guardando()"
+              [disabled]="!nNombre().trim() || !nValor() || !nClase()"
+              (onClick)="crearNoMensual()"
+            />
+          </div>
+        </section>
+
+        @if (e.no_mensuales.length) {
+          <ul class="space-y-2">
+            @for (n of e.no_mensuales; track n.id) {
+              <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-3 space-y-1">
+                <div class="flex items-center gap-2">
+                  <p class="min-w-0 flex-1 font-medium text-gray-900 dark:text-white">
+                    {{ n.nombre }}
+                  </p>
+                  <p-button
+                    icon="pi pi-trash"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="secondary"
+                    size="small"
+                    [ariaLabel]="'Quitar ' + n.nombre"
+                    (onClick)="quitar('no-mensuales', n.id)"
+                  />
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-300">
+                  {{ pesos(n.valor) }}
+                  {{ n.periodicidad === 'anual' ? 'en' : 'dos veces al año, desde' }}
+                  {{ meses[n.mes_pago - 1] }} · al año {{ pesos(n.total_anual) }} ·
+                  {{ n.clase === 'cerebral' ? 'cerebral' : 'emocional' }}
+                </p>
+                <p class="text-sm text-gray-800 dark:text-gray-100">
+                  Aparta <strong class="tabular-nums">{{ pesos(n.mensual) }}</strong> cada mes (el
+                  año entre 12).
+                  @if (n.meses_faltan) {
+                    Si empiezas ahora, para el próximo pago guarda
+                    <strong class="tabular-nums">{{ pesos(n.ahorro_hasta_pago) }}</strong> al mes
+                    durante {{ n.meses_faltan }} {{ n.meses_faltan === 1 ? 'mes' : 'meses' }}.
+                  } @else {
+                    Este mes toca pagarlo.
+                  }
+                </p>
+              </li>
+            }
+          </ul>
+          <p class="text-sm text-gray-800 dark:text-gray-100">
+            Entre todos: aparta
+            <strong class="tabular-nums">{{ pesos(e.resumen.provision.mensual) }}</strong> al mes.
+          </p>
+        }
+        <div
+          class="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-gray-700 dark:text-gray-200 space-y-1"
+        >
+          <p class="font-semibold">¿Dónde guardar esa plata?</p>
+          <p>
+            En una cuenta de ahorros con buenos intereses, en una fiducuenta o fondo conservador, o
+            en una inversión digital de bajo riesgo: así, mientras llega el pago, también puede
+            crecer un poco.
+          </p>
+        </div>
+      }
+
+      <!-- ── Gastos hormiga ── -->
+      @case ('hormiga') {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Los gastos pequeños de todos los días (el tinto, el mecato, la botella de agua) parecen
+          nada, pero sumados se llevan una parte grande de tu plata.
+        </p>
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+            ¿Qué es?
+            <input
+              pInputText
+              maxlength="80"
+              placeholder="Ej. Café y snack"
+              [value]="hNombre()"
+              (input)="hNombre.set(leer($event))"
+            />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Cuánto al día?
+              <input
+                pInputText
+                inputmode="numeric"
+                placeholder="$ 0"
+                class="w-full min-w-0"
+                [value]="hValor()"
+                (input)="hValor.set(leer($event))"
+              />
+            </label>
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              Días al mes
+              <input
+                pInputText
+                inputmode="numeric"
+                class="w-full min-w-0"
+                [value]="hDias()"
+                (input)="hDias.set(leer($event))"
+              />
+            </label>
+          </div>
+          <div class="flex flex-wrap items-center gap-2" role="radiogroup">
+            <span class="text-sm text-gray-600 dark:text-gray-400"
+              >¿Pasa algo grave si no lo haces?</span
+            >
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="hClase() === 'cerebral'"
+              [class]="clasesChip(hClase() === 'cerebral')"
+              (click)="hClase.set('cerebral')"
+            >
+              Sí
+            </button>
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="hClase() === 'emocional'"
+              [class]="clasesChip(hClase() === 'emocional')"
+              (click)="hClase.set('emocional')"
+            >
+              No
+            </button>
+          </div>
+          <div class="flex justify-end">
+            <p-button
+              label="Agregar"
+              icon="pi pi-plus"
+              [loading]="guardando()"
+              [disabled]="!hNombre().trim() || !hValor() || !hClase()"
+              (onClick)="crearHormiga()"
+            />
+          </div>
+        </section>
+        @if (e.hormiga.length) {
+          <ul class="space-y-2">
+            @for (h of e.hormiga; track h.id) {
+              <li
+                class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-3 flex items-center gap-2"
+              >
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-gray-900 dark:text-white">{{ h.nombre }}</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-300">
+                    {{ pesos(h.valor_dia) }} × {{ h.dias_mes }} días =
+                    <strong>{{ pesos(h.mensual) }}</strong> al mes ·
+                    <strong>{{ pesos(h.anual) }}</strong> al año ·
+                    {{ h.clase === 'cerebral' ? 'cerebral' : 'emocional' }}
+                  </p>
+                </div>
+                <p-button
+                  icon="pi pi-trash"
+                  [text]="true"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  [ariaLabel]="'Quitar ' + h.nombre"
+                  (onClick)="quitar('hormiga', h.id)"
+                />
+              </li>
+            }
+          </ul>
+          <p class="text-sm text-gray-800 dark:text-gray-100">
+            En total: <strong class="tabular-nums">{{ pesos(e.resumen.hormiga.total) }}</strong> al
+            mes y <strong class="tabular-nums">{{ pesos(e.resumen.hormiga.total * 12) }}</strong> al
+            año.
+          </p>
+        }
+      }
+
+      <!-- ── Resumen del mes ── -->
+      @case ('resumen') {
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white first-letter:uppercase">
+            Lo que esperas gastar en {{ tituloMes() }}
+          </h3>
+          <dl class="grid grid-cols-2 gap-2 text-sm">
+            <dt class="text-gray-600 dark:text-gray-300">Gastos del mes</dt>
+            <dd class="text-right tabular-nums">{{ pesos(e.resumen.relacion.total) }}</dd>
+            <dt class="text-gray-600 dark:text-gray-300">Aparte para los anuales</dt>
+            <dd class="text-right tabular-nums">{{ pesos(e.resumen.provision.mensual) }}</dd>
+            <dt class="text-gray-600 dark:text-gray-300">Gastos hormiga</dt>
+            <dd class="text-right tabular-nums">{{ pesos(e.resumen.hormiga.total) }}</dd>
+            <dt class="font-semibold text-gray-900 dark:text-white">Total</dt>
+            <dd class="text-right font-semibold tabular-nums">
+              {{ pesos(e.resumen.estimado.total) }}
+            </dd>
+          </dl>
+          <ng-container
+            *ngTemplateOutlet="barra; context: { $implicit: e.resumen.estimado }"
+          ></ng-container>
+        </section>
+
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Lo que anotaste de verdad</h3>
+          <p class="text-sm text-gray-700 dark:text-gray-200">
+            <strong class="tabular-nums">{{ pesos(e.resumen.anotado.total) }}</strong> en
+            {{ e.registro.length }} {{ e.registro.length === 1 ? 'gasto' : 'gastos' }} ·
+            {{ e.resumen.dias_al_dia }} de {{ e.resumen.dias_transcurridos }} días al día
+          </p>
+          @if (e.resumen.anotado.total) {
+            <ng-container
+              *ngTemplateOutlet="barra; context: { $implicit: e.resumen.anotado }"
+            ></ng-container>
+            <ul class="space-y-1.5">
+              @for (c of e.resumen.anotado.por_categoria; track c.categoria) {
+                <li class="flex justify-between gap-3 text-sm">
+                  <span class="text-gray-700 dark:text-gray-200">{{ c.nombre }}</span>
+                  <span class="tabular-nums text-gray-900 dark:text-white"
+                    >{{ pesos(c.total) }}
+                    <span class="text-xs text-gray-500 dark:text-gray-400"
+                      >· {{ porcentaje(c.emocional, c.total) }} % emocional</span
+                    ></span
+                  >
+                </li>
+              }
+            </ul>
+          }
+          @if (e.resumen.estimado.total && e.resumen.anotado.total) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Llevas anotado el
+              {{ porcentaje(e.resumen.anotado.total, e.resumen.estimado.total) }} % de lo que
+              esperabas gastar este mes.
+            </p>
+          }
+        </section>
+
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Aviso diario</h3>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+              <input
+                type="checkbox"
+                class="w-4 h-4 accent-guerrero-red"
+                [checked]="avisar()"
+                (change)="guardarAjustes($any($event.target).checked, horaAviso())"
+              />
+              Recordarme anotar mis gastos a las
+            </label>
+            <input
+              pInputText
+              type="time"
+              aria-label="Hora del aviso"
+              [value]="horaAviso()"
+              [disabled]="!avisar()"
+              (change)="guardarAjustes(avisar(), leer($event) || '20:00')"
+            />
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Solo llega si ese día aún no has anotado nada. Desde el aviso puedes decir «Hoy no
+            gasté».
+          </p>
+        </section>
+      }
+
+      <!-- ── Guía ── -->
+      @case ('guia') {
+        <div class="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-gray-900 dark:text-white">La pregunta</h3>
+            <p>Para cada gasto: <strong>¿pasa algo grave si no lo hago?</strong></p>
+          </section>
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-sky-700 dark:text-sky-300">Cerebral</h3>
+            <p>
+              Si la respuesta es sí: es indispensable para tu vida diaria. Si no pagas los servicios
+              te los cortan; si no pagas el arriendo te pueden sacar; si no pagas el colegio se
+              pierde el cupo.
+            </p>
+          </section>
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-rose-700 dark:text-rose-300">Emocional</h3>
+            <p>
+              Si la respuesta es no: lo haces por gusto, no por necesidad. La plataforma de video o
+              salir a restaurante todos los fines de semana.
+            </p>
+          </section>
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Intermedios y mixtos</h3>
+            <p>
+              Hay gastos que dependen de la situación: ropa nueva no hace falta si el clóset está
+              lleno, pero si la tuya ya no sirve y la necesitas para trabajar, se vuelve
+              indispensable.
+            </p>
+            <p>
+              Y hay rubros con una parte necesaria y otra no: hacer mercado sí, el salmón importado
+              no. En esos casos divídelo en dos («Ropa para los niños» y «Ropa para mí»): en «Del
+              mes» usa
+              <em>Mixto</em>, y en el registro anótalo en dos gastos.
+            </p>
+          </section>
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-gray-900 dark:text-white">¿Y las deudas?</h3>
+            <p>
+              Pagar una deuda es cerebral, aunque la haya causado un gasto emocional (una comida
+              costosa, un viaje): si no la pagas, las consecuencias sí son graves.
+            </p>
+          </section>
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Sin engañarte</h3>
+            <p>
+              Anota todo, también los antojos que parecen inofensivos: son los que marcan la
+              diferencia. Un diario honesto es la foto real de tus hábitos y la base para un
+              presupuesto que de verdad funcione.
+            </p>
+          </section>
+        </div>
+      }
+    }
+  }
+</div>
+
+<ng-template #barra let-p>
+  <div>
+    <div
+      class="flex h-3 rounded-full overflow-hidden bg-gray-200 dark:bg-dark-700"
+      aria-hidden="true"
+    >
+      <span class="bg-sky-500" [style.width.%]="porcentaje(p.cerebral, p.total)"></span>
+      <span class="bg-rose-500" [style.width.%]="porcentaje(p.emocional, p.total)"></span>
+    </div>
+    <p class="mt-1 flex justify-between text-xs text-gray-600 dark:text-gray-300">
+      <span>Cerebral {{ pesos(p.cerebral) }} ({{ porcentaje(p.cerebral, p.total) }} %)</span>
+      <span>Emocional {{ pesos(p.emocional) }} ({{ porcentaje(p.emocional, p.total) }} %)</span>
+    </p>
+  </div>
+</ng-template>

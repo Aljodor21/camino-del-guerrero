@@ -2,10 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  Type,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { map, switchMap } from 'rxjs';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -19,8 +23,10 @@ import {
   FuenteProceso,
   NotaCrecimiento,
   ProcesoCrecimiento,
+  ProgramaCrecimiento,
   ProyectoCrecimiento,
 } from '../core/models/crecimiento.model';
+import { PANTALLAS } from './pantallas';
 import { CrecimientoService } from '../core/services/crecimiento';
 import { mensajeError } from '../shared/errores';
 import { formatearFecha } from '../shared/fechas';
@@ -48,6 +54,7 @@ type Formulario = 'area' | 'proceso' | 'proyecto' | null;
   templateUrl: './crecimiento.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    NgComponentOutlet,
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
@@ -61,6 +68,8 @@ type Formulario = 'area' | 'proceso' | 'proyecto' | null;
 export class Crecimiento implements OnInit {
   private servicio = inject(CrecimientoService);
   private fb = inject(NonNullableFormBuilder);
+  private ruta = inject(ActivatedRoute);
+  private router = inject(Router);
 
   protected fuentes = FUENTES;
   protected avances = AVANCES;
@@ -81,6 +90,13 @@ export class Crecimiento implements OnInit {
   protected error = signal('');
   protected formulario = signal<Formulario>(null);
   protected confirmarBorrar = signal(false);
+
+  /** Los programas del catálogo y si el proceso nuevo sale de uno o es propio. */
+  protected programas = signal<ProgramaCrecimiento[]>([]);
+  protected origen = signal<'catalogo' | 'propio'>('catalogo');
+  /** La pantalla propia del tipo del proyecto abierto (si tiene). */
+  protected pantalla = signal<Type<unknown> | null>(null);
+  protected entradasPantalla = computed(() => ({ proyecto: this.proyecto() }));
 
   protected nivel = computed(() =>
     this.proyecto() ? 'proyecto' : this.proceso() ? 'proceso' : this.area() ? 'area' : 'areas',
@@ -104,7 +120,34 @@ export class Crecimiento implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarAreas();
+    // Desde un aviso se llega directo a un proyecto (?proyecto=12).
+    const id = Number(this.ruta.snapshot.queryParamMap.get('proyecto'));
+    if (!id) {
+      this.cargarAreas();
+      return;
+    }
+    this.servicio
+      .proyecto(id)
+      .pipe(
+        switchMap((proyecto) =>
+          this.servicio
+            .proceso(proyecto.proceso)
+            .pipe(
+              switchMap((proceso) =>
+                this.servicio.area(proceso.area).pipe(map((area) => ({ proyecto, proceso, area }))),
+              ),
+            ),
+        ),
+      )
+      .subscribe({
+        next: ({ proyecto, proceso, area }) => {
+          this.area.set(area);
+          this.proceso.set(proceso);
+          this.abrirProyecto(proyecto);
+          void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+        },
+        error: () => this.cargarAreas(),
+      });
   }
 
   private fallo(texto: string): (e: unknown) => void {
@@ -155,6 +198,8 @@ export class Crecimiento implements OnInit {
   protected abrirProyecto(p: ProyectoCrecimiento): void {
     this.cerrarFormulario();
     this.proyecto.set(p);
+    this.pantalla.set(null);
+    PANTALLAS[p.tipo]?.().then((c) => this.pantalla.set(c));
     this.formNota.reset();
     this.cargando.set(true);
     this.servicio.notas(p.id).subscribe({
@@ -187,6 +232,30 @@ export class Crecimiento implements OnInit {
   protected abrirFormulario(cual: Exclude<Formulario, null>): void {
     this.error.set('');
     this.formulario.set(cual);
+    if (cual === 'proceso' && !this.programas().length) {
+      this.servicio.programas().subscribe({
+        next: (l) => {
+          this.programas.set(l);
+          if (!l.length) this.origen.set('propio');
+        },
+        error: () => this.origen.set('propio'),
+      });
+    }
+  }
+
+  /** Un programa del catálogo trae su fuente y sus proyectos ya puestos. */
+  protected empezarPrograma(programa: ProgramaCrecimiento): void {
+    const area = this.area();
+    if (!area) return;
+    this.guardando.set(true);
+    this.servicio.crearProceso({ area: area.id, programa: programa.id }).subscribe({
+      next: (p) => {
+        this.guardando.set(false);
+        this.cerrarFormulario();
+        this.abrirProceso(p);
+      },
+      error: this.fallo('No pudimos empezar el programa.'),
+    });
   }
 
   protected cerrarFormulario(): void {

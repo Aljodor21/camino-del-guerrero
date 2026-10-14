@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Area, Nota, Proceso, Proyecto
+from .programas import PROGRAMAS
 from .serializers import AreaSerializer, NotaSerializer, ProcesoSerializer, ProyectoSerializer, _promedio
 
 
@@ -110,3 +111,14 @@ class ResumenView(APIView):
         notas = NotaSerializer(Nota.objects.filter(proyecto__proceso__area__usuario=request.user)
                                .select_related('proyecto')[:5], many=True, context={'request': request}).data
         return Response({'areas': datos, 'notas': notas})
+
+
+class ProgramasView(APIView):
+    """El catálogo: programas ya armados según una fuente, con sus proyectos."""
+
+    def get(self, request):
+        return Response([{
+            'id': clave, 'titulo': p.titulo, 'fuente': p.fuente, 'fuente_titulo': p.fuente_titulo,
+            'autor': p.autor, 'area': p.area, 'descripcion': p.descripcion,
+            'proyectos': [{'clave': x.clave, 'titulo': x.titulo, 'detalle': x.detalle} for x in p.proyectos],
+        } for clave, p in PROGRAMAS.items()])

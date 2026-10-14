@@ -1,35 +1,32 @@
-"""El estándar de un proyecto de crecimiento personal.
+"""El estándar de un tipo de proyecto de crecimiento personal.
 
-Cada **tipo** de proyecto (el taller de creencias, el diario de gastos, el presupuesto, el mapa de sueños, la
-bola de nieve...) se registra aquí con lo mínimo que la app principal necesita saber:
+Cada tipo (el diario de gastos, y luego el taller de creencias, el presupuesto, el mapa de sueños, la bola de
+nieve…) se registra en `TIPOS` con lo que el resto de la app necesita saber de él, y nada más:
 
 - `nombre`: cómo se llama para la persona.
-- `valida(datos)`: revisa lo propio del tipo (`Proyecto.datos`) y lo devuelve limpio; levanta
-  `ReglaNegocioError` si no sirve.
-- `avance(datos)`: de 0 a 100, qué tanto va (el proyecto no se lo inventa: sale de lo que la persona hizo).
-- `resumen(datos)`: una frase corta con lo más importante hoy («3 de 21 días leídos»), para mostrarla fuera
-  del proyecto.
+- `valida(datos)`: revisa sus ajustes propios (`Proyecto.datos`) y los devuelve limpios, o levanta
+  `ReglaNegocioError`.
+- `avance(proyecto)`: de 0 a 100, qué tanto va, calculado de lo que la persona hizo; `None` si el tipo no lo
+  calcula y lo marca ella.
+- `resumen(proyecto)`: una frase corta con lo más importante hoy («Octubre: $120.000 anotados»).
+- `avisos(proyecto, fecha)`: los avisos de ese día, `[{'clave', 'hora', 'titulo', 'cuerpo', 'accion'}]`. Llegan
+  a la bandeja y al celular como cualquier otro aviso (`crecimiento/avisos.py` los pasa a `agenda`).
+- `confirmar(proyecto, clave, fecha)`: lo que se guarda cuando la persona toca la acción del aviso.
+- `resuelto(proyecto, clave, fecha)`: si el aviso ya no hace falta (porque la persona lo hizo por otro lado).
 
-Lo demás (pantallas, cálculos) vive en el propio proyecto. Un tipo nuevo es una entrada más en `TIPOS`: no
-cambia el resto de la app.
+Lo demás (pantallas, cálculos, sus propias tablas) vive en el módulo del tipo. Un tipo nuevo es una entrada
+más en `TIPOS`: no cambia el resto de la app.
 """
-from dataclasses import dataclass
-from typing import Callable
+from .tipos_base import Tipo
 
 
-@dataclass(frozen=True)
-class Tipo:
-    nombre: str
-    valida: Callable[[dict], dict]
-    avance: Callable[[dict], int]
-    resumen: Callable[[dict], str]
+def _registrar():
+    from . import diario
+    return {
+        # El básico: título y notas; el avance lo marca la persona.
+        'libre': Tipo(nombre='Libre'),
+        'diario_gastos': diario.TIPO,
+    }
 
 
-def _libre_valida(datos):
-    return {}
-
-
-TIPOS = {
-    # El básico: un título y sus notas; el avance lo marca la persona.
-    'libre': Tipo(nombre='Libre', valida=_libre_valida, avance=lambda datos: 0, resumen=lambda datos: ''),
-}
+TIPOS = _registrar()

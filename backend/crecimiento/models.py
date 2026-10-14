@@ -4,9 +4,11 @@ Cada persona arma sus propias **áreas** (por ejemplo «Educación financiera»)
 **procesos** que salen de una fuente (un libro y su autor, un curso, un mentor o algo propio) y cada proceso
 tiene **proyectos** (los ejercicios de cada capítulo). Cada proyecto puede dejar **notas**.
 
-Los proyectos siguen un estándar (ver `tipos.py`) para que la app principal pueda traer su avance y sus notas
-sin saber cómo funciona cada uno por dentro.
+Todo sigue un estándar: un programa del catálogo (`programas.py`) trae su fuente y sus proyectos ya puestos, y
+cada tipo de proyecto (`tipos.py`) dice su avance, su frase de resumen y sus avisos, que llegan a la bandeja y al
+celular como los demás avisos de la app.
 """
+from core.exceptions import DatoInmutableError
 from django.db import models
 from django.utils import timezone
 
@@ -41,6 +43,8 @@ class Proceso(models.Model):
     autor        = models.CharField(max_length=120, blank=True)
     nota         = models.CharField(max_length=300, blank=True)
     estado       = models.CharField(max_length=10, choices=ESTADOS, default='en_curso')
+    # El programa del catálogo del que salió (`programas.py`), o vacío si lo armó la persona.
+    programa     = models.CharField(max_length=40, blank=True)
     fecha_inicio = models.DateField(default=timezone.localdate)
     fecha_fin    = models.DateField(null=True, blank=True)
 
@@ -61,17 +65,25 @@ class Proyecto(models.Model):
 
     proceso    = models.ForeignKey(Proceso, on_delete=models.CASCADE, related_name='proyectos')
     tipo       = models.CharField(max_length=40, default='libre')
+    # Cuál de los proyectos del programa es (`programas.py`); así, cuando ese proyecto tenga su propio tipo,
+    # los que ya existen se pueden pasar a él.
+    clave      = models.CharField(max_length=40, blank=True)
     titulo     = models.CharField(max_length=140)
     detalle    = models.CharField(max_length=300, blank=True, help_text='Por ejemplo, «Capítulo 2 · Paso 1»')
     orden      = models.PositiveSmallIntegerField(default=0)
     estado     = models.CharField(max_length=12, choices=ESTADOS, default='por_empezar')
     avance     = models.PositiveSmallIntegerField(default=0, help_text='De 0 a 100')
     datos      = models.JSONField(default=dict, blank=True)
+    creado     = models.DateField(default=timezone.localdate)
     actualizado = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['orden', 'id']
-        constraints = [models.CheckConstraint(condition=models.Q(avance__lte=100), name='proyecto_avance_maximo')]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(avance__lte=100), name='proyecto_avance_maximo'),
+            models.UniqueConstraint(fields=['proceso', 'clave'], condition=~models.Q(clave=''),
+                                    name='proyecto_clave_unica_en_proceso'),
+        ]
 
     def __str__(self):
         return self.titulo
@@ -90,3 +102,96 @@ class Nota(models.Model):
 
     def __str__(self):
         return self.titulo or self.texto[:40]
+
+
+# ── Diario de gastos ────────────────────────────────────────────────────────────
+# Cerebral: si no se hace, pasa algo grave (indispensable). Emocional: se hace por gusto.
+CLASES_GASTO = [('cerebral', 'Cerebral'), ('emocional', 'Emocional')]
+
+
+class RubroMes(models.Model):
+    """Una línea de la relación de gastos de un mes: cuánto vale y cuánto de eso es cerebral (lo demás es
+    emocional; así un gasto mixto se parte en dos)."""
+
+    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='rubros')
+    mes       = models.DateField(help_text='Primer día del mes')
+    categoria = models.CharField(max_length=20)
+    nombre    = models.CharField(max_length=80)
+    valor     = models.PositiveBigIntegerField(default=0)
+    cerebral  = models.PositiveBigIntegerField(default=0)
+    orden     = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['mes', 'orden', 'id']
+        indexes = [models.Index(fields=['proyecto', 'mes'])]
+        constraints = [models.CheckConstraint(condition=models.Q(cerebral__lte=models.F('valor')),
+                                              name='rubro_cerebral_no_pasa_del_valor')]
+
+    @property
+    def emocional(self):
+        return self.valor - self.cerebral
+
+
+class GastoNoMensual(models.Model):
+    """Un gasto que no llega cada mes (SOAT, matrícula, vacaciones…): se aprovisiona mes a mes."""
+
+    PERIODOS = [('anual', 'Una vez al año'), ('semestral', 'Dos veces al año')]
+
+    proyecto     = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='no_mensuales')
+    nombre       = models.CharField(max_length=80)
+    valor        = models.PositiveBigIntegerField(help_text='Lo que vale cada pago')
+    periodicidad = models.CharField(max_length=10, choices=PERIODOS, default='anual')
+    mes_pago     = models.PositiveSmallIntegerField(help_text='Mes del (primer) pago, de 1 a 12')
+    clase        = models.CharField(max_length=10, choices=CLASES_GASTO, default='cerebral')
+
+    class Meta:
+        ordering = ['mes_pago', 'id']
+        constraints = [models.CheckConstraint(condition=models.Q(mes_pago__gte=1, mes_pago__lte=12),
+                                              name='no_mensual_mes_valido')]
+
+
+class GastoHormiga(models.Model):
+    """Un gasto pequeño de todos los días (el tinto, el mecato): lo que suma al mes y al año."""
+
+    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='hormiga')
+    nombre    = models.CharField(max_length=80)
+    valor_dia = models.PositiveBigIntegerField()
+    dias_mes  = models.PositiveSmallIntegerField(default=30)
+    clase     = models.CharField(max_length=10, choices=CLASES_GASTO, default='emocional')
+
+    class Meta:
+        ordering = ['id']
+        constraints = [models.CheckConstraint(condition=models.Q(dias_mes__gte=1, dias_mes__lte=31),
+                                              name='hormiga_dias_validos')]
+
+
+class Gasto(models.Model):
+    """Lo que se gastó de verdad, el día que pasó: el diario sincero. No se edita; solo se puede borrar el
+    mismo día que se anotó (por si fue un error)."""
+
+    proyecto    = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='gastos')
+    fecha       = models.DateField(default=timezone.localdate)
+    valor       = models.PositiveBigIntegerField()
+    descripcion = models.CharField(max_length=120)
+    categoria   = models.CharField(max_length=20)
+    clase       = models.CharField(max_length=10, choices=CLASES_GASTO)
+    anotado     = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-fecha', '-anotado', '-id']
+        indexes = [models.Index(fields=['proyecto', 'fecha'])]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise DatoInmutableError('Un gasto anotado no se cambia.')
+        super().save(*args, **kwargs)
+
+
+class DiaSinGasto(models.Model):
+    """La persona dijo que ese día no gastó nada: también cuenta como día al día."""
+
+    proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='dias_sin_gasto')
+    fecha    = models.DateField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['proyecto', 'fecha'], name='dia_sin_gasto_unico')]

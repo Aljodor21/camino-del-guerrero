@@ -6,6 +6,7 @@ import {
   AreaCrecimiento,
   NotaCrecimiento,
   ProcesoCrecimiento,
+  ProgramaCrecimiento,
   ProcesoPayload,
   ProyectoCrecimiento,
   ProyectoPayload,
@@ -31,6 +32,23 @@ export class CrecimientoService {
   }
   borrarArea(id: number): Observable<void> {
     return this.http.delete<void>(`${API}/areas/${id}/`);
+  }
+
+  area(id: number): Observable<AreaCrecimiento> {
+    return this.http.get<AreaCrecimiento>(`${API}/areas/${id}/`);
+  }
+
+  /** El catálogo de programas ya armados (por ejemplo, un libro con sus ejercicios). */
+  programas(): Observable<ProgramaCrecimiento[]> {
+    return this.http.get<ProgramaCrecimiento[]>(`${API}/programas/`);
+  }
+
+  proceso(id: number): Observable<ProcesoCrecimiento> {
+    return this.http.get<ProcesoCrecimiento>(`${API}/procesos/${id}/`);
+  }
+
+  proyecto(id: number): Observable<ProyectoCrecimiento> {
+    return this.http.get<ProyectoCrecimiento>(`${API}/proyectos/${id}/`);
   }
 
   procesos(area: number): Observable<ProcesoCrecimiento[]> {

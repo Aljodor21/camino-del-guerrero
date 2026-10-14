@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from core.exceptions import ReglaNegocioError
 from . import horarios, sueno, ventanas
+from crecimiento import avisos as avisos_de_crecimiento
 from nutricion.grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from nutricion import minutas
 from nutricion.models import RegistroComida, Suplemento
@@ -280,6 +281,10 @@ def programados(usuario, fecha, ahora=None):
     if 'recordatorio' not in apagados:
         for r in Recordatorio.objects.pendientes().filter(usuario=usuario, fecha__gte=fecha):
             avisos.extend(_avisos_de_recordatorio(r, fecha))
+
+    # Los proyectos de crecimiento dicen sus propios avisos (su estándar, en `crecimiento/tipos.py`).
+    if 'crecimiento' not in apagados:
+        avisos.extend(avisos_de_crecimiento.programados(usuario, fecha))
     return avisos
 
 
@@ -338,7 +343,7 @@ def resolver_automaticas(usuario, ahora=None):
     (el aviso de levantarse horas después)."""
     ahora = ahora or timezone.now()
     pendientes = Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True,
-                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso',
+                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso', 'crecimiento',
                                                        *VIGENCIA_DEL_MOMENTO])
     for n in pendientes.select_related('recordatorio'):
         if n.tipo in VIGENCIA_DEL_MOMENTO:
@@ -351,6 +356,8 @@ def resolver_automaticas(usuario, ahora=None):
                 or (proceso.fecha_fin_plan.isoformat() if proceso.fecha_fin_plan else None) != n.datos.get('fin_plan')
         elif n.tipo == 'comida':
             hecho = RegistroComida.objects.filter(usuario=usuario, fecha=n.fecha, tiempo=n.datos.get('tiempo')).exists()
+        elif n.tipo == 'crecimiento':
+            hecho = avisos_de_crecimiento.resuelto(n)
         else:
             r = n.recordatorio
             hecho = r is None or r.completado_en is not None or r.fecha.isoformat() != n.datos.get('fecha')
@@ -387,6 +394,8 @@ def confirmar(notificacion):
                 notas='Marcado desde el aviso.')
     elif n.tipo == 'proceso':
         raise ReglaNegocioError('Cuéntanos qué sigue desde "Tu control": así queda registrado.')
+    elif n.tipo == 'crecimiento':
+        avisos_de_crecimiento.confirmar(n)
     elif n.tipo == 'comida':
         raise ReglaNegocioError('Cuenta qué comiste desde el aviso: así guardamos cómo vas con tu plan.')
     elif n.tipo == 'recordatorio':
@@ -702,6 +711,7 @@ def accion_de(notificacion):
         'entreno': 'Ya entrené',
         'comida': '',
         'proceso': '',
+        'crecimiento': notificacion.datos.get('accion', ''),
         'recordatorio': '' if notificacion.recordatorio_id and notificacion.recordatorio.automatico else 'Listo',
     }[notificacion.tipo]
 
@@ -712,4 +722,6 @@ def url_de(notificacion):
         return f'/comidas/contar?tiempo={notificacion.datos.get("tiempo", "")}&fecha={notificacion.fecha}'
     if notificacion.tipo == 'proceso':
         return '/control'
+    if notificacion.tipo == 'crecimiento':
+        return f'/crecimiento?proyecto={notificacion.datos.get("proyecto", "")}'
     return '/avisos'
