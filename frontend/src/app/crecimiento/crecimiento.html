@@ -1,0 +1,457 @@
+<div class="p-4 max-w-2xl mx-auto space-y-4">
+  <app-portada
+    foto="progreso"
+    titulo="Crecimiento"
+    subtitulo="Lo que quieres trabajar además del cuerpo y la comida."
+  />
+
+  <app-que-es
+    para="Armas tus propias áreas (por ejemplo, educación financiera). Dentro llevas procesos que salen de un libro, un curso o un mentor, y en cada uno guardas sus proyectos y tus notas."
+    [puedes]="[
+      'Crear un área y, dentro, un proceso según un libro y su autor',
+      'Agregar los proyectos de cada capítulo y marcar cuánto llevas',
+      'Dejar notas que la app puede mostrarte en otras pantallas',
+    ]"
+  />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+
+  <!-- Migas: dónde estás -->
+  @if (nivel() !== 'areas') {
+    <nav class="flex items-center gap-2 text-sm" aria-label="Dónde estás">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        ariaLabel="Volver"
+        (onClick)="volver()"
+      />
+      <p class="min-w-0 truncate text-gray-600 dark:text-gray-300">
+        {{ area()?.nombre }}
+        @if (proceso(); as p) {
+          <span aria-hidden="true"> › </span>{{ p.titulo }}
+        }
+        @if (proyecto(); as p) {
+          <span aria-hidden="true"> › </span>{{ p.titulo }}
+        }
+      </p>
+    </nav>
+  }
+
+  @if (cargando()) {
+    <div class="flex justify-center py-12"><p-progressspinner styleClass="w-10 h-10" /></div>
+  } @else {
+    @switch (nivel()) {
+      @case ('areas') {
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tus áreas</h2>
+          @if (formulario() !== 'area') {
+            <p-button
+              icon="pi pi-plus"
+              label="Agregar"
+              size="small"
+              (onClick)="abrirFormulario('area')"
+            />
+          }
+        </div>
+
+        @if (formulario() === 'area') {
+          <form
+            [formGroup]="formArea"
+            (ngSubmit)="guardarArea()"
+            class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+          >
+            <div class="flex flex-col gap-1">
+              <label for="cr-area" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >Nombre del área</label
+              >
+              <input
+                pInputText
+                id="cr-area"
+                formControlName="nombre"
+                maxlength="80"
+                placeholder="Ej. Educación financiera"
+                class="w-full"
+              />
+            </div>
+            <div class="flex justify-end gap-2">
+              <p-button
+                label="Cancelar"
+                variant="outlined"
+                severity="secondary"
+                (onClick)="cerrarFormulario()"
+              />
+              <p-button
+                type="submit"
+                label="Guardar"
+                icon="pi pi-check"
+                [loading]="guardando()"
+                [disabled]="formArea.invalid"
+              />
+            </div>
+          </form>
+        }
+
+        @if (areas().length) {
+          <ul class="space-y-2">
+            @for (a of areas(); track a.id) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                  (click)="abrirArea(a)"
+                >
+                  <span
+                    class="w-11 h-11 shrink-0 rounded-xl bg-guerrero-red/10 text-guerrero-red flex items-center justify-center"
+                    aria-hidden="true"
+                  >
+                    <i [class]="a.icono + ' text-lg'"></i>
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-semibold text-gray-900 dark:text-white">{{
+                      a.nombre
+                    }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">
+                      {{ a.procesos }} {{ a.procesos === 1 ? 'proceso' : 'procesos' }}
+                    </span>
+                    <span
+                      class="mt-1.5 block h-1.5 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden"
+                    >
+                      <span
+                        class="block h-full rounded-full bg-emerald-500"
+                        [style.width.%]="a.avance"
+                      ></span>
+                    </span>
+                  </span>
+                  <i class="pi pi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (formulario() !== 'area') {
+          <div class="text-center py-10 px-6 space-y-2">
+            <i
+              class="pi pi-compass text-4xl text-gray-300 dark:text-gray-600"
+              aria-hidden="true"
+            ></i>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Aún no tienes áreas.</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+              Crea la primera, por ejemplo «Educación financiera», y dentro empieza un proceso con
+              un libro.
+            </p>
+          </div>
+        }
+      }
+
+      @case ('area') {
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ area()?.nombre }}</h2>
+          @if (formulario() !== 'proceso') {
+            <p-button
+              icon="pi pi-plus"
+              label="Programa"
+              size="small"
+              (onClick)="abrirFormulario('proceso')"
+            />
+          }
+        </div>
+
+        @if (formulario() === 'proceso') {
+          <ul class="space-y-2">
+            @for (pr of programas(); track pr.id) {
+              <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+                <p class="font-semibold text-gray-900 dark:text-white">{{ pr.fuente_titulo }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ fuenteTexto(pr) }} · {{ pr.descripcion }}
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-300 list-disc pl-4">
+                  @for (y of pr.proyectos; track y.clave) {
+                    <li>
+                      {{ y.titulo }} <span class="text-gray-400">· {{ y.detalle }}</span>
+                    </li>
+                  }
+                </ul>
+                <div class="flex justify-end gap-2">
+                  <p-button
+                    label="Cancelar"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="cerrarFormulario()"
+                  />
+                  <p-button
+                    label="Empezar este"
+                    icon="pi pi-play"
+                    [loading]="guardando()"
+                    (onClick)="empezarPrograma(pr)"
+                  />
+                </div>
+              </li>
+            } @empty {
+              <li class="text-sm text-gray-500 dark:text-gray-400">Cargando el catálogo…</li>
+            }
+          </ul>
+        }
+
+        @if (procesos().length) {
+          <ul class="space-y-2">
+            @for (p of procesos(); track p.id) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                  (click)="abrirProceso(p)"
+                >
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-semibold text-gray-900 dark:text-white">{{
+                      p.titulo
+                    }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{
+                      fuenteTexto(p)
+                    }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">
+                      {{ p.proyectos }} {{ p.proyectos === 1 ? 'proyecto' : 'proyectos' }} ·
+                      {{ p.avance }}%
+                    </span>
+                    <span
+                      class="mt-1.5 block h-1.5 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden"
+                    >
+                      <span
+                        class="block h-full rounded-full bg-emerald-500"
+                        [style.width.%]="p.avance"
+                      ></span>
+                    </span>
+                  </span>
+                  <i class="pi pi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (formulario() !== 'proceso') {
+          <p class="text-sm text-gray-600 dark:text-gray-300 text-center py-8">
+            Aún no llevas ningún programa en esta área.
+          </p>
+        }
+
+        <div class="flex items-center gap-3 pt-2">
+          @if (confirmarBorrar()) {
+            <p class="text-xs text-gray-600 dark:text-gray-300">
+              Se borra el área con todo lo que tiene.
+            </p>
+            <p-button label="Borrar" severity="danger" size="small" (onClick)="borrar()" />
+            <p-button
+              label="No"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="confirmarBorrar.set(false)"
+            />
+          } @else {
+            <p-button
+              label="Borrar área"
+              icon="pi pi-trash"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="confirmarBorrar.set(true)"
+            />
+          }
+        </div>
+      }
+
+      @case ('proceso') {
+        @if (proceso(); as p) {
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ p.titulo }}</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300">{{ fuenteTexto(p) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Desde el {{ formatearFecha(p.fecha_inicio) }}
+            </p>
+          </section>
+        }
+
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Proyectos</h3>
+        </div>
+
+        @if (proyectos().length) {
+          <ul class="space-y-2">
+            @for (y of proyectos(); track y.id) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                  (click)="abrirProyecto(y)"
+                >
+                  <i
+                    [class]="
+                      y.estado === 'terminado'
+                        ? 'pi pi-check-circle text-emerald-600'
+                        : 'pi pi-circle text-gray-400'
+                    "
+                    aria-hidden="true"
+                  ></i>
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-semibold text-gray-900 dark:text-white">{{
+                      y.titulo
+                    }}</span>
+                    @if (y.detalle) {
+                      <span class="block text-xs text-gray-500 dark:text-gray-400">{{
+                        y.detalle
+                      }}</span>
+                    }
+                    <span class="block text-xs text-gray-500 dark:text-gray-400">
+                      {{ estadoTexto(y.estado) }} · {{ y.avance }}%
+                      @if (y.resumen) {
+                        · {{ y.resumen }}
+                      }
+                    </span>
+                  </span>
+                  <i class="pi pi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-sm text-gray-600 dark:text-gray-300 text-center py-8">
+            Este programa no tiene actividades.
+          </p>
+        }
+
+        <div class="flex items-center gap-3 pt-2">
+          @if (confirmarBorrar()) {
+            <p class="text-xs text-gray-600 dark:text-gray-300">
+              Se borra el proceso con todo lo que tiene.
+            </p>
+            <p-button label="Borrar" severity="danger" size="small" (onClick)="borrar()" />
+            <p-button
+              label="No"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="confirmarBorrar.set(false)"
+            />
+          } @else {
+            <p-button
+              label="Borrar proceso"
+              icon="pi pi-trash"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="confirmarBorrar.set(true)"
+            />
+          }
+        </div>
+      }
+
+      @case ('proyecto') {
+        @if (proyecto(); as y) {
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ y.titulo }}</h2>
+              @if (y.detalle) {
+                <p class="text-sm text-gray-600 dark:text-gray-300">{{ y.detalle }}</p>
+              }
+            </div>
+            @if (!y.calcula_avance) {
+              <div class="space-y-1.5">
+                <p id="cr-avance" class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  ¿Cuánto llevas? <span class="tabular-nums">{{ y.avance }}%</span>
+                </p>
+                <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="cr-avance">
+                  @for (a of avances; track a) {
+                    <button
+                      type="button"
+                      role="radio"
+                      [attr.aria-checked]="y.avance === a"
+                      class="px-3 py-1.5 rounded-full text-sm border transition-colors tabular-nums"
+                      [class]="
+                        y.avance === a
+                          ? 'bg-guerrero-red text-white border-guerrero-red'
+                          : 'border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-200'
+                      "
+                      (click)="marcarAvance(a)"
+                    >
+                      {{ a }}%
+                    </button>
+                  }
+                </div>
+              </div>
+            } @else if (!pantalla()) {
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                {{ estadoTexto(y.estado) }} · {{ y.avance }}%
+                @if (y.resumen) {
+                  · {{ y.resumen }}
+                }
+              </p>
+            }
+          </section>
+
+          @if (pantalla(); as componente) {
+            <div class="pt-2 pb-4">
+              <ng-container *ngComponentOutlet="componente; inputs: entradasPantalla()" />
+            </div>
+          }
+
+          <section class="space-y-3" aria-labelledby="cr-notas">
+            <h3 id="cr-notas" class="font-semibold text-gray-900 dark:text-white">Notas</h3>
+            <form [formGroup]="formNota" (ngSubmit)="guardarNota()" class="space-y-2">
+              <label for="cr-nota" class="sr-only">Nueva nota</label>
+              <textarea
+                pTextarea
+                id="cr-nota"
+                formControlName="texto"
+                rows="3"
+                maxlength="2000"
+                placeholder="Lo que quieres recordar de este proyecto"
+                class="w-full"
+              ></textarea>
+              <div class="flex justify-end">
+                <p-button
+                  type="submit"
+                  label="Guardar nota"
+                  icon="pi pi-check"
+                  size="small"
+                  [loading]="guardando()"
+                  [disabled]="formNota.invalid"
+                />
+              </div>
+            </form>
+
+            @if (notas().length) {
+              <ul class="space-y-2">
+                @for (n of notas(); track n.id) {
+                  <li
+                    class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-3 flex items-start gap-3"
+                  >
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-line">
+                        {{ n.texto }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ formatearFecha(n.fecha.slice(0, 10)) }}
+                      </p>
+                    </div>
+                    <p-button
+                      icon="pi pi-trash"
+                      [text]="true"
+                      [rounded]="true"
+                      severity="secondary"
+                      size="small"
+                      ariaLabel="Borrar nota"
+                      (onClick)="borrarNota(n)"
+                    />
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-sm text-gray-500 dark:text-gray-400">Aún no has dejado notas.</p>
+            }
+          </section>
+        }
+      }
+    }
+  }
+</div>

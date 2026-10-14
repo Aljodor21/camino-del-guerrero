@@ -1,0 +1,260 @@
+<div class="space-y-4">
+  <app-pestanas [items]="pasos" [(activa)]="paso" etiqueta="Pasos del taller" />
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+  @if (aviso()) {
+    <p class="text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ aviso() }}</p>
+  }
+
+  @switch (paso()) {
+    @case ('1') {
+      <p class="text-sm text-gray-600 dark:text-gray-300">
+        Responde sí o no a cada afirmación. Sé honesto/a contigo: no hay respuestas correctas.
+      </p>
+      @for (g of grupos; track g.id; let gi = $index) {
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-1">
+          <h3 class="font-semibold text-gray-900 dark:text-white">
+            <span class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
+              >{{ letras[gi] }})</span
+            >
+            {{ g.nombre }}
+          </h3>
+          @for (p of g.preguntas; track $index; let i = $index) {
+            @let k = g.id + i;
+            <div
+              class="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 dark:border-white/5 last:border-0"
+            >
+              <p class="min-w-0 flex-1 text-sm text-gray-800 dark:text-gray-100">¿{{ p[0] }}?</p>
+              <div class="flex shrink-0 gap-1.5" role="radiogroup" [attr.aria-label]="p[0]">
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="datos().ans[k] === 'si'"
+                  class="w-12 py-1.5 rounded-lg border text-sm font-semibold transition-colors"
+                  [class]="
+                    datos().ans[k] === 'si'
+                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                      : 'border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300'
+                  "
+                  (click)="responder(k, 'si')"
+                >
+                  Sí
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="datos().ans[k] === 'no'"
+                  class="w-12 py-1.5 rounded-lg border text-sm font-semibold transition-colors"
+                  [class]="
+                    datos().ans[k] === 'no'
+                      ? 'bg-rose-700 border-rose-700 text-white'
+                      : 'border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300'
+                  "
+                  (click)="responder(k, 'no')"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          }
+        </section>
+      }
+      <div class="flex flex-wrap items-center gap-3">
+        <p-button label="Seguir a reflexionar" (onClick)="paso.set('2')" />
+        <span class="text-sm text-gray-500 dark:text-gray-400 tabular-nums"
+          >{{ respondidas() }}/{{ total }} respondidas · {{ si().length }} «sí»</span
+        >
+      </div>
+    }
+
+    @case ('2') {
+      @if (!si().length) {
+        <p
+          class="rounded-xl border border-dashed border-gray-300 dark:border-dark-700 p-5 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Aquí aparecen las afirmaciones a las que respondiste «sí». Vuelve al paso 1 y marca tus
+          respuestas.
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Para cada creencia que marcaste con sí, responde las dos preguntas. Ejemplo: «A
+          conformarme con trabajos mal pagos» → «Me impide cobrar lo justo».
+        </p>
+        @for (q of si(); track q.k) {
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+            <p
+              class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            >
+              {{ q.grupo }}
+            </p>
+            <h3 class="font-semibold text-gray-900 dark:text-white">{{ q.texto }}</h3>
+            <label
+              class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+              [for]="'a-' + q.k"
+              >¿A dónde me ha llevado esta creencia?</label
+            >
+            <textarea
+              pTextarea
+              rows="3"
+              maxlength="1500"
+              class="w-full"
+              [id]="'a-' + q.k"
+              [value]="datos().ref[q.k]?.a ?? ''"
+              (input)="reflexionar(q.k, 'a', leer($event))"
+            ></textarea>
+            <label
+              class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+              [for]="'b-' + q.k"
+              >¿Qué me impide lograr esta creencia?</label
+            >
+            <textarea
+              pTextarea
+              rows="3"
+              maxlength="1500"
+              class="w-full"
+              [id]="'b-' + q.k"
+              [value]="datos().ref[q.k]?.b ?? ''"
+              (input)="reflexionar(q.k, 'b', leer($event))"
+            ></textarea>
+          </section>
+        }
+        <p-button label="Transformar mis creencias" (onClick)="paso.set('3')" />
+      }
+    }
+
+    @case ('3') {
+      @if (!si().length) {
+        <p
+          class="rounded-xl border border-dashed border-gray-300 dark:border-dark-700 p-5 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Primero marca tus «sí» en el paso 1. Aquí reemplazas cada creencia limitante por una
+          positiva.
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Escribe tu nueva creencia con tus propias palabras. Si te atascas, toca la sugerencia y
+          ajústala a ti.
+        </p>
+        @for (q of si(); track q.k) {
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+            <p
+              class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+            >
+              Creencia limitante
+            </p>
+            <h3 class="font-semibold text-gray-900 dark:text-white">{{ q.texto }}</h3>
+            <label
+              class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+              [for]="'p-' + q.k"
+              >Mi nueva creencia</label
+            >
+            <textarea
+              pTextarea
+              rows="2"
+              maxlength="300"
+              class="w-full"
+              [id]="'p-' + q.k"
+              [value]="datos().pos[q.k] ?? ''"
+              (input)="transformar(q.k, leer($event))"
+            ></textarea>
+            <button
+              type="button"
+              class="text-left text-sm rounded-full border border-dashed border-amber-500 px-3 py-1.5 text-gray-700 dark:text-gray-200"
+              (click)="usarSugerencia(q)"
+            >
+              Usar sugerencia: {{ q.sugerencia }}
+            </button>
+          </section>
+        }
+        <p-button label="Ver mi resultado" (onClick)="paso.set('4')" />
+      }
+    }
+
+    @case ('4') {
+      @if (!nuevas().length) {
+        <p
+          class="rounded-xl border border-dashed border-gray-300 dark:border-dark-700 p-5 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Tus nuevas creencias aparecen aquí como post-its cuando las escribas en el paso 3.
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Escríbelas en post-its y pégalas donde las veas todos los días: el espejo, el clóset, el
+          escritorio o la nevera.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          @for (x of nuevas(); track x.q.k; let i = $index) {
+            <div
+              class="bg-amber-200 text-amber-950 dark:bg-amber-300 p-4 min-h-32 text-lg leading-snug font-semibold shadow-md"
+              [style.transform]="'rotate(' + rotacion(i) + ')'"
+            >
+              {{ x.texto }}
+            </div>
+          }
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <p-button label="Copiar mis creencias" icon="pi pi-copy" (onClick)="copiar(false)" />
+          <p-button
+            label="Copiar el ejercicio completo"
+            variant="outlined"
+            severity="secondary"
+            (onClick)="copiar(true)"
+          />
+        </div>
+
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">
+            Léelas {{ meta }} días seguidos
+          </h3>
+          <div class="grid grid-cols-7 gap-1.5" aria-hidden="true">
+            @for (c of cuadros(); track $index) {
+              <span
+                class="aspect-square rounded-md flex items-center justify-center text-xs font-semibold tabular-nums"
+                [class]="
+                  c ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-dark-700 text-gray-400'
+                "
+                >{{ $index + 1 }}</span
+              >
+            }
+          </div>
+          <p class="text-sm text-gray-700 dark:text-gray-200 tabular-nums">
+            {{ racha() }} de {{ meta }} días seguidos
+          </p>
+          @if (leidaHoy()) {
+            <p class="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+              Hoy ya las leíste.
+            </p>
+          } @else {
+            <p-button label="Hoy ya las leí" icon="pi pi-check" (onClick)="yaLasLei()" />
+          }
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Si un día no las lees, la cuenta vuelve a empezar: son 21 días seguidos.
+          </p>
+          <div
+            class="flex flex-wrap items-center gap-3 border-t border-gray-100 dark:border-white/5 pt-3"
+          >
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+              <input
+                type="checkbox"
+                class="w-4 h-4 accent-guerrero-red"
+                [checked]="datos().avisar"
+                (change)="ajustarAviso($any($event.target).checked, datos().hora_aviso)"
+              />
+              Recordarme leerlas a las
+            </label>
+            <input
+              pInputText
+              type="time"
+              aria-label="Hora del aviso"
+              [value]="datos().hora_aviso"
+              [disabled]="!datos().avisar"
+              (change)="ajustarAviso(datos().avisar, leer($event) || '08:00')"
+            />
+          </div>
+        </section>
+      }
+    }
+  }
+</div>

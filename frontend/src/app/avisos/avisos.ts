@@ -41,6 +41,7 @@ const ICONOS: Record<TipoAviso, string> = {
   recordatorio: 'pi pi-calendar',
   comida: 'pi pi-camera',
   proceso: 'pi pi-flag',
+  crecimiento: 'pi pi-compass',
 };
 
 /** El color de cada tipo de aviso: así se distingue de un vistazo qué es cada uno. */
@@ -53,6 +54,7 @@ const ESTILOS: Record<TipoAviso, string> = {
   recordatorio: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
   comida: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
   proceso: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
+  crecimiento: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
 };
 
 const TIPOS: { id: TipoAviso; label: string }[] = [
@@ -64,6 +66,7 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
   { id: 'recordatorio', label: 'Agenda' },
   { id: 'comida', label: 'Comidas' },
   { id: 'proceso', label: 'Control' },
+  { id: 'crecimiento', label: 'Crecimiento' },
 ];
 
 /** Qué hace el guerrero cuando se confirma cada tipo de aviso. */

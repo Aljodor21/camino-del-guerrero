@@ -1,5 +1,13 @@
 export type TipoAviso =
-  'agua' | 'toma' | 'dormir' | 'levantar' | 'entreno' | 'recordatorio' | 'comida' | 'proceso';
+  | 'agua'
+  | 'toma'
+  | 'dormir'
+  | 'levantar'
+  | 'entreno'
+  | 'recordatorio'
+  | 'comida'
+  | 'proceso'
+  | 'crecimiento';
 
 /** Un aviso pendiente: sale de la bandeja solo cuando se confirma lo que pide. */
 export interface Aviso {

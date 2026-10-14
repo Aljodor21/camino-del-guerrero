@@ -112,6 +112,13 @@
                       class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
                       >{{ a.tipo === 'toma' ? 'Contar con mi comida' : 'Contar lo que comí' }}</a
                     >
+                  } @else if (a.tipo === 'crecimiento') {
+                    <a
+                      routerLink="/crecimiento"
+                      [queryParams]="{ proyecto: a.datos['proyecto'] }"
+                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
+                      >Abrir en Crecimiento</a
+                    >
                   } @else if (a.tipo === 'proceso') {
                     <a
                       routerLink="/control"
