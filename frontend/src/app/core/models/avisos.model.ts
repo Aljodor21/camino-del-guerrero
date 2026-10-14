@@ -93,6 +93,8 @@ export interface ResumenHoy {
     registros: VasoTomado[];
   };
   tomas: TomaDeHoy[];
+  /** Las comidas del plan de hoy y si ya se contaron. */
+  comidas: { tiempo: string; nombre: string; hora: string; contada: boolean }[];
   entreno: { toca: boolean; hecho: boolean };
   dormir: { hora: string | null; acostado: string | null };
   /** A qué hora se levantó hoy (si ya lo anotó) y cuánto durmió anoche. */
@@ -100,8 +102,6 @@ export interface ResumenHoy {
     hora: string | null;
     levantado: string | null;
     dormiste_horas: number | null;
-    /** A qué hora se acostó anoche (la última que dijo). */
-    acostado_anoche: string | null;
     /** Minutos antes (−) o después (+) de lo previsto: anoche al acostarte y hoy al levantarte. */
     acostarse_min: number | null;
     levantarse_min: number | null;

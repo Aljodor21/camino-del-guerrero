@@ -77,10 +77,17 @@ class HorasDeUnDiaTest(HorariosBase):
                                          format='json').status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_las_horas_por_dia_de_la_semana_se_validan_y_se_guardan(self):
-        r = self.client.patch(reverse('habitos'), {'horas_semana': {'6': {'levantarse': '8:30', 'dormir': '23:30'}}},
-                              format='json')
+        semana = {str(d): {'levantarse': '6:00', 'dormir': '22:00'} for d in range(1, 8)}
+        semana['6'] = {'levantarse': '8:30', 'dormir': '23:30'}
+        r = self.client.patch(reverse('habitos'), {'horas_semana': semana}, format='json')
         self.assertEqual(r.status_code, status.HTTP_200_OK, r.data)
-        self.assertEqual(r.data['horas_semana'], {'6': {'levantarse': '08:30', 'dormir': '23:30'}})
+        self.assertEqual(r.data['horas_semana']['6'], {'levantarse': '08:30', 'dormir': '23:30'})
+        self.assertEqual(r.data['horas_semana']['1'], {'levantarse': '06:00', 'dormir': '22:00'})
+        # Una hora por día es de los siete días o de ninguno; vacío vuelve a la hora general.
+        self.assertEqual(self.client.patch(reverse('habitos'), {'horas_semana': {'6': semana['6']}},
+                                           format='json').status_code, status.HTTP_400_BAD_REQUEST)
+        r = self.client.patch(reverse('habitos'), {'horas_semana': {}}, format='json')
+        self.assertEqual((r.status_code, r.data['horas_semana']), (status.HTTP_200_OK, {}))
         for malo in ({'9': {'levantarse': '07:00'}}, {'1': {'levantarse': 'tarde'}},
                      {'1': {'levantarse': '07:00', 'dormir': '07:00'}}):
             self.assertEqual(self.client.patch(reverse('habitos'), {'horas_semana': malo}, format='json').status_code,

@@ -80,9 +80,13 @@ export class AgendaService {
   }
 
   crear(payload: RecordatorioPayload): Observable<Recordatorio> {
-    return this.http
-      .post<Recordatorio>(`${API}/`, payload)
-      .pipe(tap((r) => this.guardarEnLista(r)));
+    return this.http.post<Recordatorio>(`${API}/`, payload).pipe(
+      tap((r) => {
+        this.guardarEnLista(r);
+        // Repetido son varios: se trae la lista completa.
+        if (payload.repetir) this.cargar(true).subscribe({ error: () => undefined });
+      }),
+    );
   }
 
   actualizar(
@@ -94,10 +98,16 @@ export class AgendaService {
       .pipe(tap((r) => this.guardarEnLista(r)));
   }
 
-  eliminar(id: number): Observable<void> {
+  /** `siguientes`: también borra los que se repitieron después de este. */
+  eliminar(id: number, siguientes = false): Observable<void> {
     return this.http
-      .delete<void>(`${API}/${id}/`)
-      .pipe(tap(() => this._recordatorios.update((lista) => lista.filter((r) => r.id !== id))));
+      .delete<void>(`${API}/${id}/`, { params: siguientes ? { siguientes: '1' } : {} })
+      .pipe(
+        tap(() => {
+          if (siguientes) this.cargar(true).subscribe({ error: () => undefined });
+          else this._recordatorios.update((lista) => lista.filter((r) => r.id !== id));
+        }),
+      );
   }
 
   /** Inserta o reemplaza y mantiene el orden por fecha y hora, como la API. */

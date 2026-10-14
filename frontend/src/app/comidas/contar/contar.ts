@@ -58,6 +58,8 @@ export class ContarComida implements OnInit {
   protected error = signal('');
   protected enviando = signal(false);
   protected avances = signal<Avances>({});
+  /** Por cada toma de esta comida: true si se la tomó, false si no, sin contestar si falta. */
+  protected tomas = signal<Record<number, boolean>>({});
   protected nota = signal('');
   protected foto = signal<Blob | null>(null);
   protected vista = signal<string | null>(null);
@@ -73,7 +75,11 @@ export class ContarComida implements OnInit {
   });
   protected completo = computed(() => {
     const p = this.pedido();
-    return !!p && p.grupos.every((g) => this.avances()[g.grupo] !== undefined);
+    return (
+      !!p &&
+      p.grupos.every((g) => this.avances()[g.grupo] !== undefined) &&
+      p.tomas.every((t) => t.tomada || this.tomas()[t.suplemento] !== undefined)
+    );
   });
 
   constructor() {
@@ -104,9 +110,22 @@ export class ContarComida implements OnInit {
     this.avances.update((a) => ({ ...a, [grupo]: valor }));
   }
 
+  protected tomar(suplemento: number, si: boolean): void {
+    this.tomas.update((t) => ({ ...t, [suplemento]: si }));
+  }
+
   protected todoElPlan(): void {
     const p = this.pedido();
-    if (p) this.avances.set(Object.fromEntries(p.grupos.map((g) => [g.grupo, 1])));
+    if (!p) return;
+    this.avances.set(Object.fromEntries(p.grupos.map((g) => [g.grupo, 1])));
+    this.tomas.set(Object.fromEntries(p.tomas.map((t) => [t.suplemento, true])));
+  }
+
+  /** «1 de lácteos» para decir lo que la proteína reemplaza. */
+  protected reemplaza(t: { reemplaza: { nombre: string; porciones: number }[] }): string {
+    return t.reemplaza
+      .map((r) => `${String(r.porciones).replace('.', ',')} de ${r.nombre.toLowerCase()}`)
+      .join(' y ');
   }
 
   protected leerNota(evento: Event): void {
@@ -148,6 +167,9 @@ export class ContarComida implements OnInit {
         tiempo: p.tiempo,
         fecha: p.fecha,
         avances: this.avances(),
+        tomas: p.tomas
+          .filter((t) => !t.tomada && this.tomas()[t.suplemento])
+          .map((t) => t.suplemento),
         nota: this.nota().trim(),
         foto: this.foto(),
       })

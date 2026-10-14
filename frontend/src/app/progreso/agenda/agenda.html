@@ -11,7 +11,7 @@
     [pasos]="[
       'Agrega lo que no quieres olvidar, con su fecha.',
       'El día de la fecha (o después) lo marcas como hecho.',
-      'Los sugeridos se resuelven desde la tarjeta de tu proteína.'
+      'Los sugeridos se resuelven desde la tarjeta de tu proteína.',
     ]"
     demo="agenda"
   />
@@ -161,14 +161,14 @@
     </button>
     <!-- Se marca como hecho cuando llega su fecha, no antes. -->
     @if (r.fecha <= hoy) {
-    <button
-      type="button"
-      (click)="completar(r)"
-      class="shrink-0 w-14 flex items-center justify-center border-l border-gray-100 dark:border-dark-700 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-guerrero-red"
-      [attr.aria-label]="'Marcar como hecho: ' + r.titulo"
-    >
-      <i class="pi pi-check text-base" aria-hidden="true"></i>
-    </button>
+      <button
+        type="button"
+        (click)="completar(r)"
+        class="shrink-0 w-14 flex items-center justify-center border-l border-gray-100 dark:border-dark-700 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-guerrero-red"
+        [attr.aria-label]="'Marcar como hecho: ' + r.titulo"
+      >
+        <i class="pi pi-check text-base" aria-hidden="true"></i>
+      </button>
     }
   </li>
 </ng-template>
@@ -241,6 +241,38 @@
       />
     </div>
 
+    @if (editando() === 'nuevo') {
+      <div class="flex flex-col gap-2">
+        <span id="ag-repetir" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >Repetir</span
+        >
+        <p-selectbutton
+          ariaLabelledBy="ag-repetir"
+          formControlName="repetir"
+          [options]="repeticiones"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          styleClass="w-full flex-wrap"
+        />
+        @if (form.controls.repetir.value) {
+          <div class="flex items-center gap-2">
+            <label for="ag-veces" class="text-sm text-gray-600 dark:text-gray-400">En total</label>
+            <input
+              pInputText
+              id="ag-veces"
+              type="number"
+              min="2"
+              max="60"
+              formControlName="veces"
+              class="w-20"
+            />
+            <span class="text-sm text-gray-600 dark:text-gray-400">veces (con la primera)</span>
+          </div>
+        }
+      </div>
+    }
+
     <div class="flex flex-col gap-1">
       <label for="ag-nota" class="text-sm font-medium text-gray-600 dark:text-gray-400">
         Nota <span class="text-xs font-normal text-gray-400">opcional</span>
@@ -264,6 +296,14 @@
       @if (editando() !== 'nuevo') {
         @if (confirmarEliminar()) {
           <p-button label="Eliminar" severity="danger" (onClick)="eliminar()" />
+          @if (enSerie()) {
+            <p-button
+              label="Este y los siguientes"
+              severity="danger"
+              variant="outlined"
+              (onClick)="eliminar(true)"
+            />
+          }
         } @else {
           <p-button
             icon="pi pi-trash"

@@ -8,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -16,7 +15,6 @@ import { MessageModule } from 'primeng/message';
 import {
   Aviso,
   HoraDeComida,
-  ResumenHoy,
   SugerenciaDeHoras,
   Sueno,
   TipoAviso,
@@ -158,6 +156,14 @@ export class Avisos implements OnInit {
   protected entreno = signal('');
   /** Horas distintas por día de la semana (1 = lunes): lo vacío usa la hora general. */
   protected horasSemana = signal<Record<string, { levantarse: string; dormir: string }>>({});
+  /** Una hora para todos los días, o una por cada día de la semana: es una cosa o la otra. */
+  protected modoHoras = signal<'general' | 'por_dia'>('general');
+  protected semanaCompleta = computed(() =>
+    this.diasSemana.every((d) => {
+      const h = this.horasSemana()[d.id];
+      return !!h?.levantarse && !!h?.dormir && h.levantarse !== h.dormir;
+    }),
+  );
   /** Entre qué horas se reparte el agua; vacío usa levantarse + 1 h y acostarse − 1 h. */
   protected aguaDesde = signal('');
   protected aguaHasta = signal('');
@@ -189,7 +195,9 @@ export class Avisos implements OnInit {
     return (
       aguaBien &&
       vasoValido(this.vasoMl()) &&
-      !(this.dormir() && this.dormir() === this.levantarse())
+      (this.modoHoras() === 'por_dia'
+        ? this.semanaCompleta()
+        : !(this.dormir() && this.dormir() === this.levantarse()))
     );
   });
 
@@ -234,6 +242,7 @@ export class Avisos implements OnInit {
             ]),
           ),
         );
+        this.modoHoras.set(Object.keys(h.horas_semana ?? {}).length ? 'por_dia' : 'general');
         this.tiemposComida.set(h.tiempos_comida ?? []);
         this.aguaDesde.set(h.horas_agua?.inicio ?? '');
         this.aguaHasta.set(h.horas_agua?.fin ?? '');
@@ -362,6 +371,24 @@ export class Avisos implements OnInit {
     });
   }
 
+  protected elegirModoHoras(modo: 'general' | 'por_dia'): void {
+    this.modoHoras.set(modo);
+    // Al pasar a una hora por día, cada día parte de la hora de siempre para que solo cambie lo que difiere.
+    if (modo === 'por_dia') {
+      this.horasSemana.update((h) =>
+        Object.fromEntries(
+          this.diasSemana.map((d) => [
+            d.id,
+            {
+              levantarse: h[d.id]?.levantarse || this.levantarse(),
+              dormir: h[d.id]?.dormir || this.dormir(),
+            },
+          ]),
+        ),
+      );
+    }
+  }
+
   protected fijarHoraSemana(dia: string, campo: 'levantarse' | 'dormir', valor: string): void {
     this.horasSemana.update((h) => {
       const actual = h[dia] ?? { levantarse: '', dormir: '' };
@@ -433,66 +460,6 @@ export class Avisos implements OnInit {
     return `${cuanto} ${min < 0 ? 'antes' : 'después'} de lo previsto`;
   }
 
-  // ── Decir a qué hora fue de verdad ────────────────────────────────
-  protected editandoSueno = signal(false);
-  protected horaAcostado = signal('');
-  protected horaLevantado = signal('');
-  protected guardandoSueno = signal(false);
-  private acostadoAntes = '';
-  private levantadoAntes = '';
-
-  /** La hora local (HH:MM) de un instante. */
-  private hhmm(instante: string | null | undefined): string {
-    return instante
-      ? new Date(instante).toLocaleTimeString('es-CO', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        })
-      : '';
-  }
-
-  protected abrirEditorSueno(h: ResumenHoy): void {
-    this.acostadoAntes = this.hhmm(h.levantar.acostado_anoche);
-    this.levantadoAntes = this.hhmm(h.levantar.levantado);
-    this.horaAcostado.set(this.acostadoAntes);
-    this.horaLevantado.set(this.levantadoAntes);
-    this.editandoSueno.set(true);
-  }
-
-  /** Guarda lo que la persona cambió: cada hora nueva queda como lo último que dijo (lo anterior se conserva). */
-  protected guardarEditorSueno(): void {
-    const peticiones: Observable<unknown>[] = [];
-    if (this.horaAcostado() && this.horaAcostado() !== this.acostadoAntes) {
-      peticiones.push(this.servicio.registrarDormir(this.horaAcostado()));
-    }
-    if (this.horaLevantado() && this.horaLevantado() !== this.levantadoAntes) {
-      peticiones.push(this.servicio.registrarLevantar(this.horaLevantado()));
-    }
-    if (!peticiones.length) return this.editandoSueno.set(false);
-    this.guardandoSueno.set(true);
-    this.error.set('');
-    // Una tras otra: primero cuándo se acostó, luego cuándo se levantó.
-    const hacer = (i: number): void => {
-      if (i >= peticiones.length) {
-        this.guardandoSueno.set(false);
-        this.editandoSueno.set(false);
-        this.servicio.cargarHoy().subscribe({ error: () => undefined });
-        this.servicio.cargar().subscribe({ error: () => undefined });
-        this.cargarSueno();
-        return;
-      }
-      peticiones[i].subscribe({
-        next: () => hacer(i + 1),
-        error: (e: unknown) => {
-          this.guardandoSueno.set(false);
-          this.error.set(mensajeError(e, 'No pudimos guardar esa hora. Revisa que no sea futura.'));
-        },
-      });
-    };
-    hacer(0);
-  }
-
   /** 7,75 → «7 h 45 min». */
   protected duracion(horas: number): string {
     const minutos = Math.round(horas * 60);
@@ -546,17 +513,19 @@ export class Avisos implements OnInit {
           ...(this.aguaDesde() ? { inicio: this.aguaDesde() } : {}),
           ...(this.aguaHasta() ? { fin: this.aguaHasta() } : {}),
         },
-        horas_semana: Object.fromEntries(
-          Object.entries(this.horasSemana())
-            .filter(([, v]) => v.levantarse || v.dormir)
-            .map(([d, v]) => [
-              d,
-              {
-                ...(v.levantarse ? { levantarse: v.levantarse } : {}),
-                ...(v.dormir ? { dormir: v.dormir } : {}),
-              },
-            ]),
-        ),
+        // Con una hora para todos los días no queda ninguna por día: es una cosa o la otra.
+        horas_semana:
+          this.modoHoras() === 'general'
+            ? {}
+            : Object.fromEntries(
+                this.diasSemana.map((d) => [
+                  d.id,
+                  {
+                    levantarse: this.horasSemana()[d.id].levantarse,
+                    dormir: this.horasSemana()[d.id].dormir,
+                  },
+                ]),
+              ),
         horas_comida: Object.fromEntries(
           this.tiemposComida()
             .filter((t) => t.hora !== t.referencia)

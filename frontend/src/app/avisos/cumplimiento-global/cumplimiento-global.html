@@ -139,6 +139,16 @@
                 </dd>
               </div>
             </dl>
+            @if (extremos(); as e) {
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                Mejor día:
+                <strong class="first-letter:uppercase">{{ fecha(e.mejor.fecha) }}</strong> ({{
+                  e.mejor.porcentaje
+                }}%). Más flojo:
+                <strong class="first-letter:uppercase">{{ fecha(e.peor.fecha) }}</strong>
+                ({{ e.peor.porcentaje }}%).
+              </p>
+            }
           }
         </div>
       </div>
@@ -200,8 +210,14 @@
                   [style.width.%]="b.porcentaje"
                 ></div>
               </div>
+              <div class="mt-1.5 flex gap-px h-3" aria-hidden="true">
+                @for (t of tira(b.id); track t.fecha) {
+                  <i class="flex-1 rounded-[2px]" [class]="fondo(t.porcentaje)"></i>
+                }
+              </div>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Promedio de {{ b.dias }} {{ b.dias === 1 ? 'día' : 'días' }}
+                Promedio de {{ b.dias }} {{ b.dias === 1 ? 'día' : 'días' }}, cada cuadrito es un
+                día
               </p>
             </li>
           }
@@ -259,37 +275,104 @@
         aria-labelledby="cg-dias"
         class="rounded-2xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
       >
-        <h2 id="cg-dias" class="font-semibold text-gray-900 dark:text-white">Día por día</h2>
-        <div class="grid grid-cols-7 gap-1.5 text-center">
-          @for (n of ['L', 'M', 'M', 'J', 'V', 'S', 'D']; track $index) {
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ n }}</span>
-          }
-          @for (h of huecos(); track $index) {
-            <span aria-hidden="true"></span>
-          }
-          @for (dia of dias(); track dia.fecha) {
-            <button
-              type="button"
-              class="aspect-square rounded-lg text-xs font-semibold tabular-nums transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
-              [class]="
-                fondo(dia.porcentaje) +
-                (dia.porcentaje === null ? ' text-gray-500' : ' text-white') +
-                (elegido() === dia.fecha
-                  ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
-                  : '')
-              "
-              [attr.aria-label]="
-                fecha(dia.fecha) +
-                ': ' +
-                (dia.porcentaje === null ? 'sin datos' : dia.porcentaje + ' por ciento')
-              "
-              [attr.aria-pressed]="elegido() === dia.fecha"
-              (click)="elegirDia(dia.fecha)"
-            >
-              {{ numero(dia.fecha) }}
-            </button>
-          }
-        </div>
+        <h2 id="cg-dias" class="font-semibold text-gray-900 dark:text-white">
+          {{ periodo() === 'trimestre' ? 'Semana por semana' : 'Día por día' }}
+        </h2>
+        @if (periodo() === 'semana') {
+          <ul class="grid grid-cols-7 gap-2 h-36 items-end" aria-label="Cumplimiento por día">
+            @for (c of columnasSemana(); track c.fecha) {
+              <li class="h-full flex flex-col justify-end items-center gap-1 min-w-0">
+                <button
+                  type="button"
+                  class="w-full h-full flex flex-col justify-end items-center gap-1 focus-visible:outline-2 focus-visible:outline-guerrero-red rounded-md"
+                  [disabled]="c.porcentaje === null"
+                  [attr.aria-label]="
+                    fecha(c.fecha) +
+                    ': ' +
+                    (c.porcentaje === null ? 'sin datos' : c.porcentaje + ' por ciento')
+                  "
+                  [attr.aria-pressed]="elegido() === c.fecha"
+                  (click)="elegirDia(c.fecha)"
+                >
+                  <span class="text-[11px] tabular-nums" [class]="tono(c.porcentaje)">{{
+                    c.porcentaje === null ? '' : c.porcentaje
+                  }}</span>
+                  <span
+                    class="w-full rounded-t-md transition-[height] duration-500"
+                    [class]="
+                      fondo(c.porcentaje) +
+                      (elegido() === c.fecha
+                        ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
+                        : '')
+                    "
+                    [style.height.%]="c.porcentaje === null ? 4 : max(c.porcentaje, 6)"
+                  ></span>
+                </button>
+              </li>
+            }
+          </ul>
+          <div class="grid grid-cols-7 gap-2 text-center" aria-hidden="true">
+            @for (c of columnasSemana(); track c.fecha) {
+              <span
+                class="text-[11px] font-medium"
+                [class]="c.hoy ? 'text-guerrero-red' : 'text-gray-500 dark:text-gray-400'"
+                >{{ c.letra }}</span
+              >
+            }
+          </div>
+        } @else if (periodo() === 'trimestre') {
+          <ul class="flex gap-1.5 h-36 items-end" aria-label="Promedio por semana">
+            @for (c of columnasSemanas(); track c.fecha) {
+              <li
+                class="flex-1 min-w-0 h-full flex flex-col justify-end items-center gap-1"
+                [attr.title]="'Semana del ' + c.etiqueta + ': ' + c.porcentaje + '%'"
+              >
+                <span class="text-[10px] tabular-nums" [class]="tono(c.porcentaje)">{{
+                  c.porcentaje
+                }}</span>
+                <span
+                  class="w-full rounded-t-md transition-[height] duration-500"
+                  [class]="fondo(c.porcentaje)"
+                  [style.height.%]="max(c.porcentaje, 6)"
+                ></span>
+                <span class="text-[9px] text-gray-500 dark:text-gray-400 tabular-nums">{{
+                  c.etiqueta
+                }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="grid grid-cols-7 gap-1.5 text-center">
+            @for (n of ['L', 'M', 'M', 'J', 'V', 'S', 'D']; track $index) {
+              <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ n }}</span>
+            }
+            @for (h of huecos(); track $index) {
+              <span aria-hidden="true"></span>
+            }
+            @for (dia of dias(); track dia.fecha) {
+              <button
+                type="button"
+                class="aspect-square rounded-lg text-xs font-semibold tabular-nums transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
+                [class]="
+                  fondo(dia.porcentaje) +
+                  (dia.porcentaje === null ? ' text-gray-500' : ' text-white') +
+                  (elegido() === dia.fecha
+                    ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
+                    : '')
+                "
+                [attr.aria-label]="
+                  fecha(dia.fecha) +
+                  ': ' +
+                  (dia.porcentaje === null ? 'sin datos' : dia.porcentaje + ' por ciento')
+                "
+                [attr.aria-pressed]="elegido() === dia.fecha"
+                (click)="elegirDia(dia.fecha)"
+              >
+                {{ numero(dia.fecha) }}
+              </button>
+            }
+          </div>
+        }
         <p
           class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400"
         >
@@ -306,7 +389,7 @@
           >
         </p>
 
-        @if (diaElegido(); as dia) {
+        @if (periodo() !== 'trimestre' && diaElegido(); as dia) {
           <div class="rounded-xl bg-gray-50 dark:bg-dark-700 p-3 space-y-2" aria-live="polite">
             <p class="text-sm font-semibold first-letter:uppercase text-gray-900 dark:text-white">
               {{ fecha(dia.fecha) }}

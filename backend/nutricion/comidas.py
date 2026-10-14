@@ -41,6 +41,11 @@ def pedido(usuario, fecha, tiempo, contexto=None):
     return contexto.requerido(fecha, tiempo)
 
 
+def tomas_de(usuario, fecha, tiempo):
+    """[(suplemento, toma)] de lo que se toma en esa comida ese día."""
+    return Contexto(usuario, _minuta(usuario)).tomas_en(fecha, tiempo)
+
+
 def _validar_fecha(fecha):
     hoy = timezone.localdate()
     if fecha > hoy:
@@ -110,7 +115,8 @@ def cumplimiento(usuario, desde, hasta):
     minuta = _minuta(usuario)
     ahora = timezone.localtime()
     hasta = min(hasta, ahora.date())
-    desde = max(desde, timezone.localtime(minuta.fecha_creacion).date())
+    # Solo cuenta desde que empezó el reto: antes de eso no había nada que contar.
+    desde = max(desde, timezone.localtime(minuta.fecha_creacion).date(), minuta.proceso.fecha_inicio)
 
     registros = list(RegistroComida.objects.filter(usuario=usuario, fecha__range=(desde, hasta))
                      .order_by('fecha', 'momento'))

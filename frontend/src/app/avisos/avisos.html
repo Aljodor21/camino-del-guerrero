@@ -105,12 +105,12 @@
                       [loading]="confirmando() === a.id"
                       (onClick)="confirmar(a)"
                     />
-                  } @else if (a.tipo === 'comida') {
+                  } @else if (a.tipo === 'comida' || (a.tipo === 'toma' && a.datos['unida'])) {
                     <a
                       routerLink="/comidas/contar"
                       [queryParams]="{ tiempo: a.datos['tiempo'], fecha: a.fecha }"
                       class="inline-flex items-center gap-1.5 text-sm font-semibold text-guerrero-red underline"
-                      >Contar lo que comí</a
+                      >{{ a.tipo === 'toma' ? 'Contar con mi comida' : 'Contar lo que comí' }}</a
                     >
                   } @else if (a.tipo === 'proceso') {
                     <a
@@ -220,6 +220,37 @@
             </div>
           }
 
+          @if (h.comidas.length) {
+            <div class="space-y-2">
+              <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Comidas</p>
+              <ul class="space-y-1.5">
+                @for (c of h.comidas; track c.tiempo) {
+                  <li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <i
+                      [class]="
+                        c.contada
+                          ? 'pi pi-check-circle text-green-600'
+                          : 'pi pi-circle text-gray-400'
+                      "
+                      aria-hidden="true"
+                    ></i>
+                    <span class="flex-1">{{ c.nombre }} · {{ hora(c.hora) }}</span>
+                    @if (c.contada) {
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Contada</span>
+                    } @else {
+                      <a
+                        routerLink="/comidas/contar"
+                        [queryParams]="{ tiempo: c.tiempo, fecha: h.fecha }"
+                        class="text-sm font-semibold text-guerrero-red underline"
+                        >Ya comí</a
+                      >
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           @if (h.tomas.length) {
             <div class="space-y-2">
               <p class="text-sm font-medium text-gray-800 dark:text-gray-100">Proteína</p>
@@ -293,70 +324,6 @@
                 Aún no anotas a qué hora te levantaste hoy
               }
             </p>
-            @if (!editandoSueno()) {
-              <button
-                type="button"
-                class="text-xs font-medium text-guerrero-red focus-visible:outline-2 focus-visible:outline-guerrero-red"
-                (click)="abrirEditorSueno(h)"
-              >
-                {{
-                  h.levantar.levantado
-                    ? '¿No fue a esa hora? Corrígela'
-                    : '¿Ya te levantaste hace rato? Di a qué hora'
-                }}
-              </button>
-            } @else {
-              <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-2.5 space-y-2">
-                <p class="text-xs font-medium text-gray-700 dark:text-gray-200">
-                  Dime a qué hora fue de verdad
-                </p>
-                <div class="grid grid-cols-2 gap-2">
-                  <label
-                    class="min-w-0 flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-400"
-                  >
-                    Anoche me acosté
-                    <input
-                      pInputText
-                      type="time"
-                      [value]="horaAcostado()"
-                      (change)="horaAcostado.set($any($event.target).value)"
-                      class="w-full min-w-0"
-                    />
-                  </label>
-                  <label
-                    class="min-w-0 flex flex-col gap-0.5 text-xs text-gray-600 dark:text-gray-400"
-                  >
-                    Hoy me levanté
-                    <input
-                      pInputText
-                      type="time"
-                      [value]="horaLevantado()"
-                      (change)="horaLevantado.set($any($event.target).value)"
-                      class="w-full min-w-0"
-                    />
-                  </label>
-                </div>
-                <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                  Lo último que digas es lo que cuenta; lo anterior no se borra.
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <p-button
-                    label="Guardar"
-                    icon="pi pi-check"
-                    size="small"
-                    [loading]="guardandoSueno()"
-                    (onClick)="guardarEditorSueno()"
-                  />
-                  <p-button
-                    label="Cancelar"
-                    severity="secondary"
-                    [text]="true"
-                    size="small"
-                    (onClick)="editandoSueno.set(false)"
-                  />
-                </div>
-              </div>
-            }
             @if (h.levantar.dormiste_horas) {
               <p class="text-sm text-gray-700 dark:text-gray-300">
                 Anoche dormiste <strong>{{ duracion(h.levantar.dormiste_horas) }}</strong
@@ -497,7 +464,13 @@
             </div>
           </div>
 
-          @if (!h.agua.meta && !h.tomas.length && !h.entreno.toca && !h.dormir.hora) {
+          @if (
+            !h.agua.meta &&
+            !h.comidas.length &&
+            !h.tomas.length &&
+            !h.entreno.toca &&
+            !h.dormir.hora
+          ) {
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Aún no hay nada programado. Configura tu agua y tu hora de dormir abajo.
             </p>
@@ -586,6 +559,32 @@
 
         <app-tamano-vaso [(valor)]="vasoMl" id="av-vaso" />
 
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Mis horas de levantarme y acostarme
+          </legend>
+          <div class="flex flex-wrap gap-2" role="radiogroup">
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="modoHoras() === 'general'"
+              [class]="clasesChip(modoHoras() === 'general')"
+              (click)="elegirModoHoras('general')"
+            >
+              La misma todos los días
+            </button>
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="modoHoras() === 'por_dia'"
+              [class]="clasesChip(modoHoras() === 'por_dia')"
+              (click)="elegirModoHoras('por_dia')"
+            >
+              Una distinta cada día
+            </button>
+          </div>
+        </fieldset>
+
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="flex flex-col gap-1 min-w-0">
             <label for="av-levantarse" class="text-sm font-medium text-gray-600 dark:text-gray-400"
@@ -596,6 +595,7 @@
               id="av-levantarse"
               type="time"
               [value]="levantarse()"
+              [disabled]="modoHoras() === 'por_dia'"
               (change)="levantarse.set($any($event.target).value)"
               class="w-full min-w-0"
             />
@@ -609,6 +609,7 @@
               id="av-dormir"
               type="time"
               [value]="dormir()"
+              [disabled]="modoHoras() === 'por_dia'"
               (change)="dormir.set($any($event.target).value)"
               class="w-full min-w-0"
             />
@@ -696,48 +697,47 @@
           </fieldset>
         }
 
-        <details class="rounded-xl border border-gray-200 dark:border-dark-700 px-3 py-2">
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-200">
-            Horas distintas según el día
-          </summary>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Si algunos días te levantas o te acuestas a otra hora, ponla aquí. Lo que dejes vacío
-            usa tu hora de siempre. Para cambiar solo un día (hoy o mañana) hazlo desde «Tu día».
-          </p>
-          <ul class="mt-3 space-y-2">
-            @for (d of diasSemana; track d.id) {
-              <li class="rounded-lg bg-gray-50 dark:bg-dark-700/60 p-2.5 space-y-1.5">
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ d.nombre }}</p>
-                <div class="grid grid-cols-2 gap-2">
-                  <label
-                    class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
-                  >
-                    Me levanto
-                    <input
-                      pInputText
-                      type="time"
-                      [value]="horasSemana()[d.id]?.levantarse ?? ''"
-                      (change)="fijarHoraSemana(d.id, 'levantarse', $any($event.target).value)"
-                      class="w-full min-w-0 text-sm"
-                    />
-                  </label>
-                  <label
-                    class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
-                  >
-                    Me acuesto
-                    <input
-                      pInputText
-                      type="time"
-                      [value]="horasSemana()[d.id]?.dormir ?? ''"
-                      (change)="fijarHoraSemana(d.id, 'dormir', $any($event.target).value)"
-                      class="w-full min-w-0 text-sm"
-                    />
-                  </label>
-                </div>
-              </li>
-            }
-          </ul>
-        </details>
+        @if (modoHoras() === 'por_dia') {
+          <div class="rounded-xl border border-gray-200 dark:border-dark-700 px-3 py-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Llena las horas de todos los días: con una hora para cada día, la de arriba no se usa.
+              Para cambiar solo hoy o mañana hazlo desde «Tu día».
+            </p>
+            <ul class="mt-3 space-y-2">
+              @for (d of diasSemana; track d.id) {
+                <li class="rounded-lg bg-gray-50 dark:bg-dark-700/60 p-2.5 space-y-1.5">
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ d.nombre }}</p>
+                  <div class="grid grid-cols-2 gap-2">
+                    <label
+                      class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
+                    >
+                      Me levanto
+                      <input
+                        pInputText
+                        type="time"
+                        [value]="horasSemana()[d.id]?.levantarse ?? ''"
+                        (change)="fijarHoraSemana(d.id, 'levantarse', $any($event.target).value)"
+                        class="w-full min-w-0 text-sm"
+                      />
+                    </label>
+                    <label
+                      class="min-w-0 flex flex-col gap-0.5 text-[11px] text-gray-500 dark:text-gray-400"
+                    >
+                      Me acuesto
+                      <input
+                        pInputText
+                        type="time"
+                        [value]="horasSemana()[d.id]?.dormir ?? ''"
+                        (change)="fijarHoraSemana(d.id, 'dormir', $any($event.target).value)"
+                        class="w-full min-w-0 text-sm"
+                      />
+                    </label>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        }
 
         <fieldset class="space-y-2">
           <legend class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -760,7 +760,7 @@
         @if (!ajustesValidos()) {
           <p class="text-xs text-red-600 dark:text-red-400">
             Revisa el agua (entre 0,25 y 8 litros), el tamaño del vaso (50 a 1.500 ml) y que la hora
-            de acostarte no sea la de levantarte.
+            de acostarte no sea la de levantarte. Con una hora distinta cada día, llénalas todas.
           </p>
         }
 

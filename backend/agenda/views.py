@@ -40,6 +40,11 @@ class RecordatorioDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if instance.automatico:
             raise ReglaNegocioError('Este recordatorio lo maneja la app según tu suplemento.')
+        # «Esta y las siguientes»: lo que se repitió junto, desde esta fecha en adelante.
+        if instance.serie and self.request.query_params.get('siguientes') == '1':
+            Recordatorio.objects.filter(usuario=instance.usuario, serie=instance.serie,
+                                        fecha__gte=instance.fecha).delete()
+            return
         instance.delete()
 
 
@@ -207,22 +212,11 @@ class CapituloView(APIView):
         return Response(logros.capitulo(request.user, lunes))
 
 
-def _hora_dicha(request):
-    """La hora que la persona dice («05:30»), o None si no dice ninguna."""
-    texto = request.data.get('hora')
-    if texto in (None, ''):
-        return None
-    hora = horarios.a_hora(texto)
-    if hora is None:
-        raise ReglaNegocioError('Esa no es una hora válida (ej. 05:30).')
-    return hora
-
-
 class RegistrarLevantarView(APIView):
-    """«Me levanté»: anota la hora para el promedio de sueño, ahora o la que la persona diga."""
+    """«Me levanté»: anota la hora de ahora para el promedio de sueño. Es un valor y no se cambia."""
 
     def post(self, request):
-        registro = notificaciones.registrar_levantar(request.user, _hora_dicha(request))
+        registro = notificaciones.registrar_levantar(request.user)
         return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
 
 
@@ -230,7 +224,7 @@ class RegistrarDormirView(APIView):
     """«Me acosté»: anota la hora sin esperar el aviso."""
 
     def post(self, request):
-        registro = notificaciones.registrar_dormir(request.user, _hora_dicha(request))
+        registro = notificaciones.registrar_dormir(request.user)
         return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
 
 
