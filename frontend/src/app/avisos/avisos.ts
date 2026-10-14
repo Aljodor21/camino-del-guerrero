@@ -213,6 +213,10 @@ export class Avisos implements OnInit {
   /** El promedio de sueño de los últimos 7 días. */
   protected sueno = signal<Sueno | null>(null);
   protected registrandoSueno = signal(false);
+  /** Respondiendo «a qué hora te levantaste» cuando no se anotó a tiempo (la única vez que se escribe una hora). */
+  protected diciendoHora = signal(false);
+  protected horaDicha = signal('');
+  protected registrandoSiesta = signal(false);
   protected faltanVasos = computed(() => {
     const a = this.hoy()?.agua;
     return a ? Math.max(0, a.meta - a.vasos) : 0;
@@ -351,6 +355,43 @@ export class Avisos implements OnInit {
   }
 
   /** «Me levanté» o «Me acosté»: se anota la hora y se actualiza el promedio. */
+  protected responderLevantar(): void {
+    if (!this.horaDicha()) return;
+    this.error.set('');
+    this.registrandoSueno.set(true);
+    this.servicio.registrarLevantar(this.horaDicha()).subscribe({
+      next: () => {
+        this.registrandoSueno.set(false);
+        this.diciendoHora.set(false);
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+        this.servicio.cargar().subscribe({ error: () => undefined });
+        this.cargarSueno();
+      },
+      error: (e) => {
+        this.registrandoSueno.set(false);
+        this.error.set(mensajeError(e, 'No pudimos anotarlo. Intenta de nuevo.'));
+      },
+    });
+  }
+
+  protected siesta(accion: 'iniciar' | 'terminar'): void {
+    this.error.set('');
+    this.registrandoSiesta.set(true);
+    const peticion =
+      accion === 'iniciar' ? this.servicio.iniciarSiesta() : this.servicio.terminarSiesta();
+    peticion.subscribe({
+      next: () => {
+        this.registrandoSiesta.set(false);
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+      },
+      error: (e) => {
+        this.registrandoSiesta.set(false);
+        this.error.set(mensajeError(e, 'No pudimos anotar la siesta. Intenta de nuevo.'));
+        this.servicio.cargarHoy().subscribe({ error: () => undefined });
+      },
+    });
+  }
+
   protected anotarSueno(que: 'levantar' | 'dormir'): void {
     this.error.set('');
     this.registrandoSueno.set(true);

@@ -1,4 +1,6 @@
+from contextlib import contextmanager
 from datetime import datetime, time, timedelta
+from unittest import mock
 
 from django.urls import reverse
 from django.utils import timezone
@@ -16,6 +18,13 @@ HOY = timezone.localdate
 
 def a_las(dia, hora, minuto=0):
     return timezone.make_aware(datetime.combine(dia, time(hora, minuto)))
+
+
+@contextmanager
+def a_la_hora(hora, minuto=0, dia=None):
+    """Hace como si fueran las `hora:minuto` de hoy (o de `dia`)."""
+    with mock.patch('django.utils.timezone.now', return_value=a_las(dia or HOY(), hora, minuto)):
+        yield
 
 
 class SuenoTest(APITestCase):
@@ -67,17 +76,19 @@ class SuenoTest(APITestCase):
         self.assertTrue(RegistroHabito.objects.filter(usuario=self.usuario, tipo='levantar', notificacion=n).exists())
 
     def test_el_boton_me_levante_anota_una_sola_vez_al_dia(self):
-        a = self.client.post(reverse('registrar-levantar'))
-        b = self.client.post(reverse('registrar-levantar'))
+        with a_la_hora(6, 10):
+            a = self.client.post(reverse('registrar-levantar'))
+            b = self.client.post(reverse('registrar-levantar'))
         self.assertEqual(a.status_code, status.HTTP_201_CREATED)
         self.assertEqual(a.data['id'], b.data['id'])
         self.assertEqual(RegistroHabito.objects.filter(tipo='levantar').count(), 1)
 
     def test_el_boton_me_acoste_anota_la_noche_y_lo_de_hoy_lo_cuenta(self):
-        r = self.client.post(reverse('registrar-dormir'))
-        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.client.post(reverse('registrar-dormir')).data['id'], r.data['id'])
-        hoy = self.client.get(reverse('hoy')).data
+        with a_la_hora(21, 30):
+            r = self.client.post(reverse('registrar-dormir'))
+            self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(self.client.post(reverse('registrar-dormir')).data['id'], r.data['id'])
+            hoy = self.client.get(reverse('hoy')).data
         self.assertEqual(RegistroHabito.objects.filter(usuario=self.usuario, tipo='dormir').count(), 1)
         self.assertIn('dormir', hoy)
 
@@ -141,12 +152,16 @@ class LaUltimaPalabraTest(SuenoTest):
     mismo día (datos de antes), vale el último."""
 
     def test_no_hay_forma_de_poner_otra_hora_por_la_api(self):
-        r = self.client.post(reverse('registrar-levantar'), {'hora': '04:50'}, format='json')
-        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        # La hora que quedó es la de ahora, no la que mandó.
-        self.assertLess(abs((timezone.now() - parse_datetime(r.data['momento'])).total_seconds()), 5)
-        r2 = self.client.post(reverse('registrar-dormir'), {'hora': '23:30'}, format='json')
-        self.assertLess(abs((timezone.now() - parse_datetime(r2.data['momento'])).total_seconds()), 5)
+        # A tiempo no se acepta una hora; se anota la de ahora.
+        with a_la_hora(6, 10):
+            r = self.client.post(reverse('registrar-levantar'), {'hora': '04:50'}, format='json')
+            self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+            r = self.client.post(reverse('registrar-levantar'), {}, format='json')
+            self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(timezone.localtime(parse_datetime(r.data['momento'])).strftime('%H:%M'), '06:10')
+        with a_la_hora(21, 30):
+            r2 = self.client.post(reverse('registrar-dormir'), {'hora': '23:30'}, format='json')
+            self.assertEqual(timezone.localtime(parse_datetime(r2.data['momento'])).strftime('%H:%M'), '21:30')
 
     def test_con_dos_registros_del_mismo_dia_manda_el_ultimo(self):
         ayer = HOY() - timedelta(days=1)
@@ -156,3 +171,65 @@ class LaUltimaPalabraTest(SuenoTest):
         hoy = self.client.get(reverse('hoy')).data['levantar']
         self.assertEqual(timezone.localtime(hoy['levantado']).strftime('%H:%M'), '04:50')
         self.assertEqual(hoy['dormiste_horas'], 6.83)
+
+
+class VentanasYSiestasTest(SuenoTest):
+    """«Me levanté» vale ±2 h de la hora prevista (6:00), «ya me acosté» desde 2 h antes de acostarse (22:00)
+    y las siestas se acaban cuando empieza la jornada de dormir."""
+
+    def levantar(self, hora=None):
+        return self.client.post(reverse('registrar-levantar'), {'hora': hora} if hora else {}, format='json')
+
+    def test_me_levante_solo_dos_horas_antes_o_despues(self):
+        with a_la_hora(3, 30):
+            self.assertEqual(self.client.get(reverse('hoy')).data['levantar']['ventana'], 'antes')
+            self.assertEqual(self.levantar().status_code, status.HTTP_400_BAD_REQUEST)
+        with a_la_hora(4, 0):
+            self.assertEqual(self.client.get(reverse('hoy')).data['levantar']['ventana'], 'abierta')
+        with a_la_hora(8, 0):
+            self.assertEqual(self.levantar().status_code, status.HTTP_201_CREATED)
+
+    def test_si_no_responde_queda_sin_respuesta_y_se_responde_una_vez_con_la_hora(self):
+        with a_la_hora(9, 0):
+            d = self.client.get(reverse('hoy')).data['levantar']
+            self.assertEqual((d['ventana'], d['levantado']), ('cerrada', None))
+            self.assertEqual(self.levantar().status_code, status.HTTP_400_BAD_REQUEST)
+            # Una hora que todavía no llega o mal escrita no sirve.
+            self.assertEqual(self.levantar('10:00').status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(self.levantar('tarde').status_code, status.HTTP_400_BAD_REQUEST)
+            r = self.levantar('07:20')
+            self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+            self.assertEqual(timezone.localtime(parse_datetime(r.data['momento'])).strftime('%H:%M'), '07:20')
+            # Ya respondió: no hay una segunda hora.
+            self.assertEqual(self.levantar('07:40').data['id'], r.data['id'])
+            self.assertEqual(RegistroHabito.objects.filter(tipo='levantar').count(), 1)
+
+    def test_la_hora_no_se_puede_decir_si_estaba_a_tiempo(self):
+        with a_la_hora(6, 30):
+            self.assertEqual(self.levantar('06:00').status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_ya_me_acoste_abre_dos_horas_antes(self):
+        with a_la_hora(19, 30):
+            self.assertFalse(self.client.get(reverse('hoy')).data['dormir']['abierta'])
+            self.assertEqual(self.client.post(reverse('registrar-dormir')).status_code, status.HTTP_400_BAD_REQUEST)
+        with a_la_hora(20, 0):
+            self.assertTrue(self.client.get(reverse('hoy')).data['dormir']['abierta'])
+            self.assertEqual(self.client.post(reverse('registrar-dormir')).status_code, status.HTTP_201_CREATED)
+
+    def test_siesta_se_inicia_se_termina_y_no_cabe_otra_en_la_jornada_de_dormir(self):
+        with a_la_hora(14, 0):
+            self.assertTrue(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+            self.assertEqual(self.client.post(reverse('siesta-terminar')).status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(self.client.post(reverse('siesta-iniciar')).status_code, status.HTTP_201_CREATED)
+            self.assertEqual(self.client.post(reverse('siesta-iniciar')).status_code, status.HTTP_400_BAD_REQUEST)
+            d = self.client.get(reverse('hoy')).data['siesta']
+            self.assertIsNotNone(d['en_curso'])
+            self.assertFalse(d['puede_iniciar'])
+        with a_la_hora(14, 40):
+            self.assertEqual(self.client.post(reverse('siesta-terminar')).status_code, status.HTTP_201_CREATED)
+            d = self.client.get(reverse('hoy')).data['siesta']
+            self.assertEqual([s['minutos'] for s in d['hechas']], [40])
+            self.assertTrue(d['puede_iniciar'])
+        with a_la_hora(20, 5):
+            self.assertFalse(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+            self.assertEqual(self.client.post(reverse('siesta-iniciar')).status_code, status.HTTP_400_BAD_REQUEST)

@@ -67,9 +67,18 @@ export class AvisosService {
     return this.http.get<Capitulo>(`${API}/capitulo/`, { params: lunes ? { lunes } : {} });
   }
 
-  /** «Me levanté»: anota la hora (una vez al día) para el promedio de sueño. */
-  registrarLevantar(): Observable<{ momento: string }> {
-    return this.http.post<{ momento: string }>(`${API}/registros/levantar/`, {});
+  /** «Me levanté»: anota la hora de ahora. `hora` solo se acepta si no se anotó a tiempo (una vez). */
+  registrarLevantar(hora?: string): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/levantar/`, hora ? { hora } : {});
+  }
+
+  /** Empieza una siesta (no se puede desde que empieza la jornada de dormir). */
+  iniciarSiesta(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/siesta/iniciar/`, {});
+  }
+
+  terminarSiesta(): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(`${API}/registros/siesta/terminar/`, {});
   }
 
   /** «Me acosté», sin esperar el aviso. */

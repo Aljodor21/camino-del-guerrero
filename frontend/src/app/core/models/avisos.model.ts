@@ -96,11 +96,28 @@ export interface ResumenHoy {
   /** Las comidas del plan de hoy y si ya se contaron. */
   comidas: { tiempo: string; nombre: string; hora: string; contada: boolean }[];
   entreno: { toca: boolean; hecho: boolean };
-  dormir: { hora: string | null; acostado: string | null };
+  dormir: {
+    hora: string | null;
+    acostado: string | null;
+    /** «Ya me acosté» se habilita 2 horas antes de la hora de acostarse. */
+    abierta: boolean;
+    desde: string | null;
+  };
+  siesta: {
+    en_curso: string | null;
+    hechas: { inicio: string; fin: string; minutos: number }[];
+    /** Desde que empieza la jornada de dormir ya no se pueden empezar más. */
+    puede_iniciar: boolean;
+    hasta: string | null;
+  };
   /** A qué hora se levantó hoy (si ya lo anotó) y cuánto durmió anoche. */
   levantar: {
     hora: string | null;
     levantado: string | null;
+    /** «Me levanté» vale 2 h antes y 2 h después de la hora prevista; pasado ese rato, «no respondió». */
+    ventana: 'libre' | 'antes' | 'abierta' | 'cerrada';
+    desde: string | null;
+    hasta: string | null;
     dormiste_horas: number | null;
     /** Minutos antes (−) o después (+) de lo previsto: anoche al acostarte y hoy al levantarte. */
     acostarse_min: number | null;

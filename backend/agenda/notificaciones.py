@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.exceptions import ReglaNegocioError
-from . import horarios, sueno
+from . import horarios, sueno, ventanas
 from nutricion.grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from nutricion import minutas
 from nutricion.models import RegistroComida, Suplemento
@@ -420,43 +420,123 @@ def _la_ultima(usuario, tipo, **filtro):
 
 
 @transaction.atomic
-def registrar_levantar(usuario):
-    """«Me levanté»: anota la hora de ahora, una sola vez al día, y cumple el aviso si está pendiente. Es un
-    valor y ya: no se cambia a mano (para no engañarse); si hubo más de uno, vale el último."""
-    hoy = timezone.localdate()
+def registrar_levantar(usuario, hora=None):
+    """«Me levanté»: anota la hora de ahora, una sola vez al día, y solo desde 2 horas antes hasta 2 horas
+    después de la hora prevista. Si no se dijo en ese rato, el día queda sin respuesta y se puede responder
+    una vez con la hora (`hora`): es la única vez que se escribe una hora. Si hubo más de un registro,
+    vale el último."""
+    ahora = timezone.localtime()
+    hoy = ahora.date()
     ya = _la_ultima(usuario, 'levantar', fecha=hoy)
     if ya:
         return ya
+    ventana = ventanas.levantar(habitos_de(usuario), ahora)
     n = (Notificacion.objects.select_for_update()
          .filter(usuario=usuario, tipo='levantar', fecha=hoy, resuelta_en__isnull=True).first())
+    if hora is None:
+        if ventana['estado'] == 'antes':
+            raise ReglaNegocioError(f'Podrás anotarlo desde las {hora_en_palabras(timezone.localtime(ventana["desde"]).time())}.')
+        if ventana['estado'] == 'cerrada':
+            raise ReglaNegocioError('Ya pasó el rato para anotarlo: responde con la hora en que te levantaste.')
+        if n:
+            return confirmar(n).registro
+        return RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy, momento=ahora)
+    if ventana['estado'] != 'cerrada':
+        raise ReglaNegocioError('Solo puedes decir la hora si no lo anotaste a tiempo.')
+    dicha = horarios.a_hora(hora)
+    if dicha is None:
+        raise ReglaNegocioError('Esa no es una hora válida (ej. 06:30).')
+    momento = timezone.make_aware(datetime.combine(hoy, dicha))
+    if momento > ahora:
+        raise ReglaNegocioError('Esa hora todavía no llega.')
+    registro = RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy, momento=momento)
     if n:
-        return confirmar(n).registro
-    return RegistroHabito.objects.create(usuario=usuario, tipo='levantar', fecha=hoy)
+        n.resuelta_en, n.resolucion = timezone.now(), 'confirmada'
+        n.save(update_fields=['resuelta_en', 'resolucion'])
+    return registro
 
 
 # Antes de esta hora, acostarse todavía es del día anterior (se fue a dormir pasada la medianoche).
-HORA_CORTE_DORMIR = time(4, 0)
+HORA_CORTE_DORMIR = ventanas.HORA_CORTE_DORMIR
 
 
 @transaction.atomic
 def registrar_dormir(usuario):
-    """«Me acosté»: anota la hora de ahora, una sola vez por noche, y cumple el aviso si está pendiente."""
+    """«Me acosté»: anota la hora de ahora, una sola vez por noche, desde 2 horas antes de la hora de
+    acostarse, y cumple el aviso si está pendiente."""
     ahora = timezone.localtime()
-    fecha = ahora.date() - timedelta(days=1) if ahora.time() < HORA_CORTE_DORMIR else ahora.date()
+    ventana = ventanas.dormir(habitos_de(usuario), ahora)
+    fecha = ventana['noche']
     ya = _la_ultima(usuario, 'dormir', fecha=fecha)
     if ya:
         return ya
+    if not ventana['abierta']:
+        raise ReglaNegocioError(
+            f'Podrás anotarlo desde las {hora_en_palabras(timezone.localtime(ventana["desde"]).time())}.')
     n = (Notificacion.objects.select_for_update()
          .filter(usuario=usuario, tipo='dormir', fecha=fecha, resuelta_en__isnull=True).first())
     if n:
         return confirmar(n).registro
-    return RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha)
+    return RegistroHabito.objects.create(usuario=usuario, tipo='dormir', fecha=fecha, momento=ahora)
+
+
+# ── Siestas ─────────────────────────────────────────────────────────────────
+def _siestas_de(usuario, fecha):
+    """([{'inicio', 'fin'}], en_curso): las siestas del día en orden; en curso es el inicio sin fin, si hay."""
+    eventos = RegistroHabito.objects.filter(usuario=usuario, fecha=fecha, tipo__in=['siesta_inicio', 'siesta_fin'])
+    hechas, abierta = [], None
+    for e in eventos.order_by('momento', 'id'):
+        if e.tipo == 'siesta_inicio':
+            abierta = e.momento
+        elif abierta:
+            hechas.append({'inicio': abierta, 'fin': e.momento})
+            abierta = None
+    return hechas, abierta
+
+
+@transaction.atomic
+def iniciar_siesta(usuario):
+    """Empieza una siesta. No se puede con una en curso ni desde que empieza la jornada de dormir."""
+    ahora = timezone.localtime()
+    hoy = ahora.date()
+    _, en_curso = _siestas_de(usuario, hoy)
+    if en_curso:
+        raise ReglaNegocioError('Ya tienes una siesta en curso.')
+    dormir = ventanas.dormir(habitos_de(usuario), ahora)
+    if dormir['abierta'] or _la_ultima(usuario, 'dormir', fecha=dormir['noche']):
+        raise ReglaNegocioError('Ya empezó tu jornada de dormir: no hay más siestas hoy.')
+    return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_inicio', fecha=hoy, momento=ahora)
+
+
+@transaction.atomic
+def terminar_siesta(usuario):
+    ahora = timezone.localtime()
+    hoy = ahora.date()
+    _, en_curso = _siestas_de(usuario, hoy)
+    if not en_curso:
+        raise ReglaNegocioError('No tienes ninguna siesta en curso.')
+    return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_fin', fecha=hoy, momento=ahora)
+
+
+def _estado_siesta(usuario, habitos, ahora):
+    hechas, en_curso = _siestas_de(usuario, ahora.date())
+    dormir = ventanas.dormir(habitos, ahora)
+    jornada = dormir['abierta'] or bool(_la_ultima(usuario, 'dormir', fecha=dormir['noche']))
+    return {
+        'en_curso': en_curso,
+        'hechas': [{**s, 'minutos': round((s['fin'] - s['inicio']).total_seconds() / 60)} for s in hechas],
+        # Desde que empieza la jornada de dormir no se pueden empezar más.
+        'puede_iniciar': en_curso is None and not jornada,
+        'hasta': dormir['desde'],
+    }
 
 
 def resumen_de_hoy(usuario):
     """Cómo va el día: vasos, tomas, entreno y la hora de dormir."""
-    hoy = timezone.localdate()
+    ahora = timezone.localtime()
+    hoy = ahora.date()
     habitos = habitos_de(usuario)
+    _levantar, _dormir = ventanas.levantar(habitos, ahora), ventanas.dormir(habitos, ahora)
     registros = RegistroHabito.objects.filter(usuario=usuario, fecha=hoy)
     hechas = {(r.suplemento_id, r.tiempo) for r in registros if r.tipo == 'toma'}
     tomas = [{'suplemento': s.id, 'nombre': s.nombre_visible, 'tiempo': Suplemento.clave_toma(t),
@@ -481,8 +561,13 @@ def resumen_de_hoy(usuario):
         'comidas': _comidas_de_hoy(usuario, habitos, hoy),
         'entreno': {'toca': toca_entreno,
                     'hecho': RegistroEntrenamiento.objects.filter(usuario=usuario, fecha=hoy).exists()},
-        'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None},
+        'dormir': {'hora': horas_hoy['dormir'], 'acostado': acostado.momento if acostado else None,
+                   # Se puede anotar desde 2 horas antes de la hora de acostarse.
+                   'abierta': _dormir['abierta'], 'desde': _dormir['desde']},
+        'siesta': _estado_siesta(usuario, habitos, ahora),
         'levantar': {'hora': horas_hoy['levantarse'], 'levantado': levantado.momento if levantado else None,
+                     # 'antes', 'abierta', 'cerrada' (no respondió: se puede responder una vez con la hora) o 'libre'.
+                     'ventana': _levantar['estado'], 'desde': _levantar['desde'], 'hasta': _levantar['hasta'],
                      'dormiste_horas': (anoche or {}).get('horas'),
                      # Cuántos minutos antes (−) o después (+) de lo previsto se acostó anoche y se levantó hoy.
                      'acostarse_min': (anoche or {}).get('dif_acostarse_min'),
