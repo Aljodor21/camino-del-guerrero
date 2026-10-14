@@ -60,3 +60,5 @@ Commit messages are in Spanish and carry only the author's own name — do **not
 ## Relevant skills (installed, auto-activate)
 
 `django-expert` (models, DRF, ORM), `db-schema-conventions` + `postgresql-database-engineering` (schema/migrations), `ui-design-quality` (Angular + PrimeNG + Tailwind screens), `post-sprint-review` (after long AI-coding sessions), `pre-deploy-security-checklist` (before deploying).
+
+**Aviso a la hora de comer:** cada comida del plan avisa dos veces, «Es hora de…» a su hora (`clave …:hora`) y «¿Cómo te fue?» 45 minutos después; comparten `datos.grupo`, así el segundo reemplaza al primero. Si la comida ya se contó no se avisa nada, y si el segundo ya le tocaba al calcular, el primero no se crea.

@@ -1015,6 +1015,33 @@ class MinutaYMenuTest(APITestCase):
             self.assertEqual(self.client.get(reverse('registro-comida-foto', args=[r.data['id']])).status_code,
                              status.HTTP_404_NOT_FOUND)
 
+    def test_avisa_a_la_hora_de_comer_y_el_de_como_te_fue_lo_reemplaza(self, ai):
+        from datetime import datetime, time
+        from agenda import notificaciones
+        from agenda.models import Habitos, Notificacion
+        self.subir_y_confirmar()
+        Habitos.objects.create(usuario=self.usuario, horas_comida={'desayuno': '07:00'})
+
+        def a_las(h, m=0):
+            return timezone.make_aware(datetime.combine(self.hoy, time(h, m)))
+
+        # Sin haber dicho que se levantó, la comida se retiene; con 3 h de gracia ya sale.
+        notificaciones.generar(self.usuario, a_las(7, 25))
+        hora = Notificacion.objects.get(clave=f'comida:{self.hoy}:desayuno:hora')
+        self.assertEqual(hora.titulo, 'Es hora del desayuno')
+        self.assertIsNone(hora.resuelta_en)
+        notificaciones.generar(self.usuario, a_las(7, 50))
+        hora.refresh_from_db()
+        self.assertEqual(hora.resolucion, 'automatica')
+        self.assertEqual(Notificacion.objects.get(clave=f'comida:{self.hoy}:desayuno').titulo,
+                         '¿Cómo te fue con el desayuno?')
+        # Contada antes de la hora, no se avisa nada de esa comida.
+        Notificacion.objects.all().delete()
+        grupos = {g['grupo']: 1 for g in self.client.get(reverse('pedido-comida'), {'tiempo': 'desayuno'}).data['grupos']}
+        self.client.post(reverse('registros-comida'), {'tiempo': 'desayuno', 'avances': grupos}, format='json')
+        notificaciones.generar(self.usuario, a_las(7, 25))
+        self.assertFalse(Notificacion.objects.filter(datos__tiempo='desayuno').exists())
+
     def test_el_aviso_de_la_comida_sale_al_contarla(self, ai):
         from datetime import datetime, time
         from agenda import notificaciones
