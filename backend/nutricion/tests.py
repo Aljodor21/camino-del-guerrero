@@ -1028,6 +1028,17 @@ class MinutaYMenuTest(APITestCase):
             self.assertEqual(self.client.get(reverse('registro-comida-foto', args=[r.data['id']])).status_code,
                              status.HTTP_404_NOT_FOUND)
 
+    def test_hoy_lista_las_comidas_para_contar_una_antes_del_aviso(self, ai):
+        self.assertEqual(self.client.get(reverse('hoy')).data['comidas'], [])
+        self.subir_y_confirmar()
+        comidas = self.client.get(reverse('hoy')).data['comidas']
+        self.assertEqual([c['tiempo'] for c in comidas][:2], ['desayuno', 'onces'])
+        self.assertFalse(any(c['contada'] for c in comidas))
+        grupos = {g['grupo']: 1 for g in self.client.get(reverse('pedido-comida'), {'tiempo': 'desayuno'}).data['grupos']}
+        r = self.client.post(reverse('registros-comida'), {'tiempo': 'desayuno', 'avances': grupos}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual([c['contada'] for c in self.client.get(reverse('hoy')).data['comidas']][:2], [True, False])
+
     def test_el_aviso_de_la_comida_sale_al_contarla(self, ai):
         from datetime import datetime, time
         from agenda import notificaciones
