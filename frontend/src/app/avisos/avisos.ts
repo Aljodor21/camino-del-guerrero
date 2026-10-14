@@ -217,6 +217,8 @@ export class Avisos implements OnInit {
   protected diciendoHora = signal(false);
   protected horaDicha = signal('');
   protected registrandoSiesta = signal(false);
+  protected diciendoHoraSiesta = signal(false);
+  protected horaSiesta = signal('');
   protected faltanVasos = computed(() => {
     const a = this.hoy()?.agua;
     return a ? Math.max(0, a.meta - a.vasos) : 0;
@@ -374,14 +376,15 @@ export class Avisos implements OnInit {
     });
   }
 
-  protected siesta(accion: 'iniciar' | 'terminar'): void {
+  protected siesta(accion: 'iniciar' | 'terminar', hora?: string): void {
     this.error.set('');
     this.registrandoSiesta.set(true);
     const peticion =
-      accion === 'iniciar' ? this.servicio.iniciarSiesta() : this.servicio.terminarSiesta();
+      accion === 'iniciar' ? this.servicio.iniciarSiesta() : this.servicio.terminarSiesta(hora);
     peticion.subscribe({
       next: () => {
         this.registrandoSiesta.set(false);
+        this.diciendoHoraSiesta.set(false);
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
       },
       error: (e) => {

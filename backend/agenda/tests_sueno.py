@@ -216,7 +216,24 @@ class VentanasYSiestasTest(SuenoTest):
             self.assertTrue(self.client.get(reverse('hoy')).data['dormir']['abierta'])
             self.assertEqual(self.client.post(reverse('registrar-dormir')).status_code, status.HTTP_201_CREATED)
 
-    def test_siesta_se_inicia_se_termina_y_no_cabe_otra_en_la_jornada_de_dormir(self):
+    def test_ya_me_acoste_vale_hasta_dos_horas_antes_de_levantarse_y_despues_no_respondio(self):
+        Habitos.objects.filter(usuario=self.usuario).update(hora_levantarse=time(5, 0))
+        ayer = HOY() - timedelta(days=1)
+        with a_la_hora(3, 30):          # la noche de ayer: hasta las 3:00 (5:00 menos 2 h)
+            d = self.client.get(reverse('hoy')).data['dormir']
+            self.assertEqual((d['ventana'], d['abierta']), ('cerrada', False))
+            self.assertEqual(self.client.post(reverse('registrar-dormir')).status_code, status.HTTP_400_BAD_REQUEST)
+        with a_la_hora(2, 30):
+            self.assertEqual(self.client.post(reverse('registrar-dormir')).status_code, status.HTTP_201_CREATED)
+        self.assertTrue(RegistroHabito.objects.filter(tipo='dormir', fecha=ayer).exists())
+
+    def test_anoche_sin_respuesta_se_dice_por_la_manana(self):
+        with a_la_hora(5, 0):
+            self.assertTrue(self.client.get(reverse('hoy')).data['dormir']['anoche_sin_respuesta'])
+        with a_la_hora(3, 0):
+            self.assertFalse(self.client.get(reverse('hoy')).data['dormir']['anoche_sin_respuesta'])
+
+    def test_voy_a_dormir_y_deje_de_dormir_solo_fuera_de_las_horas_de_sueno(self):
         with a_la_hora(14, 0):
             self.assertTrue(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
             self.assertEqual(self.client.post(reverse('siesta-terminar')).status_code, status.HTTP_400_BAD_REQUEST)
@@ -230,6 +247,38 @@ class VentanasYSiestasTest(SuenoTest):
             d = self.client.get(reverse('hoy')).data['siesta']
             self.assertEqual([s['minutos'] for s in d['hechas']], [40])
             self.assertTrue(d['puede_iniciar'])
+        # Desde 2 h antes de acostarse (20:00) son horas de sueño.
         with a_la_hora(20, 5):
             self.assertFalse(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
             self.assertEqual(self.client.post(reverse('siesta-iniciar')).status_code, status.HTTP_400_BAD_REQUEST)
+        # De madrugada y antes de levantarse también; ya levantado (o pasado el rato para decirlo), no.
+        with a_la_hora(5, 0):
+            self.assertFalse(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+        with a_la_hora(6, 10):
+            self.assertEqual(self.levantar().status_code, status.HTTP_201_CREATED)
+            self.assertTrue(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+
+    def test_sin_responder_el_levantarse_la_siesta_se_abre_pasado_el_rato(self):
+        with a_la_hora(7, 0):
+            self.assertFalse(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+        with a_la_hora(8, 30):
+            self.assertTrue(self.client.get(reverse('hoy')).data['siesta']['puede_iniciar'])
+
+    def test_siesta_sin_terminar_se_responde_una_vez_con_la_hora(self):
+        with a_la_hora(12, 0):
+            self.assertEqual(self.client.post(reverse('siesta-iniciar')).status_code, status.HTTP_201_CREATED)
+        terminar = lambda hora=None: self.client.post(reverse('siesta-terminar'), {'hora': hora} if hora else {}, format='json')
+        with a_la_hora(13, 0):          # a tiempo: se anota la de ahora y no se acepta una hora
+            self.assertEqual(terminar('12:30').status_code, status.HTTP_400_BAD_REQUEST)
+        with a_la_hora(16, 0):          # pasaron más de 3 h: sin respuesta
+            d = self.client.get(reverse('hoy')).data['siesta']
+            self.assertTrue(d['sin_respuesta'])
+            self.assertEqual(terminar().status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(terminar('11:00').status_code, status.HTTP_400_BAD_REQUEST)    # antes de empezar
+            self.assertEqual(terminar('17:00').status_code, status.HTTP_400_BAD_REQUEST)    # futura
+            r = terminar('13:15')
+            self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+            d = self.client.get(reverse('hoy')).data['siesta']
+            self.assertEqual([s['minutos'] for s in d['hechas']], [75])
+            self.assertFalse(d['sin_respuesta'])
+            self.assertEqual(terminar('14:00').status_code, status.HTTP_400_BAD_REQUEST)    # ya respondió

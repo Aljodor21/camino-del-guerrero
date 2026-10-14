@@ -446,25 +446,17 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
-              @if (
-                !h.levantar.levantado &&
-                (h.levantar.ventana === 'abierta' || h.levantar.ventana === 'libre')
-              ) {
+              @if (!h.levantar.levantado && h.levantar.ventana !== 'antes' && !diciendoHora()) {
                 <p-button
                   label="Me levanté"
                   icon="pi pi-sun"
                   size="small"
                   [loading]="registrandoSueno()"
-                  (onClick)="anotarSueno('levantar')"
-                />
-              }
-              @if (!h.levantar.levantado && h.levantar.ventana === 'cerrada' && !diciendoHora()) {
-                <p-button
-                  label="Responder"
-                  icon="pi pi-pencil"
-                  size="small"
-                  severity="secondary"
-                  (onClick)="diciendoHora.set(true)"
+                  (onClick)="
+                    h.levantar.ventana === 'cerrada'
+                      ? diciendoHora.set(true)
+                      : anotarSueno('levantar')
+                  "
                 />
               }
               @if (!h.dormir.acostado && h.dormir.abierta) {
@@ -484,7 +476,8 @@
                 <label
                   for="av-hora-dicha"
                   class="text-xs font-medium text-gray-700 dark:text-gray-200"
-                  >¿A qué hora te levantaste hoy? Solo puedes decirlo esta vez.</label
+                  >No lo anotaste a tiempo. ¿A qué hora te levantaste hoy? Solo puedes decirlo esta
+                  vez.</label
                 >
                 <div class="flex items-center gap-2">
                   <input
@@ -513,16 +506,23 @@
               </div>
             }
 
-            @if (!h.dormir.acostado && !h.dormir.abierta && h.dormir.desde) {
+            @if (!h.dormir.acostado && h.dormir.ventana === 'antes' && h.dormir.desde) {
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                «Ya me acosté» se habilita a las {{ horaDe(h.dormir.desde) }}.
+                «Ya me acosté» se habilita a las {{ horaDe(h.dormir.desde) }}
+              </p>
+            }
+            @if (h.dormir.anoche_sin_respuesta) {
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Anoche no respondiste a qué hora te acostaste.
               </p>
             }
           </div>
 
           <!-- Siesta: se puede empezar mientras no empiece la jornada de dormir -->
           <div class="space-y-2 border-t border-gray-100 dark:border-white/5 pt-3">
-            <p class="text-sm font-medium text-gray-900 dark:text-white">Siesta</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">
+              Dormir fuera de tu noche
+            </p>
             @for (s of h.siesta.hechas; track s.inicio) {
               <p class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <i class="pi pi-check-circle text-green-600" aria-hidden="true"></i>
@@ -531,18 +531,57 @@
             }
             @if (h.siesta.en_curso) {
               <p class="text-sm text-gray-700 dark:text-gray-300">
-                Siesta en curso desde las {{ horaDe(h.siesta.en_curso) }}.
+                Durmiendo desde las {{ horaDe(h.siesta.en_curso) }}.
+                @if (h.siesta.sin_respuesta) {
+                  No respondiste a qué hora dejaste de dormir.
+                }
               </p>
-              <p-button
-                label="Terminar siesta"
-                icon="pi pi-stop-circle"
-                size="small"
-                [loading]="registrandoSiesta()"
-                (onClick)="siesta('terminar')"
-              />
+              @if (!diciendoHoraSiesta()) {
+                <p-button
+                  label="Dejé de dormir"
+                  icon="pi pi-sun"
+                  size="small"
+                  [loading]="registrandoSiesta()"
+                  (onClick)="
+                    h.siesta.sin_respuesta ? diciendoHoraSiesta.set(true) : siesta('terminar')
+                  "
+                />
+              } @else {
+                <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-2.5 space-y-2">
+                  <label
+                    for="av-hora-siesta"
+                    class="text-xs font-medium text-gray-700 dark:text-gray-200"
+                    >¿A qué hora dejaste de dormir? Solo puedes decirlo esta vez.</label
+                  >
+                  <div class="flex items-center gap-2">
+                    <input
+                      pInputText
+                      id="av-hora-siesta"
+                      type="time"
+                      [value]="horaSiesta()"
+                      (change)="horaSiesta.set($any($event.target).value)"
+                      class="min-w-0"
+                    />
+                    <p-button
+                      label="Guardar"
+                      size="small"
+                      [disabled]="!horaSiesta()"
+                      [loading]="registrandoSiesta()"
+                      (onClick)="siesta('terminar', horaSiesta())"
+                    />
+                    <p-button
+                      label="Cancelar"
+                      size="small"
+                      variant="text"
+                      severity="secondary"
+                      (onClick)="diciendoHoraSiesta.set(false)"
+                    />
+                  </div>
+                </div>
+              }
             } @else if (h.siesta.puede_iniciar) {
               <p-button
-                label="Iniciar siesta"
+                label="Voy a dormir"
                 icon="pi pi-cloud"
                 size="small"
                 severity="secondary"
@@ -551,12 +590,12 @@
               />
               @if (h.siesta.hasta) {
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Hasta las {{ horaDe(h.siesta.hasta) }}: después empieza tu jornada de dormir.
+                  Hasta las {{ horaDe(h.siesta.hasta) }}: después son tus horas de sueño.
                 </p>
               }
             } @else {
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                Ya empezó tu jornada de dormir: no hay más siestas hoy.
+                Estás en tus horas de sueño: esto es para fuera de ellas.
               </p>
             }
           </div>
