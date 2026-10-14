@@ -109,6 +109,8 @@ export interface ResumenHoy {
   };
   siesta: {
     en_curso: string | null;
+    /** Lleva más de 3 h sin decir que dejó de dormir: se puede responder una vez con la hora. */
+    sin_respuesta: boolean;
     hechas: { inicio: string; fin: string; minutos: number }[];
     /** Desde que empieza la jornada de dormir ya no se pueden empezar más. */
     puede_iniciar: boolean;

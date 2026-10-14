@@ -77,8 +77,12 @@ export class AvisosService {
     return this.http.post<{ momento: string }>(`${API}/registros/siesta/iniciar/`, {});
   }
 
-  terminarSiesta(): Observable<{ momento: string }> {
-    return this.http.post<{ momento: string }>(`${API}/registros/siesta/terminar/`, {});
+  /** `hora` solo se acepta si la siesta quedó más de 3 horas sin terminar (una vez). */
+  terminarSiesta(hora?: string): Observable<{ momento: string }> {
+    return this.http.post<{ momento: string }>(
+      `${API}/registros/siesta/terminar/`,
+      hora ? { hora } : {},
+    );
   }
 
   /** «Me acosté», sin esperar el aviso. */

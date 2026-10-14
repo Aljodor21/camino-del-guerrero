@@ -509,14 +509,33 @@ def iniciar_siesta(usuario):
     return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_inicio', fecha=hoy, momento=ahora)
 
 
+# Una siesta que lleva más que esto sin terminarse quedó «sin respuesta»: se puede decir la hora una vez.
+MAX_SIESTA = timedelta(hours=3)
+
+
 @transaction.atomic
-def terminar_siesta(usuario):
+def terminar_siesta(usuario, hora=None):
+    """«Dejé de dormir»: anota la hora de ahora. Si pasaron más de 3 horas sin decirlo, la siesta queda sin
+    respuesta y se puede responder una sola vez con la hora (`hora`), entre que empezó y ahora."""
     ahora = timezone.localtime()
     hoy = ahora.date()
     _, en_curso = _siestas_de(usuario, hoy)
     if not en_curso:
         raise ReglaNegocioError('No tienes ninguna siesta en curso.')
-    return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_fin', fecha=hoy, momento=ahora)
+    sin_respuesta = ahora - en_curso > MAX_SIESTA
+    if hora is None:
+        if sin_respuesta:
+            raise ReglaNegocioError('Ya pasó mucho rato: di a qué hora dejaste de dormir.')
+        return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_fin', fecha=hoy, momento=ahora)
+    if not sin_respuesta:
+        raise ReglaNegocioError('Solo puedes decir la hora si no lo anotaste a tiempo.')
+    dicha = horarios.a_hora(hora)
+    if dicha is None:
+        raise ReglaNegocioError('Esa no es una hora válida (ej. 15:30).')
+    momento = timezone.make_aware(datetime.combine(hoy, dicha))
+    if not en_curso < momento <= ahora:
+        raise ReglaNegocioError('Esa hora tiene que ser después de que empezaste a dormir y no futura.')
+    return RegistroHabito.objects.create(usuario=usuario, tipo='siesta_fin', fecha=hoy, momento=momento)
 
 
 def _en_horas_de_sueno(usuario, habitos, ahora):
@@ -541,6 +560,8 @@ def _estado_siesta(usuario, habitos, ahora):
     jornada = _en_horas_de_sueno(usuario, habitos, ahora)
     return {
         'en_curso': en_curso,
+        # Lleva mucho rato sin decir que dejó de dormir: se puede responder una vez con la hora.
+        'sin_respuesta': bool(en_curso and ahora - en_curso > MAX_SIESTA),
         'hechas': [{**s, 'minutos': round((s['fin'] - s['inicio']).total_seconds() / 60)} for s in hechas],
         # En las horas de sueño no se empiezan siestas.
         'puede_iniciar': en_curso is None and not jornada,

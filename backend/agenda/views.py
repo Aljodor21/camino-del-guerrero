@@ -237,7 +237,7 @@ class IniciarSiestaView(APIView):
 
 class TerminarSiestaView(APIView):
     def post(self, request):
-        registro = notificaciones.terminar_siesta(request.user)
+        registro = notificaciones.terminar_siesta(request.user, request.data.get('hora'))
         return Response(RegistroHabitoSerializer(registro).data, status=status.HTTP_201_CREATED)
 
 

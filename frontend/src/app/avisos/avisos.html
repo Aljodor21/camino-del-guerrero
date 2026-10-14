@@ -532,14 +532,53 @@
             @if (h.siesta.en_curso) {
               <p class="text-sm text-gray-700 dark:text-gray-300">
                 Durmiendo desde las {{ horaDe(h.siesta.en_curso) }}.
+                @if (h.siesta.sin_respuesta) {
+                  No respondiste a qué hora dejaste de dormir.
+                }
               </p>
-              <p-button
-                label="Dejé de dormir"
-                icon="pi pi-sun"
-                size="small"
-                [loading]="registrandoSiesta()"
-                (onClick)="siesta('terminar')"
-              />
+              @if (!diciendoHoraSiesta()) {
+                <p-button
+                  label="Dejé de dormir"
+                  icon="pi pi-sun"
+                  size="small"
+                  [loading]="registrandoSiesta()"
+                  (onClick)="
+                    h.siesta.sin_respuesta ? diciendoHoraSiesta.set(true) : siesta('terminar')
+                  "
+                />
+              } @else {
+                <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-2.5 space-y-2">
+                  <label
+                    for="av-hora-siesta"
+                    class="text-xs font-medium text-gray-700 dark:text-gray-200"
+                    >¿A qué hora dejaste de dormir? Solo puedes decirlo esta vez.</label
+                  >
+                  <div class="flex items-center gap-2">
+                    <input
+                      pInputText
+                      id="av-hora-siesta"
+                      type="time"
+                      [value]="horaSiesta()"
+                      (change)="horaSiesta.set($any($event.target).value)"
+                      class="min-w-0"
+                    />
+                    <p-button
+                      label="Guardar"
+                      size="small"
+                      [disabled]="!horaSiesta()"
+                      [loading]="registrandoSiesta()"
+                      (onClick)="siesta('terminar', horaSiesta())"
+                    />
+                    <p-button
+                      label="Cancelar"
+                      size="small"
+                      variant="text"
+                      severity="secondary"
+                      (onClick)="diciendoHoraSiesta.set(false)"
+                    />
+                  </div>
+                </div>
+              }
             } @else if (h.siesta.puede_iniciar) {
               <p-button
                 label="Voy a dormir"
