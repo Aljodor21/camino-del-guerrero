@@ -26,6 +26,7 @@ import { Celebracion } from '../celebracion/celebracion';
 import { Companero } from '../companero/companero';
 import { Visor } from '../visor/visor';
 import { cuandoEs, formatearFecha, formatearHora } from '../fechas';
+import { hastaCuando } from '../../avisos/modo-pausa/modo-pausa';
 
 interface Aviso {
   icono: string;
@@ -120,6 +121,16 @@ export class Layout implements OnInit, OnDestroy {
   /** Un solo aviso a la vez, el más importante primero. */
   protected aviso = computed((): Aviso | null => {
     if (this.authService.isAdmin()) return this.invitacionApp();
+    const pausa = this.avisos.pausa();
+    if (pausa) {
+      return {
+        icono: 'pi pi-pause-circle',
+        texto: `Estás en pausa${pausa.hasta ? ' ' + hastaCuando(pausa.hasta) : ''}, sin avisos. Aquí te esperamos.`,
+        accion: 'Ver',
+        enlace: ['/avisos'],
+        queryParams: { seccion: 'dia' },
+      };
+    }
     if (this.procesos.medicionInicialPendiente()) {
       return {
         icono: 'pi pi-flag',

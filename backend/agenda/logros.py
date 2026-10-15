@@ -45,7 +45,7 @@ def _dias(usuario, hasta=None):
 
 
 def calcular_racha(dias, umbral=cumplimiento.UMBRAL_RACHA):
-    """Días seguidos desde el umbral. Un día que se queda corto no corta la racha si en esa semana
+    """Días seguidos desde el umbral (los días en pausa se saltan). Un día que se queda corto no corta la racha si en esa semana
     (lunes a domingo) aún no se ha usado el comodín: se «salva» sin sumar. Hoy no corta mientras no
     se acabe. Devuelve la racha, la mejor, los días salvados y las fechas en que se llegó a cada meta."""
     actual = mejor = 0
@@ -53,6 +53,9 @@ def calcular_racha(dias, umbral=cumplimiento.UMBRAL_RACHA):
     alcanzada = {}
     for d in dias:
         p = d['porcentaje']
+        # Un día en pausa ni suma ni corta.
+        if d.get('en_pausa'):
+            continue
         if p is not None and p >= umbral:
             actual += 1
             mejor = max(mejor, actual)

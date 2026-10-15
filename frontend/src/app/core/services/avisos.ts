@@ -8,7 +8,9 @@ import {
   CumplimientoGlobal,
   Habitos,
   HabitosPayload,
+  DuracionPausa,
   HorasDelDia,
+  Pausa,
   ResumenHoy,
   SugerenciaDeHoras,
   Sueno,
@@ -28,11 +30,14 @@ export class AvisosService {
   private _avisos = signal<Aviso[]>([]);
   private _hoy = signal<ResumenHoy | null>(null);
   private _habitos = signal<Habitos | null>(null);
+  private _pausa = signal<Pausa | null>(null);
   private temporizador: ReturnType<typeof setInterval> | null = null;
 
   readonly avisos = this._avisos.asReadonly();
   readonly hoy = this._hoy.asReadonly();
   readonly habitos = this._habitos.asReadonly();
+  /** La pausa activa, si la persona dijo que va a estar desconectada. */
+  readonly pausa = this._pausa.asReadonly();
   readonly pendientes = computed(() => this._avisos().length);
 
   /** `sondeo`: la revisión que la app hace sola cada minuto, para no mezclarla con lo que la persona hace. */
@@ -111,6 +116,34 @@ export class AvisosService {
     return this.http.get<Sueno>(`${API}/sueno/`, { params });
   }
 
+  cargarPausa(): Observable<{ activa: Pausa | null }> {
+    return this.http
+      .get<{ activa: Pausa | null }>(`${API}/pausa/`)
+      .pipe(tap((r) => this._pausa.set(r.activa)));
+  }
+
+  /** «Voy a estar desconectado». `cantidad`: horas o días, según la duración. */
+  pausar(datos: {
+    duracion: DuracionPausa;
+    cantidad?: number;
+    motivo?: string;
+    desde_ayer?: boolean;
+  }): Observable<{ activa: Pausa | null }> {
+    return this.http.post<{ activa: Pausa | null }>(`${API}/pausa/`, datos).pipe(
+      tap((r) => {
+        this._pausa.set(r.activa);
+        this._avisos.set([]);
+      }),
+    );
+  }
+
+  /** «Ya volví». */
+  volver(): Observable<{ activa: Pausa | null }> {
+    return this.http
+      .delete<{ activa: Pausa | null }>(`${API}/pausa/`)
+      .pipe(tap(() => this._pausa.set(null)));
+  }
+
   cargarHabitos(): Observable<Habitos> {
     return this.http.get<Habitos>(`${API}/habitos/`).pipe(tap((h) => this._habitos.set(h)));
   }
@@ -137,6 +170,7 @@ export class AvisosService {
   iniciar(): void {
     if (this.temporizador) return;
     this.cargar().subscribe({ error: () => undefined });
+    this.cargarPausa().subscribe({ error: () => undefined });
     this.temporizador = setInterval(() => {
       if (!document.hidden) this.cargar(true).subscribe({ error: () => undefined });
     }, REVISION_MS);
@@ -148,6 +182,7 @@ export class AvisosService {
     this._avisos.set([]);
     this._hoy.set(null);
     this._habitos.set(null);
+    this._pausa.set(null);
   }
 
   // ── Notificaciones al celular ─────────────────────────────────────

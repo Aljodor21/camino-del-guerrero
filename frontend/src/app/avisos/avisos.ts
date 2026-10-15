@@ -42,6 +42,7 @@ const ICONOS: Record<TipoAviso, string> = {
   comida: 'pi pi-camera',
   proceso: 'pi pi-flag',
   crecimiento: 'pi pi-compass',
+  regreso: 'pi pi-heart',
 };
 
 /** El color de cada tipo de aviso: así se distingue de un vistazo qué es cada uno. */
@@ -55,6 +56,7 @@ const ESTILOS: Record<TipoAviso, string> = {
   comida: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
   proceso: 'bg-slate-500/15 text-slate-600 dark:text-slate-300',
   crecimiento: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
+  regreso: 'bg-pink-500/15 text-pink-600 dark:text-pink-400',
 };
 
 const TIPOS: { id: TipoAviso; label: string }[] = [
@@ -67,6 +69,7 @@ const TIPOS: { id: TipoAviso; label: string }[] = [
   { id: 'comida', label: 'Comidas' },
   { id: 'proceso', label: 'Control' },
   { id: 'crecimiento', label: 'Crecimiento' },
+  { id: 'regreso', label: '¿Qué pasó?' },
 ];
 
 /** Qué hace el guerrero cuando se confirma cada tipo de aviso. */
@@ -81,6 +84,7 @@ const ACCION_DE_AVISO: Partial<Record<TipoAviso, AccionGuerrero>> = {
 /** La bandeja: lo pendiente solo sale cuando se confirma. Además, cómo va el día y los ajustes. */
 import { Ayuda } from '../shared/ayuda/ayuda';
 import { CumplimientoGlobalVista } from './cumplimiento-global/cumplimiento-global';
+import { ModoPausa } from './modo-pausa/modo-pausa';
 import { LogrosVista } from './logros/logros';
 import { CelebracionesService } from '../core/services/celebraciones';
 import { Anillo } from '../shared/anillo/anillo';
@@ -99,6 +103,7 @@ const SECCIONES: Seccion[] = ['pendientes', 'dia', 'cumplimiento', 'logros', 'aj
     Anillo,
     Ayuda,
     CumplimientoGlobalVista,
+    ModoPausa,
     LogrosVista,
     Pestanas,
     RouterLink,
@@ -283,6 +288,14 @@ export class Avisos implements OnInit {
     return this.comidas[tiempo as TiempoComida]?.label ?? tiempo;
   }
 
+  /** Se puso o se quitó la pausa: el celular reprograma sus avisos y el día se recarga. */
+  protected alCambiarPausa(): void {
+    this.servicio.cargarPausa().subscribe({ error: () => undefined });
+    this.servicio.cargar().subscribe({ error: () => undefined });
+    this.servicio.cargarHoy().subscribe({ error: () => undefined });
+    void this.celular.actualizar();
+  }
+
   protected confirmar(aviso: Aviso): void {
     this.confirmando.set(aviso.id);
     this.error.set('');
@@ -290,6 +303,7 @@ export class Avisos implements OnInit {
       next: () => {
         this.confirmando.set(null);
         this.celebraciones.registro(ACCION_DE_AVISO[aviso.tipo]);
+        if (aviso.tipo === 'regreso') this.alCambiarPausa();
         this.servicio.cargarHoy().subscribe({ error: () => undefined });
       },
       error: (e) => {

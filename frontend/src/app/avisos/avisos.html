@@ -161,8 +161,10 @@
           'Anotar un vaso de agua con un toque',
           'Decir a qué hora te levantas y te acuestas, y cambiar esas horas solo para hoy o para mañana',
           'Ver cuánto dormiste y tu promedio de los últimos días',
+          'Poner la app en pausa si vas a estar desconectado',
         ]"
       />
+      <app-modo-pausa (cambio)="alCambiarPausa()" />
       @if (hoy(); as h) {
         <section
           aria-labelledby="av-dia"
