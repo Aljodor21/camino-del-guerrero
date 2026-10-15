@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.exceptions import ReglaNegocioError
-from . import horarios, sueno, ventanas
+from . import horarios, pausa, sueno, ventanas
 from crecimiento import avisos as avisos_de_crecimiento
 from nutricion.grupos import NOMBRE_GRUPO, NOMBRE_TIEMPO
 from nutricion import minutas
@@ -285,6 +285,21 @@ def programados(usuario, fecha, ahora=None):
     # Los proyectos de crecimiento dicen sus propios avisos (su estándar, en `crecimiento/tipos.py`).
     if 'crecimiento' not in apagados:
         avisos.extend(avisos_de_crecimiento.programados(usuario, fecha))
+
+    # Si lleva un día sin hacer nada, se le pregunta qué pasó (solo al revisar hoy).
+    if ahora is not None and 'regreso' not in apagados:
+        regreso = pausa.aviso_de_regreso(usuario, fecha, ahora)
+        if regreso:
+            avisos.append(regreso)
+
+    # En pausa no llega nada.
+    pausas = pausa.pausas_entre(usuario, _momento(fecha, time(0, 0)), _momento(fecha + timedelta(days=1), time(0, 0)))
+    if pausas:
+        # Tampoco lo que tocaba antes de volver: eso ya pasó y no se amontona.
+        fines = [p.fin for p in pausas if p.fin]
+        volvio = max(fines) if fines else None
+        avisos = [a for a in avisos if not pausa.en_pausa(pausas, a['programada_para'])
+                  and (volvio is None or a['programada_para'] >= volvio)]
     return avisos
 
 
@@ -343,7 +358,7 @@ def resolver_automaticas(usuario, ahora=None):
     (el aviso de levantarse horas después)."""
     ahora = ahora or timezone.now()
     pendientes = Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True,
-                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso', 'crecimiento',
+                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso', 'crecimiento', 'regreso',
                                                        *VIGENCIA_DEL_MOMENTO])
     for n in pendientes.select_related('recordatorio'):
         if n.tipo in VIGENCIA_DEL_MOMENTO:
@@ -358,6 +373,8 @@ def resolver_automaticas(usuario, ahora=None):
             hecho = RegistroComida.objects.filter(usuario=usuario, fecha=n.fecha, tiempo=n.datos.get('tiempo')).exists()
         elif n.tipo == 'crecimiento':
             hecho = avisos_de_crecimiento.resuelto(n)
+        elif n.tipo == 'regreso':
+            hecho = pausa.regreso_resuelto(n, ahora)
         else:
             r = n.recordatorio
             hecho = r is None or r.completado_en is not None or r.fecha.isoformat() != n.datos.get('fecha')
@@ -396,6 +413,8 @@ def confirmar(notificacion):
         raise ReglaNegocioError('Cuéntanos qué sigue desde "Tu control": así queda registrado.')
     elif n.tipo == 'crecimiento':
         avisos_de_crecimiento.confirmar(n)
+    elif n.tipo == 'regreso':
+        pausa.iniciar(n.usuario, 'hoy', motivo='Desde el aviso de «¿qué pasó?»')
     elif n.tipo == 'comida':
         raise ReglaNegocioError('Cuenta qué comiste desde el aviso: así guardamos cómo vas con tu plan.')
     elif n.tipo == 'recordatorio':
@@ -559,6 +578,9 @@ def _anoche_sin_respuesta(usuario, habitos, ahora):
     ayer = ahora.date() - timedelta(days=1)
     if usuario.date_joined.astimezone(ahora.tzinfo).date() > ayer or _la_ultima(usuario, 'dormir', fecha=ayer):
         return False
+    # En pausa no se le pide nada.
+    if pausa.activa(usuario) or ayer in pausa.dias_en_pausa(usuario, ayer, ayer):
+        return False
     hoy_levantarse = horarios.horas_de(habitos, ahora.date())['levantarse']
     return hoy_levantarse is None or ahora > ventanas._momento(ahora.date(), hoy_levantarse) - ventanas.MARGEN
 
@@ -712,6 +734,7 @@ def accion_de(notificacion):
         'comida': '',
         'proceso': '',
         'crecimiento': notificacion.datos.get('accion', ''),
+        'regreso': 'Pausar hoy',
         'recordatorio': '' if notificacion.recordatorio_id and notificacion.recordatorio.automatico else 'Listo',
     }[notificacion.tipo]
 
@@ -724,4 +747,6 @@ def url_de(notificacion):
         return '/control'
     if notificacion.tipo == 'crecimiento':
         return f'/crecimiento?proyecto={notificacion.datos.get("proyecto", "")}'
+    if notificacion.tipo == 'regreso':
+        return '/avisos?seccion=dia'
     return '/avisos'

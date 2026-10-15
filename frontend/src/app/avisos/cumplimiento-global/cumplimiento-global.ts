@@ -119,6 +119,7 @@ export class CumplimientoGlobalVista implements OnInit {
         fecha,
         letra: ['L', 'M', 'M', 'J', 'V', 'S', 'D'][i],
         porcentaje: dia?.porcentaje ?? null,
+        en_pausa: dia?.en_pausa ?? false,
         hoy: fecha === hoyISO(),
       };
     });
@@ -282,6 +283,13 @@ export class CumplimientoGlobalVista implements OnInit {
     return p >= (this.datos()?.umbral_racha ?? 50) / 2
       ? 'text-amber-600 dark:text-amber-400'
       : 'text-guerrero-red';
+  }
+
+  /** Cómo se dice el porcentaje de un día: «en pausa», «sin datos» o «60 por ciento». */
+  protected estadoDia(d: { porcentaje: number | null; en_pausa: boolean }, corto = false): string {
+    if (d.en_pausa) return 'en pausa';
+    if (d.porcentaje === null) return 'sin datos';
+    return corto ? d.porcentaje + '%' : d.porcentaje + ' por ciento';
   }
 
   protected fondo(p: number | null): string {

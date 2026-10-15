@@ -13,7 +13,7 @@ from auditoria.middleware import datos_del_cliente
 from core.exceptions import ReglaNegocioError
 from users.procesos import proceso_de_referencia
 
-from . import cumplimiento, fcm, horarios, logros, notificaciones, push, sueno, sugerencias_de_horas
+from . import cumplimiento, fcm, horarios, logros, notificaciones, pausa, push, sueno, sugerencias_de_horas
 from .models import HorarioDia, Notificacion, Recordatorio, RegistroHabito, SuscripcionPush, TokenCelular
 from .serializers import (HabitosSerializer, HorarioDiaSerializer, NotificacionSerializer, RecordatorioSerializer,
                           RegistroHabitoSerializer, SuscripcionPushSerializer)
@@ -288,3 +288,29 @@ class SugerenciasView(APIView):
 
     def get(self, request):
         return Response(sugerencias_de_horas.de_horas(request.user))
+
+
+def _pausa_en_datos(p):
+    if p is None:
+        return None
+    return {'id': p.id, 'desde': p.desde, 'hasta': p.hasta, 'motivo': p.motivo}
+
+
+class PausaView(APIView):
+    """GET: la pausa activa (o null) y las últimas. POST: «voy a estar desconectado». DELETE: «ya volví»."""
+
+    def get(self, request):
+        ultimas = [{**_pausa_en_datos(p), 'fin': p.fin} for p in request.user.pausas.all()[:5]]
+        return Response({'activa': _pausa_en_datos(pausa.activa(request.user)), 'ultimas': ultimas})
+
+    def post(self, request):
+        cantidad = request.data.get('cantidad')
+        p = pausa.iniciar(request.user, request.data.get('duracion'),
+                          cantidad=cantidad if isinstance(cantidad, int) else None,
+                          motivo=str(request.data.get('motivo') or ''),
+                          desde_ayer=bool(request.data.get('desde_ayer')))
+        return Response({'activa': _pausa_en_datos(p)}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        pausa.terminar(request.user)
+        return Response({'activa': None})

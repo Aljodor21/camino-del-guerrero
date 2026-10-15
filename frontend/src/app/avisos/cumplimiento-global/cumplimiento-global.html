@@ -286,21 +286,21 @@
                   type="button"
                   class="w-full h-full flex flex-col justify-end items-center gap-1 focus-visible:outline-2 focus-visible:outline-guerrero-red rounded-md"
                   [disabled]="c.porcentaje === null"
-                  [attr.aria-label]="
-                    fecha(c.fecha) +
-                    ': ' +
-                    (c.porcentaje === null ? 'sin datos' : c.porcentaje + ' por ciento')
-                  "
+                  [attr.aria-label]="fecha(c.fecha) + ': ' + estadoDia(c)"
                   [attr.aria-pressed]="elegido() === c.fecha"
                   (click)="elegirDia(c.fecha)"
                 >
-                  <span class="text-[11px] tabular-nums" [class]="tono(c.porcentaje)">{{
-                    c.porcentaje === null ? '' : c.porcentaje
-                  }}</span>
+                  @if (c.en_pausa) {
+                    <i class="pi pi-pause text-[11px] text-indigo-500" aria-hidden="true"></i>
+                  } @else {
+                    <span class="text-[11px] tabular-nums" [class]="tono(c.porcentaje)">{{
+                      c.porcentaje === null ? '' : c.porcentaje
+                    }}</span>
+                  }
                   <span
                     class="w-full rounded-t-md transition-[height] duration-500"
                     [class]="
-                      fondo(c.porcentaje) +
+                      (c.en_pausa ? 'bg-indigo-400/40' : fondo(c.porcentaje)) +
                       (elegido() === c.fecha
                         ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
                         : '')
@@ -354,17 +354,15 @@
                 type="button"
                 class="aspect-square rounded-lg text-xs font-semibold tabular-nums transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-guerrero-red"
                 [class]="
-                  fondo(dia.porcentaje) +
-                  (dia.porcentaje === null ? ' text-gray-500' : ' text-white') +
+                  (dia.en_pausa
+                    ? 'bg-indigo-400/30 text-indigo-700 dark:text-indigo-300'
+                    : fondo(dia.porcentaje) +
+                      (dia.porcentaje === null ? ' text-gray-500' : ' text-white')) +
                   (elegido() === dia.fecha
                     ? ' ring-2 ring-offset-2 ring-gray-900 dark:ring-white dark:ring-offset-dark-800'
                     : '')
                 "
-                [attr.aria-label]="
-                  fecha(dia.fecha) +
-                  ': ' +
-                  (dia.porcentaje === null ? 'sin datos' : dia.porcentaje + ' por ciento')
-                "
+                [attr.aria-label]="fecha(dia.fecha) + ': ' + estadoDia(dia)"
                 [attr.aria-pressed]="elegido() === dia.fecha"
                 (click)="elegirDia(dia.fecha)"
               >
@@ -387,6 +385,11 @@
             ><i class="w-2.5 h-2.5 rounded-sm bg-guerrero-red"></i>Menos de
             {{ d.umbral_racha / 2 }}%</span
           >
+          @if (d.dias_en_pausa) {
+            <span class="flex items-center gap-1.5"
+              ><i class="w-2.5 h-2.5 rounded-sm bg-indigo-400/40"></i>En pausa (no cuenta)</span
+            >
+          }
         </p>
 
         @if (periodo() !== 'trimestre' && diaElegido(); as dia) {
@@ -394,7 +397,7 @@
             <p class="text-sm font-semibold first-letter:uppercase text-gray-900 dark:text-white">
               {{ fecha(dia.fecha) }}
               <span class="tabular-nums" [class]="tono(dia.porcentaje)">
-                · {{ dia.porcentaje === null ? 'sin datos' : dia.porcentaje + '%' }}</span
+                · {{ estadoDia(dia, true) }}</span
               >
             </p>
             @for (b of dia.bloques; track b.id) {

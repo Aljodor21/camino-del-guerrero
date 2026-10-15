@@ -7,7 +7,8 @@ export type TipoAviso =
   | 'recordatorio'
   | 'comida'
   | 'proceso'
-  | 'crecimiento';
+  | 'crecimiento'
+  | 'regreso';
 
 /** Un aviso pendiente: sale de la bandeja solo cuando se confirma lo que pide. */
 export interface Aviso {
@@ -181,6 +182,8 @@ export interface DiaCumplimiento {
   porcentaje: number | null;
   /** false antes de que empiece el proceso: solo cuentan el agua y dormir. */
   en_proceso: boolean;
+  /** La persona estuvo en pausa ese día: no cuenta ni rompe la racha. */
+  en_pausa: boolean;
   es_hoy: boolean;
   bloques: BloqueDelDia[];
   pilares: { id: 'alimentacion' | 'deporte'; nombre: string; porcentaje: number; peso: number }[];
@@ -195,6 +198,8 @@ export interface CumplimientoGlobal {
   /** Cuántos días tiene el periodo completo (7 en una semana). */
   dias_periodo: number;
   dias_cumplidos: number;
+  /** Cuántos días del periodo estuvo en pausa (no cuentan). */
+  dias_en_pausa: number;
   racha_actual: number;
   mejor_racha: number;
   umbral_racha: number;
@@ -208,3 +213,14 @@ export interface CumplimientoGlobal {
   }[];
   dias: DiaCumplimiento[];
 }
+
+/** «Voy a estar desconectado»: sin avisos, y los días que cubre no cuentan ni rompen la racha. */
+export interface Pausa {
+  id: number;
+  desde: string;
+  /** null: hasta que vuelva. */
+  hasta: string | null;
+  motivo: string;
+}
+
+export type DuracionPausa = 'horas' | 'hoy' | 'dias' | 'indefinida';

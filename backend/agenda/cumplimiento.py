@@ -26,7 +26,7 @@ from nutricion.models import RegistroComida, Suplemento
 from progress.models import RegistroEntrenamiento
 from routines.models import DiaRutina
 
-from . import horarios
+from . import horarios, pausa
 from .models import RegistroHabito
 from .notificaciones import VASO_ML, habitos_de
 
@@ -84,6 +84,8 @@ class _Datos:
         self.minuta = minutas.vigente_de(usuario)
         self.contexto = Contexto(usuario, self.minuta) if self.minuta else None
         self.inicio_minuta = timezone.localtime(self.minuta.fecha_creacion).date() if self.minuta else None
+        # Los días que la persona pasó en pausa: no cuentan ni rompen la racha.
+        self.en_pausa = pausa.dias_en_pausa(usuario, desde, hasta)
 
     def proceso_en(self, fecha):
         for p in self.procesos:
@@ -162,6 +164,9 @@ def _entreno(datos, fecha):
 
 def _dia(datos, fecha, ahora):
     proceso = datos.proceso_en(fecha)
+    if fecha in datos.en_pausa:
+        return {'fecha': fecha, 'porcentaje': None, 'en_proceso': proceso is not None, 'en_pausa': True,
+                'es_hoy': fecha == ahora.date(), 'bloques': [], 'pilares': []}
     bloques = [_agua(datos, fecha), _dormir(datos, fecha)]
     if proceso is not None:
         bloques += [_comidas(datos, fecha, ahora), _tomas(datos, fecha), _entreno(datos, fecha)]
@@ -177,15 +182,17 @@ def _dia(datos, fecha, ahora):
     for p in pilares:
         p['peso'] = round(100 / len(pilares))
     porcentaje = round(sum(p['porcentaje'] for p in pilares) / len(pilares)) if pilares else None
-    return {'fecha': fecha, 'porcentaje': porcentaje, 'en_proceso': proceso is not None,
+    return {'fecha': fecha, 'porcentaje': porcentaje, 'en_proceso': proceso is not None, 'en_pausa': False,
             'es_hoy': fecha == ahora.date(), 'bloques': bloques, 'pilares': pilares}
 
 
 def _rachas(dias):
     """(la que sigue vigente, la mejor): días seguidos desde el umbral. Hoy no corta la racha
-    mientras no se acabe."""
+    mientras no se acabe, y un día en pausa ni la suma ni la corta."""
     mejor = actual = 0
     for d in dias:
+        if d.get('en_pausa'):
+            continue
         if d['porcentaje'] is not None and d['porcentaje'] >= UMBRAL_RACHA:
             actual += 1
             mejor = max(mejor, actual)
@@ -212,6 +219,8 @@ def calcular(usuario, desde, hasta):
 
     datos = _Datos(usuario, desde, hasta)
     dias = [_dia(datos, desde + timedelta(days=i), ahora) for i in range((hasta - desde).days + 1)]
+    # Los días en pausa (también los que vienen, si ya la puso) no se cuentan en el periodo.
+    dias_periodo -= len(pausa.dias_en_pausa(usuario, desde, hasta_pedido))
 
     con_porcentaje = [d['porcentaje'] for d in dias if d['porcentaje'] is not None]
     por_bloque = defaultdict(list)
@@ -229,5 +238,6 @@ def calcular(usuario, desde, hasta):
                      'porcentaje': round(sum(por_bloque[i]) / len(por_bloque[i])), 'dias': len(por_bloque[i])}
                     for i in ORDEN if por_bloque[i]],
         'racha_actual': actual, 'mejor_racha': mejor, 'umbral_racha': UMBRAL_RACHA,
+        'dias_en_pausa': sum(1 for d in dias if d['en_pausa']),
         'dias': dias,
     }

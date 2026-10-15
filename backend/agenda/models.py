@@ -112,6 +112,7 @@ class Notificacion(models.Model):
         ('comida',       'Contar la comida'),
         ('proceso',      'Control del proceso'),
         ('crecimiento',  'Crecimiento personal'),
+        ('regreso',      '¿Qué pasó?'),
     ]
 
     usuario         = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='notificaciones')
@@ -131,9 +132,10 @@ class Notificacion(models.Model):
     enviada_en      = models.DateTimeField(null=True, blank=True, help_text='Cuándo se mandó al celular')
     resuelta_en     = models.DateTimeField(null=True, blank=True)
     # 'confirmada': el usuario dijo que lo hizo. 'automatica': se resolvió por otro lado
-    # (entrenó con el temporizador, completó o movió el recordatorio).
+    # (entrenó con el temporizador, completó o movió el recordatorio). 'pausa': llegó estando en pausa.
     resolucion      = models.CharField(max_length=20, blank=True,
-                                       choices=[('confirmada', 'Confirmada'), ('automatica', 'Automática')])
+                                       choices=[('confirmada', 'Confirmada'), ('automatica', 'Automática'),
+                                                ('pausa', 'En pausa')])
 
     class Meta:
         ordering = ['programada_para', 'id']
@@ -248,3 +250,30 @@ class HorarioDia(models.Model):
 
     def __str__(self):
         return f'{self.usuario.email} - {self.fecha}'
+
+
+class Pausa(models.Model):
+    """«Voy a estar desconectado»: mientras dura no llega ningún aviso, y los días que cubre (al menos 8 horas
+    del día) no cuentan en el cumplimiento ni rompen la racha. Queda registrada: no se borra."""
+
+    usuario      = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='pausas')
+    desde        = models.DateTimeField(default=timezone.now)
+    # Hasta cuándo la puso; vacío es «hasta que vuelva».
+    hasta        = models.DateTimeField(null=True, blank=True)
+    motivo       = models.CharField(max_length=120, blank=True)
+    # Cuándo dijo «ya volví» (si volvió antes).
+    terminada_en = models.DateTimeField(null=True, blank=True)
+    creada       = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-desde', '-id']
+        indexes = [models.Index(fields=['usuario', 'desde'])]
+
+    def __str__(self):
+        return f'Pausa de {self.usuario.email} desde {self.desde:%Y-%m-%d}'
+
+    @property
+    def fin(self):
+        """Cuándo termina: lo que pase primero entre «ya volví» y lo que se puso; None si sigue abierta."""
+        fines = [f for f in (self.terminada_en, self.hasta) if f]
+        return min(fines) if fines else None
