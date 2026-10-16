@@ -96,17 +96,6 @@ export function hastaCuando(hasta: string | null): string {
             (input)="motivo.set($any($event.target).value)"
           />
         </label>
-        @if (elegida() !== 'horas') {
-          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-            <input
-              type="checkbox"
-              class="w-4 h-4 accent-guerrero-red"
-              [checked]="desdeAyer()"
-              (change)="desdeAyer.set($any($event.target).checked)"
-            />
-            Ya estaba desconectado desde ayer
-          </label>
-        }
         <p class="text-xs text-gray-500 dark:text-gray-400">
           Mientras dure no te llega ningún aviso. Los días que cubra no cuentan en tu cumplimiento
           ni rompen tu racha (tampoco la suman). Una pausa de unas horas solo calla los avisos.
@@ -159,7 +148,6 @@ export class ModoPausa {
   protected abierto = signal(false);
   protected elegida = signal<string | null>(null);
   protected motivo = signal('');
-  protected desdeAyer = signal(false);
   protected trabajando = signal(false);
   protected error = signal('');
 
@@ -173,7 +161,6 @@ export class ModoPausa {
         duracion: o.duracion,
         cantidad: o.cantidad,
         motivo: this.motivo().trim(),
-        desde_ayer: o.duracion !== 'horas' && this.desdeAyer(),
       })
       .subscribe({
         next: () => {
@@ -181,7 +168,6 @@ export class ModoPausa {
           this.abierto.set(false);
           this.elegida.set(null);
           this.motivo.set('');
-          this.desdeAyer.set(false);
           this.cambio.emit();
         },
         error: (e) => {

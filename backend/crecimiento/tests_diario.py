@@ -103,7 +103,9 @@ class DiarioTest(APITestCase):
         self.assertEqual(self.client.delete(reverse('diario-gasto', args=[self.proyecto.id, gasto['id']]))
                          .status_code, status.HTTP_200_OK)
         self.assertEqual(self.anotar(fecha=(HOY() + timedelta(days=1)).isoformat()).status_code, 400)
-        self.assertEqual(self.anotar(fecha=(HOY() - timedelta(days=8)).isoformat()).status_code, 400)
+        self.assertEqual(self.anotar(fecha=(HOY() - timedelta(days=1)).isoformat()).status_code, 400)
+        self.assertEqual(self.client.post(reverse('diario-sin-gasto', args=[self.proyecto.id]),
+                                          {'fecha': (HOY() - timedelta(days=1)).isoformat()}, format='json').status_code, 400)
         self.assertEqual(self.anotar(descripcion=' ').status_code, 400)
         self.assertEqual(self.anotar(clase='').status_code, 400)
         self.assertIn('anotados', self.client.get(reverse('crecimiento-proyecto', args=[self.proyecto.id]))

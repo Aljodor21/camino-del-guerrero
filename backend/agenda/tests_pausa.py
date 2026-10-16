@@ -111,12 +111,13 @@ class PausaTest(APITestCase):
         r = self.pausar(duracion='horas', cantidad=4)
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
 
-    def test_desde_ayer_cuenta_el_dia_de_ayer(self):
+    def test_la_pausa_empieza_ahora_y_no_excusa_lo_que_ya_paso(self):
         hoy = HOY()
         with a_la_hora(hoy, 10):
             self.pausar(duracion='hoy', desde_ayer=True)
-            self.assertIn(hoy - timedelta(days=1),
-                          pausa.dias_en_pausa(self.usuario, hoy - timedelta(days=1), hoy))
+            self.assertEqual(pausa.activa(self.usuario).desde, a_las(hoy, 10))
+            self.assertNotIn(hoy - timedelta(days=1),
+                             pausa.dias_en_pausa(self.usuario, hoy - timedelta(days=1), hoy))
 
 
 class QuePasoTest(APITestCase):
@@ -159,3 +160,28 @@ class QuePasoTest(APITestCase):
         notificaciones.resolver_automaticas(self.usuario, a_las(hoy, 11, 5))
         n.refresh_from_db()
         self.assertEqual(n.resolucion, 'automatica')
+
+
+class LoQuePasoNoSeLlenaTest(APITestCase):
+    """Un día que ya pasó no se llena después: sería hacerse trampa."""
+
+    def setUp(self):
+        self.usuario = Usuario.objects.create_user(username='t@x.co', email='t@x.co', nombre='T',
+                                                   password='clave-segura-123')
+        Usuario.objects.filter(pk=self.usuario.pk).update(date_joined=timezone.now() - timedelta(days=20))
+        self.usuario.refresh_from_db()
+        self.client.force_authenticate(self.usuario)
+        Habitos.objects.create(usuario=self.usuario, agua_ml=2000, vaso_ml=500,
+                               hora_levantarse=time(6, 0), hora_dormir=time(22, 0))
+
+    def test_los_avisos_de_ayer_no_se_confirman_y_se_van_solos(self):
+        ayer = HOY() - timedelta(days=1)
+        notificaciones.generar(self.usuario, a_las(ayer, 12))
+        agua = Notificacion.objects.filter(tipo='agua').first()
+        self.assertIsNotNone(agua)
+        r = self.client.post(reverse('aviso-confirmar', args=[agua.id]))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(RegistroHabito.objects.filter(tipo='agua').exists())
+        notificaciones.resolver_automaticas(self.usuario)
+        self.assertFalse(Notificacion.objects.filter(fecha=ayer, resuelta_en__isnull=True)
+                         .exclude(tipo__in=notificaciones.DE_FECHA).exists())

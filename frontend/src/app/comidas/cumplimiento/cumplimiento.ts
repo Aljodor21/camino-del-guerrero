@@ -86,8 +86,9 @@ export class CumplimientoPlan implements OnInit {
     return d ? Math.max(0, d.porciones_pedidas - d.porciones_comidas) : 0;
   });
   /** Las que aún se pueden contar (hasta 7 días atrás) y cuántas ya no. */
+  /** Las de hoy todavía se pueden contar; las de días que ya pasaron no se llenan después. */
   protected porContar = computed(() =>
-    (this.datos()?.sin_contar ?? []).filter((s) => diasDesde(s.fecha) <= 7),
+    (this.datos()?.sin_contar ?? []).filter((s) => diasDesde(s.fecha) === 0),
   );
   protected perdidas = computed(
     () => (this.datos()?.sin_contar.length ?? 0) - this.porContar().length,

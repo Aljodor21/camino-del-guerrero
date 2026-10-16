@@ -353,10 +353,19 @@ def proximos(usuario, dias=7, ahora=None):
     return sorted(lista, key=lambda a: a['programada_para'])
 
 
+# Avisos que no son registros de un día: la agenda, el control y dormir (la noche sigue de madrugada).
+DE_FECHA = ('recordatorio', 'proceso', 'dormir')
+
+
 def resolver_automaticas(usuario, ahora=None):
     """Lo que ya pasó por otro lado: entrenó, completó o movió el recordatorio; o ya no tiene sentido
     (el aviso de levantarse horas después)."""
     ahora = ahora or timezone.now()
+    # Lo de un día que ya pasó no se llena después: sus avisos se van (menos la agenda y el control, que son
+    # fechas, no registros del día; y dormir, que vale hasta la madrugada y tiene su propia vigencia).
+    (Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True, fecha__lt=timezone.localdate(ahora))
+     .exclude(tipo__in=DE_FECHA)
+     .update(resuelta_en=ahora, resolucion='automatica'))
     pendientes = Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True,
                                              tipo__in=['entreno', 'recordatorio', 'comida', 'proceso', 'crecimiento', 'regreso',
                                                        *VIGENCIA_DEL_MOMENTO])
@@ -395,6 +404,10 @@ def confirmar(notificacion):
     n = Notificacion.objects.select_for_update().get(pk=notificacion.pk)
     if n.resuelta_en:
         return n
+    if n.fecha < timezone.localdate() and n.tipo not in DE_FECHA:
+        n.resuelta_en, n.resolucion = timezone.now(), 'automatica'
+        n.save(update_fields=['resuelta_en', 'resolucion'])
+        raise ReglaNegocioError('Ese día ya pasó: lo que no se anotó a tiempo no se llena después.')
     ahora = timezone.now()
     if n.tipo == 'toma' and n.datos.get('unida'):
         raise ReglaNegocioError('Esta toma va con tu comida: cuéntala desde ahí para guardar también la foto.')
