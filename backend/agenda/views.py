@@ -307,8 +307,7 @@ class PausaView(APIView):
         cantidad = request.data.get('cantidad')
         p = pausa.iniciar(request.user, request.data.get('duracion'),
                           cantidad=cantidad if isinstance(cantidad, int) else None,
-                          motivo=str(request.data.get('motivo') or ''),
-                          desde_ayer=bool(request.data.get('desde_ayer')))
+                          motivo=str(request.data.get('motivo') or ''))
         return Response({'activa': _pausa_en_datos(p)}, status=status.HTTP_201_CREATED)
 
     def delete(self, request):

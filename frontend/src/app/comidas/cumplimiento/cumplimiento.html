@@ -224,9 +224,10 @@
       >
         <h2 id="cu-sin" class="font-semibold text-gray-900 dark:text-white">Sin contar</h2>
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          No entran al porcentaje. Puedes contarlas hasta 7 días después.
+          No entran al porcentaje. Las de hoy todavía las puedes contar.
           @if (perdidas()) {
-            Otras {{ perdidas() }} ya pasaron de esos 7 días.
+            {{ perdidas() }} {{ perdidas() === 1 ? 'es' : 'son' }} de días que ya pasaron: esas ya
+            no se llenan.
           }
         </p>
         <ul class="flex flex-wrap gap-2">

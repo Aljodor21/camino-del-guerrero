@@ -19,8 +19,6 @@ from .grupos import HORA_TIEMPO, NOMBRE_GRUPO, NOMBRE_TIEMPO, ORDEN_TIEMPO
 from .menus import Contexto
 from .models import RegistroComida
 
-# Hasta cuántos días atrás se puede contar lo que se comió.
-DIAS_ATRAS = 7
 # Avances permitidos por grupo: de cuánto de lo pedido comió.
 AVANCES = {Decimal(x) for x in ('0', '0.25', '0.5', '0.75', '1')}
 
@@ -47,11 +45,12 @@ def tomas_de(usuario, fecha, tiempo):
 
 
 def _validar_fecha(fecha):
+    """Solo se cuenta lo de hoy: un día que ya pasó no se llena después (sería hacerse trampa)."""
     hoy = timezone.localdate()
     if fecha > hoy:
         raise ReglaNegocioError('Aún no llega ese día.')
-    if fecha < hoy - timedelta(days=DIAS_ATRAS):
-        raise ReglaNegocioError(f'Solo puedes contar lo de los últimos {DIAS_ATRAS} días.')
+    if fecha < hoy:
+        raise ReglaNegocioError('Ese día ya pasó: lo que no se contó a tiempo no se llena después.')
 
 
 # Cómo se nombran los grupos en una frase (los de la minuta son largos).
