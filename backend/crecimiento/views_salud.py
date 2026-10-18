@@ -29,6 +29,7 @@ class TomaSerializer(serializers.Serializer):
     animo    = serializers.IntegerField(required=False, allow_null=True)
     energia  = serializers.IntegerField(required=False, allow_null=True)
     nota     = serializers.CharField(max_length=300, required=False, allow_blank=True)
+    plan     = serializers.CharField(max_length=20, required=False, allow_blank=True)
 
 
 class SaludView(APIView):

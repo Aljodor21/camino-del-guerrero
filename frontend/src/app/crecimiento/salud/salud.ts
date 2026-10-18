@@ -19,6 +19,7 @@ import { CrecimientoService } from '../../core/services/crecimiento';
 import { SaludService } from '../../core/services/salud';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
+import { PlanesSuplementos } from './planes-suplementos';
 import { diasEntre, formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 
 const NIVELES = [1, 2, 3, 4, 5];
@@ -32,7 +33,7 @@ const NIVELES = [1, 2, 3, 4, 5];
   selector: 'app-salud',
   templateUrl: './salud.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule, PlanesSuplementos],
 })
 export class Salud implements OnInit {
   readonly proyecto = input.required<ProyectoCrecimiento>();
@@ -114,7 +115,7 @@ export class Salud implements OnInit {
     });
   }
 
-  private recibir(e: EstadoSalud): void {
+  protected recibir(e: EstadoSalud): void {
     this.estado.set(e);
     this.cargando.set(false);
     this.error.set('');

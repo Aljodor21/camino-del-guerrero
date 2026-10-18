@@ -165,7 +165,7 @@
 
         @if (formulario() === 'proceso') {
           <ul class="space-y-2">
-            @for (pr of programas(); track pr.id) {
+            @for (pr of programasDelArea(); track pr.id) {
               <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
                 <p class="font-semibold text-gray-900 dark:text-white">{{ pr.fuente_titulo }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -194,7 +194,23 @@
                 </div>
               </li>
             } @empty {
-              <li class="text-sm text-gray-500 dark:text-gray-400">Cargando el catálogo…</li>
+              <li class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  @if (programas().length) {
+                    Ya empezaste todos los programas de esta área.
+                  } @else {
+                    Cargando el catálogo…
+                  }
+                </p>
+                <div class="flex justify-end">
+                  <p-button
+                    label="Cerrar"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="cerrarFormulario()"
+                  />
+                </div>
+              </li>
             }
           </ul>
         }

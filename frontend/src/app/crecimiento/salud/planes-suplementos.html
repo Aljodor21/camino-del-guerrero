@@ -1,0 +1,274 @@
+<div class="space-y-4">
+  @if (error()) {
+    <p class="text-sm text-red-600 dark:text-red-400" role="alert">{{ error() }}</p>
+  }
+
+  <!-- ── Hoy ── -->
+  @if (deHoy().length) {
+    <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Hoy te toca</h3>
+      <ul class="divide-y divide-gray-100 dark:divide-white/5">
+        @for (t of deHoy(); track t.clave) {
+          <li class="py-2 flex items-center gap-3">
+            <span class="w-14 tabular-nums text-sm font-medium text-gray-700 dark:text-gray-200">{{
+              t.hora
+            }}</span>
+            <span class="min-w-0 flex-1 text-sm text-gray-900 dark:text-white">
+              {{ t.nombre }}
+              <span class="text-gray-500 dark:text-gray-400">· {{ t.cantidad }}</span>
+            </span>
+            @if (t.tomada) {
+              <span class="text-sm text-emerald-700 dark:text-emerald-400">
+                <i class="pi pi-check" aria-hidden="true"></i> Tomado
+              </span>
+            } @else {
+              <p-button
+                label="Ya lo tomé"
+                size="small"
+                [loading]="guardando()"
+                (onClick)="tomar(t.clave)"
+              />
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- ── Mis suplementos ── -->
+  <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Mis suplementos</h3>
+      @if (editando() === null) {
+        <p-button icon="pi pi-plus" label="Agregar" size="small" (onClick)="abrir(null)" />
+      }
+    </div>
+
+    @if (editando() !== null) {
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="ps-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Qué vas a tomar</label
+            >
+            <input
+              pInputText
+              id="ps-nombre"
+              formControlName="nombre"
+              maxlength="60"
+              placeholder="Ej. Omega 3"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="ps-cantidad" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Cuánto cada vez</label
+            >
+            <input
+              pInputText
+              id="ps-cantidad"
+              formControlName="cantidad"
+              maxlength="40"
+              placeholder="Ej. 1 cápsula"
+            />
+          </div>
+        </div>
+
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">Qué días</legend>
+          <div class="flex flex-wrap items-center gap-2">
+            @for (d of diasSemana; track d.n) {
+              <button
+                type="button"
+                [attr.aria-pressed]="dias().includes(d.n)"
+                [attr.aria-label]="d.largo"
+                [class]="clasesChip(dias().includes(d.n)) + ' w-10'"
+                (click)="alternarDia(d.n)"
+              >
+                {{ d.corto }}
+              </button>
+            }
+            @if (dias().length < 7) {
+              <p-button label="Todos" [text]="true" size="small" (onClick)="todosLosDias()" />
+            }
+          </div>
+        </fieldset>
+
+        <fieldset class="space-y-2">
+          <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+            A qué horas (te aviso a cada una)
+          </legend>
+          <ul class="flex flex-wrap gap-2">
+            @for (h of horas(); track h) {
+              <li
+                class="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-dark-700 pl-3 text-sm tabular-nums text-gray-800 dark:text-gray-100"
+              >
+                {{ h }}
+                <p-button
+                  icon="pi pi-times"
+                  [text]="true"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  [ariaLabel]="'Quitar las ' + h"
+                  (onClick)="quitarHora(h)"
+                />
+              </li>
+            }
+          </ul>
+          <div class="flex items-center gap-2">
+            <input
+              pInputText
+              type="time"
+              class="w-32"
+              aria-label="Otra hora"
+              [value]="nuevaHora()"
+              (input)="nuevaHora.set(leer($event))"
+            />
+            <p-button
+              label="Agregar hora"
+              icon="pi pi-plus"
+              variant="outlined"
+              size="small"
+              [disabled]="horas().length >= 6 || horas().includes(nuevaHora())"
+              (onClick)="agregarHora()"
+            />
+          </div>
+        </fieldset>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="ps-inicio" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Desde</label
+            >
+            <input pInputText id="ps-inicio" type="date" formControlName="inicio" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Tratamiento</span>
+            <div role="radiogroup" aria-label="¿Tiene fin?" class="flex gap-2">
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="form.controls.con_fin.value"
+                [class]="clasesChip(form.controls.con_fin.value)"
+                (click)="form.controls.con_fin.setValue(true)"
+              >
+                Por días
+              </button>
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="!form.controls.con_fin.value"
+                [class]="clasesChip(!form.controls.con_fin.value)"
+                (click)="form.controls.con_fin.setValue(false)"
+              >
+                Sin fin
+              </button>
+            </div>
+          </div>
+        </div>
+        @if (form.controls.con_fin.value) {
+          <div class="flex items-center gap-2">
+            <input
+              pInputText
+              id="ps-duracion"
+              type="number"
+              min="1"
+              max="730"
+              class="w-24"
+              formControlName="duracion_dias"
+            />
+            <label for="ps-duracion" class="text-sm text-gray-700 dark:text-gray-200"
+              >días de tratamiento</label
+            >
+          </div>
+        }
+
+        <input
+          pInputText
+          formControlName="nota"
+          maxlength="200"
+          class="w-full"
+          placeholder="Una nota (opcional): con comida, en ayunas…"
+          aria-label="Nota"
+        />
+        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <input type="checkbox" formControlName="avisar" /> Avisarme a cada hora
+        </label>
+
+        <div class="flex justify-end gap-2">
+          <p-button label="Cancelar" variant="outlined" severity="secondary" (onClick)="cerrar()" />
+          <p-button
+            type="submit"
+            label="Guardar"
+            icon="pi pi-check"
+            [loading]="guardando()"
+            [disabled]="form.invalid || !puedeGuardar()"
+          />
+        </div>
+      </form>
+    }
+
+    @if (planes().length) {
+      <ul class="divide-y divide-gray-100 dark:divide-white/5">
+        @for (p of planes(); track p.id) {
+          <li class="py-3 flex items-start gap-3" [class.opacity-60]="p.termino">
+            <div class="min-w-0 flex-1 text-sm space-y-0.5">
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ p.nombre }}
+                <span class="text-gray-500 dark:text-gray-400">· {{ p.cantidad }}</span>
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                {{ diasTexto(p) }} · {{ p.horas.join(', ') }}
+                @if (!p.avisar) {
+                  · sin aviso
+                }
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                @if (p.termino) {
+                  Terminó el {{ fecha(p.fin!) }}
+                } @else if (p.dia_tratamiento && p.duracion_dias) {
+                  Día {{ p.dia_tratamiento }} de {{ p.duracion_dias }} · hasta el
+                  {{ fecha(p.fin!) }}
+                } @else if (p.dia_tratamiento) {
+                  Desde el {{ fecha(p.inicio) }}, sin fin
+                } @else {
+                  Empieza el {{ fecha(p.inicio) }}
+                }
+                @if (p.nota) {
+                  · {{ p.nota }}
+                }
+              </p>
+            </div>
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              size="small"
+              [ariaLabel]="'Cambiar ' + p.nombre"
+              (onClick)="abrir(p)"
+            />
+            <p-button
+              [icon]="confirmarBorrar() === p.id ? 'pi pi-check' : 'pi pi-trash'"
+              [label]="confirmarBorrar() === p.id ? '¿Quitar?' : ''"
+              [text]="true"
+              [rounded]="confirmarBorrar() !== p.id"
+              [severity]="confirmarBorrar() === p.id ? 'danger' : 'secondary'"
+              size="small"
+              [ariaLabel]="'Quitar ' + p.nombre"
+              (onClick)="borrar(p)"
+            />
+          </li>
+        }
+      </ul>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Quitar un suplemento no borra las tomas que ya anotaste.
+      </p>
+    } @else if (editando() === null) {
+      <p class="text-sm text-gray-600 dark:text-gray-300">
+        Agrega lo que tomas: qué, cuánto, qué días y a qué horas. Te aviso a cada hora y lo marcas
+        con «Ya lo tomé».
+      </p>
+    }
+  </section>
+</div>

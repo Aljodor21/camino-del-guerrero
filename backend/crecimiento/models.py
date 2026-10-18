@@ -186,6 +186,8 @@ class TomaSalud(models.Model):
     nota      = models.CharField(max_length=300, blank=True)
     # La toma fue en un día que el protocolo no marcaba: se anota igual, para no engañarse.
     fuera_de_protocolo = models.BooleanField(default=False)
+    # De qué plan y hora salió («a1b2c3d4@08:00»), si vino de un plan de suplementos; vacío si se anotó suelta.
+    plan      = models.CharField(max_length=20, blank=True)
     anotado   = models.DateTimeField(default=timezone.now)
 
     class Meta:

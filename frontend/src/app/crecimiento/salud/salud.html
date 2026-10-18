@@ -300,14 +300,15 @@
       }
     } @else {
       <!-- ── Otros suplementos ── -->
+      <app-planes-suplementos [proyecto]="proyecto()" [estado]="e" (cambio)="recibir($event)" />
       <form
         [formGroup]="toma"
         (ngSubmit)="anotarSuplemento()"
         class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
       >
-        <h3 class="font-semibold text-gray-900 dark:text-white">Anotar lo que tomaste</h3>
+        <h3 class="font-semibold text-gray-900 dark:text-white">Anotar una toma suelta</h3>
         <p class="text-sm text-gray-600 dark:text-gray-300">
-          Para llevar la cuenta de lo que tomas además de lo de tu plan de nutrición.
+          Algo que tomaste hoy y no está en tus suplementos.
         </p>
         @if (e.frecuentes.length) {
           <ul class="flex flex-wrap gap-2" aria-label="Lo que ya anotaste antes">

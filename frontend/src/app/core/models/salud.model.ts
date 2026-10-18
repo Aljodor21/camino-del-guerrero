@@ -11,7 +11,40 @@ export interface TomaSalud {
   nota: string;
   /** Se anotó en un día que el protocolo no marcaba. */
   fuera_de_protocolo: boolean;
+  /** De qué plan y hora salió («id@08:00»), o vacío si se anotó suelta. */
+  plan: string;
   se_puede_borrar: boolean;
+}
+
+/** Un suplemento con su plan: qué, cuánto, qué días (lunes = 0), a qué horas y cuánto dura. */
+export interface PlanSuplemento {
+  id: string;
+  nombre: string;
+  cantidad: string;
+  dias: number[];
+  horas: string[];
+  inicio: string;
+  /** Días de tratamiento, o null si no tiene fin. */
+  duracion_dias: number | null;
+  nota: string;
+  avisar: boolean;
+}
+
+/** El plan con lo que calcula el servidor. */
+export interface PlanSuplementoEstado extends PlanSuplemento {
+  fin: string | null;
+  termino: boolean;
+  toca_hoy: boolean;
+  /** En qué día del tratamiento va (null si no ha empezado o ya terminó). */
+  dia_tratamiento: number | null;
+}
+
+export interface TomaDeHoy {
+  clave: string;
+  hora: string;
+  nombre: string;
+  cantidad: string;
+  tomada: boolean;
 }
 
 export interface DiaProtocolo {
@@ -41,6 +74,9 @@ export interface EstadoSalud {
   tomas: TomaSalud[];
   cuidados: string[];
   frecuentes: { nombre: string; cantidad: string }[];
+  // Solo en otros suplementos.
+  planes?: PlanSuplementoEstado[];
+  de_hoy?: TomaDeHoy[];
   // Solo en el protocolo.
   dia?: DiaProtocolo;
   etapa?: [string, string] | null;
@@ -58,4 +94,5 @@ export interface TomaPayload {
   animo?: number | null;
   energia?: number | null;
   nota?: string;
+  plan?: string;
 }
