@@ -7,6 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -18,7 +19,7 @@ import { CrecimientoService } from '../../core/services/crecimiento';
 import { SaludService } from '../../core/services/salud';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
-import { formatearFecha } from '../../shared/fechas';
+import { diasEntre, formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 
 const NIVELES = [1, 2, 3, 4, 5];
 
@@ -67,11 +68,34 @@ export class Salud implements OnInit {
   protected ajustes = this.fb.nonNullable.group({
     sustancia: ['', [Validators.maxLength(60)]],
     dosis: ['', [Validators.maxLength(40)]],
-    inicio: ['', Validators.required],
+    // Solo para la pantalla: si ya empezó, el día 1 es uno pasado; si no, uno de hoy en adelante.
+    ya_empezo: [false],
+    inicio: [hoyISO(), Validators.required],
     semanas_ciclo: [4, [Validators.required, Validators.min(4), Validators.max(8)]],
     semanas_descanso: [2, [Validators.required, Validators.min(2), Validators.max(4)]],
     avisar: [true],
     hora_aviso: ['08:00', Validators.required],
+  });
+  private valores = toSignal(this.ajustes.valueChanges, {
+    initialValue: this.ajustes.getRawValue(),
+  });
+  protected hoy = hoyISO();
+  protected desdeMin = computed(() => sumarDias(this.hoy, this.valores().ya_empezo ? -120 : 0));
+  protected desdeMax = computed(() =>
+    this.valores().ya_empezo ? this.hoy : sumarDias(this.hoy, 30),
+  );
+  /** Dónde cae hoy según lo que escribió (el servidor calcula lo mismo al guardar). */
+  protected vista = computed(() => {
+    const v = this.valores();
+    if (!v.inicio) return '';
+    const corridos = diasEntre(v.inicio, this.hoy);
+    if (corridos < 0)
+      return `Empiezas en ${-corridos} ${corridos === -1 ? 'día' : 'días'}: ese día es tu día 1.`;
+    const ciclo = (v.semanas_ciclo ?? 4) * 7;
+    const pos = corridos % (ciclo + (v.semanas_descanso ?? 2) * 7);
+    if (pos >= ciclo)
+      return `Hoy estarías en descanso, semana ${Math.floor((pos - ciclo) / 7) + 1}.`;
+    return `Hoy sería el día ${(pos % 4) + 1} del ciclo, semana ${Math.floor(pos / 7) + 1} de ${v.semanas_ciclo}.`;
   });
   protected toma = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(60)]],
@@ -99,7 +123,8 @@ export class Salud implements OnInit {
       this.ajustes.patchValue({
         sustancia: a.sustancia,
         dosis: a.dosis,
-        inicio: a.inicio,
+        ya_empezo: !!a.inicio && a.inicio <= this.hoy,
+        inicio: a.inicio || this.hoy,
         semanas_ciclo: a.semanas_ciclo,
         semanas_descanso: a.semanas_descanso,
         avisar: a.avisar,
@@ -117,7 +142,7 @@ export class Salud implements OnInit {
     if (this.ajustes.invalid) return;
     this.guardando.set(true);
     this.crecimiento
-      .actualizarProyecto(this.proyecto().id, { datos: this.ajustes.getRawValue() })
+      .actualizarProyecto(this.proyecto().id, { datos: this.datosAjustes() })
       .subscribe({
         next: () => {
           this.editandoAjustes.set(false);
@@ -132,6 +157,12 @@ export class Salud implements OnInit {
         },
         error: (e) => this.fallo(e, 'No pudimos guardar tus ajustes.'),
       });
+  }
+
+  private datosAjustes(): Record<string, unknown> {
+    const { ya_empezo, ...datos } = this.ajustes.getRawValue();
+    void ya_empezo;
+    return datos;
   }
 
   /** La toma del protocolo usa la sustancia y la cantidad de los ajustes. */
