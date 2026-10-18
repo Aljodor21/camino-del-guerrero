@@ -6,9 +6,9 @@
   />
 
   <app-que-es
-    para="Armas tus propias áreas (por ejemplo, educación financiera). Dentro llevas procesos que salen de un libro, un curso o un mentor, y en cada uno guardas sus proyectos y tus notas."
+    para="Eliges tus áreas (por ejemplo, Salud o Educación financiera). Dentro llevas programas con sus proyectos, y en cada uno guardas tus avances y tus notas."
     [puedes]="[
-      'Crear un área y, dentro, un proceso según un libro y su autor',
+      'Elegir un área y, dentro, empezar un programa',
       'Agregar los proyectos de cada capítulo y marcar cuánto llevas',
       'Dejar notas que la app puede mostrarte en otras pantallas',
     ]"
@@ -59,11 +59,7 @@
         </div>
 
         @if (formulario() === 'area') {
-          <form
-            [formGroup]="formArea"
-            (ngSubmit)="guardarArea()"
-            class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
-          >
+          <div class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
             @if (areasSugeridas().length) {
               <div class="space-y-2">
                 <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Elige un área</p>
@@ -89,22 +85,9 @@
               </div>
             } @else if (programas().length) {
               <p class="text-sm text-gray-600 dark:text-gray-300">
-                Ya tienes todas las áreas que ofrece la app. Si quieres otra, escríbela abajo.
+                Ya tienes todas las áreas que ofrece la app.
               </p>
             }
-            <div class="flex flex-col gap-1">
-              <label for="cr-area" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                >¿Otra área? Escríbela</label
-              >
-              <input
-                pInputText
-                id="cr-area"
-                formControlName="nombre"
-                maxlength="80"
-                placeholder="Ej. Estudios"
-                class="w-full"
-              />
-            </div>
             <div class="flex justify-end gap-2">
               <p-button
                 label="Cancelar"
@@ -112,15 +95,8 @@
                 severity="secondary"
                 (onClick)="cerrarFormulario()"
               />
-              <p-button
-                type="submit"
-                label="Guardar la mía"
-                icon="pi pi-check"
-                [loading]="guardando()"
-                [disabled]="formArea.invalid"
-              />
             </div>
-          </form>
+          </div>
         }
 
         @if (areas().length) {
