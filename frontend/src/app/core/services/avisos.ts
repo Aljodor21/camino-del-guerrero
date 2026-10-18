@@ -127,7 +127,6 @@ export class AvisosService {
     duracion: DuracionPausa;
     cantidad?: number;
     motivo?: string;
-    desde_ayer?: boolean;
   }): Observable<{ activa: Pausa | null }> {
     return this.http.post<{ activa: Pausa | null }>(`${API}/pausa/`, datos).pipe(
       tap((r) => {

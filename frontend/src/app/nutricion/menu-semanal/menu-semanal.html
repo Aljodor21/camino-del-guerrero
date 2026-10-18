@@ -266,7 +266,7 @@
                 <footer
                   class="border-t border-gray-100 dark:border-dark-700 pt-2 -mb-1 flex flex-wrap items-center gap-x-4"
                 >
-                  @if (avance().puedeContar && !avance().porTiempo.has(c.tiempo)) {
+                  @if (diaSeleccionado() === hoy && !avance().porTiempo.has(c.tiempo)) {
                     <a
                       routerLink="/comidas/contar"
                       [queryParams]="{ tiempo: c.tiempo, fecha: c.fecha }"

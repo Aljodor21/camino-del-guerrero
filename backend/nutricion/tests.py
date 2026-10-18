@@ -1066,6 +1066,15 @@ class MinutaYMenuTest(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
         self.assertEqual([c['contada'] for c in self.client.get(reverse('hoy')).data['comidas']][:2], [True, False])
 
+    def test_una_comida_de_ayer_ya_no_se_cuenta(self, ai):
+        ai.return_value.proponer_menu.side_effect = Exception('sin IA')
+        self.subir_y_confirmar()
+        ayer = (self.hoy - timedelta(days=1)).isoformat()
+        r = self.client.post(reverse('registros-comida'), {'tiempo': 'almuerzo', 'fecha': ayer, 'avances': {}},
+                             format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('ya pasó', r.data['detail'])
+
     def test_el_aviso_de_la_comida_sale_al_contarla(self, ai):
         from datetime import datetime, time
         from agenda import notificaciones

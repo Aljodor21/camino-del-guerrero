@@ -5,12 +5,12 @@ Es el ejercicio tal cual, con dos mejoras:
   demás es emocional; un gasto mixto se parte así). Cada rubro dice cada cuánto se paga: los de cada mes van
   tal cual; los anuales (o semestrales) se suman en el año y se dividen entre 12; los hormiga (de todos los
   días) se multiplican por los días del mes. Al final todo es **un solo gasto mensual**.
-- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad cada día de este mes, sin engañarse; un día
+- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad, anotado el mismo día, sin engañarse; un día
   está «al día» si tiene gastos anotados o si la persona dijo que no gastó.
 """
 import calendar
 import math
-from datetime import time, timedelta
+from datetime import time
 
 from django.db import transaction
 from django.utils import timezone
@@ -50,7 +50,6 @@ NOMBRE_CATEGORIA = {c: n for c, n, _ in CATEGORIAS}
 ANUALES = {'SOAT', 'Revisión tecnomecánica', 'Impuesto de rodamiento', 'Vacaciones', 'Impuestos nacionales',
            'Impuestos locales'}
 FRECUENCIAS = {f for f, _ in Rubro.FRECUENCIAS}
-DIAS_ATRAS = 7
 HORA_AVISO = time(20, 0)
 MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre',
          'noviembre', 'diciembre']
@@ -164,11 +163,12 @@ def dia_al_dia(proyecto, fecha):
 
 
 def _validar_fecha(fecha):
+    """Solo se anota lo de hoy: un día que ya pasó no se llena después (sería hacerse trampa)."""
     hoy = timezone.localdate()
     if fecha > hoy:
         raise ReglaNegocioError('Ese día todavía no llega.')
-    if fecha < hoy - timedelta(days=DIAS_ATRAS):
-        raise ReglaNegocioError(f'Solo se anota lo de los últimos {DIAS_ATRAS} días.')
+    if fecha < hoy:
+        raise ReglaNegocioError('Ese día ya pasó: lo que no se anotó a tiempo no se llena después.')
 
 
 @transaction.atomic

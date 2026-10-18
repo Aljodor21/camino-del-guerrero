@@ -65,9 +65,9 @@ def dias_en_pausa(usuario, desde, hasta, ahora=None):
 
 
 @transaction.atomic
-def iniciar(usuario, duracion, cantidad=None, motivo='', desde_ayer=False):
-    """`duracion`: 'horas' (cantidad 1-12), 'hoy', 'dias' (cantidad 1-30, contando hoy) o 'indefinida'.
-    `desde_ayer`: si ya estaba desconectado desde ayer (no más atrás: lo de antes ya pasó)."""
+def iniciar(usuario, duracion, cantidad=None, motivo=''):
+    """`duracion`: 'horas' (cantidad 1-12), 'hoy', 'dias' (cantidad 1-30, contando hoy) o 'indefinida'. Empieza
+    ahora: los días que ya pasaron no se excusan después."""
     ahora = timezone.now()
     if activa(usuario, ahora):
         raise ReglaNegocioError('Ya estás en pausa.')
@@ -86,7 +86,7 @@ def iniciar(usuario, duracion, cantidad=None, motivo='', desde_ayer=False):
         hasta = None
     else:
         raise ReglaNegocioError('Elige cuánto vas a estar desconectado.')
-    desde = _inicio_del_dia(hoy - timedelta(days=1)) if desde_ayer else ahora
+    desde = ahora
     # Nunca encima de una pausa anterior.
     ultima = usuario.pausas.order_by('-desde').first()
     if ultima and ultima.fin and ultima.fin > desde:
