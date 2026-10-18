@@ -26,6 +26,8 @@ export type Actualizacion = 'actual' | 'atrasada' | null;
 
 const CLAVE_INVITACION = 'cdg_apk_invitacion';
 const CLAVE_ACTUALIZACION = 'cdg_apk_actualizacion';
+/** Cada cuánto vuelve a preguntar si hay versión nueva mientras la app sigue abierta. */
+const MINUTOS_REVISION = 10;
 
 /** Compara "1.0.5" con "1.0.12" número a número: negativo si a es más vieja, 0 si iguales. */
 export function compararVersiones(a: string, b: string): number {
@@ -74,6 +76,7 @@ export class ApkService {
   private cerrada = signal(invitacionYaCerrada());
   private descartada = signal(actualizacionDescartada());
   private pedida = false;
+  private vigilando = false;
   private http = inject(HttpClient);
 
   /** El aviso de arriba solo sale donde se puede instalar y mientras no se haya cerrado. */
@@ -122,8 +125,10 @@ export class ApkService {
   async cargar(forzar = false): Promise<void> {
     if (this.pedida && !forzar) return;
     this.pedida = true;
-    this.estado.set('cargando');
+    // Al revisar de nuevo no se vuelve a "cargando": la pantalla no parpadea.
+    if (!forzar) this.estado.set('cargando');
     void this.leerInstalada();
+    this.vigilar();
     try {
       const r = await firstValueFrom(
         this.http.get<{
@@ -138,16 +143,30 @@ export class ApkService {
         this.estado.set('no-disponible');
         return;
       }
-      this.version.set(
+      const nueva =
         r.disponible && r.version && r.publicada && r.bytes
           ? { version: r.version, publicada: new Date(r.publicada), bytes: r.bytes }
-          : null,
-      );
+          : null;
+      // Una revisión sin datos no borra la versión que ya se conocía.
+      if (nueva || !forzar) this.version.set(nueva);
     } catch {
-      this.version.set(null);
+      if (!forzar) this.version.set(null);
     }
     // Sin datos (servidor o GitHub sin responder) el enlace sigue sirviendo: se ofrece igual.
     this.estado.set('lista');
+  }
+
+  /**
+   * La app suele quedar abierta días en segundo plano: sin esto solo sabría de una versión nueva al
+   * cerrarla y abrirla de nuevo. Se vuelve a preguntar al regresar a ella y cada pocos minutos.
+   */
+  private vigilar(): void {
+    if (!this.enLaApp || this.vigilando) return;
+    this.vigilando = true;
+    void App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) void this.cargar(true);
+    });
+    setInterval(() => void this.cargar(true), MINUTOS_REVISION * 60_000);
   }
 
   /** La versión con la que se instaló la app (la lee el propio Android). */
