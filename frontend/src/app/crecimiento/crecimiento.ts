@@ -112,9 +112,6 @@ export class Crecimiento implements OnInit {
     this.proyecto() ? 'proyecto' : this.proceso() ? 'proceso' : this.area() ? 'area' : 'areas',
   );
 
-  protected formArea = this.fb.group({
-    nombre: this.fb.control('', [Validators.required, Validators.maxLength(80)]),
-  });
   protected formNota = this.fb.group({
     texto: this.fb.control('', [Validators.required, Validators.maxLength(2000)]),
   });
@@ -258,13 +255,11 @@ export class Crecimiento implements OnInit {
   protected cerrarFormulario(): void {
     this.formulario.set(null);
     this.confirmarBorrar.set(false);
-    this.formArea.reset();
   }
 
-  protected guardarArea(nombre = this.formArea.controls.nombre.value): void {
-    if (!nombre.trim()) return;
+  protected guardarArea(nombre: string): void {
     this.guardando.set(true);
-    this.servicio.crearArea(nombre.trim()).subscribe({
+    this.servicio.crearArea(nombre).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarFormulario();
