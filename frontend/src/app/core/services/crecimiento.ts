@@ -51,9 +51,10 @@ export class CrecimientoService {
     return this.http.get<ProyectoCrecimiento>(`${API}/proyectos/${id}/`);
   }
 
-  procesos(area: number): Observable<ProcesoCrecimiento[]> {
+  /** Los procesos de un área, o todos los de la persona si no se dice cuál. */
+  procesos(area?: number): Observable<ProcesoCrecimiento[]> {
     return this.http.get<ProcesoCrecimiento[]>(`${API}/procesos/`, {
-      params: { area: String(area) },
+      params: area === undefined ? {} : { area: String(area) },
     });
   }
   crearProceso(datos: ProcesoPayload): Observable<ProcesoCrecimiento> {
