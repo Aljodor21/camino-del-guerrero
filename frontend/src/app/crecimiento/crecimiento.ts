@@ -93,11 +93,14 @@ export class Crecimiento implements OnInit {
 
   /** Los programas del catálogo y si el proceso nuevo sale de uno o es propio. */
   protected programas = signal<ProgramaCrecimiento[]>([]);
+  /** Los programas que la persona ya tiene en proceso, en cualquier área. */
+  protected programasEmpezados = signal<ReadonlySet<string>>(new Set());
   /** Las áreas que ofrece el catálogo y todavía no tiene la persona, con los programas que traen. */
   protected areasSugeridas = computed(() => {
     const tiene = new Set(this.areas().map((a) => a.nombre.trim().toLowerCase()));
     const porArea = new Map<string, string[]>();
-    for (const p of this.programas()) {
+    // Un programa que ya está en proceso (en cualquier área) no vuelve a ofrecerse.
+    for (const p of this.programas().filter((x) => !this.programasEmpezados().has(x.id))) {
       porArea.set(p.area, [...(porArea.get(p.area) ?? []), p.titulo]);
     }
     return [...porArea]
@@ -229,6 +232,12 @@ export class Crecimiento implements OnInit {
   protected abrirFormulario(cual: Exclude<Formulario, null>): void {
     this.error.set('');
     this.formulario.set(cual);
+    if (cual === 'area') {
+      this.servicio.procesos().subscribe({
+        next: (l) => this.programasEmpezados.set(new Set(l.map((p) => p.programa).filter(Boolean))),
+        error: this.fallo('No pudimos revisar tus programas.'),
+      });
+    }
     if ((cual === 'proceso' || cual === 'area') && !this.programas().length) {
       this.servicio.programas().subscribe({
         next: (l) => this.programas.set(l),
