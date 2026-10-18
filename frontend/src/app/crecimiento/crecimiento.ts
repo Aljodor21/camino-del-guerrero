@@ -93,6 +93,17 @@ export class Crecimiento implements OnInit {
 
   /** Los programas del catálogo y si el proceso nuevo sale de uno o es propio. */
   protected programas = signal<ProgramaCrecimiento[]>([]);
+  /** Las áreas que ofrece el catálogo y todavía no tiene la persona, con los programas que traen. */
+  protected areasSugeridas = computed(() => {
+    const tiene = new Set(this.areas().map((a) => a.nombre.trim().toLowerCase()));
+    const porArea = new Map<string, string[]>();
+    for (const p of this.programas()) {
+      porArea.set(p.area, [...(porArea.get(p.area) ?? []), p.titulo]);
+    }
+    return [...porArea]
+      .filter(([nombre]) => !tiene.has(nombre.trim().toLowerCase()))
+      .map(([nombre, programas]) => ({ nombre, programas }));
+  });
   /** La pantalla propia del tipo del proyecto abierto (si tiene). */
   protected pantalla = signal<Type<unknown> | null>(null);
   protected entradasPantalla = computed(() => ({ proyecto: this.proyecto() }));
@@ -221,7 +232,7 @@ export class Crecimiento implements OnInit {
   protected abrirFormulario(cual: Exclude<Formulario, null>): void {
     this.error.set('');
     this.formulario.set(cual);
-    if (cual === 'proceso' && !this.programas().length) {
+    if ((cual === 'proceso' || cual === 'area') && !this.programas().length) {
       this.servicio.programas().subscribe({
         next: (l) => this.programas.set(l),
         error: this.fallo('No pudimos cargar los programas.'),
@@ -250,10 +261,10 @@ export class Crecimiento implements OnInit {
     this.formArea.reset();
   }
 
-  protected guardarArea(): void {
-    if (this.formArea.invalid) return;
+  protected guardarArea(nombre = this.formArea.controls.nombre.value): void {
+    if (!nombre.trim()) return;
     this.guardando.set(true);
-    this.servicio.crearArea(this.formArea.controls.nombre.value.trim()).subscribe({
+    this.servicio.crearArea(nombre.trim()).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarFormulario();
