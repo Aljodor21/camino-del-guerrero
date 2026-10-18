@@ -15,6 +15,7 @@ nieve…) se registra en `TIPOS` con lo que el resto de la app necesita saber de
 - `resuelto(proyecto, clave, fecha)`: si el aviso ya no hace falta (porque la persona lo hizo por otro lado).
 - `del_servidor`: llaves de `datos` que la app no puede cambiar (lo cumplido no se escribe a mano).
 - `acciones`: lo que se hace desde la pantalla (`POST /proyectos/<id>/accion/<nombre>/`).
+- `con_avance`: falso si el tipo no tiene un porcentaje con sentido (no se muestra ni cuenta en los promedios).
 
 Lo demás (pantallas, cálculos, sus propias tablas) vive en el módulo del tipo. Un tipo nuevo es una entrada
 más en `TIPOS`: no cambia el resto de la app.

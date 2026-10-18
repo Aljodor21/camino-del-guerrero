@@ -107,13 +107,13 @@ class ResumenView(APIView):
             procesos = [{
                 'id': p.id, 'titulo': p.titulo, 'fuente': p.fuente, 'fuente_titulo': p.fuente_titulo,
                 'autor': p.autor, 'estado': p.estado,
-                'avance': _promedio(x.avance for x in p.proyectos.all()),
+                'avance': _promedio(p.proyectos.all()),
                 'proyectos': [{'id': x.id, 'titulo': x.titulo, 'estado': x.estado, 'avance': x.avance,
                                'resumen': ProyectoSerializer(x, context={'request': request}).data['resumen']}
                               for x in p.proyectos.all()],
             } for p in area.procesos.all() if p.estado != 'terminado']
             datos.append({'id': area.id, 'nombre': area.nombre, 'icono': area.icono,
-                          'avance': _promedio(x.avance for p in area.procesos.all() for x in p.proyectos.all()),
+                          'avance': _promedio(x for p in area.procesos.all() for x in p.proyectos.all()),
                           'procesos': procesos})
         notas = NotaSerializer(Nota.objects.filter(proyecto__proceso__area__usuario=request.user)
                                .select_related('proyecto')[:5], many=True, context={'request': request}).data

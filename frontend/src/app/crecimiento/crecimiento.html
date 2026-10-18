@@ -323,9 +323,13 @@
                       }}</span>
                     }
                     <span class="block text-xs text-gray-500 dark:text-gray-400">
-                      {{ estadoTexto(y.estado) }} · {{ y.avance }}%
-                      @if (y.resumen) {
-                        · {{ y.resumen }}
+                      @if (y.con_avance) {
+                        {{ estadoTexto(y.estado) }} · {{ y.avance }}%
+                        @if (y.resumen) {
+                          · {{ y.resumen }}
+                        }
+                      } @else {
+                        {{ y.resumen }}
                       }
                     </span>
                   </span>
@@ -375,7 +379,7 @@
                 <p class="text-sm text-gray-600 dark:text-gray-300">{{ y.detalle }}</p>
               }
             </div>
-            @if (!y.calcula_avance) {
+            @if (y.con_avance && !y.calcula_avance) {
               <div class="space-y-1.5">
                 <p id="cr-avance" class="text-sm font-medium text-gray-700 dark:text-gray-200">
                   ¿Cuánto llevas? <span class="tabular-nums">{{ y.avance }}%</span>
@@ -399,7 +403,7 @@
                   }
                 </div>
               </div>
-            } @else if (!pantalla()) {
+            } @else if (y.con_avance && !pantalla()) {
               <p class="text-sm text-gray-600 dark:text-gray-300">
                 {{ estadoTexto(y.estado) }} · {{ y.avance }}%
                 @if (y.resumen) {
