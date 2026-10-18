@@ -24,7 +24,7 @@ import { CrecimientoService } from '../../core/services/crecimiento';
 import { DiarioGastosService } from '../../core/services/diario-gastos';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
-import { formatearFecha, hoyISO } from '../../shared/fechas';
+import { formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 import { Pestana, Pestanas } from '../../shared/pestanas/pestanas';
 
 type Seccion = 'gastos' | 'registro' | 'resumen' | 'guia';
@@ -98,6 +98,7 @@ export class DiarioGastos implements OnInit {
   protected meses = MESES;
   protected clasesChip = clasesChip;
   protected hoy = hoyISO();
+  protected haceUnaSemana = sumarDias(hoyISO(), -7);
 
   protected seccion = signal<Seccion>('gastos');
   protected estado = signal<EstadoDiario | null>(null);
@@ -130,6 +131,7 @@ export class DiarioGastos implements OnInit {
   protected gDescripcion = signal('');
   protected gCategoria = signal('');
   protected gClase = signal<ClaseGasto | null>(null);
+  protected gFecha = signal(hoyISO());
   protected puedeAnotar = computed(
     () =>
       aPesos(this.gValor()) > 0 &&
@@ -345,7 +347,7 @@ export class DiarioGastos implements OnInit {
     this.guardando.set(true);
     this.servicio
       .anotar(this.proyecto().id, {
-        fecha: this.hoy,
+        fecha: this.gFecha(),
         valor: aPesos(this.gValor()),
         descripcion: this.gDescripcion().trim(),
         categoria: this.gCategoria(),

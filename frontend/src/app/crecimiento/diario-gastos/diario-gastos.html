@@ -206,17 +206,35 @@
               {{ e.resumen.dias_al_dia }} de {{ e.resumen.dias_transcurridos }} días al día
             </span>
           </div>
-          <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-            ¿Cuánto gastaste hoy?
-            <input
-              pInputText
-              inputmode="numeric"
-              placeholder="$ 0"
-              [value]="gValor()"
-              (input)="gValor.set(leer($event))"
-              class="w-full"
-            />
-          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Cuánto?
+              <input
+                pInputText
+                inputmode="numeric"
+                placeholder="$ 0"
+                [value]="gValor()"
+                (input)="gValor.set(leer($event))"
+                class="w-full min-w-0"
+              />
+            </label>
+            <label
+              class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              ¿Qué día?
+              <input
+                pInputText
+                type="date"
+                [min]="haceUnaSemana"
+                [max]="hoy"
+                [value]="gFecha()"
+                (change)="gFecha.set(leer($event) || hoy)"
+                class="w-full min-w-0"
+              />
+            </label>
+          </div>
           <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
             ¿En qué?
             <input
@@ -339,8 +357,8 @@
           </p>
         }
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Se anota el mismo día: un día que ya pasó no se llena después. Lo anotado no se cambia;
-          solo se puede borrar ese mismo día, por si fue un error.
+          Lo anotado no se cambia; solo se puede borrar el mismo día, por si fue un error. Puedes
+          anotar lo de los últimos 7 días.
         </p>
       }
 

@@ -6,8 +6,8 @@
  * STORY: cualquiera, sepa o no qué hacer, entiende que la app arma su comida (con o sin
  * nutricionista), su entreno y su seguimiento, y empieza.
  * FIRST VIEWPORT: los guantes flotando en el negro, el titular a un lado y el botón
- * "Empieza tu camino"; al bajar, vendas y cuerdas estallan alrededor de los guantes.
- * FORM: hero cinematográfico con la animación atada al scroll (96 cuadros WebP dibujados
+ * "Empieza tu camino"; apenas carga, vendas y cuerdas estallan alrededor de los guantes.
+ * FORM: hero cinematográfico con la animación en bucle desde que carga (96 cuadros WebP dibujados
  * en un video) + recorrido de estaciones fijas; nada de partículas ni destellos.
  */
 import {
@@ -140,14 +140,14 @@ export class Home {
 
     const elVideo = raiz.querySelector<HTMLVideoElement>('[data-video]');
     const secuencia = elVideo && this.puedeAnimar() ? this.video(elVideo) : null;
+    // La animación arranca apenas carga la página y sigue en bucle mientras el hero se vea.
+    secuencia?.reproducir();
 
     let pendiente = false;
     const medir = () => {
       pendiente = false;
       const alto = window.innerHeight;
       raiz.style.setProperty('--hero', avance(hero, alto).toFixed(4));
-      // La animación arranca con el primer scroll y sigue en bucle mientras el hero se vea.
-      if (secuencia && window.scrollY > 4) secuencia.reproducir();
       const camino = raiz.querySelector<HTMLElement>('.preguntas');
       if (camino) {
         // La línea dorada llega hasta donde ya se bajó por la lista de preguntas.
@@ -237,7 +237,7 @@ export class Home {
 
   /**
    * Video del hero (H.264, sin audio) decodificado por el chip del celular: mucho más fluido que
-   * dibujar cuadros con JavaScript. Arranca con el primer scroll, sigue en bucle y se pausa cuando
+   * dibujar cuadros con JavaScript. Arranca al cargar la página, sigue en bucle y se pausa cuando
    * el hero no se ve o la pestaña está oculta. Hay una versión horizontal y una vertical.
    */
   private video(el: HTMLVideoElement): { reproducir(): void; detener(): void } {
