@@ -129,3 +129,10 @@ class SaludTest(APITestCase):
         self.anotar(self.fadiman, nombre='X', cantidad='1')
         self.fadiman.refresh_from_db()
         self.assertEqual(self.fadiman.avance, round(100 / 7))
+
+    def test_si_ya_habia_empezado_lo_de_antes_no_cuenta_en_el_avance(self):
+        self.ajustar(inicio=(HOY() - timedelta(days=10)).isoformat(), semanas_ciclo=4)
+        d = self.client.get(reverse('salud', args=[self.fadiman.id])).data
+        self.assertEqual((d['dia']['fase'], d['dia']['semana']), ('ciclo', 2))
+        # Las tomas del primer ciclo van en los días 0, 4, 8…24; solo cuentan de hoy (día 10) en adelante.
+        self.assertEqual(d['primer_ciclo']['previstas'], 4)

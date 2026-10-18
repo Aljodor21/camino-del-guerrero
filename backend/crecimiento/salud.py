@@ -103,6 +103,12 @@ def dias_de_toma_del_ciclo(datos):
     return [inicio + timedelta(days=d) for d in range(0, datos.get('semanas_ciclo', 4) * 7, DIAS_CICLO)]
 
 
+def tomas_del_primer_ciclo(proyecto):
+    """Las tomas del primer ciclo que se pueden llevar en la app: si la persona ya había empezado antes de
+    registrarse, lo de antes no se cuenta (no se anota hacia atrás), así el avance no queda en cero."""
+    return [d for d in dias_de_toma_del_ciclo(proyecto.datos) if d >= proyecto.creado]
+
+
 def _de_ese_dia(proyecto, fecha, clase):
     return proyecto.tomas_salud.filter(fecha=fecha, clase=clase)
 
@@ -191,7 +197,7 @@ def estado(proyecto, dias=60):
         return datos
     ajustes = proyecto.datos
     dia = dia_del_protocolo(ajustes, hoy)
-    previstas = dias_de_toma_del_ciclo(ajustes)
+    previstas = tomas_del_primer_ciclo(proyecto)
     hechas = {t.fecha for t in proyecto.tomas_salud.filter(clase='dosis')}
     siguiente = None
     if _ajustes(ajustes)['inicio']:
@@ -229,12 +235,11 @@ def _valida_fadiman(datos):
 
 
 def _avance_fadiman(proyecto):
-    previstas = [d for d in dias_de_toma_del_ciclo(proyecto.datos) if d <= timezone.localdate()]
+    previstas = tomas_del_primer_ciclo(proyecto)
     if not previstas:
         return 0
-    total = len(dias_de_toma_del_ciclo(proyecto.datos))
     hechas = set(proyecto.tomas_salud.filter(clase='dosis', fecha__in=previstas).values_list('fecha', flat=True))
-    return round(100 * len(hechas) / total)
+    return round(100 * len(hechas) / len(previstas))
 
 
 def _resumen_fadiman(proyecto):

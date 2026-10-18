@@ -27,7 +27,13 @@
             <label for="sa-sustancia" class="text-sm font-medium text-gray-600 dark:text-gray-400"
               >Qué tomas</label
             >
-            <input pInputText id="sa-sustancia" formControlName="sustancia" maxlength="60" class="w-full" />
+            <input
+              pInputText
+              id="sa-sustancia"
+              formControlName="sustancia"
+              maxlength="60"
+              class="w-full"
+            />
           </div>
           <div class="flex flex-col gap-1">
             <label for="sa-dosis" class="text-sm font-medium text-gray-600 dark:text-gray-400"
@@ -35,29 +41,99 @@
             >
             <input pInputText id="sa-dosis" formControlName="dosis" maxlength="40" class="w-full" />
           </div>
+          <fieldset class="space-y-2">
+            <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              ¿Ya empezaste el protocolo?
+            </legend>
+            <div role="radiogroup" aria-label="¿Ya empezaste?" class="flex gap-2">
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="ajustes.controls.ya_empezo.value"
+                [class]="clasesChip(ajustes.controls.ya_empezo.value)"
+                (click)="
+                  ajustes.controls.ya_empezo.setValue(true); ajustes.controls.inicio.setValue(hoy)
+                "
+              >
+                Sí, ya empecé
+              </button>
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="!ajustes.controls.ya_empezo.value"
+                [class]="clasesChip(!ajustes.controls.ya_empezo.value)"
+                (click)="
+                  ajustes.controls.ya_empezo.setValue(false); ajustes.controls.inicio.setValue(hoy)
+                "
+              >
+                No, voy a empezar
+              </button>
+            </div>
+          </fieldset>
           <div class="flex flex-col gap-1">
-            <label for="sa-inicio" class="text-sm font-medium text-gray-600 dark:text-gray-400"
-              >Tu día 1 (el primero del ciclo)</label
-            >
-            <input pInputText id="sa-inicio" type="date" formControlName="inicio" class="w-full" />
+            <label for="sa-inicio" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              @if (ajustes.controls.ya_empezo.value) {
+                ¿Qué día fue tu primera toma de este ciclo?
+              } @else {
+                ¿Qué día vas a empezar? (será tu día 1)
+              }
+            </label>
+            <input
+              pInputText
+              id="sa-inicio"
+              type="date"
+              formControlName="inicio"
+              [min]="desdeMin()"
+              [max]="desdeMax()"
+              class="w-full"
+            />
+            @if (vista()) {
+              <p class="text-sm text-gray-700 dark:text-gray-200" role="status">{{ vista() }}</p>
+            }
+            @if (ajustes.controls.ya_empezo.value) {
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Con esa fecha la app calcula en qué día del ciclo vas. Lo de antes no se anota hacia
+                atrás: desde hoy llevas tus tomas aquí.
+              </p>
+            }
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1">
               <label for="sa-ciclo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
                 >Semanas de ciclo (4 a 8)</label
               >
-              <input pInputText id="sa-ciclo" type="number" min="4" max="8" formControlName="semanas_ciclo" />
+              <input
+                pInputText
+                id="sa-ciclo"
+                type="number"
+                min="4"
+                max="8"
+                formControlName="semanas_ciclo"
+              />
             </div>
             <div class="flex flex-col gap-1">
               <label for="sa-descanso" class="text-sm font-medium text-gray-600 dark:text-gray-400"
                 >Semanas de descanso (2 a 4)</label
               >
-              <input pInputText id="sa-descanso" type="number" min="2" max="4" formControlName="semanas_descanso" />
+              <input
+                pInputText
+                id="sa-descanso"
+                type="number"
+                min="2"
+                max="4"
+                formControlName="semanas_descanso"
+              />
             </div>
           </div>
           <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
             <input type="checkbox" formControlName="avisar" /> Avisarme a las
-            <input pInputText type="time" formControlName="hora_aviso" class="w-28" aria-label="Hora del aviso" />
+            <input
+              pInputText
+              type="time"
+              formControlName="hora_aviso"
+              class="w-28"
+              aria-label="Hora del aviso"
+            />
           </label>
           <div class="flex justify-end gap-2">
             @if (!sinEmpezar()) {
@@ -134,19 +210,23 @@
                 (onClick)="anotarToma()"
               />
             } @else {
-              <p class="text-sm text-emerald-700 dark:text-emerald-400">Tu toma de hoy ya está anotada.</p>
+              <p class="text-sm text-emerald-700 dark:text-emerald-400">
+                Tu toma de hoy ya está anotada.
+              </p>
             }
           </div>
           @if (d.dia !== 1 && !e.toma_hoy) {
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Hoy el protocolo no marca toma: si la hiciste, se anota igual y queda marcada como fuera
-              del protocolo.
+              Hoy el protocolo no marca toma: si la hiciste, se anota igual y queda marcada como
+              fuera del protocolo.
             </p>
           }
           <div class="space-y-1">
             <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
               <span>Primer ciclo</span>
-              <span class="tabular-nums">{{ e.primer_ciclo!.hechas }} de {{ e.primer_ciclo!.previstas }} tomas</span>
+              <span class="tabular-nums"
+                >{{ e.primer_ciclo!.hechas }} de {{ e.primer_ciclo!.previstas }} tomas</span
+              >
             </div>
             <div
               class="h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
@@ -242,17 +322,46 @@
         }
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
-            <label for="so-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400">Qué tomaste</label>
-            <input pInputText id="so-nombre" formControlName="nombre" maxlength="60" placeholder="Ej. Creatina" />
+            <label for="so-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Qué tomaste</label
+            >
+            <input
+              pInputText
+              id="so-nombre"
+              formControlName="nombre"
+              maxlength="60"
+              placeholder="Ej. Creatina"
+            />
           </div>
           <div class="flex flex-col gap-1">
-            <label for="so-cantidad" class="text-sm font-medium text-gray-600 dark:text-gray-400">Cuánto</label>
-            <input pInputText id="so-cantidad" formControlName="cantidad" maxlength="40" placeholder="Ej. 5 g" />
+            <label for="so-cantidad" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Cuánto</label
+            >
+            <input
+              pInputText
+              id="so-cantidad"
+              formControlName="cantidad"
+              maxlength="40"
+              placeholder="Ej. 5 g"
+            />
           </div>
         </div>
-        <input pInputText formControlName="nota" maxlength="300" class="w-full" placeholder="Una nota (opcional)" aria-label="Nota" />
+        <input
+          pInputText
+          formControlName="nota"
+          maxlength="300"
+          class="w-full"
+          placeholder="Una nota (opcional)"
+          aria-label="Nota"
+        />
         <div class="flex justify-end">
-          <p-button type="submit" label="Anotar" icon="pi pi-check" [loading]="guardando()" [disabled]="toma.invalid" />
+          <p-button
+            type="submit"
+            label="Anotar"
+            icon="pi pi-check"
+            [loading]="guardando()"
+            [disabled]="toma.invalid"
+          />
         </div>
       </form>
     }
@@ -270,14 +379,22 @@
                     {{ t.nombre }} · {{ t.cantidad }}
                   } @else {
                     Cómo estaba
-                    @if (t.animo) { · ánimo {{ t.animo }} }
-                    @if (t.energia) { · energía {{ t.energia }} }
+                    @if (t.animo) {
+                      · ánimo {{ t.animo }}
+                    }
+                    @if (t.energia) {
+                      · energía {{ t.energia }}
+                    }
                   }
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ fecha(t.fecha) }}
-                  @if (t.fuera_de_protocolo) { · fuera del protocolo }
-                  @if (t.nota) { · {{ t.nota }} }
+                  @if (t.fuera_de_protocolo) {
+                    · fuera del protocolo
+                  }
+                  @if (t.nota) {
+                    · {{ t.nota }}
+                  }
                 </p>
               </div>
               @if (t.se_puede_borrar) {
