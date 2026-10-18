@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views_diario as diario
+from . import views_salud as salud
 
 from .views import (AccionProyectoView, AreaDetailView, AreaListCreateView, NotaDetailView, NotaListCreateView, ProcesoDetailView,
                     ProcesoListCreateView, ProyectoDetailView, ProyectoListView, ProgramasView, ResumenView)
@@ -21,4 +22,7 @@ urlpatterns = [
     path('diario/<int:pk>/gastos/', diario.GastosView.as_view(), name='diario-gastos'),
     path('diario/<int:pk>/gastos/<int:gasto>/', diario.GastoView.as_view(), name='diario-gasto'),
     path('diario/<int:pk>/sin-gasto/', diario.SinGastoView.as_view(), name='diario-sin-gasto'),
+    path('salud/<int:pk>/', salud.SaludView.as_view(), name='salud'),
+    path('salud/<int:pk>/tomas/', salud.TomasView.as_view(), name='salud-tomas'),
+    path('salud/<int:pk>/tomas/<int:toma>/', salud.TomaView.as_view(), name='salud-toma'),
 ]

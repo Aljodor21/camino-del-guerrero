@@ -167,3 +167,38 @@ class DiaSinGasto(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['proyecto', 'fecha'], name='dia_sin_gasto_unico')]
+
+
+# ── Salud: protocolo y suplementos ──────────────────────────────────────────────
+class TomaSalud(models.Model):
+    """Lo que la persona anotó de su protocolo o de un suplemento: una toma (`dosis`) o, en los días de
+    transición del protocolo, cómo se sintió (`observacion`). No se edita; solo se borra el mismo día."""
+
+    CLASES = [('dosis', 'Toma'), ('observacion', 'Observación')]
+
+    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='tomas_salud')
+    fecha     = models.DateField(default=timezone.localdate)
+    clase     = models.CharField(max_length=12, choices=CLASES, default='dosis')
+    nombre    = models.CharField(max_length=60, blank=True)
+    cantidad  = models.CharField(max_length=40, blank=True, help_text='Tal como la tomó: «0.1 g», «5 g», «1 cápsula»')
+    animo     = models.PositiveSmallIntegerField(null=True, blank=True, help_text='De 1 a 5')
+    energia   = models.PositiveSmallIntegerField(null=True, blank=True, help_text='De 1 a 5')
+    nota      = models.CharField(max_length=300, blank=True)
+    # La toma fue en un día que el protocolo no marcaba: se anota igual, para no engañarse.
+    fuera_de_protocolo = models.BooleanField(default=False)
+    anotado   = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-fecha', '-anotado', '-id']
+        indexes = [models.Index(fields=['proyecto', 'fecha'])]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(animo__isnull=True) | models.Q(animo__range=(1, 5)),
+                                   name='toma_salud_animo_valido'),
+            models.CheckConstraint(condition=models.Q(energia__isnull=True) | models.Q(energia__range=(1, 5)),
+                                   name='toma_salud_energia_valida'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise DatoInmutableError('Lo anotado no se cambia.')
+        super().save(*args, **kwargs)
