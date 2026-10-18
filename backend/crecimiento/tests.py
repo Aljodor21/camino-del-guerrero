@@ -45,7 +45,7 @@ class Base(APITestCase):
 class CrecimientoTest(Base):
     def test_el_programa_del_catalogo_trae_su_fuente_y_sus_dos_actividades(self):
         programas = self.client.get(reverse('crecimiento-programas')).data
-        self.assertEqual([p['id'] for p in programas], ['sana_tus_finanzas'])
+        self.assertEqual([p['id'] for p in programas], ['sana_tus_finanzas', 'salud_protocolo'])
         proceso = self.crear_proceso(self.crear_area())
         self.assertEqual((proceso['fuente_titulo'], proceso['autor'], proceso['proyectos']),
                          ('Sana tus finanzas, transforma tu vida', 'Jaime Jaramillo', 2))

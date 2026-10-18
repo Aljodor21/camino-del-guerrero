@@ -1,0 +1,318 @@
+<div class="space-y-4">
+  @if (error()) {
+    <p-message severity="error" [text]="error()" styleClass="w-full" />
+  }
+  @if (aviso()) {
+    <p class="text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ aviso() }}</p>
+  }
+
+  @if (cargando() && !estado()) {
+    <p class="text-sm text-gray-600 dark:text-gray-300" role="status">Cargando…</p>
+  } @else if (estado(); as e) {
+    @if (esProtocolo()) {
+      <!-- ── Protocolo Fadiman ── -->
+      @if (sinEmpezar() || editandoAjustes()) {
+        <form
+          [formGroup]="ajustes"
+          (ngSubmit)="guardarAjustes()"
+          class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+        >
+          <h3 class="font-semibold text-gray-900 dark:text-white">Tu protocolo</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Un ciclo de 4 días que se repite: día 1 la toma, día 2 observas, día 3 normal y el día 4
+            vuelve a ser día 1. Dura de 4 a 8 semanas y sigue un descanso de 2 a 4 semanas. Lo que
+            tomas y cuánto lo escribes tú.
+          </p>
+          <div class="flex flex-col gap-1">
+            <label for="sa-sustancia" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Qué tomas</label
+            >
+            <input pInputText id="sa-sustancia" formControlName="sustancia" maxlength="60" class="w-full" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="sa-dosis" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Cuánto (tal como lo mides)</label
+            >
+            <input pInputText id="sa-dosis" formControlName="dosis" maxlength="40" class="w-full" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="sa-inicio" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Tu día 1 (el primero del ciclo)</label
+            >
+            <input pInputText id="sa-inicio" type="date" formControlName="inicio" class="w-full" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1">
+              <label for="sa-ciclo" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >Semanas de ciclo (4 a 8)</label
+              >
+              <input pInputText id="sa-ciclo" type="number" min="4" max="8" formControlName="semanas_ciclo" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="sa-descanso" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >Semanas de descanso (2 a 4)</label
+              >
+              <input pInputText id="sa-descanso" type="number" min="2" max="4" formControlName="semanas_descanso" />
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+            <input type="checkbox" formControlName="avisar" /> Avisarme a las
+            <input pInputText type="time" formControlName="hora_aviso" class="w-28" aria-label="Hora del aviso" />
+          </label>
+          <div class="flex justify-end gap-2">
+            @if (!sinEmpezar()) {
+              <p-button
+                label="Cancelar"
+                variant="outlined"
+                severity="secondary"
+                (onClick)="editandoAjustes.set(false)"
+              />
+            }
+            <p-button
+              type="submit"
+              label="Guardar"
+              icon="pi pi-check"
+              [loading]="guardando()"
+              [disabled]="ajustes.invalid"
+            />
+          </div>
+        </form>
+      } @else {
+        @let d = e.dia!;
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                @switch (d.fase) {
+                  @case ('ciclo') {
+                    Ciclo {{ d.vuelta }} · semana {{ d.semana }} de {{ e.ajustes!.semanas_ciclo }}
+                  }
+                  @case ('descanso') {
+                    Descanso · semana {{ d.semana }} de {{ e.ajustes!.semanas_descanso }}
+                  }
+                  @default {
+                    Empieza el {{ fecha(e.ajustes!.inicio) }}
+                  }
+                }
+              </p>
+              @if (d.fase === 'ciclo' && e.etapa) {
+                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                  Día {{ d.dia }} · {{ e.etapa[0] }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">{{ e.etapa[1] }}</p>
+              } @else if (d.fase === 'ciclo') {
+                <p class="text-xl font-bold text-gray-900 dark:text-white">Día {{ d.dia }}</p>
+              } @else if (d.fase === 'descanso') {
+                <p class="text-xl font-bold text-gray-900 dark:text-white">Hoy no toca nada</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                  Descansa para evaluar cómo te fue y evitar la tolerancia.
+                </p>
+              }
+            </div>
+            <p-button
+              icon="pi pi-cog"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              ariaLabel="Ajustes del protocolo"
+              (onClick)="editandoAjustes.set(true)"
+            />
+          </div>
+          @if (e.siguiente_toma && !(d.dia === 1 && !e.toma_hoy)) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Próxima toma: {{ fecha(e.siguiente_toma) }}
+            </p>
+          }
+          <div class="flex flex-wrap gap-2">
+            @if (!e.toma_hoy) {
+              <p-button
+                [label]="d.dia === 1 ? 'Anoté mi toma de hoy' : 'Anotar una toma de hoy'"
+                icon="pi pi-check"
+                [severity]="d.dia === 1 ? 'primary' : 'secondary'"
+                [outlined]="d.dia !== 1"
+                [loading]="guardando()"
+                (onClick)="anotarToma()"
+              />
+            } @else {
+              <p class="text-sm text-emerald-700 dark:text-emerald-400">Tu toma de hoy ya está anotada.</p>
+            }
+          </div>
+          @if (d.dia !== 1 && !e.toma_hoy) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Hoy el protocolo no marca toma: si la hiciste, se anota igual y queda marcada como fuera
+              del protocolo.
+            </p>
+          }
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>Primer ciclo</span>
+              <span class="tabular-nums">{{ e.primer_ciclo!.hechas }} de {{ e.primer_ciclo!.previstas }} tomas</span>
+            </div>
+            <div
+              class="h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
+              role="progressbar"
+              [attr.aria-valuenow]="avance()"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Tomas del primer ciclo"
+            >
+              <div class="h-full bg-guerrero-red" [style.width.%]="avance()"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cómo estás (día de transición) -->
+        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">¿Cómo estás hoy?</h3>
+          @if (e.observacion_hoy) {
+            <p class="text-sm text-emerald-700 dark:text-emerald-400">Hoy ya lo anotaste.</p>
+          } @else {
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Sobre todo en el día 2, mira cómo van tu ánimo y tu energía.
+            </p>
+            <div role="radiogroup" aria-label="Ánimo" class="flex items-center gap-2">
+              <span class="w-16 text-sm text-gray-600 dark:text-gray-300">Ánimo</span>
+              @for (n of niveles; track n) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="animo() === n"
+                  [class]="clasesChip(animo() === n)"
+                  (click)="animo.set(animo() === n ? null : n)"
+                >
+                  {{ n }}
+                </button>
+              }
+            </div>
+            <div role="radiogroup" aria-label="Energía" class="flex items-center gap-2">
+              <span class="w-16 text-sm text-gray-600 dark:text-gray-300">Energía</span>
+              @for (n of niveles; track n) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="energia() === n"
+                  [class]="clasesChip(energia() === n)"
+                  (click)="energia.set(energia() === n ? null : n)"
+                >
+                  {{ n }}
+                </button>
+              }
+            </div>
+            <form [formGroup]="observacion" class="space-y-2" (ngSubmit)="anotarObservacion()">
+              <input
+                pInputText
+                formControlName="nota"
+                maxlength="300"
+                class="w-full"
+                placeholder="Una nota (opcional)"
+                aria-label="Nota"
+              />
+              <p-button
+                type="submit"
+                label="Anotar"
+                icon="pi pi-pencil"
+                [loading]="guardando()"
+                [disabled]="animo() === null && energia() === null && !observacion.value.nota"
+              />
+            </form>
+          }
+        </section>
+      }
+    } @else {
+      <!-- ── Otros suplementos ── -->
+      <form
+        [formGroup]="toma"
+        (ngSubmit)="anotarSuplemento()"
+        class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+      >
+        <h3 class="font-semibold text-gray-900 dark:text-white">Anotar lo que tomaste</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Para llevar la cuenta de lo que tomas además de lo de tu plan de nutrición.
+        </p>
+        @if (e.frecuentes.length) {
+          <ul class="flex flex-wrap gap-2" aria-label="Lo que ya anotaste antes">
+            @for (f of e.frecuentes; track f.nombre + f.cantidad) {
+              <li>
+                <button type="button" [class]="clasesChip(false)" (click)="usarFrecuente(f)">
+                  {{ f.nombre }} · {{ f.cantidad }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="so-nombre" class="text-sm font-medium text-gray-600 dark:text-gray-400">Qué tomaste</label>
+            <input pInputText id="so-nombre" formControlName="nombre" maxlength="60" placeholder="Ej. Creatina" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="so-cantidad" class="text-sm font-medium text-gray-600 dark:text-gray-400">Cuánto</label>
+            <input pInputText id="so-cantidad" formControlName="cantidad" maxlength="40" placeholder="Ej. 5 g" />
+          </div>
+        </div>
+        <input pInputText formControlName="nota" maxlength="300" class="w-full" placeholder="Una nota (opcional)" aria-label="Nota" />
+        <div class="flex justify-end">
+          <p-button type="submit" label="Anotar" icon="pi pi-check" [loading]="guardando()" [disabled]="toma.invalid" />
+        </div>
+      </form>
+    }
+
+    <!-- ── Lo anotado ── -->
+    <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Lo que llevas anotado</h3>
+      @if (e.tomas.length) {
+        <ul class="divide-y divide-gray-100 dark:divide-white/5">
+          @for (t of e.tomas; track t.id) {
+            <li class="py-2 flex items-start gap-3">
+              <div class="min-w-0 flex-1 text-sm">
+                <p class="text-gray-900 dark:text-white">
+                  @if (t.clase === 'dosis') {
+                    {{ t.nombre }} · {{ t.cantidad }}
+                  } @else {
+                    Cómo estaba
+                    @if (t.animo) { · ánimo {{ t.animo }} }
+                    @if (t.energia) { · energía {{ t.energia }} }
+                  }
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ fecha(t.fecha) }}
+                  @if (t.fuera_de_protocolo) { · fuera del protocolo }
+                  @if (t.nota) { · {{ t.nota }} }
+                </p>
+              </div>
+              @if (t.se_puede_borrar) {
+                <p-button
+                  icon="pi pi-trash"
+                  [text]="true"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="Borrar lo anotado hoy"
+                  (onClick)="borrar(t)"
+                />
+              }
+            </li>
+          }
+        </ul>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Lo anotado no se cambia; solo se borra el mismo día, por si fue un error.
+        </p>
+      } @else {
+        <p class="text-sm text-gray-600 dark:text-gray-300">Aún no has anotado nada.</p>
+      }
+    </section>
+
+    @if (esProtocolo()) {
+      <details class="rounded-xl bg-amber-50 dark:bg-amber-500/10 p-4">
+        <summary class="cursor-pointer font-medium text-gray-900 dark:text-white">
+          Cuidados y legalidad
+        </summary>
+        <ul class="mt-2 space-y-1 list-disc pl-5 text-sm text-gray-700 dark:text-gray-200">
+          @for (c of e.cuidados; track c) {
+            <li>{{ c }}</li>
+          }
+        </ul>
+      </details>
+    }
+  }
+</div>

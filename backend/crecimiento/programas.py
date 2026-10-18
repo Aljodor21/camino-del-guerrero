@@ -40,3 +40,18 @@ PROGRAMAS = {
         ),
     ),
 }
+
+
+PROGRAMAS['salud_protocolo'] = Programa(
+    titulo='Protocolo y suplementos',
+    fuente='propio',
+    fuente_titulo='Protocolo Fadiman',
+    autor='James Fadiman',
+    area='Salud',
+    descripcion='El calendario del protocolo Fadiman de microdosis, con sus días y su descanso, y el control '
+                'de los otros suplementos que tomas.',
+    proyectos=(
+        ProyectoBase('fadiman', 'fadiman', 'Protocolo Fadiman', 'Ciclo de 4 días · 4 a 8 semanas'),
+        ProyectoBase('otros_suplementos', 'otros_suplementos', 'Otros suplementos', 'Lo que tomas además'),
+    ),
+)

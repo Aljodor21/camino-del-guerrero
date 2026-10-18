@@ -23,12 +23,14 @@ from .tipos_base import Tipo
 
 
 def _registrar():
-    from . import creencias, diario
+    from . import creencias, diario, salud
     return {
         # El básico: título y notas; el avance lo marca la persona.
         'libre': Tipo(nombre='Libre'),
         'taller_creencias': creencias.TIPO,
         'diario_gastos': diario.TIPO,
+        'fadiman': salud.FADIMAN,
+        'otros_suplementos': salud.SUPLEMENTOS,
     }
 
 
