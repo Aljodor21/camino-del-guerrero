@@ -67,6 +67,30 @@ export interface AjustesFadiman {
   rango_descanso: [number, number];
 }
 
+/** Cómo quedó la toma de un día que tocaba: `antes` es de antes de registrarse en la app (no se sabe). */
+export type EstadoTomaDia = 'hecha' | 'perdida' | 'pendiente' | 'antes';
+
+export interface DiaCalendario {
+  fecha: string;
+  fase: 'ciclo' | 'descanso';
+  /** De 1 a 3 en el ciclo. */
+  dia: number | null;
+  toma: EstadoTomaDia | null;
+  observacion: boolean;
+  hoy: boolean;
+}
+
+/** La vuelta en curso (ciclo + descanso), día por día. */
+export interface CalendarioFadiman {
+  vuelta: number;
+  desde: string;
+  fin_ciclo: string;
+  hasta: string;
+  siguiente_vuelta: string;
+  dias: DiaCalendario[];
+  tomas: { previstas: number; hechas: number; perdidas: number };
+}
+
 /** Lo que responde la API de Salud: el estado entero en cada llamada. */
 export interface EstadoSalud {
   tipo: 'fadiman' | 'otros_suplementos';
@@ -83,6 +107,10 @@ export interface EstadoSalud {
   toma_hoy?: boolean;
   observacion_hoy?: boolean;
   siguiente_toma?: string | null;
+  /** El día 1 del primer ciclo y el día en que se registró en la app. */
+  empezo?: string | null;
+  registrado?: string;
+  calendario?: CalendarioFadiman | null;
   primer_ciclo?: { previstas: number; hechas: number };
   ajustes?: AjustesFadiman;
 }

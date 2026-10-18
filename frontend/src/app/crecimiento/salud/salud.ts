@@ -19,13 +19,14 @@ import { CrecimientoService } from '../../core/services/crecimiento';
 import { SaludService } from '../../core/services/salud';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
+import { CalendarioFadiman } from './calendario-fadiman';
 import { PlanesSuplementos } from './planes-suplementos';
 import { diasEntre, formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 
 const NIVELES = [1, 2, 3, 4, 5];
 
 /**
- * Salud: el protocolo Fadiman de microdosis (calendario de 4 días, ciclo y descanso, y lo que la persona anota) y
+ * Salud: el protocolo Fadiman de microdosis (ciclo de 3 días, ciclo y descanso, y lo que la persona anota) y
  * el control de otros suplementos. Una sola pantalla para los dos tipos de proyecto (`fadiman` y
  * `otros_suplementos`). La app no sugiere sustancias ni dosis: lo escribe la persona.
  */
@@ -33,7 +34,14 @@ const NIVELES = [1, 2, 3, 4, 5];
   selector: 'app-salud',
   templateUrl: './salud.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule, PlanesSuplementos],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    PlanesSuplementos,
+    CalendarioFadiman,
+  ],
 })
 export class Salud implements OnInit {
   readonly proyecto = input.required<ProyectoCrecimiento>();
@@ -61,10 +69,6 @@ export class Salud implements OnInit {
   protected observaciones = computed(() =>
     (this.estado()?.tomas ?? []).filter((t) => t.clase === 'observacion'),
   );
-  protected avance = computed(() => {
-    const c = this.estado()?.primer_ciclo;
-    return c && c.previstas ? Math.round((100 * c.hechas) / c.previstas) : 0;
-  });
 
   protected ajustes = this.fb.nonNullable.group({
     sustancia: ['', [Validators.maxLength(60)]],
@@ -96,7 +100,7 @@ export class Salud implements OnInit {
     const pos = corridos % (ciclo + (v.semanas_descanso ?? 2) * 7);
     if (pos >= ciclo)
       return `Hoy estarías en descanso, semana ${Math.floor((pos - ciclo) / 7) + 1}.`;
-    return `Hoy sería el día ${(pos % 4) + 1} del ciclo, semana ${Math.floor(pos / 7) + 1} de ${v.semanas_ciclo}.`;
+    return `Hoy sería el día ${(pos % 3) + 1} del ciclo, semana ${Math.floor(pos / 7) + 1} de ${v.semanas_ciclo}.`;
   });
   protected toma = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.maxLength(60)]],

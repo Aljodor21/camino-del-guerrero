@@ -1,10 +1,11 @@
 """Salud: el protocolo Fadiman de microdosis y el control de otros suplementos.
 
-**Protocolo Fadiman** (`fadiman`): un ciclo de 4 días que se repite: día 1 la toma (por la mañana), día 2 de
+**Protocolo Fadiman** (`fadiman`): un ciclo de 3 días que se repite: día 1 la toma (por la mañana), día 2 de
 transición (se observa el ánimo y la energía), día 3 normal y día 4 es otra vez día 1. Dura de 4 a 8 semanas y
 sigue un descanso de 2 a 4 semanas para evaluar y evitar la tolerancia. La app solo lleva el calendario y lo que la
 persona anota: no recomienda sustancias ni dosis (la sustancia y la cantidad las escribe ella), y lo que anota no se
-edita. Una toma en un día que el protocolo no marcaba se guarda igual, marcada `fuera_de_protocolo`.
+edita. La toma solo se anota el día que toca (día 1 del ciclo y fuera del descanso); `fuera_de_protocolo` queda para
+lo anotado antes de esa regla.
 
 **Otros suplementos** (`otros_suplementos`): lo que toma además de lo del plan de nutrición. Cada suplemento es un
 **plan** en `Proyecto.datos['planes']`: qué, cuánto, qué días de la semana, a qué horas y cuánto dura el tratamiento
@@ -26,7 +27,8 @@ from core.exceptions import ReglaNegocioError
 from .models import TomaSalud
 from .tipos_base import Tipo
 
-DIAS_CICLO = 4
+# Día 1 la toma, día 2 transición, día 3 normal; el siguiente vuelve a ser día 1 (una toma cada 3 días).
+DIAS_CICLO = 3
 SEMANAS_CICLO = (4, 8)
 SEMANAS_DESCANSO = (2, 4)
 HORA_AVISO = time(8, 0)
@@ -83,9 +85,9 @@ def _ajustes(datos):
 
 
 def dia_del_protocolo(datos, fecha):
-    """Dónde cae ese día: `{fase: 'sin_empezar'|'ciclo'|'descanso', dia (1 a 4, solo en ciclo), vuelta, semana}`.
+    """Dónde cae ese día: `{fase: 'sin_empezar'|'ciclo'|'descanso', dia (1 a 3, solo en ciclo), vuelta, semana}`.
 
-    Desde `inicio` corren `semanas_ciclo` semanas en ciclo de 4 días y luego `semanas_descanso` de descanso; así
+    Desde `inicio` corren `semanas_ciclo` semanas en ciclo de 3 días y luego `semanas_descanso` de descanso; así
     se repite (la `vuelta` cuenta cuántos ciclos van)."""
     a = _ajustes(datos)
     if a['inicio'] is None or fecha < a['inicio']:
@@ -154,9 +156,11 @@ def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=N
             ajustes = proyecto.datos
             nombre = _texto(nombre, 60) or ajustes.get('sustancia', '')
             cantidad = _texto(cantidad, 40) or ajustes.get('dosis', '')
+            if not (_ajustes(ajustes)['inicio'] and dia_del_protocolo(ajustes, fecha)['dia'] == 1):
+                raise ReglaNegocioError('Hoy no toca: la toma es solo el día 1 de cada ciclo de 3 días.')
             if _de_ese_dia(proyecto, fecha, 'dosis').exists():
                 raise ReglaNegocioError('Ese día ya anotaste tu toma.')
-            fuera = not (_ajustes(ajustes)['inicio'] and dia_del_protocolo(ajustes, fecha)['dia'] == 1)
+            fuera = False
         else:
             fuera = False
             if plan:
@@ -188,6 +192,42 @@ def _toma(t, hoy):
             'plan': t.plan, 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
 
 
+def calendario(proyecto, hoy):
+    """La vuelta en curso (ciclo + descanso), día por día, para dibujarla: qué toca cada día y qué se hizo.
+
+    Cada toma prevista queda `hecha`, `perdida` (ya pasó sin anotarse), `pendiente` (hoy o más adelante) o
+    `antes` (antes de que se registrara en la app: no se sabe)."""
+    ajustes = proyecto.datos
+    a = _ajustes(ajustes)
+    if a['inicio'] is None:
+        return None
+    periodo = (a['semanas_ciclo'] + a['semanas_descanso']) * 7
+    vuelta = max(dia_del_protocolo(ajustes, hoy)['vuelta'], 1)
+    desde = a['inicio'] + timedelta(days=(vuelta - 1) * periodo)
+    hasta = desde + timedelta(days=periodo - 1)
+    tomas = set(proyecto.tomas_salud.filter(clase='dosis', fecha__range=(desde, hasta)).values_list('fecha', flat=True))
+    vistas = set(proyecto.tomas_salud.filter(clase='observacion', fecha__range=(desde, hasta))
+                 .values_list('fecha', flat=True))
+    dias = []
+    for n in range(periodo):
+        fecha = desde + timedelta(days=n)
+        d = dia_del_protocolo(ajustes, fecha)
+        toma = None
+        if d['dia'] == 1:
+            toma = ('hecha' if fecha in tomas else 'antes' if fecha < proyecto.creado
+                    else 'pendiente' if fecha >= hoy else 'perdida')
+        dias.append({'fecha': fecha, 'fase': d['fase'], 'dia': d['dia'], 'toma': toma,
+                     'observacion': fecha in vistas, 'hoy': fecha == hoy})
+    previstas = [x for x in dias if x['toma'] and x['toma'] != 'antes']
+    fin_ciclo = desde + timedelta(days=a['semanas_ciclo'] * 7 - 1)
+    return {
+        'vuelta': vuelta, 'desde': desde, 'fin_ciclo': fin_ciclo, 'hasta': hasta,
+        'siguiente_vuelta': hasta + timedelta(days=1), 'dias': dias,
+        'tomas': {'previstas': len(previstas), 'hechas': sum(1 for x in previstas if x['toma'] == 'hecha'),
+                  'perdidas': sum(1 for x in previstas if x['toma'] == 'perdida')},
+    }
+
+
 def estado(proyecto, dias=60):
     """Todo lo de la pantalla: el día de hoy en el protocolo, lo anotado y, para los suplementos, lo que ya toma."""
     hoy = timezone.localdate()
@@ -214,7 +254,8 @@ def estado(proyecto, dias=60):
     datos.update({
         'dia': dia, 'etapa': ETAPAS.get(dia['dia']), 'toma_hoy': hoy in hechas,
         'observacion_hoy': _de_ese_dia(proyecto, hoy, 'observacion').exists(),
-        'siguiente_toma': siguiente,
+        'siguiente_toma': siguiente, 'empezo': _ajustes(ajustes)['inicio'],
+        'registrado': proyecto.creado, 'calendario': calendario(proyecto, hoy),
         'primer_ciclo': {'previstas': len(previstas), 'hechas': sum(1 for d in previstas if d in hechas)},
         'ajustes': {**{k: v for k, v in ajustes.items()}, 'rango_ciclo': SEMANAS_CICLO,
                     'rango_descanso': SEMANAS_DESCANSO},

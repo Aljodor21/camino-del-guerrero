@@ -19,7 +19,7 @@
         >
           <h3 class="font-semibold text-gray-900 dark:text-white">Tu protocolo</h3>
           <p class="text-sm text-gray-600 dark:text-gray-300">
-            Un ciclo de 4 días que se repite: día 1 la toma, día 2 observas, día 3 normal y el día 4
+            Un ciclo de 3 días que se repite: día 1 la toma, día 2 observas, día 3 normal y el día 4
             vuelve a ser día 1. Dura de 4 a 8 semanas y sigue un descanso de 2 a 4 semanas. Lo que
             tomas y cuánto lo escribes tú.
           </p>
@@ -194,52 +194,27 @@
               (onClick)="editandoAjustes.set(true)"
             />
           </div>
-          @if (e.siguiente_toma && !(d.dia === 1 && !e.toma_hoy)) {
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Próxima toma: {{ fecha(e.siguiente_toma) }}
-            </p>
-          }
-          <div class="flex flex-wrap gap-2">
-            @if (!e.toma_hoy) {
+          @if (d.fase === 'ciclo' && d.dia === 1) {
+            @if (e.toma_hoy) {
+              <p class="text-sm text-emerald-700 dark:text-emerald-400">
+                <i class="pi pi-check" aria-hidden="true"></i> Tu toma de hoy ya está anotada.
+              </p>
+            } @else {
               <p-button
-                [label]="d.dia === 1 ? 'Anoté mi toma de hoy' : 'Anotar una toma de hoy'"
+                label="Anoté mi toma de hoy"
                 icon="pi pi-check"
-                [severity]="d.dia === 1 ? 'primary' : 'secondary'"
-                [outlined]="d.dia !== 1"
                 [loading]="guardando()"
                 (onClick)="anotarToma()"
               />
-            } @else {
-              <p class="text-sm text-emerald-700 dark:text-emerald-400">
-                Tu toma de hoy ya está anotada.
-              </p>
             }
-          </div>
-          @if (d.dia !== 1 && !e.toma_hoy) {
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Hoy el protocolo no marca toma: si la hiciste, se anota igual y queda marcada como
-              fuera del protocolo.
+          } @else if (e.siguiente_toma) {
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Hoy no toca la toma. La próxima es el {{ fecha(e.siguiente_toma) }}.
             </p>
           }
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
-              <span>Primer ciclo</span>
-              <span class="tabular-nums"
-                >{{ e.primer_ciclo!.hechas }} de {{ e.primer_ciclo!.previstas }} tomas</span
-              >
-            </div>
-            <div
-              class="h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
-              role="progressbar"
-              [attr.aria-valuenow]="avance()"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-label="Tomas del primer ciclo"
-            >
-              <div class="h-full bg-guerrero-red" [style.width.%]="avance()"></div>
-            </div>
-          </div>
         </section>
+
+        <app-calendario-fadiman [estado]="e" />
 
         <!-- Cómo estás (día de transición) -->
         <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">

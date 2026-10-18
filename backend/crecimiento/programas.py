@@ -51,7 +51,7 @@ PROGRAMAS['salud_protocolo'] = Programa(
     descripcion='El calendario del protocolo Fadiman de microdosis, con sus días y su descanso, y el control '
                 'de los otros suplementos que tomas.',
     proyectos=(
-        ProyectoBase('fadiman', 'fadiman', 'Protocolo Fadiman', 'Ciclo de 4 días · 4 a 8 semanas'),
+        ProyectoBase('fadiman', 'fadiman', 'Protocolo Fadiman', 'Una toma cada 3 días · 4 a 8 semanas'),
         ProyectoBase('otros_suplementos', 'otros_suplementos', 'Otros suplementos', 'Lo que tomas además'),
     ),
 )

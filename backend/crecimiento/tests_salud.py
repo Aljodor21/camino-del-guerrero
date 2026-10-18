@@ -41,7 +41,7 @@ class SaludTest(APITestCase):
     def test_el_ciclo_de_cuatro_dias_y_el_descanso(self):
         datos = {'inicio': '2026-01-01', 'semanas_ciclo': 4, 'semanas_descanso': 2}
         dias = [salud.dia_del_protocolo(datos, date(2026, 1, 1) + timedelta(days=n)) for n in range(5)]
-        self.assertEqual([d['dia'] for d in dias], [1, 2, 3, 4, 1])
+        self.assertEqual([d['dia'] for d in dias], [1, 2, 3, 1, 2])
         self.assertEqual(salud.dia_del_protocolo(datos, date(2026, 1, 28))['fase'], 'ciclo')
         self.assertEqual(salud.dia_del_protocolo(datos, date(2026, 1, 29))['fase'], 'descanso')
         vuelta2 = salud.dia_del_protocolo(datos, date(2026, 1, 1) + timedelta(days=42))
@@ -65,10 +65,28 @@ class SaludTest(APITestCase):
         self.assertTrue(r.data['toma_hoy'])
         self.assertEqual(self.anotar(self.fadiman).status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_una_toma_en_otro_dia_se_anota_marcada(self):
+    def test_la_toma_solo_el_dia_que_toca(self):
         self.ajustar(inicio=(HOY() - timedelta(days=1)).isoformat(), sustancia='X', dosis='1')
-        toma = self.anotar(self.fadiman).data['tomas'][0]
-        self.assertTrue(toma['fuera_de_protocolo'])
+        r = self.anotar(self.fadiman)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('no toca', str(r.data))
+        # Tampoco en el descanso, aunque caiga en un día 1 de la cuenta de 4.
+        self.ajustar(inicio=(HOY() - timedelta(days=28)).isoformat(), semanas_ciclo=4)
+        self.assertEqual(self.anotar(self.fadiman, nombre='X', cantidad='1').status_code, 400)
+
+    def test_el_calendario_de_la_vuelta(self):
+        self.ajustar(inicio=(HOY() - timedelta(days=3)).isoformat(), semanas_ciclo=4, semanas_descanso=2)
+        self.anotar(self.fadiman, nombre='X', cantidad='1')
+        c = self.client.get(reverse('salud', args=[self.fadiman.id])).data['calendario']
+        self.assertEqual(len(c['dias']), 42)
+        self.assertEqual(c['dias'][0]['toma'], 'antes')
+        self.assertEqual((c['dias'][3]['toma'], c['dias'][3]['hoy']), ('hecha', True))
+        self.assertEqual(c['dias'][4]['toma'], None)
+        self.assertEqual(c['dias'][6]['toma'], 'pendiente')
+        self.assertEqual(c['dias'][28]['fase'], 'descanso')
+        # 4 semanas = 28 días: tomas en los días 0, 3, …, 27 (10); la del día 0 fue antes de registrarse.
+        self.assertEqual(c['tomas'], {'previstas': 9, 'hechas': 1, 'perdidas': 0})
+        self.assertEqual(c['fin_ciclo'], HOY() + timedelta(days=24))
 
     def test_observacion_en_dia_de_transicion(self):
         self.ajustar(inicio=(HOY() - timedelta(days=1)).isoformat())
@@ -128,14 +146,14 @@ class SaludTest(APITestCase):
         self.ajustar(inicio=HOY().isoformat(), semanas_ciclo=4)
         self.anotar(self.fadiman, nombre='X', cantidad='1')
         self.fadiman.refresh_from_db()
-        self.assertEqual(self.fadiman.avance, round(100 / 7))
+        self.assertEqual(self.fadiman.avance, round(100 / 10))
 
     def test_si_ya_habia_empezado_lo_de_antes_no_cuenta_en_el_avance(self):
         self.ajustar(inicio=(HOY() - timedelta(days=10)).isoformat(), semanas_ciclo=4)
         d = self.client.get(reverse('salud', args=[self.fadiman.id])).data
         self.assertEqual((d['dia']['fase'], d['dia']['semana']), ('ciclo', 2))
-        # Las tomas del primer ciclo van en los días 0, 4, 8…24; solo cuentan de hoy (día 10) en adelante.
-        self.assertEqual(d['primer_ciclo']['previstas'], 4)
+        # Las tomas del primer ciclo van en los días 0, 3, 6…27; solo cuentan de hoy (día 10) en adelante.
+        self.assertEqual(d['primer_ciclo']['previstas'], 6)
 
 
 class PlanesSuplementosTest(APITestCase):
