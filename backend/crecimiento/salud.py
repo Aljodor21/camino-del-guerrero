@@ -189,7 +189,12 @@ def borrar(toma):
 def _toma(t, hoy):
     return {'id': t.id, 'fecha': t.fecha, 'clase': t.clase, 'nombre': t.nombre, 'cantidad': t.cantidad,
             'animo': t.animo, 'energia': t.energia, 'nota': t.nota, 'fuera_de_protocolo': t.fuera_de_protocolo,
-            'plan': t.plan, 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
+            'plan': t.plan, 'hora': _hora_de(t), 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
+
+
+def _hora_de(toma):
+    """La hora en que se anotó (la toma se anota cuando se hace: es la hora de la toma)."""
+    return timezone.localtime(toma.anotado).strftime('%H:%M')
 
 
 def calendario(proyecto, hoy):
@@ -412,7 +417,7 @@ def plan_de(proyecto, clave, fecha):
 
 
 def estado_planes(proyecto, hoy):
-    tomadas = set(proyecto.tomas_salud.filter(fecha=hoy).exclude(plan='').values_list('plan', flat=True))
+    tomadas = {t.plan: _hora_de(t) for t in proyecto.tomas_salud.filter(fecha=hoy).exclude(plan='')}
     planes, de_hoy = [], []
     for p in _planes(proyecto):
         inicio, fin = date.fromisoformat(p['inicio']), _fin(p)
@@ -421,7 +426,8 @@ def estado_planes(proyecto, hoy):
                        else None})
         if toca(p, hoy):
             de_hoy += [{'clave': f'{p["id"]}@{h}', 'hora': h, 'nombre': p['nombre'], 'cantidad': p['cantidad'],
-                        'tomada': f'{p["id"]}@{h}' in tomadas} for h in p['horas']]
+                        'tomada': f'{p["id"]}@{h}' in tomadas, 'tomada_a': tomadas.get(f'{p["id"]}@{h}')}
+                       for h in p['horas']]
     return {'planes': planes, 'de_hoy': sorted(de_hoy, key=lambda x: x['hora'])}
 
 
@@ -460,4 +466,5 @@ def _resumen_suplementos(proyecto):
 
 
 SUPLEMENTOS = Tipo(nombre='Otros suplementos', valida=_valida_suplementos, resumen=_resumen_suplementos,
-                   avisos=_avisos_suplementos, confirmar=_confirmar_suplemento, resuelto=_resuelto_suplemento)
+                   avisos=_avisos_suplementos, confirmar=_confirmar_suplemento, resuelto=_resuelto_suplemento,
+                   con_avance=False)

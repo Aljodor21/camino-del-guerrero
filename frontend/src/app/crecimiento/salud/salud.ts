@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
@@ -109,7 +110,20 @@ export class Salud implements OnInit {
   });
   protected observacion = this.fb.nonNullable.group({ nota: ['', [Validators.maxLength(300)]] });
 
+  constructor() {
+    // Lo que se marca desde un aviso (en la bandeja o en el celular) se ve al volver a la pantalla.
+    const alVolver = () => {
+      if (document.visibilityState === 'visible' && this.estado()) this.recargar();
+    };
+    document.addEventListener('visibilitychange', alVolver);
+    inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', alVolver));
+  }
+
   ngOnInit(): void {
+    this.recargar();
+  }
+
+  private recargar(): void {
     this.servicio.cargar(this.proyecto().id).subscribe({
       next: (e) => this.recibir(e),
       error: (e) => {
@@ -124,7 +138,8 @@ export class Salud implements OnInit {
     this.cargando.set(false);
     this.error.set('');
     const a = e.ajustes;
-    if (a) {
+    // Si está cambiando los ajustes, lo que trae una recarga no le pisa lo que lleva escrito.
+    if (a && !this.editandoAjustes()) {
       this.ajustes.patchValue({
         sustancia: a.sustancia,
         dosis: a.dosis,

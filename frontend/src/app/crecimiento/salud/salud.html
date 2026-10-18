@@ -364,7 +364,10 @@
                   }
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ fecha(t.fecha) }}
+                  {{ fecha(t.fecha) }} · {{ t.hora }}
+                  @if (t.plan) {
+                    · de tu plan de las {{ t.plan.split('@')[1] }}
+                  }
                   @if (t.fuera_de_protocolo) {
                     · fuera del protocolo
                   }

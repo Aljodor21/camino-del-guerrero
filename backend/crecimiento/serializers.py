@@ -29,7 +29,7 @@ class AreaSerializer(serializers.ModelSerializer):
         return nombre
 
     def get_avance(self, area):
-        return _promedio(p.avance for proceso in area.procesos.all() for p in proceso.proyectos.all())
+        return _promedio(p for proceso in area.procesos.all() for p in proceso.proyectos.all())
 
 
 class ProcesoSerializer(serializers.ModelSerializer):
@@ -88,20 +88,22 @@ class ProcesoSerializer(serializers.ModelSerializer):
         return attrs
 
     def get_avance(self, proceso):
-        return _promedio(p.avance for p in proceso.proyectos.all())
+        return _promedio(proceso.proyectos.all())
 
 
 class ProyectoSerializer(serializers.ModelSerializer):
     tipo_nombre = serializers.SerializerMethodField()
     resumen     = serializers.SerializerMethodField()
     calcula_avance = serializers.SerializerMethodField()
+    con_avance  = serializers.SerializerMethodField()
     notas       = serializers.IntegerField(source='notas.count', read_only=True)
 
     class Meta:
         model  = Proyecto
         fields = ['id', 'proceso', 'tipo', 'tipo_nombre', 'clave', 'titulo', 'detalle', 'orden', 'estado', 'avance',
-                  'calcula_avance', 'datos', 'resumen', 'notas', 'creado', 'actualizado']
-        read_only_fields = ['tipo_nombre', 'clave', 'calcula_avance', 'resumen', 'notas', 'creado', 'actualizado']
+                  'calcula_avance', 'con_avance', 'datos', 'resumen', 'notas', 'creado', 'actualizado']
+        read_only_fields = ['tipo_nombre', 'clave', 'calcula_avance', 'con_avance', 'resumen', 'notas', 'creado',
+                            'actualizado']
         extra_kwargs = {'avance': {'min_value': 0, 'max_value': 100}}
 
     def validate_proceso(self, proceso):
@@ -158,6 +160,9 @@ class ProyectoSerializer(serializers.ModelSerializer):
     def get_calcula_avance(self, proyecto):
         return proyecto.tipo in TIPOS and TIPOS[proyecto.tipo].avance is not None
 
+    def get_con_avance(self, proyecto):
+        return _con_avance(proyecto)
+
     def get_tipo_nombre(self, proyecto):
         return TIPOS[proyecto.tipo].nombre if proyecto.tipo in TIPOS else proyecto.tipo
 
@@ -199,6 +204,11 @@ def _calcular_avance(proyecto):
     return proyecto
 
 
-def _promedio(valores):
-    valores = list(valores)
+def _con_avance(proyecto):
+    return proyecto.tipo not in TIPOS or TIPOS[proyecto.tipo].con_avance
+
+
+def _promedio(proyectos):
+    """El avance promedio de unos proyectos, sin los que no tienen un porcentaje con sentido."""
+    valores = [p.avance for p in proyectos if _con_avance(p)]
     return round(sum(valores) / len(valores)) if valores else 0

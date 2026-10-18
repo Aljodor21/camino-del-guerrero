@@ -22,3 +22,6 @@ class Tipo:
     del_servidor: tuple = ()
     # Lo que la persona puede hacer desde la pantalla del proyecto: {nombre: función(proyecto, fecha)}.
     acciones: dict = field(default_factory=dict)
+    # Si tiene sentido un porcentaje de avance (un registro que no se termina, como los suplementos, no lo
+    # tiene): sin él no se muestra ni cuenta en el avance del área.
+    con_avance: bool = True

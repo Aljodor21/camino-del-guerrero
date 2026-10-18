@@ -207,6 +207,8 @@ class PlanesSuplementosTest(APITestCase):
         r = self.anotar(self.otros, plan=f'{p["id"]}@08:00')
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
         self.assertEqual(r.data['de_hoy'][0]['tomada'], True)
+        hora = timezone.localtime().strftime('%H:%M')
+        self.assertEqual((r.data['de_hoy'][0]['tomada_a'], r.data['tomas'][0]['hora']), (hora, hora))
         self.assertEqual(self.anotar(self.otros, plan=f'{p["id"]}@08:00').status_code, 400)
         self.assertEqual(self.anotar(self.otros, plan=f'{p["id"]}@09:00').status_code, 400)
 
@@ -215,6 +217,33 @@ class PlanesSuplementosTest(APITestCase):
         self.planes(self.creatina(dias=[otro_dia]))
         self.assertEqual(salud.SUPLEMENTOS.avisos(self.otros, HOY()), [])
 
+    def test_los_suplementos_no_tienen_porcentaje(self):
+        d = self.client.get(reverse('crecimiento-proyecto', args=[self.otros.id])).data
+        self.assertFalse(d['con_avance'])
+        self.assertTrue(self.client.get(reverse('crecimiento-proyecto', args=[self.fadiman.id])).data['con_avance'])
+
     def test_lo_de_ayer_no_se_anota(self):
         self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1',
                                      fecha=(HOY() - timedelta(days=1)).isoformat()).status_code, 400)
+
+    def test_ya_lo_tome_desde_el_aviso_la_quita_de_todos_lados(self):
+        from datetime import datetime, time
+        from agenda import notificaciones
+        from agenda.models import Notificacion
+        self.planes(self.creatina(nombre='Melena de león', horas=['08:00']))
+        notificaciones.generar(self.usuario, timezone.make_aware(datetime.combine(HOY(), time(8, 30))))
+        n = Notificacion.objects.get(tipo='crecimiento')
+        self.assertEqual(notificaciones.accion_de(n), 'Ya lo tomé')
+        r = self.client.post(reverse('aviso-confirmar', args=[n.id]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT, getattr(r, 'data', None))
+        self.assertTrue(self.client.get(reverse('salud', args=[self.otros.id])).data['de_hoy'][0]['tomada'])
+        notificaciones.generar(self.usuario, timezone.make_aware(datetime.combine(HOY(), time(9, 0))))
+        self.assertFalse(notificaciones.pendientes(self.usuario).filter(tipo='crecimiento').exists())
+
+    def test_ya_lo_tome_desde_la_pantalla_quita_el_aviso(self):
+        from datetime import datetime, time
+        from agenda import notificaciones
+        [p] = self.planes(self.creatina(horas=['08:00']))
+        notificaciones.generar(self.usuario, timezone.make_aware(datetime.combine(HOY(), time(8, 30))))
+        self.anotar(self.otros, plan=f'{p["id"]}@08:00')
+        self.assertFalse(notificaciones.pendientes(self.usuario).filter(tipo='crecimiento').exists())

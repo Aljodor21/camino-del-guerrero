@@ -66,6 +66,8 @@ export interface ProyectoCrecimiento {
   avance: number;
   /** Si el tipo calcula su avance (si no, lo marca la persona). */
   calcula_avance: boolean;
+  /** Si tiene sentido un porcentaje (un registro que no se termina, como los suplementos, no lo tiene). */
+  con_avance: boolean;
   datos: Record<string, unknown>;
   resumen: string;
   notas: number;

@@ -13,6 +13,8 @@ export interface TomaSalud {
   fuera_de_protocolo: boolean;
   /** De qué plan y hora salió («id@08:00»), o vacío si se anotó suelta. */
   plan: string;
+  /** A qué hora se anotó (la hora de la toma). */
+  hora: string;
   se_puede_borrar: boolean;
 }
 
@@ -45,6 +47,8 @@ export interface TomaDeHoy {
   nombre: string;
   cantidad: string;
   tomada: boolean;
+  /** A qué hora se tomó, si ya. */
+  tomada_a: string | null;
 }
 
 export interface DiaProtocolo {
