@@ -6,13 +6,15 @@ sigue un descanso de 2 a 4 semanas para evaluar y evitar la tolerancia. La app s
 persona anota: no recomienda sustancias ni dosis (la sustancia y la cantidad las escribe ella), y lo que anota no se
 edita. Una toma en un día que el protocolo no marcaba se guarda igual, marcada `fuera_de_protocolo`.
 
-**Otros suplementos** (`otros_suplementos`): un registro simple de lo que toma además de lo del plan de nutrición
-(que ya tiene sus propios avisos): qué, cuánto y cuándo, para tener a la vista todo lo que se toma.
+**Otros suplementos** (`otros_suplementos`): lo que toma además de lo del plan de nutrición. Cada suplemento es un
+**plan** en `Proyecto.datos['planes']`: qué, cuánto, qué días de la semana, a qué horas y cuánto dura el tratamiento
+(desde `inicio`, `duracion_dias` días, o sin fin). A cada hora llega un aviso con «Ya lo tomé», que anota la toma
+ligada a su plan y hora (`TomaSalud.plan`). También se puede anotar una toma suelta.
 
 Todo cuelga de `TomaSalud`. En `Proyecto.datos` del protocolo van solo los ajustes: `sustancia`, `dosis`, `inicio`
 (el día 1 del primer ciclo), `semanas_ciclo`, `semanas_descanso`, `avisar` y `hora_aviso`.
 """
-import math
+import uuid
 from datetime import date, time, timedelta
 
 from django.db import transaction
@@ -28,7 +30,9 @@ DIAS_CICLO = 4
 SEMANAS_CICLO = (4, 8)
 SEMANAS_DESCANSO = (2, 4)
 HORA_AVISO = time(8, 0)
-DIAS_ATRAS = 7
+MAX_PLANES = 20
+MAX_HORAS = 6
+MAX_DURACION = 730
 # De lo que dice el protocolo, para mostrarlo; no se usa para validar ni para aconsejar.
 ETAPAS = {1: ('Día de la microdosis', 'Tomas la sustancia por la mañana.'),
           2: ('Día de transición', 'No consumes; observas cómo estás de ánimo y energía.'),
@@ -115,11 +119,9 @@ def _de_ese_dia(proyecto, fecha, clase):
 
 # ── Anotar ──────────────────────────────────────────────────────────────────────
 def _validar_fecha(fecha):
-    hoy = timezone.localdate()
-    if fecha > hoy:
-        raise ReglaNegocioError('Ese día todavía no llega.')
-    if fecha < hoy - timedelta(days=DIAS_ATRAS):
-        raise ReglaNegocioError(f'Solo se anota lo de los últimos {DIAS_ATRAS} días.')
+    """Lo de un día se anota ese día (como las comidas y los gastos)."""
+    if fecha != timezone.localdate():
+        raise ReglaNegocioError('Solo se anota lo de hoy.')
 
 
 def _nivel(valor, nombre):
@@ -129,7 +131,7 @@ def _nivel(valor, nombre):
 
 
 @transaction.atomic
-def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=None, nota=''):
+def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=None, nota='', plan=''):
     """Anota una toma o una observación. En el protocolo, la sustancia y la cantidad vienen de los ajustes si no
     se dicen; la toma del protocolo es una por día."""
     _validar_fecha(fecha)
@@ -157,6 +159,11 @@ def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=N
             fuera = not (_ajustes(ajustes)['inicio'] and dia_del_protocolo(ajustes, fecha)['dia'] == 1)
         else:
             fuera = False
+            if plan:
+                p = plan_de(proyecto, plan, fecha)
+                if proyecto.tomas_salud.filter(fecha=fecha, plan=plan).exists():
+                    raise ReglaNegocioError('Esa toma ya está anotada.')
+                nombre, cantidad = p['nombre'], p['cantidad']
         nombre, cantidad = _texto(nombre, 60), _texto(cantidad, 40)
         if not nombre:
             raise ReglaNegocioError('Escribe qué tomaste.')
@@ -164,7 +171,7 @@ def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=N
             raise ReglaNegocioError('Escribe cuánto tomaste.')
     return TomaSalud.objects.create(proyecto=proyecto, fecha=fecha, clase=clase, nombre=nombre, cantidad=cantidad,
                                     animo=animo, energia=energia, nota=_texto(nota, 300),
-                                    fuera_de_protocolo=fuera)
+                                    fuera_de_protocolo=fuera, plan=plan if clase == 'dosis' else '')
 
 
 def borrar(toma):
@@ -178,7 +185,7 @@ def borrar(toma):
 def _toma(t, hoy):
     return {'id': t.id, 'fecha': t.fecha, 'clase': t.clase, 'nombre': t.nombre, 'cantidad': t.cantidad,
             'animo': t.animo, 'energia': t.energia, 'nota': t.nota, 'fuera_de_protocolo': t.fuera_de_protocolo,
-            'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
+            'plan': t.plan, 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
 
 
 def estado(proyecto, dias=60):
@@ -194,6 +201,7 @@ def estado(proyecto, dias=60):
                        .order_by('nombre', 'cantidad').values_list('nombre', 'cantidad').distinct()[:20]],
     }
     if proyecto.tipo != 'fadiman':
+        datos.update(estado_planes(proyecto, hoy))
         return datos
     ajustes = proyecto.datos
     dia = dia_del_protocolo(ajustes, hoy)
@@ -286,12 +294,129 @@ FADIMAN = Tipo(nombre='Protocolo Fadiman', valida=_valida_fadiman, avance=_avanc
                resumen=_resumen_fadiman, avisos=_avisos_fadiman, resuelto=_resuelto_fadiman)
 
 
-# ── El tipo «otros suplementos» ─────────────────────────────────────────────────
-def _resumen_suplementos(proyecto):
+# ── El tipo «otros suplementos»: planes con días, horas y duración ──────────────
+def _hora(valor):
+    hora = a_hora(valor) if isinstance(valor, str) else None
+    if hora is None:
+        raise ReglaNegocioError('Las horas van así: 08:00.')
+    return hora.isoformat('minutes')
+
+
+def _plan_limpio(p, hoy):
+    if not isinstance(p, dict):
+        raise ReglaNegocioError('Suplemento no válido.')
+    nombre, cantidad = _texto(p.get('nombre'), 60), _texto(p.get('cantidad'), 40)
+    if not nombre:
+        raise ReglaNegocioError('Escribe qué vas a tomar.')
+    if not cantidad:
+        raise ReglaNegocioError(f'{nombre}: escribe cuánto tomas.')
+    dias = p.get('dias')
+    if not isinstance(dias, list) or not dias or not all(isinstance(d, int) and 0 <= d <= 6 for d in dias):
+        raise ReglaNegocioError(f'{nombre}: elige al menos un día.')
+    horas = p.get('horas')
+    if not isinstance(horas, list) or not horas:
+        raise ReglaNegocioError(f'{nombre}: pon al menos una hora.')
+    horas = sorted({_hora(h) for h in horas})
+    if len(horas) > MAX_HORAS:
+        raise ReglaNegocioError(f'{nombre}: hasta {MAX_HORAS} horas al día.')
+    inicio = _fecha(p.get('inicio')) or hoy
+    duracion = p.get('duracion_dias')
+    duracion = None if duracion in (None, '') else _entre(duracion, (1, MAX_DURACION), f'{nombre}: días de tratamiento')
+    ident = str(p.get('id') or '')
+    if not (len(ident) == 8 and ident.isalnum()):
+        ident = uuid.uuid4().hex[:8]
+    return {'id': ident, 'nombre': nombre, 'cantidad': cantidad, 'dias': sorted(set(dias)), 'horas': horas,
+            'inicio': inicio.isoformat(), 'duracion_dias': duracion, 'nota': _texto(p.get('nota'), 200),
+            'avisar': bool(p.get('avisar', True))}
+
+
+def _valida_suplementos(datos):
+    if not isinstance(datos, dict):
+        raise ReglaNegocioError('Datos no válidos.')
+    planes = datos.get('planes') or []
+    if not isinstance(planes, list) or len(planes) > MAX_PLANES:
+        raise ReglaNegocioError(f'Hasta {MAX_PLANES} suplementos.')
     hoy = timezone.localdate()
-    hoy_n = proyecto.tomas_salud.filter(fecha=hoy).count()
-    semana = proyecto.tomas_salud.filter(fecha__gt=hoy - timedelta(days=7)).count()
-    return f'{hoy_n} {"toma" if hoy_n == 1 else "tomas"} hoy · {semana} en 7 días'
+    limpios = [_plan_limpio(p, hoy) for p in planes]
+    if len({p['id'] for p in limpios}) != len(limpios):
+        raise ReglaNegocioError('Hay suplementos repetidos.')
+    return {'planes': limpios}
 
 
-SUPLEMENTOS = Tipo(nombre='Otros suplementos', resumen=_resumen_suplementos)
+def _fin(plan):
+    """El último día del tratamiento, o None si no tiene fin."""
+    if plan['duracion_dias'] is None:
+        return None
+    return date.fromisoformat(plan['inicio']) + timedelta(days=plan['duracion_dias'] - 1)
+
+
+def toca(plan, fecha):
+    """¿Ese día le toca? Dentro del tratamiento y en uno de sus días de la semana (lunes = 0)."""
+    fin = _fin(plan)
+    return (date.fromisoformat(plan['inicio']) <= fecha and (fin is None or fecha <= fin)
+            and fecha.weekday() in plan['dias'])
+
+
+def _planes(proyecto):
+    return proyecto.datos.get('planes', []) if proyecto.tipo == 'otros_suplementos' else []
+
+
+def plan_de(proyecto, clave, fecha):
+    """El plan de una toma («id@hora»), si ese día y a esa hora le toca."""
+    ident, _, hora = clave.partition('@')
+    plan = next((p for p in _planes(proyecto) if p['id'] == ident), None)
+    if plan is None or hora not in plan['horas'] or not toca(plan, fecha):
+        raise ReglaNegocioError('Esa toma no está en tu plan de ese día.')
+    return plan
+
+
+def estado_planes(proyecto, hoy):
+    tomadas = set(proyecto.tomas_salud.filter(fecha=hoy).exclude(plan='').values_list('plan', flat=True))
+    planes, de_hoy = [], []
+    for p in _planes(proyecto):
+        inicio, fin = date.fromisoformat(p['inicio']), _fin(p)
+        planes.append({**p, 'fin': fin, 'termino': fin is not None and hoy > fin, 'toca_hoy': toca(p, hoy),
+                       'dia_tratamiento': (hoy - inicio).days + 1 if inicio <= hoy and (fin is None or hoy <= fin)
+                       else None})
+        if toca(p, hoy):
+            de_hoy += [{'clave': f'{p["id"]}@{h}', 'hora': h, 'nombre': p['nombre'], 'cantidad': p['cantidad'],
+                        'tomada': f'{p["id"]}@{h}' in tomadas} for h in p['horas']]
+    return {'planes': planes, 'de_hoy': sorted(de_hoy, key=lambda x: x['hora'])}
+
+
+def _avisos_suplementos(proyecto, fecha):
+    tomadas = set(proyecto.tomas_salud.filter(fecha=fecha).exclude(plan='').values_list('plan', flat=True))
+    avisos = []
+    for p in _planes(proyecto):
+        if not p.get('avisar', True) or not toca(p, fecha):
+            continue
+        for h in p['horas']:
+            clave = f'{p["id"]}@{h}'
+            if clave not in tomadas:
+                avisos.append({'clave': clave, 'hora': a_hora(h), 'titulo': f'Hora de tu {p["nombre"]}',
+                               'cuerpo': p['cantidad'] + (f' · {p["nota"]}' if p.get('nota') else ''),
+                               'accion': 'Ya lo tomé'})
+    return avisos
+
+
+def _confirmar_suplemento(proyecto, clave, fecha):
+    anotar(proyecto, fecha, 'dosis', plan=clave)
+
+
+def _resuelto_suplemento(proyecto, clave, fecha):
+    return fecha < timezone.localdate() or clave not in {a['clave'] for a in _avisos_suplementos(proyecto, fecha)}
+
+
+def _resumen_suplementos(proyecto):
+    de_hoy = estado_planes(proyecto, timezone.localdate())['de_hoy']
+    activos = sum(1 for p in _planes(proyecto) if _fin(p) is None or _fin(p) >= timezone.localdate())
+    if not activos:
+        return 'Sin suplementos en curso'
+    texto = f'{activos} {"suplemento" if activos == 1 else "suplementos"}'
+    if de_hoy:
+        texto += f' · hoy {sum(1 for x in de_hoy if x["tomada"])} de {len(de_hoy)}'
+    return texto
+
+
+SUPLEMENTOS = Tipo(nombre='Otros suplementos', valida=_valida_suplementos, resumen=_resumen_suplementos,
+                   avisos=_avisos_suplementos, confirmar=_confirmar_suplemento, resuelto=_resuelto_suplemento)

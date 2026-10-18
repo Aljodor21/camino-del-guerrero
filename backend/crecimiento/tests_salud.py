@@ -136,3 +136,67 @@ class SaludTest(APITestCase):
         self.assertEqual((d['dia']['fase'], d['dia']['semana']), ('ciclo', 2))
         # Las tomas del primer ciclo van en los días 0, 4, 8…24; solo cuentan de hoy (día 10) en adelante.
         self.assertEqual(d['primer_ciclo']['previstas'], 4)
+
+
+class PlanesSuplementosTest(APITestCase):
+    setUp = SaludTest.setUp
+    anotar = SaludTest.anotar
+
+    def planes(self, *planes, esperado=status.HTTP_200_OK):
+        r = self.client.patch(reverse('crecimiento-proyecto', args=[self.otros.id]),
+                              {'datos': {'planes': list(planes)}}, format='json')
+        self.assertEqual(r.status_code, esperado, r.data)
+        self.otros.refresh_from_db()
+        return self.otros.datos.get('planes', [])
+
+    def creatina(self, **extra):
+        return {'nombre': 'Creatina', 'cantidad': '5 g', 'dias': list(range(7)), 'horas': ['08:00'], **extra}
+
+    def test_un_plan_se_guarda_limpio_con_su_id(self):
+        [p] = self.planes(self.creatina(horas=['20:00', '08:00', '08:00'], duracion_dias=30))
+        self.assertEqual(len(p['id']), 8)
+        self.assertEqual((p['horas'], p['inicio'], p['duracion_dias']), (['08:00', '20:00'], HOY().isoformat(), 30))
+        # Al guardar de nuevo conserva su id.
+        [otra] = self.planes(p)
+        self.assertEqual(otra['id'], p['id'])
+
+    def test_un_plan_necesita_dias_horas_y_cantidad(self):
+        for malo in (self.creatina(dias=[]), self.creatina(horas=[]), self.creatina(horas=['8am']),
+                     self.creatina(cantidad=''), self.creatina(duracion_dias=0), self.creatina(dias=[7])):
+            self.planes(malo, esperado=status.HTTP_400_BAD_REQUEST)
+
+    def test_toca_segun_dias_y_duracion(self):
+        hoy = HOY()
+        p = {'inicio': hoy.isoformat(), 'duracion_dias': 3, 'dias': [hoy.weekday()]}
+        self.assertTrue(salud.toca(p, hoy))
+        self.assertFalse(salud.toca(p, hoy + timedelta(days=1)))
+        self.assertFalse(salud.toca({**p, 'dias': list(range(7))}, hoy + timedelta(days=3)))
+        self.assertTrue(salud.toca({**p, 'dias': list(range(7)), 'duracion_dias': None}, hoy + timedelta(days=300)))
+
+    def test_avisos_y_ya_lo_tome(self):
+        [p] = self.planes(self.creatina(horas=['08:00', '20:00']))
+        avisos = salud.SUPLEMENTOS.avisos(self.otros, HOY())
+        self.assertEqual([a['clave'] for a in avisos], [f'{p["id"]}@08:00', f'{p["id"]}@20:00'])
+        self.assertEqual(avisos[0]['accion'], 'Ya lo tomé')
+        salud.SUPLEMENTOS.confirmar(self.otros, f'{p["id"]}@08:00', HOY())
+        self.assertTrue(salud.SUPLEMENTOS.resuelto(self.otros, f'{p["id"]}@08:00', HOY()))
+        self.assertFalse(salud.SUPLEMENTOS.resuelto(self.otros, f'{p["id"]}@20:00', HOY()))
+        toma = self.otros.tomas_salud.get()
+        self.assertEqual((toma.nombre, toma.cantidad, toma.plan), ('Creatina', '5 g', f'{p["id"]}@08:00'))
+
+    def test_desde_la_pantalla_con_el_plan(self):
+        [p] = self.planes(self.creatina())
+        r = self.anotar(self.otros, plan=f'{p["id"]}@08:00')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual(r.data['de_hoy'][0]['tomada'], True)
+        self.assertEqual(self.anotar(self.otros, plan=f'{p["id"]}@08:00').status_code, 400)
+        self.assertEqual(self.anotar(self.otros, plan=f'{p["id"]}@09:00').status_code, 400)
+
+    def test_un_dia_que_no_toca_no_avisa(self):
+        otro_dia = (HOY().weekday() + 1) % 7
+        self.planes(self.creatina(dias=[otro_dia]))
+        self.assertEqual(salud.SUPLEMENTOS.avisos(self.otros, HOY()), [])
+
+    def test_lo_de_ayer_no_se_anota(self):
+        self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1',
+                                     fecha=(HOY() - timedelta(days=1)).isoformat()).status_code, 400)

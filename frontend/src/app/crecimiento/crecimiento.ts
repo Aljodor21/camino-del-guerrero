@@ -107,6 +107,16 @@ export class Crecimiento implements OnInit {
       .filter(([nombre]) => !tiene.has(nombre.trim().toLowerCase()))
       .map(([nombre, programas]) => ({ nombre, programas }));
   });
+  /**
+   * Los programas que se pueden empezar en el área abierta: los de esa área (por su nombre) que todavía no
+   * están en proceso. Un área con un nombre que no es del catálogo ve los que falten de todos.
+   */
+  protected programasDelArea = computed(() => {
+    const nombre = this.area()?.nombre.trim().toLowerCase() ?? '';
+    const libres = this.programas().filter((p) => !this.programasEmpezados().has(p.id));
+    const delArea = libres.filter((p) => p.area.trim().toLowerCase() === nombre);
+    return this.programas().some((p) => p.area.trim().toLowerCase() === nombre) ? delArea : libres;
+  });
   /** La pantalla propia del tipo del proyecto abierto (si tiene). */
   protected pantalla = signal<Type<unknown> | null>(null);
   protected entradasPantalla = computed(() => ({ proyecto: this.proyecto() }));
@@ -232,7 +242,7 @@ export class Crecimiento implements OnInit {
   protected abrirFormulario(cual: Exclude<Formulario, null>): void {
     this.error.set('');
     this.formulario.set(cual);
-    if (cual === 'area') {
+    if (cual === 'area' || cual === 'proceso') {
       this.servicio.procesos().subscribe({
         next: (l) => this.programasEmpezados.set(new Set(l.map((p) => p.programa).filter(Boolean))),
         error: this.fallo('No pudimos revisar tus programas.'),
