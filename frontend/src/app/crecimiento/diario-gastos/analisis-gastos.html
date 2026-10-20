@@ -1,0 +1,454 @@
+@let c = cifras();
+<section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-4">
+  <h3 class="font-semibold text-gray-900 dark:text-white">Lo que anotaste de verdad</h3>
+
+  <!-- Los filtros mandan sobre todo lo de abajo. -->
+  <div class="space-y-2">
+    <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Qué gastos ver">
+      @for (op of clases; track op.id) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="clase() === op.id"
+          [class]="clasesChip(clase() === op.id)"
+          (click)="clase.set(op.id)"
+        >
+          {{ op.label }}
+        </button>
+      }
+    </div>
+    @if (medios().length) {
+      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Con qué pagaste">
+        @for (op of medios(); track op.id) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="medio() === op.id"
+            [class]="clasesChip(medio() === op.id)"
+            (click)="medio.set(op.id)"
+          >
+            @if (op.id !== 'todo' && op.id !== 'registro') {
+              <i class="pi pi-credit-card text-xs mr-1" aria-hidden="true"></i>
+            }
+            {{ op.label }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (!c.n) {
+    <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+      Nada anotado con este filtro este mes.
+    </p>
+  } @else {
+    <!-- Cifras -->
+    <dl class="grid grid-cols-2 gap-3">
+      <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3">
+        <dt class="text-xs text-gray-500 dark:text-gray-400">Anotado</dt>
+        <dd class="text-xl font-bold text-gray-900 dark:text-white">{{ pesos(c.total) }}</dd>
+        <dd class="text-xs text-gray-500 dark:text-gray-400">
+          {{ c.n }} {{ c.n === 1 ? 'gasto' : 'gastos' }}
+          @if (clase() === 'todo') {
+            · {{ porcentaje(c.emocional, c.total) }} % emocional
+          }
+        </dd>
+      </div>
+      <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3">
+        <dt class="text-xs text-gray-500 dark:text-gray-400">Un día típico</dt>
+        <dd class="text-xl font-bold text-gray-900 dark:text-white">{{ pesos(c.tipico) }}</dd>
+        <dd class="text-xs text-gray-500 dark:text-gray-400">
+          En promedio {{ pesos(c.promedio) }} al día
+        </dd>
+      </div>
+      <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3">
+        <dt class="text-xs text-gray-500 dark:text-gray-400">A este ritmo, al final del mes</dt>
+        <dd
+          class="text-xl font-bold"
+          [class]="
+            c.plan && c.proyeccion > c.plan ? 'text-guerrero-red' : 'text-gray-900 dark:text-white'
+          "
+        >
+          {{ pesos(c.proyeccion) }}
+        </dd>
+        <dd class="text-xs text-gray-500 dark:text-gray-400">
+          @if (c.plan) {
+            @if (c.proyeccion > c.plan) {
+              <i class="pi pi-exclamation-triangle text-[10px]" aria-hidden="true"></i>
+              {{ pesos(c.proyeccion - c.plan) }} más de lo planeado
+            } @else {
+              {{ porcentaje(c.proyeccion, c.plan) }} % de lo planeado
+            }
+          } @else {
+            Lo anotado, más un día típico por cada día que falta
+          }
+        </dd>
+      </div>
+      @if (c.mayor; as m) {
+        <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3 min-w-0">
+          <dt class="text-xs text-gray-500 dark:text-gray-400">El más grande</dt>
+          <dd class="text-xl font-bold text-gray-900 dark:text-white">{{ pesos(m.valor) }}</dd>
+          <dd class="truncate text-xs text-gray-500 dark:text-gray-400">
+            {{ m.descripcion }} · {{ fecha(m.fecha) }}
+          </dd>
+        </div>
+      }
+    </dl>
+
+    <!-- Cómo pagaste -->
+    @if (medio() === 'todo' && c.tarjeta) {
+      <div class="space-y-1">
+        <div class="flex h-2 gap-[2px] rounded-full overflow-hidden" aria-hidden="true">
+          <span
+            class="bg-gray-400 dark:bg-gray-500"
+            [style.width.%]="porcentaje(c.registro, c.total)"
+          ></span>
+          <span class="bg-amber-500" [style.width.%]="porcentaje(c.tarjeta, c.total)"></span>
+        </div>
+        <dl class="grid grid-cols-[1fr_auto] gap-x-3 text-xs text-gray-600 dark:text-gray-300">
+          <dt class="flex items-center gap-1.5">
+            <span
+              class="size-2.5 rounded-sm bg-gray-400 dark:bg-gray-500"
+              aria-hidden="true"
+            ></span>
+            Sin tarjeta
+          </dt>
+          <dd class="text-right tabular-nums">
+            {{ pesos(c.registro) }} · {{ porcentaje(c.registro, c.total) }} %
+          </dd>
+          <dt class="flex items-center gap-1.5">
+            <span class="size-2.5 rounded-sm bg-amber-500" aria-hidden="true"></span>
+            Con tarjeta
+          </dt>
+          <dd class="text-right tabular-nums">
+            {{ pesos(c.tarjeta) }} · {{ porcentaje(c.tarjeta, c.total) }} %
+          </dd>
+          @if (c.porTarjeta.length > 1) {
+            @for (t of c.porTarjeta; track t.nombre) {
+              <dt class="pl-4 text-gray-500 dark:text-gray-400">{{ t.nombre }}</dt>
+              <dd class="text-right tabular-nums text-gray-500 dark:text-gray-400">
+                {{ pesos(t.valor) }}
+              </dd>
+            }
+          }
+        </dl>
+      </div>
+    }
+
+    <!-- Día por día -->
+    @let d = dias();
+    <div class="space-y-2">
+      <div class="flex items-baseline justify-between gap-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Día por día</h4>
+        <p class="flex gap-3 text-xs text-gray-600 dark:text-gray-300">
+          @if (clase() !== 'emocional') {
+            <span class="flex items-center gap-1">
+              <span class="size-2.5 rounded-sm bg-sky-600" aria-hidden="true"></span>Cerebral
+            </span>
+          }
+          @if (clase() !== 'cerebral') {
+            <span class="flex items-center gap-1">
+              <span class="size-2.5 rounded-sm bg-rose-500" aria-hidden="true"></span>Emocional
+            </span>
+          }
+        </p>
+      </div>
+      <div class="relative">
+        <p class="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">{{ pesos(d.tope) }}</p>
+        <div
+          class="relative flex h-32 items-end gap-[2px] border-b border-gray-200 dark:border-dark-700"
+          role="group"
+          aria-label="Lo gastado cada día del mes; toca un día para ver sus gastos"
+        >
+          @if (d.planDia) {
+            <div
+              class="pointer-events-none absolute inset-x-0 border-t border-gray-400/70 dark:border-gray-500/70"
+              [style.bottom.%]="alto(d.planDia)"
+              aria-hidden="true"
+            ></div>
+          }
+          @for (x of d.lista; track x.iso) {
+            <button
+              type="button"
+              class="group relative flex h-full flex-1 min-w-0 flex-col justify-end rounded-sm focus-visible:outline-2 focus-visible:outline-guerrero-red disabled:cursor-default"
+              [class]="dia() === x.iso ? 'bg-gray-100 dark:bg-dark-700' : ''"
+              [disabled]="x.futuro"
+              [attr.aria-pressed]="dia() === x.iso"
+              [attr.aria-label]="fecha(x.iso) + ': ' + pesos(x.total)"
+              [title]="fecha(x.iso) + ' · ' + pesos(x.total)"
+              (click)="elegirDia(x.iso)"
+            >
+              @if (x.total) {
+                <span
+                  class="flex w-full flex-col gap-[2px] overflow-hidden rounded-t-[3px] group-hover:opacity-80"
+                  [style.height.%]="alto(x.total)"
+                >
+                  @if (x.emocional) {
+                    <span class="w-full bg-rose-500" [style.flex-grow]="x.emocional"></span>
+                  }
+                  @if (x.cerebral) {
+                    <span class="w-full bg-sky-600" [style.flex-grow]="x.cerebral"></span>
+                  }
+                </span>
+              } @else if (!x.futuro) {
+                <span
+                  class="mx-auto mb-0.5 size-1 rounded-full bg-gray-300 dark:bg-gray-600"
+                ></span>
+              }
+            </button>
+          }
+        </div>
+        <div
+          class="relative h-4 text-[10px] text-gray-500 dark:text-gray-400 tabular-nums"
+          aria-hidden="true"
+        >
+          @for (m of marcas; track m) {
+            @if (m <= d.lista.length) {
+              <span
+                class="absolute -translate-x-1/2"
+                [style.left.%]="((m - 0.5) / d.lista.length) * 100"
+                >{{ m }}</span
+              >
+            }
+          }
+        </div>
+      </div>
+      @if (d.planDia) {
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          La línea es lo planeado por día ({{ pesos(d.planDia) }}). Los puntos son días sin gastos.
+        </p>
+      }
+
+      @if (diaElegido(); as x) {
+        <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3 space-y-1" role="status">
+          <p class="flex justify-between text-sm font-semibold text-gray-900 dark:text-white">
+            <span class="first-letter:uppercase">{{ fecha(x.iso) }}</span>
+            <span class="tabular-nums">{{ pesos(x.total) }}</span>
+          </p>
+          @if (x.gastos.length) {
+            <ul>
+              @for (g of x.gastos; track g.id) {
+                <ng-container
+                  *ngTemplateOutlet="linea; context: { $implicit: g, sinFecha: true }"
+                />
+              }
+            </ul>
+          } @else {
+            <p class="text-xs text-gray-500 dark:text-gray-400">Ese día no anotaste gastos.</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Por categoría -->
+    @let cat = categorias();
+    <div class="space-y-2">
+      <div class="flex items-baseline justify-between gap-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Por categoría</h4>
+        @if (c.plan) {
+          <p class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+            <span class="h-3 w-0.5 bg-gray-700 dark:bg-gray-200" aria-hidden="true"></span>
+            Lo planeado
+          </p>
+        }
+      </div>
+      <ul class="space-y-1">
+        @for (k of cat.lista; track k.id) {
+          @let abierto = abierta() === k.id;
+          <li class="rounded-lg" [class]="abierto ? 'bg-gray-50 dark:bg-dark-700' : ''">
+            <button
+              type="button"
+              class="w-full rounded-lg p-2 text-left space-y-1 hover:bg-gray-50 dark:hover:bg-dark-700 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+              [attr.aria-expanded]="abierto"
+              (click)="abrir(k.id)"
+            >
+              <span class="flex items-baseline gap-2 text-sm">
+                <i
+                  class="pi text-[10px] text-gray-400"
+                  [class]="abierto ? 'pi-chevron-down' : 'pi-chevron-right'"
+                  aria-hidden="true"
+                ></i>
+                <span class="min-w-0 flex-1 truncate text-gray-800 dark:text-gray-100">{{
+                  k.nombre
+                }}</span>
+                <span
+                  class="tabular-nums font-semibold"
+                  [class]="
+                    k.plan && k.anotado > k.plan
+                      ? 'text-guerrero-red'
+                      : 'text-gray-900 dark:text-white'
+                  "
+                  >{{ pesos(k.anotado) }}</span
+                >
+              </span>
+              <span class="relative block h-2 rounded-full bg-gray-100 dark:bg-dark-800">
+                <span
+                  class="flex h-full gap-[2px] overflow-hidden rounded-full"
+                  [style.width.%]="ancho(k.anotado)"
+                >
+                  @if (k.cerebral) {
+                    <span class="h-full bg-sky-600" [style.flex-grow]="k.cerebral"></span>
+                  }
+                  @if (k.emocional) {
+                    <span class="h-full bg-rose-500" [style.flex-grow]="k.emocional"></span>
+                  }
+                </span>
+                @if (k.plan) {
+                  <span
+                    class="absolute -top-0.5 h-3 w-0.5 -translate-x-1/2 bg-gray-700 dark:bg-gray-200"
+                    [style.left.%]="ancho(k.plan)"
+                    aria-hidden="true"
+                  ></span>
+                }
+              </span>
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                {{ k.parte }} % del total · {{ k.gastos.length }}
+                {{ k.gastos.length === 1 ? 'gasto' : 'gastos' }}
+                @if (k.plan) {
+                  @if (k.anotado > k.plan) {
+                    ·
+                    <span class="text-guerrero-red"
+                      >{{ pesos(k.anotado - k.plan) }} sobre el plan</span
+                    >
+                  } @else {
+                    · quedan {{ pesos(k.plan - k.anotado) }} de {{ pesos(k.plan) }}
+                  }
+                } @else if (medio() === 'todo') {
+                  · sin plan
+                }
+              </span>
+            </button>
+
+            @if (abierto) {
+              <div class="px-2 pb-3 space-y-3">
+                @if (k.gastos.length) {
+                  <dl class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                    @if (clase() === 'todo' && k.cerebral && k.emocional) {
+                      <dt class="text-gray-600 dark:text-gray-300">Cerebral</dt>
+                      <dd class="text-right tabular-nums">
+                        {{ pesos(k.cerebral) }} · {{ porcentaje(k.cerebral, k.anotado) }} %
+                      </dd>
+                      <dt class="text-gray-600 dark:text-gray-300">Emocional</dt>
+                      <dd class="text-right tabular-nums">
+                        {{ pesos(k.emocional) }} · {{ porcentaje(k.emocional, k.anotado) }} %
+                      </dd>
+                    }
+                    @if (medio() === 'todo' && k.tarjeta) {
+                      <dt class="text-gray-600 dark:text-gray-300">Con tarjeta</dt>
+                      <dd class="text-right tabular-nums">
+                        {{ pesos(k.tarjeta) }} · {{ porcentaje(k.tarjeta, k.anotado) }} %
+                      </dd>
+                    }
+                  </dl>
+
+                  @if (k.repetidos.length) {
+                    <div class="space-y-0.5">
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-200">
+                        Lo que más se repite
+                      </p>
+                      @for (r of k.repetidos; track r.descripcion) {
+                        <p
+                          class="flex justify-between gap-2 text-xs text-gray-600 dark:text-gray-300"
+                        >
+                          <span class="truncate">{{ r.descripcion }} × {{ r.veces }}</span>
+                          <span class="tabular-nums">{{ pesos(r.valor) }}</span>
+                        </p>
+                      }
+                    </div>
+                  }
+
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-200">Cada gasto</p>
+                      <div class="flex gap-1" role="radiogroup" aria-label="Ordenar los gastos">
+                        @for (
+                          o of [
+                            { id: 'valor', label: 'Mayor' },
+                            { id: 'fecha', label: 'Recientes' },
+                          ];
+                          track o.id
+                        ) {
+                          <button
+                            type="button"
+                            role="radio"
+                            class="rounded px-2 py-0.5 text-xs"
+                            [class]="
+                              orden() === o.id
+                                ? 'bg-guerrero-red/10 text-guerrero-red font-medium'
+                                : 'text-gray-500 dark:text-gray-400'
+                            "
+                            [attr.aria-checked]="orden() === o.id"
+                            (click)="orden.set($any(o.id))"
+                          >
+                            {{ o.label }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <ul class="divide-y divide-gray-200/70 dark:divide-dark-800">
+                      @for (g of ordenados(k.gastos); track g.id) {
+                        <ng-container *ngTemplateOutlet="linea; context: { $implicit: g }" />
+                      }
+                    </ul>
+                  </div>
+                } @else {
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Aún no has anotado nada aquí. Tienes planeado {{ pesos(k.plan) }} al mes.
+                  </p>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Los más grandes -->
+    @if (mayores().length > 1) {
+      <div class="space-y-1">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Tus gastos más grandes</h4>
+        <ol class="divide-y divide-gray-100 dark:divide-dark-700">
+          @for (g of mayores(); track g.id) {
+            <ng-container *ngTemplateOutlet="linea; context: { $implicit: g, categoria: true }" />
+          }
+        </ol>
+      </div>
+    }
+
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      «Al final del mes» suma a lo anotado un día típico (la mediana de tus días, contando los que
+      no gastaste) por cada día que falta: así un pago grande como el arriendo no se repite. Lo de
+      tarjeta cuenta por lo que compraste, no por la cuota.
+    </p>
+  }
+</section>
+
+<ng-template #linea let-g let-sinFecha="sinFecha" let-categoria="categoria">
+  <li class="flex items-center gap-2 py-1.5 text-sm">
+    <span
+      class="size-2 shrink-0 rounded-full"
+      [class]="g.clase === 'cerebral' ? 'bg-sky-600' : 'bg-rose-500'"
+      [title]="g.clase === 'cerebral' ? 'Cerebral' : 'Emocional'"
+    ></span>
+    <span class="sr-only">{{ g.clase === 'cerebral' ? 'Cerebral' : 'Emocional' }}:</span>
+    <span class="min-w-0 flex-1">
+      <span class="block truncate text-gray-800 dark:text-gray-100">{{ g.descripcion }}</span>
+      <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
+        @if (!sinFecha) {
+          {{ fecha(g.fecha) }}
+        }
+        @if (categoria) {
+          · {{ nombreCategoria(g.categoria) }}
+        }
+        @if (g.tarjeta) {
+          @if (!sinFecha) {
+            ·
+          }
+          <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i> {{ g.tarjeta
+          }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}
+        }
+      </span>
+    </span>
+    <span class="shrink-0 tabular-nums text-gray-900 dark:text-white">{{ pesos(g.valor) }}</span>
+  </li>
+</ng-template>
