@@ -1,0 +1,257 @@
+<div class="space-y-4">
+  @if (error()) {
+    <p class="text-sm text-red-700 dark:text-red-400" role="alert">{{ error() }}</p>
+  }
+
+  @for (t of estado().tarjetas; track t.id) {
+    @if (editando() === t.id) {
+      <ng-container *ngTemplateOutlet="formulario" />
+    } @else {
+      <section
+        class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+        [attr.aria-label]="'Tarjeta ' + t.nombre"
+      >
+        <div class="flex items-center gap-2">
+          <i class="pi pi-credit-card text-guerrero-red" aria-hidden="true"></i>
+          <h3 class="min-w-0 flex-1 truncate font-semibold text-gray-900 dark:text-white">
+            {{ t.nombre }}
+            @if (t.ultimos) {
+              <span class="text-sm font-normal text-gray-500 dark:text-gray-400 tabular-nums"
+                >·{{ t.ultimos }}</span
+              >
+            }
+          </h3>
+          <p-button
+            icon="pi pi-pencil"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            size="small"
+            ariaLabel="Cambiar esta tarjeta"
+            (onClick)="editar(t)"
+          />
+          <p-button
+            [icon]="confirmarQuitar() === t.id ? 'pi pi-check' : 'pi pi-trash'"
+            [label]="confirmarQuitar() === t.id ? '¿Quitar?' : ''"
+            [text]="true"
+            [rounded]="confirmarQuitar() !== t.id"
+            [severity]="confirmarQuitar() === t.id ? 'danger' : 'secondary'"
+            size="small"
+            ariaLabel="Quitar esta tarjeta"
+            (onClick)="quitar(t)"
+          />
+        </div>
+
+        @if (t.factura; as f) {
+          <div
+            class="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-900 dark:text-amber-200"
+            role="status"
+          >
+            <p class="font-semibold">Pagas {{ pesos(f.valor) }} el {{ fecha(f.pago) }}</p>
+            <p class="text-xs">Factura del corte del {{ fecha(f.corte) }}.</p>
+          </div>
+        }
+
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Este corte ({{ fecha(t.periodo.desde) }} – {{ fecha(t.periodo.hasta) }})
+          </p>
+          <p class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+            {{ pesos(t.este_corte) }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            @if (t.periodo.pago) {
+              Se paga el {{ fecha(t.periodo.pago) }}.
+            } @else {
+              Pon el día de pago para saber cuándo se paga.
+            }
+            @if (t.comprado) {
+              Compraste {{ pesos(t.comprado) }}, {{ pesos(t.emocional) }} emocional.
+            }
+          </p>
+        </div>
+
+        @if (t.cupo) {
+          <div class="space-y-1">
+            <div
+              class="h-2 rounded-full bg-gray-100 dark:bg-dark-700 overflow-hidden"
+              role="meter"
+              [attr.aria-valuenow]="usado(t)"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-label]="'Cupo usado: ' + usado(t) + ' %'"
+            >
+              <div
+                class="h-full rounded-full"
+                [class]="usado(t) >= 80 ? 'bg-rose-500' : 'bg-emerald-500'"
+                [style.width.%]="usado(t)"
+              ></div>
+            </div>
+            <p class="flex justify-between text-xs text-gray-600 dark:text-gray-300 tabular-nums">
+              <span>Debes {{ pesos(t.deuda) }}</span>
+              <span>Te quedan {{ pesos(t.disponible ?? 0) }} de {{ pesos(t.cupo) }}</span>
+            </p>
+          </div>
+        } @else if (t.deuda) {
+          <p class="text-xs text-gray-600 dark:text-gray-300 tabular-nums">
+            Debes {{ pesos(t.deuda) }}
+          </p>
+        }
+
+        @if (t.compras.length) {
+          <ul
+            class="divide-y divide-gray-100 dark:divide-dark-700"
+            aria-label="Compras de este corte"
+          >
+            @for (c of t.compras; track c.id) {
+              <li class="flex items-center gap-2 py-1.5 text-sm">
+                <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400 tabular-nums">{{
+                  fecha(c.fecha)
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-gray-700 dark:text-gray-200">
+                  {{ c.descripcion }}
+                  @if (c.cuotas > 1) {
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      · {{ c.cuotas }} cuotas</span
+                    >
+                  }
+                </span>
+                <span class="tabular-nums text-gray-900 dark:text-white">{{ pesos(c.valor) }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        <div class="flex justify-end">
+          <p-button
+            label="Anotar una compra"
+            icon="pi pi-plus"
+            variant="outlined"
+            size="small"
+            (onClick)="anotarCon.emit(t.id)"
+          />
+        </div>
+      </section>
+    }
+  } @empty {
+    @if (editando() !== 'nueva') {
+      <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+        Aún no tienes tarjetas. Agrega una para ver cuánto va en cada corte y cuánto te queda.
+      </p>
+    }
+  }
+
+  @if (editando() === 'nueva') {
+    <ng-container *ngTemplateOutlet="formulario" />
+  } @else if (editando() === null) {
+    <p-button
+      label="Agregar una tarjeta"
+      icon="pi pi-plus"
+      styleClass="w-full"
+      (onClick)="nueva()"
+    />
+  }
+
+  <p class="text-xs text-gray-500 dark:text-gray-400">
+    Cada compra con tarjeta se anota en el Registro eligiendo la tarjeta y cuenta en el mes como
+    cualquier gasto. Cuando pagues la factura no la anotes como otro gasto: las compras ya están.
+    Las cuotas se reparten sin intereses (cada banco cobra distinto) y una factura se da por pagada
+    cuando pasa su día de pago. Nunca se guarda el número de la tarjeta.
+  </p>
+</div>
+
+<ng-template #formulario>
+  <form
+    class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3"
+    [formGroup]="form"
+    (ngSubmit)="guardar()"
+  >
+    <h3 class="font-semibold text-gray-900 dark:text-white">
+      {{ editando() === 'nueva' ? 'Agregar una tarjeta' : 'Cambiar la tarjeta' }}
+    </h3>
+    <div class="grid grid-cols-3 gap-3">
+      <label
+        class="col-span-2 flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+      >
+        Nombre
+        <input
+          pInputText
+          formControlName="nombre"
+          maxlength="40"
+          placeholder="Ej. Visa Bancolombia"
+          class="w-full min-w-0"
+        />
+      </label>
+      <label
+        class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+      >
+        4 últimos
+        <input
+          pInputText
+          formControlName="ultimos"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="1234"
+          class="w-full min-w-0"
+        />
+      </label>
+    </div>
+    <label class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+      Cupo (opcional)
+      <input
+        pInputText
+        formControlName="cupo"
+        inputmode="numeric"
+        placeholder="$ 0"
+        class="w-full"
+      />
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+      <label
+        class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+      >
+        Día de corte
+        <input
+          pInputText
+          formControlName="dia_corte"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="Fin de mes"
+          class="w-full min-w-0"
+        />
+      </label>
+      <label
+        class="flex flex-col gap-1 min-w-0 text-sm font-medium text-gray-600 dark:text-gray-400"
+      >
+        Día de pago
+        <input
+          pInputText
+          formControlName="dia_pago"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="Ej. 10"
+          class="w-full min-w-0"
+        />
+      </label>
+    </div>
+    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+      <input type="checkbox" formControlName="avisar" class="size-4 accent-guerrero-red" />
+      Avisarme 2 días antes del pago y ese día
+    </label>
+    @if (form.controls.ultimos.invalid) {
+      <p class="text-xs text-red-700 dark:text-red-400">Solo los 4 últimos números, o nada.</p>
+    }
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" variant="text" severity="secondary" (onClick)="cancelar()" />
+      <p-button
+        type="submit"
+        label="Guardar"
+        icon="pi pi-check"
+        [loading]="guardando()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
+</ng-template>

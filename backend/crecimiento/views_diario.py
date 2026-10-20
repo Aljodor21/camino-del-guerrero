@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from core.exceptions import ReglaNegocioError
 
-from . import diario
+from . import diario, tarjetas
 from .models import CLASES_GASTO, Proyecto
 from .serializers import _calcular_avance
 
@@ -44,6 +44,8 @@ class GastoSerializer(serializers.Serializer):
     descripcion = serializers.CharField(max_length=120)
     categoria   = serializers.ChoiceField(choices=[c for c, _, _ in diario.CATEGORIAS])
     clase       = serializers.ChoiceField(choices=CLASES_GASTO)
+    tarjeta     = serializers.IntegerField(required=False, allow_null=True)
+    cuotas      = serializers.IntegerField(required=False, allow_null=True)
 
 
 class GastosView(APIView):
@@ -55,7 +57,7 @@ class GastosView(APIView):
         datos.is_valid(raise_exception=True)
         d = datos.validated_data
         diario.anotar_gasto(proyecto, d.get('fecha') or timezone.localdate(), d['valor'], d['descripcion'],
-                            d['categoria'], d['clase'])
+                            d['categoria'], d['clase'], d.get('tarjeta'), d.get('cuotas'))
         return _responder(proyecto, status.HTTP_201_CREATED)
 
 
@@ -73,3 +75,29 @@ class SinGastoView(APIView):
         proyecto = _diario(request, pk)
         diario.marcar_sin_gasto(proyecto, parse_date(str(request.data.get('fecha') or '')) or timezone.localdate())
         return _responder(proyecto, status.HTTP_201_CREATED)
+
+
+class TarjetasView(APIView):
+    """Agregar una tarjeta de crédito (`{nombre, ultimos, cupo, dia_corte, dia_pago, avisar}`)."""
+
+    def post(self, request, pk):
+        proyecto = _diario(request, pk)
+        tarjetas.agregar(proyecto, request.data)
+        return _responder(proyecto, status.HTTP_201_CREATED)
+
+
+class TarjetaView(APIView):
+    """PATCH: cambia sus datos. DELETE: la quita (si ya tiene compras, se retira y su historial queda)."""
+
+    def _tarjeta(self, proyecto, tarjeta):
+        return get_object_or_404(proyecto.tarjetas, pk=tarjeta, activa=True)
+
+    def patch(self, request, pk, tarjeta):
+        proyecto = _diario(request, pk)
+        tarjetas.cambiar(self._tarjeta(proyecto, tarjeta), request.data)
+        return _responder(proyecto)
+
+    def delete(self, request, pk, tarjeta):
+        proyecto = _diario(request, pk)
+        tarjetas.quitar(self._tarjeta(proyecto, tarjeta))
+        return _responder(proyecto)

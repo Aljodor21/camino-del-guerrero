@@ -137,9 +137,38 @@ class Rubro(models.Model):
         ]
 
 
+class Tarjeta(models.Model):
+    """Una tarjeta de crédito del diario de gastos. Solo se guarda un nombre y, si se quiere, los 4 últimos
+    dígitos para reconocerla (nunca el número). Con el día de corte y el de pago se sabe cuánto se paga y cuándo;
+    con el cupo, cuánto queda. Si ya tiene compras no se borra: se retira (`activa=False`) y su historial queda."""
+
+    proyecto  = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='tarjetas')
+    nombre    = models.CharField(max_length=40)
+    ultimos   = models.CharField(max_length=4, blank=True, default='')
+    cupo      = models.PositiveBigIntegerField(null=True, blank=True)
+    dia_corte = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Sin día: corta a fin de mes')
+    dia_pago  = models.PositiveSmallIntegerField(null=True, blank=True)
+    avisar    = models.BooleanField(default=True, help_text='Avisar 2 días antes del pago y ese día')
+    activa    = models.BooleanField(default=True)
+    creada    = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['nombre', 'id']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(dia_corte__gte=1, dia_corte__lte=31) | models.Q(dia_corte=None),
+                                   name='tarjeta_dia_corte_valido'),
+            models.CheckConstraint(condition=models.Q(dia_pago__gte=1, dia_pago__lte=31) | models.Q(dia_pago=None),
+                                   name='tarjeta_dia_pago_valido'),
+        ]
+
+    def __str__(self):
+        return f'{self.nombre} ·{self.ultimos}' if self.ultimos else self.nombre
+
+
 class Gasto(models.Model):
     """Lo que se gastó de verdad, el día que pasó: el diario sincero. No se edita; solo se puede borrar el
-    mismo día que se anotó (por si fue un error)."""
+    mismo día que se anotó (por si fue un error). Si se pagó con una tarjeta de crédito, dice con cuál y a
+    cuántas cuotas."""
 
     proyecto    = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='gastos')
     fecha       = models.DateField(default=timezone.localdate)
@@ -147,11 +176,17 @@ class Gasto(models.Model):
     descripcion = models.CharField(max_length=120)
     categoria   = models.CharField(max_length=20)
     clase       = models.CharField(max_length=10, choices=CLASES_GASTO)
+    # RESTRICT: una tarjeta con compras no se borra sola, pero sí cuando se borra todo el diario.
+    tarjeta     = models.ForeignKey(Tarjeta, on_delete=models.RESTRICT, null=True, blank=True,
+                                    related_name='compras')
+    cuotas      = models.PositiveSmallIntegerField(default=1)
     anotado     = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['-fecha', '-anotado', '-id']
         indexes = [models.Index(fields=['proyecto', 'fecha'])]
+        constraints = [models.CheckConstraint(condition=models.Q(cuotas__gte=1, cuotas__lte=48),
+                                              name='gasto_cuotas_validas')]
 
     def save(self, *args, **kwargs):
         if not self._state.adding:

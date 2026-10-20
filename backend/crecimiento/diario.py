@@ -5,8 +5,10 @@ Es el ejercicio tal cual, con dos mejoras:
   demás es emocional; un gasto mixto se parte así). Cada rubro dice cada cuánto se paga: los de cada mes van
   tal cual; los anuales (o semestrales) se suman en el año y se dividen entre 12; los hormiga (de todos los
   días) se multiplican por los días del mes. Al final todo es **un solo gasto mensual**.
-- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad cada día de este mes (hasta 7 días atrás, por si se pasó), sin engañarse; un día
-  está «al día» si tiene gastos anotados o si la persona dijo que no gastó.
+- **El registro** (`Gasto`, `DiaSinGasto`): lo que se gastó de verdad cada día de este mes (hasta 7 días atrás,
+  por si se pasó), sin engañarse; un día está «al día» si tiene gastos anotados o si la persona dijo que no gastó.
+- **Las tarjetas de crédito** (`tarjetas.py`): un gasto puede ir con una tarjeta y a cuotas; la tarjeta dice
+  cuánto va en su corte, cuándo se paga y cuánto queda del cupo.
 """
 import calendar
 import math
@@ -19,6 +21,7 @@ from agenda.horarios import a_hora
 from core.exceptions import ReglaNegocioError
 
 from .models import DiaSinGasto, Gasto, Rubro
+from . import tarjetas
 from .tipos_base import Tipo
 
 # Las categorías y los rubros del diario de gastos del libro.
@@ -173,8 +176,9 @@ def _validar_fecha(fecha):
 
 
 @transaction.atomic
-def anotar_gasto(proyecto, fecha, valor, descripcion, categoria, clase):
+def anotar_gasto(proyecto, fecha, valor, descripcion, categoria, clase, tarjeta=None, cuotas=None):
     _validar_fecha(fecha)
+    tarjeta, cuotas = tarjetas.para_la_compra(proyecto, tarjeta, cuotas)
     if categoria not in NOMBRE_CATEGORIA:
         raise ReglaNegocioError('Elige una categoría.')
     if clase not in ('cerebral', 'emocional'):
@@ -188,7 +192,7 @@ def anotar_gasto(proyecto, fecha, valor, descripcion, categoria, clase):
     # Si ese día había dicho que no gastó, lo que cuenta es lo que anota ahora.
     proyecto.dias_sin_gasto.filter(fecha=fecha).delete()
     return Gasto.objects.create(proyecto=proyecto, fecha=fecha, valor=valor, descripcion=descripcion[:120],
-                                categoria=categoria, clase=clase)
+                                categoria=categoria, clase=clase, tarjeta=tarjeta, cuotas=cuotas)
 
 
 def borrar_gasto(gasto):
@@ -211,9 +215,10 @@ def estado(proyecto):
     inicio, fin = _mes_actual()
     lista, guardados = rubros_de(proyecto)
     rubros = [rubro(r) for r in lista]
-    gastos = list(proyecto.gastos.filter(fecha__range=(inicio, fin)))
+    gastos = list(proyecto.gastos.filter(fecha__range=(inicio, fin)).select_related('tarjeta'))
     registro = [{'id': g.id, 'fecha': g.fecha, 'valor': g.valor, 'descripcion': g.descripcion,
                  'categoria': g.categoria, 'clase': g.clase,
+                 'tarjeta': str(g.tarjeta) if g.tarjeta else '', 'cuotas': g.cuotas,
                  'se_puede_borrar': timezone.localtime(g.anotado).date() == hoy} for g in gastos]
     al_dia, transcurridos = dias_al_dia(proyecto, hoy)
 
@@ -237,6 +242,7 @@ def estado(proyecto):
         'mes': f'{MESES[hoy.month - 1]} {hoy.year}',
         'categorias': [{'id': c, 'nombre': n} for c, n, _ in CATEGORIAS],
         'rubros': rubros, 'guardados': guardados, 'registro': registro,
+        'tarjetas': tarjetas.estado(proyecto, hoy),
         'hoy_al_dia': dia_al_dia(proyecto, hoy),
         'resumen': {
             # Lo que se va a gastar este mes: lo de cada mes + la parte del mes de lo anual + la hormiga.
@@ -277,9 +283,12 @@ def _resumen(proyecto):
 
 
 def _avisos(proyecto, fecha):
-    if not proyecto.datos.get('avisar', True) or fecha < proyecto.creado or dia_al_dia(proyecto, fecha):
+    if fecha < proyecto.creado:
         return []
-    return [{
+    pagos = tarjetas.avisos(proyecto, fecha)
+    if not proyecto.datos.get('avisar', True) or dia_al_dia(proyecto, fecha):
+        return pagos
+    return pagos + [{
         'clave': 'dia', 'hora': a_hora(proyecto.datos.get('hora_aviso')) or HORA_AVISO,
         'titulo': '¿En qué gastaste hoy?',
         'cuerpo': 'Anótalo en tu diario de gastos, sin engañarte. Si no gastaste nada, dilo.',
@@ -287,7 +296,19 @@ def _avisos(proyecto, fecha):
     }]
 
 
+def _confirmar(proyecto, clave, fecha):
+    # Los avisos de pago de una tarjeta solo recuerdan: no tienen botón.
+    if clave != 'dia':
+        raise ReglaNegocioError('Este aviso es solo un recordatorio.')
+    marcar_sin_gasto(proyecto, fecha)
+
+
+def _resuelto(proyecto, clave, fecha):
+    if fecha < timezone.localdate():
+        return True
+    return clave == 'dia' and dia_al_dia(proyecto, fecha)
+
+
 TIPO = Tipo(nombre='Diario de gastos', valida=_valida, avance=_avance, resumen=_resumen, avisos=_avisos,
-            confirmar=lambda proyecto, clave, fecha: marcar_sin_gasto(proyecto, fecha),
-            resuelto=lambda proyecto, clave, fecha: fecha < timezone.localdate() or dia_al_dia(proyecto, fecha),
+            confirmar=_confirmar, resuelto=_resuelto,
             acciones={'sin_gasto': marcar_sin_gasto})
