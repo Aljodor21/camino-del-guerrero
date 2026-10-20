@@ -26,11 +26,11 @@ import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 import { formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 import { Pestana, Pestanas } from '../../shared/pestanas/pestanas';
+import { AnalisisGastos } from './analisis-gastos';
 import { TarjetasCredito } from './tarjetas-credito';
 
 type Seccion = 'gastos' | 'registro' | 'tarjetas' | 'resumen' | 'guia';
 type Modo = 'cerebral' | 'emocional' | 'mixto';
-type Filtro = 'todo' | ClaseGasto;
 
 const PESTANAS: Pestana<Seccion>[] = [
   { id: 'gastos', label: 'Mis gastos', icon: 'pi pi-list' },
@@ -95,6 +95,7 @@ function aPesos(texto: string): number {
     MessageModule,
     Pestanas,
     TarjetasCredito,
+    AnalisisGastos,
   ],
 })
 export class DiarioGastos implements OnInit {
@@ -163,43 +164,6 @@ export class DiarioGastos implements OnInit {
       gastos,
       total: gastos.reduce((s, g) => s + g.valor, 0),
     }));
-  });
-
-  // ── Resumen: registro y tarjeta juntos, con su filtro ──
-  protected filtro = signal<Filtro>('todo');
-  protected resumenFiltrado = computed(() => {
-    const e = this.estado();
-    if (!e) return null;
-    const f = this.filtro();
-    const gastos = e.registro.filter((g) => f === 'todo' || g.clase === f);
-    const suma = (l: GastoAnotado[]) => l.reduce((s, g) => s + g.valor, 0);
-    const conTarjeta = gastos.filter((g) => g.tarjeta);
-    const porTarjeta = new Map<string, number>();
-    for (const g of conTarjeta)
-      porTarjeta.set(g.tarjeta, (porTarjeta.get(g.tarjeta) ?? 0) + g.valor);
-    const planDe = (r: (typeof e.rubros)[number]) =>
-      f === 'todo' ? r.mensual : f === 'cerebral' ? r.mensual_cerebral : r.mensual_emocional;
-    const categorias = e.categorias
-      .map((c) => {
-        const deAqui = gastos.filter((g) => g.categoria === c.id);
-        return {
-          categoria: c.id,
-          nombre: c.nombre,
-          plan: e.rubros.filter((r) => r.categoria === c.id).reduce((s, r) => s + planDe(r), 0),
-          anotado: suma(deAqui),
-          tarjeta: suma(deAqui.filter((g) => g.tarjeta)),
-        };
-      })
-      .filter((c) => c.plan || c.anotado);
-    return {
-      gastos: gastos.length,
-      total: suma(gastos),
-      registro: suma(gastos.filter((g) => !g.tarjeta)),
-      tarjeta: suma(conTarjeta),
-      porTarjeta: [...porTarjeta].map(([nombre, valor]) => ({ nombre, valor })),
-      plan: e.rubros.reduce((s, r) => s + planDe(r), 0),
-      categorias,
-    };
   });
 
   // ── Ajustes del aviso ──
