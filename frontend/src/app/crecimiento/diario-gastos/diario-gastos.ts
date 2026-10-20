@@ -26,13 +26,16 @@ import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 import { formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
 import { Pestana, Pestanas } from '../../shared/pestanas/pestanas';
+import { TarjetasCredito } from './tarjetas-credito';
 
-type Seccion = 'gastos' | 'registro' | 'resumen' | 'guia';
+type Seccion = 'gastos' | 'registro' | 'tarjetas' | 'resumen' | 'guia';
 type Modo = 'cerebral' | 'emocional' | 'mixto';
+type Filtro = 'todo' | ClaseGasto;
 
 const PESTANAS: Pestana<Seccion>[] = [
   { id: 'gastos', label: 'Mis gastos', icon: 'pi pi-list' },
   { id: 'registro', label: 'Registro', icon: 'pi pi-pencil' },
+  { id: 'tarjetas', label: 'Tarjetas', icon: 'pi pi-credit-card' },
   { id: 'resumen', label: 'Resumen', icon: 'pi pi-chart-pie' },
   { id: 'guia', label: '¿Cerebral o emocional?', icon: 'pi pi-question-circle' },
 ];
@@ -85,7 +88,14 @@ function aPesos(texto: string): number {
   selector: 'app-diario-gastos',
   templateUrl: './diario-gastos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, ButtonModule, InputTextModule, MessageModule, Pestanas],
+  imports: [
+    NgTemplateOutlet,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    Pestanas,
+    TarjetasCredito,
+  ],
 })
 export class DiarioGastos implements OnInit {
   readonly proyecto = input.required<ProyectoCrecimiento>();
@@ -132,6 +142,9 @@ export class DiarioGastos implements OnInit {
   protected gCategoria = signal('');
   protected gClase = signal<ClaseGasto | null>(null);
   protected gFecha = signal(hoyISO());
+  /** Con qué se pagó: una tarjeta de crédito (y a cuántas cuotas) o nada (efectivo, débito…). */
+  protected gTarjeta = signal<number | null>(null);
+  protected gCuotas = signal(1);
   protected puedeAnotar = computed(
     () =>
       aPesos(this.gValor()) > 0 &&
@@ -139,6 +152,7 @@ export class DiarioGastos implements OnInit {
       !!this.gCategoria() &&
       !!this.gClase(),
   );
+  protected cuota = computed(() => Math.ceil(aPesos(this.gValor()) / this.gCuotas()));
   protected porDia = computed(() => {
     const dias = new Map<string, GastoAnotado[]>();
     for (const g of this.estado()?.registro ?? []) {
@@ -149,6 +163,43 @@ export class DiarioGastos implements OnInit {
       gastos,
       total: gastos.reduce((s, g) => s + g.valor, 0),
     }));
+  });
+
+  // ── Resumen: registro y tarjeta juntos, con su filtro ──
+  protected filtro = signal<Filtro>('todo');
+  protected resumenFiltrado = computed(() => {
+    const e = this.estado();
+    if (!e) return null;
+    const f = this.filtro();
+    const gastos = e.registro.filter((g) => f === 'todo' || g.clase === f);
+    const suma = (l: GastoAnotado[]) => l.reduce((s, g) => s + g.valor, 0);
+    const conTarjeta = gastos.filter((g) => g.tarjeta);
+    const porTarjeta = new Map<string, number>();
+    for (const g of conTarjeta)
+      porTarjeta.set(g.tarjeta, (porTarjeta.get(g.tarjeta) ?? 0) + g.valor);
+    const planDe = (r: (typeof e.rubros)[number]) =>
+      f === 'todo' ? r.mensual : f === 'cerebral' ? r.mensual_cerebral : r.mensual_emocional;
+    const categorias = e.categorias
+      .map((c) => {
+        const deAqui = gastos.filter((g) => g.categoria === c.id);
+        return {
+          categoria: c.id,
+          nombre: c.nombre,
+          plan: e.rubros.filter((r) => r.categoria === c.id).reduce((s, r) => s + planDe(r), 0),
+          anotado: suma(deAqui),
+          tarjeta: suma(deAqui.filter((g) => g.tarjeta)),
+        };
+      })
+      .filter((c) => c.plan || c.anotado);
+    return {
+      gastos: gastos.length,
+      total: suma(gastos),
+      registro: suma(gastos.filter((g) => !g.tarjeta)),
+      tarjeta: suma(conTarjeta),
+      porTarjeta: [...porTarjeta].map(([nombre, valor]) => ({ nombre, valor })),
+      plan: e.rubros.reduce((s, r) => s + planDe(r), 0),
+      categorias,
+    };
   });
 
   // ── Ajustes del aviso ──
@@ -352,16 +403,37 @@ export class DiarioGastos implements OnInit {
         descripcion: this.gDescripcion().trim(),
         categoria: this.gCategoria(),
         clase: this.gClase()!,
+        tarjeta: this.gTarjeta(),
+        cuotas: this.gTarjeta() ? this.gCuotas() : 1,
       })
       .subscribe({
         next: (e) => {
           this.gValor.set('');
           this.gDescripcion.set('');
           this.gClase.set(null);
+          this.gTarjeta.set(null);
+          this.gCuotas.set(1);
           this.listo('Anotado.')(e);
         },
         error: this.fallo('No pudimos anotarlo.'),
       });
+  }
+
+  protected fijarCuotas(texto: string): void {
+    this.gCuotas.set(Math.min(48, Math.max(1, Math.round(Number(texto)) || 1)));
+  }
+
+  /** Desde una tarjeta: el registro queda listo con esa tarjeta elegida. */
+  protected anotarConTarjeta(id: number): void {
+    this.gTarjeta.set(id);
+    this.aviso.set('');
+    this.seccion.set('registro');
+  }
+
+  protected tarjetaCambio(e: EstadoDiario): void {
+    this.listo()(e);
+    // Si quitó la tarjeta elegida en el registro, vuelve a «sin tarjeta».
+    if (!e.tarjetas.some((t) => t.id === this.gTarjeta())) this.gTarjeta.set(null);
   }
 
   protected borrarGasto(g: GastoAnotado): void {

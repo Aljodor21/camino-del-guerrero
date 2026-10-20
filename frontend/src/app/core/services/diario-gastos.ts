@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { ClaseGasto, EstadoDiario, RubroPayload } from '../models/diario-gastos.model';
+import {
+  ClaseGasto,
+  EstadoDiario,
+  RubroPayload,
+  TarjetaPayload,
+} from '../models/diario-gastos.model';
 import { environment } from '../../../environments/environment';
 
 const API = `${environment.apiUrl}/crecimiento/diario`;
@@ -28,6 +33,8 @@ export class DiarioGastosService {
       descripcion: string;
       categoria: string;
       clase: ClaseGasto;
+      tarjeta: number | null;
+      cuotas: number;
     },
   ): Observable<EstadoDiario> {
     return this.http.post<EstadoDiario>(`${API}/${proyecto}/gastos/`, gasto);
@@ -39,5 +46,17 @@ export class DiarioGastosService {
 
   sinGasto(proyecto: number, fecha: string): Observable<EstadoDiario> {
     return this.http.post<EstadoDiario>(`${API}/${proyecto}/sin-gasto/`, { fecha });
+  }
+
+  agregarTarjeta(proyecto: number, tarjeta: TarjetaPayload): Observable<EstadoDiario> {
+    return this.http.post<EstadoDiario>(`${API}/${proyecto}/tarjetas/`, tarjeta);
+  }
+
+  cambiarTarjeta(proyecto: number, id: number, tarjeta: TarjetaPayload): Observable<EstadoDiario> {
+    return this.http.patch<EstadoDiario>(`${API}/${proyecto}/tarjetas/${id}/`, tarjeta);
+  }
+
+  quitarTarjeta(proyecto: number, id: number): Observable<EstadoDiario> {
+    return this.http.delete<EstadoDiario>(`${API}/${proyecto}/tarjetas/${id}/`);
   }
 }

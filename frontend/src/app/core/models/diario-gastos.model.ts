@@ -33,7 +33,42 @@ export interface GastoAnotado {
   descripcion: string;
   categoria: string;
   clase: ClaseGasto;
+  /** «Visa ·1234» si se pagó con tarjeta de crédito; vacío si no. */
+  tarjeta: string;
+  cuotas: number;
   se_puede_borrar: boolean;
+}
+
+export interface TarjetaPayload {
+  nombre: string;
+  /** Solo los 4 últimos números, o nada. */
+  ultimos: string;
+  cupo: number | null;
+  dia_corte: number | null;
+  dia_pago: number | null;
+  avisar: boolean;
+}
+
+/** Una tarjeta de crédito con lo calculado de su corte (cuotas sin intereses). */
+export interface TarjetaCredito extends TarjetaPayload {
+  id: number;
+  periodo: { desde: string; hasta: string; pago: string | null };
+  compras: {
+    id: number;
+    fecha: string;
+    valor: number;
+    descripcion: string;
+    clase: ClaseGasto;
+    cuotas: number;
+  }[];
+  comprado: number;
+  emocional: number;
+  /** Lo que va en la factura de este corte: lo de contado y las cuotas que caen aquí. */
+  este_corte: number;
+  /** La factura del corte anterior, mientras no pase su día de pago. */
+  factura: { valor: number; corte: string; pago: string } | null;
+  deuda: number;
+  disponible: number | null;
 }
 
 export interface PorClase {
@@ -50,6 +85,7 @@ export interface EstadoDiario {
   /** Falso mientras la lista es la del libro en blanco. */
   guardados: boolean;
   registro: GastoAnotado[];
+  tarjetas: TarjetaCredito[];
   hoy_al_dia: boolean;
   resumen: {
     plan: PorClase;

@@ -259,6 +259,55 @@
               }
             </select>
           </label>
+          @if (e.tarjetas.length) {
+            <fieldset class="space-y-1.5">
+              <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                ¿Con tarjeta de crédito?
+              </legend>
+              <div class="flex flex-wrap items-center gap-2" role="radiogroup">
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="gTarjeta() === null"
+                  [class]="clasesChip(gTarjeta() === null)"
+                  (click)="gTarjeta.set(null)"
+                >
+                  No
+                </button>
+                @for (t of e.tarjetas; track t.id) {
+                  <button
+                    type="button"
+                    role="radio"
+                    [attr.aria-checked]="gTarjeta() === t.id"
+                    [class]="clasesChip(gTarjeta() === t.id)"
+                    (click)="gTarjeta.set(t.id)"
+                  >
+                    <i class="pi pi-credit-card text-xs" aria-hidden="true"></i>
+                    {{ t.nombre }}{{ t.ultimos ? ' ·' + t.ultimos : '' }}
+                  </button>
+                }
+              </div>
+              @if (gTarjeta()) {
+                <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <span class="whitespace-nowrap">¿A cuántas cuotas?</span>
+                  <input
+                    pInputText
+                    type="number"
+                    min="1"
+                    max="48"
+                    [value]="gCuotas()"
+                    (change)="fijarCuotas(leer($event))"
+                    class="w-20"
+                  />
+                  @if (gCuotas() > 1 && gValor()) {
+                    <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                      ≈ {{ pesos(cuota()) }} por mes, sin intereses
+                    </span>
+                  }
+                </label>
+              }
+            </fieldset>
+          }
           <fieldset class="space-y-1.5">
             <legend class="text-sm font-medium text-gray-600 dark:text-gray-400">
               ¿Pasa algo grave si no haces este gasto?
@@ -331,6 +380,13 @@
                       <span class="text-xs text-gray-500 dark:text-gray-400">
                         · {{ nombreCategoria().get(g.categoria) }}</span
                       >
+                      @if (g.tarjeta) {
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                          · <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i>
+                          {{ g.tarjeta
+                          }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}</span
+                        >
+                      }
                     </span>
                     <span class="tabular-nums text-gray-900 dark:text-white">{{
                       pesos(g.valor)
@@ -362,6 +418,15 @@
         </p>
       }
 
+      @case ('tarjetas') {
+        <app-tarjetas-credito
+          [proyecto]="proyecto()"
+          [estado]="e"
+          (cambio)="tarjetaCambio($event)"
+          (anotarCon)="anotarConTarjeta($event)"
+        />
+      }
+
       @case ('resumen') {
         <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
           <h3 class="font-semibold text-gray-900 dark:text-white first-letter:uppercase">
@@ -384,50 +449,115 @@
           ></ng-container>
         </section>
 
-        <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
-          <h3 class="font-semibold text-gray-900 dark:text-white">Lo que anotaste de verdad</h3>
-          <p class="text-sm text-gray-700 dark:text-gray-200">
-            <strong class="tabular-nums">{{ pesos(e.resumen.anotado.total) }}</strong> en
-            {{ e.registro.length }} {{ e.registro.length === 1 ? 'gasto' : 'gastos' }} ·
-            {{ e.resumen.dias_al_dia }} de {{ e.resumen.dias_transcurridos }} días al día
-          </p>
-          @if (e.resumen.anotado.total) {
-            <ng-container
-              *ngTemplateOutlet="barra; context: { $implicit: e.resumen.anotado }"
-            ></ng-container>
-          }
-          @if (e.resumen.por_categoria.length) {
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-xs text-gray-500 dark:text-gray-400">
-                  <th class="text-left font-medium">Categoría</th>
-                  <th class="text-right font-medium">Al mes</th>
-                  <th class="text-right font-medium">Anotado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of e.resumen.por_categoria; track c.categoria) {
-                  <tr>
-                    <td class="py-1 text-gray-700 dark:text-gray-200">{{ c.nombre }}</td>
-                    <td class="py-1 text-right tabular-nums">{{ pesos(c.plan) }}</td>
-                    <td
-                      class="py-1 text-right tabular-nums"
-                      [class.text-guerrero-red]="c.plan > 0 && c.anotado > c.plan"
-                    >
-                      {{ pesos(c.anotado) }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-          @if (e.resumen.plan.total && e.resumen.anotado.total) {
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Llevas anotado el {{ porcentaje(e.resumen.anotado.total, e.resumen.plan.total) }} % de
-              lo que vas a gastar en el mes.
+        @if (resumenFiltrado(); as r) {
+          <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Lo que anotaste de verdad</h3>
+            <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Qué gastos ver">
+              @for (
+                op of [
+                  { id: 'todo', label: 'Todo' },
+                  { id: 'cerebral', label: 'Cerebral' },
+                  { id: 'emocional', label: 'Emocional' },
+                ];
+                track op.id
+              ) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="filtro() === op.id"
+                  [class]="clasesChip(filtro() === op.id)"
+                  (click)="filtro.set($any(op.id))"
+                >
+                  {{ op.label }}
+                </button>
+              }
+            </div>
+            <p class="text-sm text-gray-700 dark:text-gray-200">
+              <strong class="tabular-nums">{{ pesos(r.total) }}</strong>
+              {{ filtro() === 'todo' ? '' : filtro() === 'cerebral' ? 'cerebral' : 'emocional' }}
+              en {{ r.gastos }} {{ r.gastos === 1 ? 'gasto' : 'gastos' }} ·
+              {{ e.resumen.dias_al_dia }} de {{ e.resumen.dias_transcurridos }} días al día
             </p>
-          }
-        </section>
+            @if (filtro() === 'todo' && e.resumen.anotado.total) {
+              <ng-container
+                *ngTemplateOutlet="barra; context: { $implicit: e.resumen.anotado }"
+              ></ng-container>
+            }
+            @if (r.total) {
+              <dl class="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+                <dt class="text-gray-600 dark:text-gray-300">
+                  <i class="pi pi-pencil text-xs" aria-hidden="true"></i> Registro (sin tarjeta)
+                </dt>
+                <dd class="text-right tabular-nums">
+                  {{ pesos(r.registro) }}
+                  <span class="text-xs text-gray-500 dark:text-gray-400"
+                    >· {{ porcentaje(r.registro, r.total) }} %</span
+                  >
+                </dd>
+                <dt class="text-gray-600 dark:text-gray-300">
+                  <i class="pi pi-credit-card text-xs" aria-hidden="true"></i> Tarjeta de crédito
+                </dt>
+                <dd class="text-right tabular-nums">
+                  {{ pesos(r.tarjeta) }}
+                  <span class="text-xs text-gray-500 dark:text-gray-400"
+                    >· {{ porcentaje(r.tarjeta, r.total) }} %</span
+                  >
+                </dd>
+                @if (r.porTarjeta.length > 1) {
+                  @for (t of r.porTarjeta; track t.nombre) {
+                    <dt class="pl-5 text-xs text-gray-500 dark:text-gray-400">{{ t.nombre }}</dt>
+                    <dd class="text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                      {{ pesos(t.valor) }}
+                    </dd>
+                  }
+                }
+              </dl>
+            }
+            @if (r.categorias.length) {
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-xs text-gray-500 dark:text-gray-400">
+                    <th class="text-left font-medium">Categoría</th>
+                    <th class="text-right font-medium">Al mes</th>
+                    <th class="text-right font-medium">Anotado</th>
+                    <th class="text-right font-medium">
+                      <span class="sr-only">Con tarjeta</span>
+                      <i class="pi pi-credit-card text-xs" aria-hidden="true"></i>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of r.categorias; track c.categoria) {
+                    <tr>
+                      <td class="py-1 text-gray-700 dark:text-gray-200">{{ c.nombre }}</td>
+                      <td class="py-1 text-right tabular-nums">{{ pesos(c.plan) }}</td>
+                      <td
+                        class="py-1 text-right tabular-nums"
+                        [class.text-guerrero-red]="c.plan > 0 && c.anotado > c.plan"
+                      >
+                        {{ pesos(c.anotado) }}
+                      </td>
+                      <td
+                        class="py-1 pl-2 text-right tabular-nums text-gray-500 dark:text-gray-400"
+                      >
+                        {{ c.tarjeta ? pesos(c.tarjeta) : '—' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (r.plan && r.total) {
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Llevas anotado el {{ porcentaje(r.total, r.plan) }} % de lo
+                {{
+                  filtro() === 'todo' ? '' : filtro() === 'cerebral' ? 'cerebral ' : 'emocional '
+                }}que vas a gastar en el mes. Lo de tarjeta cuenta por lo que compraste, no por la
+                cuota.
+              </p>
+            }
+          </section>
+        }
 
         <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
           <h3 class="font-semibold text-gray-900 dark:text-white">Aviso diario</h3>
