@@ -195,6 +195,14 @@ def anotar_gasto(proyecto, fecha, valor, descripcion, categoria, clase, tarjeta=
                                 categoria=categoria, clase=clase, tarjeta=tarjeta, cuotas=cuotas)
 
 
+def cambiar_categoria(gasto, categoria):
+    """Pasar un gasto a otra categoría: lo gastado, el día y si fue cerebral o emocional no cambian."""
+    if categoria not in NOMBRE_CATEGORIA:
+        raise ReglaNegocioError('Elige una categoría.')
+    gasto.categoria = categoria
+    gasto.save(update_fields=['categoria'])
+
+
 def borrar_gasto(gasto):
     """Solo el mismo día que se anotó, por si fue un error: el diario es sincero."""
     if timezone.localtime(gasto.anotado).date() != timezone.localdate():

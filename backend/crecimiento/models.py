@@ -166,9 +166,9 @@ class Tarjeta(models.Model):
 
 
 class Gasto(models.Model):
-    """Lo que se gastó de verdad, el día que pasó: el diario sincero. No se edita; solo se puede borrar el
-    mismo día que se anotó (por si fue un error). Si se pagó con una tarjeta de crédito, dice con cuál y a
-    cuántas cuotas."""
+    """Lo que se gastó de verdad, el día que pasó: el diario sincero. No se edita (solo se puede pasar a otra
+    categoría: no cambia lo gastado) y solo se puede borrar el mismo día que se anotó (por si fue un error). Si
+    se pagó con una tarjeta de crédito, dice con cuál y a cuántas cuotas."""
 
     proyecto    = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='gastos')
     fecha       = models.DateField(default=timezone.localdate)
@@ -189,7 +189,7 @@ class Gasto(models.Model):
                                               name='gasto_cuotas_validas')]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
+        if not self._state.adding and set(kwargs.get('update_fields') or ()) != {'categoria'}:
             raise DatoInmutableError('Un gasto anotado no se cambia.')
         super().save(*args, **kwargs)
 
