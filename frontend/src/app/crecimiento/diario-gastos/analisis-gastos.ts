@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
 import { ClaseGasto, EstadoDiario, GastoAnotado } from '../../core/models/diario-gastos.model';
@@ -41,6 +41,8 @@ function clave(texto: string): string {
 })
 export class AnalisisGastos {
   readonly estado = input.required<EstadoDiario>();
+  /** Pasar un gasto a otra categoría: lo guarda el diario y todo se recalcula con lo que responde. */
+  readonly cambiarCategoria = output<{ gasto: GastoAnotado; categoria: string }>();
 
   protected clasesChip = clasesChip;
   protected marcas = MARCAS;
@@ -218,12 +220,6 @@ export class AnalisisGastos {
     return { lista, escala };
   });
 
-  private nombres = computed(() => new Map(this.estado().categorias.map((c) => [c.id, c.nombre])));
-
-  protected nombreCategoria(id: string): string {
-    return this.nombres().get(id) ?? id;
-  }
-
   protected mayores = computed(() =>
     [...this.gastos()].sort((a, b) => b.valor - a.valor).slice(0, 5),
   );
@@ -252,6 +248,11 @@ export class AnalisisGastos {
 
   protected ancho(valor: number): number {
     return (valor / this.categorias().escala) * 100;
+  }
+
+  protected moverA(gasto: GastoAnotado, e: Event): void {
+    const categoria = (e.target as HTMLSelectElement).value;
+    if (categoria !== gasto.categoria) this.cambiarCategoria.emit({ gasto, categoria });
   }
 
   protected abrir(id: string): void {

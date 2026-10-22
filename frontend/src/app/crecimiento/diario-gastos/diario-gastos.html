@@ -375,18 +375,32 @@
                       "
                       >{{ g.clase === 'cerebral' ? 'Cerebral' : 'Emocional' }}</span
                     >
-                    <span class="min-w-0 flex-1 truncate text-gray-700 dark:text-gray-200">
-                      {{ g.descripcion }}
-                      <span class="text-xs text-gray-500 dark:text-gray-400">
-                        · {{ nombreCategoria().get(g.categoria) }}</span
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate text-gray-700 dark:text-gray-200">{{
+                        g.descripcion
+                      }}</span>
+                      <span
+                        class="flex flex-wrap items-center gap-x-1 text-xs text-gray-500 dark:text-gray-400"
                       >
-                      @if (g.tarjeta) {
-                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                          · <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i>
-                          {{ g.tarjeta
-                          }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}</span
+                        <select
+                          class="cursor-pointer rounded bg-transparent dark:scheme-dark underline decoration-dotted underline-offset-2 hover:text-gray-800 dark:hover:text-gray-100 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+                          aria-label="Cambiar la categoría de este gasto"
+                          (change)="cambiarCategoria(g, leer($event))"
                         >
-                      }
+                          @for (c of e.categorias; track c.id) {
+                            <option [value]="c.id" [selected]="c.id === g.categoria">
+                              {{ c.nombre }}
+                            </option>
+                          }
+                        </select>
+                        @if (g.tarjeta) {
+                          <span>
+                            · <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i>
+                            {{ g.tarjeta
+                            }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}</span
+                          >
+                        }
+                      </span>
                     </span>
                     <span class="tabular-nums text-gray-900 dark:text-white">{{
                       pesos(g.valor)
@@ -413,8 +427,8 @@
           </p>
         }
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Lo anotado no se cambia; solo se puede borrar el mismo día, por si fue un error. Puedes
-          anotar lo de los últimos 7 días.
+          Lo anotado no se cambia (solo se puede pasar a otra categoría tocando la suya); se puede
+          borrar el mismo día, por si fue un error. Puedes anotar lo de los últimos 7 días.
         </p>
       }
 
@@ -449,7 +463,10 @@
           ></ng-container>
         </section>
 
-        <app-analisis-gastos [estado]="e" />
+        <app-analisis-gastos
+          [estado]="e"
+          (cambiarCategoria)="cambiarCategoria($event.gasto, $event.categoria)"
+        />
 
         <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-2">
           <h3 class="font-semibold text-gray-900 dark:text-white">Aviso diario</h3>

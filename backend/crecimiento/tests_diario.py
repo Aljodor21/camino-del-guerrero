@@ -9,10 +9,11 @@ from rest_framework.test import APITestCase
 
 from agenda import notificaciones
 from agenda.models import Notificacion
+from core.exceptions import DatoInmutableError
 from users.models import Usuario
 
 from . import diario
-from .models import Proyecto
+from .models import Gasto, Proyecto
 
 HOY = timezone.localdate
 
@@ -97,6 +98,20 @@ class DiarioTest(APITestCase):
         self.assertEqual(d['resumen']['dias_al_dia'], 1)
         gasto = d['registro'][0]
         self.assertTrue(gasto['se_puede_borrar'])
+        # Pasarlo a otra categoría sí se puede (también días después): lo gastado no cambia.
+        url = reverse('diario-gasto', args=[self.proyecto.id, gasto['id']])
+        with el_dia(HOY() + timedelta(days=3)):
+            self.assertEqual(self.client.patch(url, {'categoria': 'salud'}, format='json').status_code, 200)
+        self.assertEqual(Gasto.objects.get(pk=gasto['id']).categoria, 'salud')
+        r = self.client.patch(url, {'categoria': 'transporte'}, format='json')
+        movido = next(g for g in r.data['registro'] if g['id'] == gasto['id'])
+        self.assertEqual((movido['categoria'], movido['valor']), ('transporte', gasto['valor']))
+        self.assertIn('transporte', [c['categoria'] for c in r.data['resumen']['por_categoria']])
+        self.assertEqual(self.client.patch(url, {'categoria': 'nada'}, format='json').status_code, 400)
+        g = Gasto.objects.get(pk=gasto['id'])
+        g.valor = 1
+        with self.assertRaises(DatoInmutableError):
+            g.save()
         with el_dia(HOY() + timedelta(days=1)):
             self.assertEqual(self.client.delete(reverse('diario-gasto', args=[self.proyecto.id, gasto['id']]))
                              .status_code, status.HTTP_400_BAD_REQUEST)

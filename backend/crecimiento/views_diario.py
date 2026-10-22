@@ -62,6 +62,13 @@ class GastosView(APIView):
 
 
 class GastoView(APIView):
+    """PATCH: lo pasa a otra categoría (`{categoria}`). DELETE: lo borra (solo el mismo día)."""
+
+    def patch(self, request, pk, gasto):
+        proyecto = _diario(request, pk)
+        diario.cambiar_categoria(get_object_or_404(proyecto.gastos, pk=gasto), request.data.get('categoria'))
+        return _responder(proyecto)
+
     def delete(self, request, pk, gasto):
         proyecto = _diario(request, pk)
         diario.borrar_gasto(get_object_or_404(proyecto.gastos, pk=gasto))

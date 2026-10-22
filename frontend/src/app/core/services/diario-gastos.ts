@@ -40,6 +40,11 @@ export class DiarioGastosService {
     return this.http.post<EstadoDiario>(`${API}/${proyecto}/gastos/`, gasto);
   }
 
+  /** Pasa un gasto a otra categoría (lo gastado no cambia). */
+  cambiarCategoria(proyecto: number, gasto: number, categoria: string): Observable<EstadoDiario> {
+    return this.http.patch<EstadoDiario>(`${API}/${proyecto}/gastos/${gasto}/`, { categoria });
+  }
+
   borrarGasto(proyecto: number, gasto: number): Observable<EstadoDiario> {
     return this.http.delete<EstadoDiario>(`${API}/${proyecto}/gastos/${gasto}/`);
   }

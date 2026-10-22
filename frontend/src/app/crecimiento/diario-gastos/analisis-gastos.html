@@ -409,7 +409,7 @@
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Tus gastos más grandes</h4>
         <ol class="divide-y divide-gray-100 dark:divide-dark-700">
           @for (g of mayores(); track g.id) {
-            <ng-container *ngTemplateOutlet="linea; context: { $implicit: g, categoria: true }" />
+            <ng-container *ngTemplateOutlet="linea; context: { $implicit: g }" />
           }
         </ol>
       </div>
@@ -423,7 +423,7 @@
   }
 </section>
 
-<ng-template #linea let-g let-sinFecha="sinFecha" let-categoria="categoria">
+<ng-template #linea let-g let-sinFecha="sinFecha">
   <li class="flex items-center gap-2 py-1.5 text-sm">
     <span
       class="size-2 shrink-0 rounded-full"
@@ -433,19 +433,26 @@
     <span class="sr-only">{{ g.clase === 'cerebral' ? 'Cerebral' : 'Emocional' }}:</span>
     <span class="min-w-0 flex-1">
       <span class="block truncate text-gray-800 dark:text-gray-100">{{ g.descripcion }}</span>
-      <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
+      <span
+        class="flex min-w-0 flex-wrap items-center gap-x-1 text-xs text-gray-500 dark:text-gray-400"
+      >
         @if (!sinFecha) {
-          {{ fecha(g.fecha) }}
+          <span class="shrink-0">{{ fecha(g.fecha) }} ·</span>
         }
-        @if (categoria) {
-          · {{ nombreCategoria(g.categoria) }}
-        }
-        @if (g.tarjeta) {
-          @if (!sinFecha) {
-            ·
+        <select
+          class="cursor-pointer rounded bg-transparent dark:scheme-dark underline decoration-dotted underline-offset-2 hover:text-gray-800 dark:hover:text-gray-100 focus-visible:outline-2 focus-visible:outline-guerrero-red"
+          aria-label="Cambiar la categoría de este gasto"
+          (change)="moverA(g, $event)"
+        >
+          @for (c of estado().categorias; track c.id) {
+            <option [value]="c.id" [selected]="c.id === g.categoria">{{ c.nombre }}</option>
           }
-          <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i> {{ g.tarjeta
-          }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}
+        </select>
+        @if (g.tarjeta) {
+          <span>
+            · <i class="pi pi-credit-card text-[10px]" aria-hidden="true"></i> {{ g.tarjeta
+            }}{{ g.cuotas > 1 ? ' a ' + g.cuotas + ' cuotas' : '' }}</span
+          >
         }
       </span>
     </span>

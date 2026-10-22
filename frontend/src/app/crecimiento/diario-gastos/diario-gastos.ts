@@ -400,6 +400,15 @@ export class DiarioGastos implements OnInit {
     if (!e.tarjetas.some((t) => t.id === this.gTarjeta())) this.gTarjeta.set(null);
   }
 
+  /** Pasa el gasto a otra categoría; el diario vuelve recalculado. */
+  protected cambiarCategoria(g: GastoAnotado, categoria: string): void {
+    if (!categoria || categoria === g.categoria) return;
+    this.servicio.cambiarCategoria(this.proyecto().id, g.id, categoria).subscribe({
+      next: this.listo(`«${g.descripcion}» pasó a ${this.nombreCategoria().get(categoria)}.`),
+      error: this.fallo('No pudimos cambiar la categoría.'),
+    });
+  }
+
   protected borrarGasto(g: GastoAnotado): void {
     this.servicio
       .borrarGasto(this.proyecto().id, g.id)
