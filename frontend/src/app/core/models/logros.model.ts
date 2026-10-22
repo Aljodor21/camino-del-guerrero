@@ -34,6 +34,10 @@ export interface Logros {
     en_proceso: boolean;
     /** Alimentación y deporte (si ese día toca entrenar): cada uno vale la mitad del día. */
     pilares: { id: 'alimentacion' | 'deporte'; nombre: string; porcentaje: number; peso: number }[];
+    /** Hoy no cuenta: una pausa cubrió 8 horas o más (no suma ni corta la racha). */
+    en_pausa?: boolean;
+    /** Hoy terminó una pausa: la persona ya volvió. */
+    volvio?: boolean;
   } | null;
   logrados: number;
   total: number;

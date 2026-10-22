@@ -16,7 +16,7 @@ from core.exceptions import ReglaNegocioError
 from nutricion.models import RegistroComida
 from progress.models import Medicion, RegistroEntrenamiento
 
-from . import cumplimiento
+from . import cumplimiento, pausa
 from .models import HitoVisto, RegistroHabito
 
 # Hasta cuántos días atrás se mira para la racha y los hitos.
@@ -175,7 +175,10 @@ def logros(usuario):
     hoy = next((d for d in dias if d['es_hoy']), None)
     return {
         'racha': racha, 'hitos': hitos,
-        'hoy': ({'porcentaje': hoy['porcentaje'], 'en_proceso': hoy['en_proceso'], 'pilares': hoy['pilares']}
+        # en_pausa: hoy no cuenta (la pausa cubrió 8 horas o más); volvio: hoy terminó una pausa. Con eso el
+        # guerrero no se queda dormido cuando la persona ya volvió.
+        'hoy': ({'porcentaje': hoy['porcentaje'], 'en_proceso': hoy['en_proceso'], 'pilares': hoy['pilares'],
+                 'en_pausa': hoy['en_pausa'], 'volvio': pausa.volvio_hoy(usuario)}
                 if hoy else None),
         'logrados': sum(h['logrado'] for h in hitos), 'total': len(hitos),
     }

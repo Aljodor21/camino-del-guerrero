@@ -95,6 +95,20 @@ class PausaTest(APITestCase):
         self.assertEqual(datos['racha_actual'], 4)
         self.assertEqual(logros.logros(self.usuario)['racha']['actual'], 4)
 
+    def test_al_volver_los_logros_dicen_que_hoy_fue_pausa_y_que_volvio(self):
+        hoy = HOY()
+        Pausa.objects.create(usuario=self.usuario, desde=a_las(hoy - timedelta(days=2), 8), motivo='UCI con el bebé')
+        with a_la_hora(hoy, 16):
+            l = logros.logros(self.usuario)['hoy']
+            self.assertEqual((l['porcentaje'], l['en_pausa'], l['volvio']), (None, True, False))
+            self.assertEqual(self.client.delete(reverse('pausa')).status_code, status.HTTP_200_OK)
+            l = logros.logros(self.usuario)['hoy']
+            self.assertEqual((l['en_pausa'], l['volvio']), (True, True))
+        # Al otro día ya es un día normal.
+        with a_la_hora(hoy + timedelta(days=1), 9):
+            l = logros.logros(self.usuario)['hoy']
+            self.assertEqual((l['en_pausa'], l['volvio']), (False, False))
+
     def test_una_pausa_de_unas_horas_solo_calla_los_avisos(self):
         hoy = HOY()
         p = Pausa.objects.create(usuario=self.usuario, desde=a_las(hoy, 9), hasta=a_las(hoy, 13))

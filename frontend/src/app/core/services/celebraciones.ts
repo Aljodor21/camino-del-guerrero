@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { Hito, Logros } from '../models/logros.model';
 import { hoyISO } from '../../shared/fechas';
-import { AccionGuerrero } from '../../shared/guerrero/guerrero';
+import { AccionGuerrero, pausaDeHoy } from '../../shared/guerrero/guerrero';
 import { AudioService } from './audio';
 import { AuthService } from './auth';
 import { AvisosService } from './avisos';
@@ -56,6 +56,8 @@ export class CelebracionesService {
   /** Cuánto lleva el día y la última foto de los logros. */
   readonly logros = signal<Logros | null>(null);
   readonly hoy = computed(() => this.logros()?.hoy?.porcentaje ?? null);
+  /** Si está en pausa o si hoy volvió de una: el guerrero descansa con la persona o la recibe despierto. */
+  readonly pausa = computed(() => pausaDeHoy(this.logros()?.hoy, this.avisos.pausa() !== null));
   /** Sube con cada registro para que el anillo dé un salto. */
   readonly pulso = signal(false);
   readonly fiesta = signal<Fiesta | null>(null);

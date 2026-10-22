@@ -5,6 +5,7 @@ import { MessageModule } from 'primeng/message';
 
 import { DuracionPausa } from '../../core/models/avisos.model';
 import { AvisosService } from '../../core/services/avisos';
+import { CelebracionesService } from '../../core/services/celebraciones';
 import { clasesChip } from '../../shared/chip';
 import { mensajeError } from '../../shared/errores';
 
@@ -138,6 +139,7 @@ export function hastaCuando(hasta: string | null): string {
 })
 export class ModoPausa {
   protected servicio = inject(AvisosService);
+  private celebraciones = inject(CelebracionesService);
   /** Cambió la pausa: quien la usa vuelve a programar lo del celular y recarga el día. */
   readonly cambio = output<void>();
 
@@ -168,6 +170,7 @@ export class ModoPausa {
           this.abierto.set(false);
           this.elegida.set(null);
           this.motivo.set('');
+          void this.celebraciones.revisar(true);
           this.cambio.emit();
         },
         error: (e) => {
@@ -182,6 +185,8 @@ export class ModoPausa {
     this.servicio.volver().subscribe({
       next: () => {
         this.trabajando.set(false);
+        // El guerrero se despierta con la persona.
+        void this.celebraciones.revisar(true);
         this.cambio.emit();
       },
       error: (e) => {

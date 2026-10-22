@@ -65,6 +65,15 @@ def dias_en_pausa(usuario, desde, hasta, ahora=None):
 
 
 @transaction.atomic
+def volvio_hoy(usuario, ahora=None):
+    """Hoy terminó una pausa (dijo «ya volví» o se cumplió su tiempo) y no hay otra en curso."""
+    ahora = ahora or timezone.now()
+    if activa(usuario, ahora):
+        return False
+    inicio = _inicio_del_dia(timezone.localdate(ahora))
+    return any(p.fin and inicio <= p.fin <= ahora for p in pausas_entre(usuario, inicio, ahora))
+
+
 def iniciar(usuario, duracion, cantidad=None, motivo=''):
     """`duracion`: 'horas' (cantidad 1-12), 'hoy', 'dias' (cantidad 1-30, contando hoy) o 'indefinida'. Empieza
     ahora: los días que ya pasaron no se excusan después."""
