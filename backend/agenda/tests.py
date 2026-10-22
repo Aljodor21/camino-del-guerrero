@@ -249,6 +249,25 @@ class AvisosTest(APITestCase):
         hoy = self.client.get(reverse('hoy')).data
         self.assertEqual([(t['tiempo'], t['hecha']) for t in hoy['tomas']], [('onces', True), ('algo', False)])
 
+    def test_la_toma_ya_anotada_no_avisa_y_la_pendiente_se_cierra_sola(self):
+        r = self.client.post(reverse('suplementos'), {
+            'tipo': 'hipercalorico', 'duracion_confirmada': True, 'scoops_porcion': 6,
+            'tomas': [{'tiempo': 'onces', 'scoops': 3, 'reemplaza': {}},
+                      {'tiempo': 'algo', 'scoops': 3, 'reemplaza': {}}]}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        suplemento = r.data['id']
+        # Anotada al contar la comida antes de su hora: cuando llega la hora no hay nada que avisar.
+        notificaciones.registrar_tomas_de_comida(self.usuario, self.hoy, 'onces', [suplemento])
+        notificaciones.generar(self.usuario, self.a_las(11))
+        self.assertEqual(self.pendientes('toma'), [])
+        # Anotada después de que llegó el aviso, por otro lado: el aviso se va solo.
+        notificaciones.generar(self.usuario, self.a_las(17))
+        self.assertEqual(len(self.pendientes('toma')), 1)
+        RegistroHabito.objects.create(usuario=self.usuario, tipo='toma', fecha=self.hoy, momento=self.a_las(17, 5),
+                                      cantidad=3, suplemento_id=suplemento, tiempo='algo')
+        notificaciones.generar(self.usuario, self.a_las(17, 10))
+        self.assertEqual(self.pendientes('toma'), [])
+
     def test_una_toma_con_hora_avisa_a_esa_hora_y_dice_como(self):
         r = self.client.post(reverse('suplementos'), {
             'tipo': 'hipercalorico', 'duracion_confirmada': True, 'scoops_porcion': 6,
