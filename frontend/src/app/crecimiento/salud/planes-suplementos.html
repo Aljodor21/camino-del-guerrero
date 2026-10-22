@@ -35,6 +35,45 @@
     </section>
   }
 
+  <!-- ── Lo de los últimos días sin anotar ── -->
+  @if (atrasadas().length) {
+    <section
+      class="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-2"
+    >
+      <h3 class="font-semibold text-gray-900 dark:text-white">Sin anotar de los últimos días</h3>
+      <p class="text-sm text-amber-900 dark:text-amber-200">
+        Si te lo tomaste y no alcanzaste a anotarlo, anótalo aquí (hasta 7 días atrás).
+      </p>
+      @for (d of atrasadas(); track d.fecha) {
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white first-letter:uppercase">
+            {{ dia(d.fecha) }}
+          </p>
+          <ul class="divide-y divide-amber-200/60 dark:divide-white/5">
+            @for (t of d.tomas; track t.clave) {
+              <li class="py-1.5 flex items-center gap-3">
+                <span class="w-14 tabular-nums text-sm text-gray-700 dark:text-gray-200">{{
+                  t.hora
+                }}</span>
+                <span class="min-w-0 flex-1 text-sm text-gray-900 dark:text-white">
+                  {{ t.nombre }}
+                  <span class="text-gray-500 dark:text-gray-400">· {{ t.cantidad }}</span>
+                </span>
+                <p-button
+                  label="Sí, lo tomé"
+                  size="small"
+                  variant="outlined"
+                  [loading]="guardando()"
+                  (onClick)="tomar(t.clave, d.fecha)"
+                />
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  }
+
   <!-- ── Mis suplementos ── -->
   <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
     <div class="flex items-center justify-between gap-3">

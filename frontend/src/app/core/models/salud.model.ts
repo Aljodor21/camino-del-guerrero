@@ -13,7 +13,7 @@ export interface TomaSalud {
   fuera_de_protocolo: boolean;
   /** De qué plan y hora salió («id@08:00»), o vacío si se anotó suelta. */
   plan: string;
-  /** A qué hora se anotó (la hora de la toma). */
+  /** A qué hora se anotó (la hora de la toma); vacío si se anotó otro día. */
   hora: string;
   se_puede_borrar: boolean;
 }
@@ -105,10 +105,17 @@ export interface EstadoSalud {
   // Solo en otros suplementos.
   planes?: PlanSuplementoEstado[];
   de_hoy?: TomaDeHoy[];
+  /** Lo que tocaba en la última semana y quedó sin anotar (aún se puede). */
+  atrasadas?: {
+    fecha: string;
+    tomas: Pick<TomaDeHoy, 'clave' | 'hora' | 'nombre' | 'cantidad'>[];
+  }[];
   // Solo en el protocolo.
   dia?: DiaProtocolo;
   etapa?: [string, string] | null;
   toma_hoy?: boolean;
+  /** Los días 1 de la última semana sin la toma anotada (aún se pueden anotar). */
+  sin_anotar?: string[];
   observacion_hoy?: boolean;
   siguiente_toma?: string | null;
   /** El día 1 del primer ciclo y el día en que se registró en la app. */
@@ -120,6 +127,8 @@ export interface EstadoSalud {
 }
 
 export interface TomaPayload {
+  /** Hoy si no se dice; una toma se puede anotar hasta 7 días atrás. */
+  fecha?: string;
   clase?: ClaseToma;
   nombre?: string;
   cantidad?: string;

@@ -200,9 +200,25 @@
                 <i class="pi pi-check" aria-hidden="true"></i> Tu toma de hoy ya está anotada.
               </p>
             } @else {
+              @if (!e.ajustes?.dosis) {
+                <label
+                  class="flex flex-col gap-1 text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  ¿Cuánto tomaste? (opcional)
+                  <input
+                    pInputText
+                    maxlength="40"
+                    class="w-full"
+                    placeholder="Tal como lo mides"
+                    [value]="cantidadToma()"
+                    (input)="cantidadToma.set($any($event.target).value)"
+                  />
+                </label>
+              }
               <p-button
-                label="Anoté mi toma de hoy"
+                label="Ya me tomé la de hoy"
                 icon="pi pi-check"
+                styleClass="w-full"
                 [loading]="guardando()"
                 (onClick)="anotarToma()"
               />
@@ -212,19 +228,44 @@
               Hoy no toca la toma. La próxima es el {{ fecha(e.siguiente_toma) }}.
             </p>
           }
+          @if (e.sin_anotar?.length) {
+            <div
+              class="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 space-y-2"
+            >
+              <p class="text-sm text-amber-900 dark:text-amber-200">
+                ¿Te la tomaste y no la anotaste? Puedes anotar las de los últimos 7 días.
+              </p>
+              @for (f of e.sin_anotar; track f) {
+                <div class="flex items-center justify-between gap-2">
+                  <span
+                    class="text-sm font-medium text-gray-900 dark:text-white first-letter:uppercase"
+                    >{{ fecha(f) }}</span
+                  >
+                  <p-button
+                    label="Sí, me la tomé"
+                    size="small"
+                    variant="outlined"
+                    [loading]="guardando()"
+                    (onClick)="anotarToma(f)"
+                  />
+                </div>
+              }
+            </div>
+          }
         </section>
 
         <app-calendario-fadiman [estado]="e" />
 
         <!-- Cómo estás (día de transición) -->
         <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-3">
-          <h3 class="font-semibold text-gray-900 dark:text-white">¿Cómo estás hoy?</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-white">¿Cómo te sientes hoy?</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Esto no anota la toma (la toma es el botón de arriba): es para ver cómo te va el
+            protocolo, sobre todo el día 2.
+          </p>
           @if (e.observacion_hoy) {
             <p class="text-sm text-emerald-700 dark:text-emerald-400">Hoy ya lo anotaste.</p>
           } @else {
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-              Sobre todo en el día 2, mira cómo van tu ánimo y tu energía.
-            </p>
             <div role="radiogroup" aria-label="Ánimo" class="flex items-center gap-2">
               <span class="w-16 text-sm text-gray-600 dark:text-gray-300">Ánimo</span>
               @for (n of niveles; track n) {
@@ -283,7 +324,7 @@
       >
         <h3 class="font-semibold text-gray-900 dark:text-white">Anotar una toma suelta</h3>
         <p class="text-sm text-gray-600 dark:text-gray-300">
-          Algo que tomaste hoy y no está en tus suplementos.
+          Algo que tomaste y no está en tus suplementos (hasta 7 días atrás).
         </p>
         @if (e.frecuentes.length) {
           <ul class="flex flex-wrap gap-2" aria-label="Lo que ya anotaste antes">
@@ -322,14 +363,27 @@
             />
           </div>
         </div>
-        <input
-          pInputText
-          formControlName="nota"
-          maxlength="300"
-          class="w-full"
-          placeholder="Una nota (opcional)"
-          aria-label="Nota"
-        />
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="so-fecha" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >¿Qué día?</label
+            >
+            <input
+              pInputText
+              id="so-fecha"
+              type="date"
+              formControlName="fecha"
+              [min]="haceUnaSemana"
+              [max]="hoy"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="so-nota" class="text-sm font-medium text-gray-600 dark:text-gray-400"
+              >Nota (opcional)</label
+            >
+            <input pInputText id="so-nota" formControlName="nota" maxlength="300" />
+          </div>
+        </div>
         <div class="flex justify-end">
           <p-button
             type="submit"
@@ -352,7 +406,7 @@
               <div class="min-w-0 flex-1 text-sm">
                 <p class="text-gray-900 dark:text-white">
                   @if (t.clase === 'dosis') {
-                    {{ t.nombre }} · {{ t.cantidad }}
+                    {{ t.nombre }}{{ t.cantidad ? ' · ' + t.cantidad : '' }}
                   } @else {
                     Cómo estaba
                     @if (t.animo) {
@@ -364,7 +418,7 @@
                   }
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ fecha(t.fecha) }} · {{ t.hora }}
+                  {{ fecha(t.fecha) }} · {{ t.hora || 'anotada después' }}
                   @if (t.plan) {
                     · de tu plan de las {{ t.plan.split('@')[1] }}
                   }
@@ -391,7 +445,8 @@
           }
         </ul>
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Lo anotado no se cambia; solo se borra el mismo día, por si fue un error.
+          Lo anotado no se cambia; solo se borra el mismo día en que lo anotaste, por si fue un
+          error.
         </p>
       } @else {
         <p class="text-sm text-gray-600 dark:text-gray-300">Aún no has anotado nada.</p>
