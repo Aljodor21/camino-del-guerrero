@@ -184,9 +184,14 @@ def programados(usuario, fecha, ahora=None):
             })
 
     if 'toma' not in apagados:
+        # La que ya se anotó (por ejemplo al contar la comida antes de la hora) no se avisa.
+        hechas = set(RegistroHabito.objects.filter(usuario=usuario, tipo='toma', fecha=fecha)
+                     .values_list('suplemento_id', 'tiempo'))
         for s in _suplementos_del_dia(usuario, fecha):
             for toma in s.tomas:
                 tiempo = Suplemento.clave_toma(toma)
+                if (s.id, tiempo) in hechas:
+                    continue
                 scoops = toma.get('scoops')
                 cantidad = f'{scoops:g} {"scoop" if scoops == 1 else "scoops"} de ' if scoops else ''
                 cuerpo = (_con_punto(f'A las {hora_en_palabras(time.fromisoformat(toma["hora"]))}') if toma['tiempo'] == 'otro'
@@ -367,8 +372,8 @@ def resolver_automaticas(usuario, ahora=None):
      .exclude(tipo__in=DE_FECHA)
      .update(resuelta_en=ahora, resolucion='automatica'))
     pendientes = Notificacion.objects.filter(usuario=usuario, resuelta_en__isnull=True,
-                                             tipo__in=['entreno', 'recordatorio', 'comida', 'proceso', 'crecimiento', 'regreso',
-                                                       *VIGENCIA_DEL_MOMENTO])
+                                             tipo__in=['entreno', 'recordatorio', 'comida', 'toma', 'proceso', 'crecimiento',
+                                                       'regreso', *VIGENCIA_DEL_MOMENTO])
     for n in pendientes.select_related('recordatorio'):
         if n.tipo in VIGENCIA_DEL_MOMENTO:
             hecho = ahora - n.programada_para > VIGENCIA_DEL_MOMENTO[n.tipo]
@@ -380,6 +385,8 @@ def resolver_automaticas(usuario, ahora=None):
                 or (proceso.fecha_fin_plan.isoformat() if proceso.fecha_fin_plan else None) != n.datos.get('fin_plan')
         elif n.tipo == 'comida':
             hecho = RegistroComida.objects.filter(usuario=usuario, fecha=n.fecha, tiempo=n.datos.get('tiempo')).exists()
+        elif n.tipo == 'toma':
+            hecho = toma_registrada(usuario, n.fecha, n.suplemento_id, n.datos.get('tiempo', ''))
         elif n.tipo == 'crecimiento':
             hecho = avisos_de_crecimiento.resuelto(n)
         elif n.tipo == 'regreso':
