@@ -14,7 +14,7 @@ import { AvisosService } from '../../core/services/avisos';
 import { CelebracionesService } from '../../core/services/celebraciones';
 import { mensajeError } from '../../shared/errores';
 import { formatearFecha, hoyISO, sumarDias } from '../../shared/fechas';
-import { Guerrero, estadoDe } from '../../shared/guerrero/guerrero';
+import { Guerrero, estadoDe, pausaDeHoy } from '../../shared/guerrero/guerrero';
 import { Medalla } from '../../shared/medalla/medalla';
 import { QueEs } from '../../shared/que-es/que-es';
 
@@ -86,7 +86,11 @@ export class LogrosVista implements OnInit {
   protected ruta = RUTA;
 
   protected estado = computed(() =>
-    estadoDe(this.datos()?.hoy?.porcentaje, this.datos()?.racha.umbral),
+    estadoDe(
+      this.datos()?.hoy?.porcentaje,
+      this.datos()?.racha.umbral,
+      pausaDeHoy(this.datos()?.hoy, this.servicio.pausa() !== null),
+    ),
   );
   /** El próximo hito de racha que aún no se logra. */
   protected proximoHito = computed(() =>

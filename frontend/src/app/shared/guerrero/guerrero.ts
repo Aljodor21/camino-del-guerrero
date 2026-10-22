@@ -18,11 +18,28 @@ export type AccionGuerrero = 'agua' | 'proteina' | 'comer' | 'dormir' | 'levanta
 /** Desde cuánto del día cuenta para la racha (la misma meta que el servidor). */
 export const META_DEL_DIA = 50;
 
-/** El estado del guerrero según cuánto va del día: poco, algo, o lo que hace falta para sostener la racha. */
+/** La pausa vista desde hoy: en curso, o terminó hoy (la persona ya volvió). */
+export type PausaDeHoy = 'activa' | 'volvio' | null;
+
+export function pausaDeHoy(
+  hoy: { en_pausa?: boolean; volvio?: boolean } | null | undefined,
+  activa: boolean,
+): PausaDeHoy {
+  if (activa) return 'activa';
+  return hoy?.en_pausa || hoy?.volvio ? 'volvio' : null;
+}
+
+/**
+ * El estado del guerrero según cuánto va del día: poco, algo, o lo que hace falta para sostener la racha. En
+ * pausa descansa con la persona; el día que vuelve está despierto aunque el día aún no sume (o no cuente).
+ */
 export function estadoDe(
   porcentaje: number | null | undefined,
   meta = META_DEL_DIA,
+  pausa: PausaDeHoy = null,
 ): EstadoGuerrero {
+  if (pausa === 'activa') return 'descansa';
+  if (pausa === 'volvio' && (porcentaje ?? 0) < meta) return 'firme';
   if (porcentaje == null || porcentaje < meta / 2) return 'descansa';
   return porcentaje >= meta ? 'celebra' : 'firme';
 }

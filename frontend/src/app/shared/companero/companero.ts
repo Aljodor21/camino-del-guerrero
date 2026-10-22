@@ -262,13 +262,23 @@ export class Companero {
 
   protected actuando = computed(() => this.celebraciones.accion() !== null);
   protected racha = computed(() => this.celebraciones.logros()?.racha.actual ?? 0);
-  protected estado = computed(() => estadoDe(this.celebraciones.hoy(), this.umbral()));
+  protected estado = computed(() =>
+    estadoDe(this.celebraciones.hoy(), this.umbral(), this.celebraciones.pausa()),
+  );
   private umbral = computed(() => this.celebraciones.logros()?.racha.umbral ?? META_DEL_DIA);
 
   /** Qué falta hoy para que el día cuente: o que la racha de hoy ya está a salvo. */
   protected estadoDelDia = computed(() => {
     const hoy = this.celebraciones.hoy();
     const umbral = this.umbral();
+    const pausa = this.celebraciones.pausa();
+    if (pausa === 'activa') return 'Estás en pausa: tu racha te espera, aquí no se pierde nada.';
+    if (pausa === 'volvio' && hoy === null) {
+      return 'Qué bueno tenerte de vuelta. Hoy cuenta como pausa: no suma ni corta tu racha.';
+    }
+    if (pausa === 'volvio' && hoy !== null && hoy < umbral) {
+      return `Qué bueno tenerte de vuelta. Hoy llevas ${hoy} %; a tu ritmo, sin afán.`;
+    }
     if (hoy === null) return 'Cuando empieces a anotar, el día cuenta.';
     if (hoy >= umbral) return `Hoy llevas ${hoy} %: la racha de hoy está a salvo.`;
     return `Hoy llevas ${hoy} %. Te faltan ${umbral - hoy} puntos para sostener tu racha.`;
