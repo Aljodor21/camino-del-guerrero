@@ -157,9 +157,13 @@ export class PlanesSuplementos {
     );
   }
 
-  protected tomar(clave: string): void {
+  protected atrasadas = computed(() => this.estado().atrasadas ?? []);
+  protected dia = (iso: string) => formatearFecha(iso, 'dia');
+
+  /** Desde «Hoy te toca», o una de los últimos días que quedó sin anotar (`fecha`). */
+  protected tomar(clave: string, fecha?: string): void {
     this.guardando.set(true);
-    this.salud.anotar(this.proyecto().id, { plan: clave }).subscribe({
+    this.salud.anotar(this.proyecto().id, { plan: clave, ...(fecha ? { fecha } : {}) }).subscribe({
       next: (e) => {
         this.guardando.set(false);
         this.cambio.emit(e);

@@ -129,6 +129,36 @@ class SaludTest(APITestCase):
         self.assertEqual(self.client.get(reverse('salud', args=[self.otros.id])).status_code, 404)
         self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1').status_code, 404)
 
+    def test_la_toma_del_protocolo_sin_cantidad_y_la_de_dias_atras(self):
+        # Sin dosis en los ajustes la toma se anota igual (antes pedía «cuánto» y no dejaba).
+        self.ajustar(inicio=(HOY() - timedelta(days=6)).isoformat(), sustancia='Microdosis')
+        r = self.anotar(self.fadiman)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual((r.data['tomas'][0]['nombre'], r.data['tomas'][0]['cantidad']), ('Microdosis', ''))
+        # El día 1 de hace tres días quedó sin anotar: se puede; el de hace 6 también; cómo estaba, no.
+        hace3 = HOY() - timedelta(days=3)
+        self.assertEqual(r.data['sin_anotar'], [HOY() - timedelta(days=6), hace3])
+        r = self.anotar(self.fadiman, fecha=hace3.isoformat())
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertEqual(r.data['sin_anotar'], [HOY() - timedelta(days=6)])
+        self.assertEqual(self.anotar(self.fadiman, fecha=(HOY() - timedelta(days=2)).isoformat()).status_code, 400)
+        self.assertEqual(self.anotar(self.fadiman, clase='observacion', animo=3,
+                                     fecha=(HOY() - timedelta(days=1)).isoformat()).status_code, 400)
+
+    def test_ya_la_tome_desde_el_aviso_del_dia_uno(self):
+        from datetime import datetime, time
+        from agenda import notificaciones
+        from agenda.models import Notificacion
+        self.ajustar(inicio=HOY().isoformat(), hora_aviso='08:00')
+        notificaciones.generar(self.usuario, timezone.make_aware(datetime.combine(HOY(), time(8, 30))))
+        n = Notificacion.objects.get(tipo='crecimiento')
+        self.assertEqual(notificaciones.accion_de(n), 'Ya la tomé')
+        r = self.client.post(reverse('aviso-confirmar', args=[n.id]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT, getattr(r, 'data', None))
+        self.assertTrue(self.client.get(reverse('salud', args=[self.fadiman.id])).data['toma_hoy'])
+        with self.assertRaises(Exception):
+            salud.FADIMAN.confirmar(self.fadiman, 'observar', HOY())
+
     def test_avisos_del_protocolo(self):
         self.ajustar(inicio=HOY().isoformat())
         self.assertEqual([a['clave'] for a in salud.FADIMAN.avisos(self.fadiman, HOY())], ['toma'])
@@ -222,9 +252,24 @@ class PlanesSuplementosTest(APITestCase):
         self.assertFalse(d['con_avance'])
         self.assertTrue(self.client.get(reverse('crecimiento-proyecto', args=[self.fadiman.id])).data['con_avance'])
 
-    def test_lo_de_ayer_no_se_anota(self):
+    def test_las_tomas_de_la_ultima_semana_se_pueden_anotar(self):
+        Proyecto.objects.filter(pk=self.otros.pk).update(creado=HOY() - timedelta(days=10))
+        self.otros.refresh_from_db()
+        [p] = self.planes(self.creatina(inicio=(HOY() - timedelta(days=10)).isoformat()))
+        r = self.client.get(reverse('salud', args=[self.otros.id])).data
+        self.assertEqual(len(r['atrasadas']), 7)
+        ayer = (HOY() - timedelta(days=1)).isoformat()
+        r = self.anotar(self.otros, plan=f'{p["id"]}@08:00', fecha=ayer)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.data)
+        self.assertNotIn(HOY() - timedelta(days=1), [a['fecha'] for a in r.data['atrasadas']])
+        # Se anotó después: la hora no dice nada.
+        self.assertEqual(r.data['tomas'][0]['hora'], '')
+        self.assertEqual(self.anotar(self.otros, plan=f'{p["id"]}@08:00', fecha=ayer).status_code, 400)
+        self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1', fecha=ayer).status_code, 201)
         self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1',
-                                     fecha=(HOY() - timedelta(days=1)).isoformat()).status_code, 400)
+                                     fecha=(HOY() - timedelta(days=8)).isoformat()).status_code, 400)
+        self.assertEqual(self.anotar(self.otros, nombre='X', cantidad='1',
+                                     fecha=(HOY() + timedelta(days=1)).isoformat()).status_code, 400)
 
     def test_ya_lo_tome_desde_el_aviso_la_quita_de_todos_lados(self):
         from datetime import datetime, time

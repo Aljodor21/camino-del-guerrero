@@ -62,6 +62,8 @@ export class Salud implements OnInit {
   protected aviso = signal('');
   protected editandoAjustes = signal(false);
   protected animo = signal<number | null>(null);
+  /** Cuánto tomó, si no lo tiene en los ajustes (no es obligatorio). */
+  protected cantidadToma = signal('');
   protected energia = signal<number | null>(null);
 
   protected esProtocolo = computed(() => this.proyecto().tipo === 'fadiman');
@@ -86,6 +88,7 @@ export class Salud implements OnInit {
     initialValue: this.ajustes.getRawValue(),
   });
   protected hoy = hoyISO();
+  protected haceUnaSemana = sumarDias(hoyISO(), -7);
   protected desdeMin = computed(() => sumarDias(this.hoy, this.valores().ya_empezo ? -120 : 0));
   protected desdeMax = computed(() =>
     this.valores().ya_empezo ? this.hoy : sumarDias(this.hoy, 30),
@@ -107,6 +110,7 @@ export class Salud implements OnInit {
     nombre: ['', [Validators.required, Validators.maxLength(60)]],
     cantidad: ['', [Validators.required, Validators.maxLength(40)]],
     nota: ['', [Validators.maxLength(300)]],
+    fecha: [hoyISO(), Validators.required],
   });
   protected observacion = this.fb.nonNullable.group({ nota: ['', [Validators.maxLength(300)]] });
 
@@ -185,9 +189,13 @@ export class Salud implements OnInit {
     return datos;
   }
 
-  /** La toma del protocolo usa la sustancia y la cantidad de los ajustes. */
-  protected anotarToma(): void {
-    this.enviar({}, 'Toma anotada.');
+  /** La toma del protocolo usa la sustancia y la cantidad de los ajustes (o la que escriba aquí). */
+  protected anotarToma(fecha?: string): void {
+    const cantidad = this.cantidadToma().trim();
+    this.enviar(
+      { ...(fecha ? { fecha } : {}), ...(cantidad ? { cantidad } : {}) },
+      fecha ? `Anotada la toma del ${this.fecha(fecha)}.` : 'Toma anotada.',
+    );
   }
 
   protected anotarObservacion(): void {
@@ -209,7 +217,9 @@ export class Salud implements OnInit {
 
   protected anotarSuplemento(): void {
     if (this.toma.invalid) return;
-    this.enviar(this.toma.getRawValue(), 'Toma anotada.', () => this.toma.reset());
+    this.enviar(this.toma.getRawValue(), 'Toma anotada.', () =>
+      this.toma.reset({ fecha: this.hoy }),
+    );
   }
 
   protected usarFrecuente(f: { nombre: string; cantidad: string }): void {

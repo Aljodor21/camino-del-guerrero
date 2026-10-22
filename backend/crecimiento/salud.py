@@ -35,6 +35,8 @@ HORA_AVISO = time(8, 0)
 MAX_PLANES = 20
 MAX_HORAS = 6
 MAX_DURACION = 730
+# Una toma se puede anotar hasta 7 días después (como un gasto): a veces no se alcanza ese día.
+DIAS_ATRAS = 7
 # De lo que dice el protocolo, para mostrarlo; no se usa para validar ni para aconsejar.
 ETAPAS = {1: ('Día de la microdosis', 'Tomas la sustancia por la mañana.'),
           2: ('Día de transición', 'No consumes; observas cómo estás de ánimo y energía.'),
@@ -120,10 +122,15 @@ def _de_ese_dia(proyecto, fecha, clase):
 
 
 # ── Anotar ──────────────────────────────────────────────────────────────────────
-def _validar_fecha(fecha):
-    """Lo de un día se anota ese día (como las comidas y los gastos)."""
-    if fecha != timezone.localdate():
-        raise ReglaNegocioError('Solo se anota lo de hoy.')
+def _validar_fecha(fecha, clase):
+    """Una toma, hasta 7 días atrás (por si no se alcanzó a anotar); cómo se siente, solo el mismo día."""
+    hoy = timezone.localdate()
+    if fecha > hoy:
+        raise ReglaNegocioError('Ese día todavía no llega.')
+    if clase == 'observacion' and fecha != hoy:
+        raise ReglaNegocioError('Cómo te sientes se anota el mismo día.')
+    if fecha < hoy - timedelta(days=DIAS_ATRAS):
+        raise ReglaNegocioError(f'Solo se anotan las tomas de los últimos {DIAS_ATRAS} días.')
 
 
 def _nivel(valor, nombre):
@@ -135,8 +142,8 @@ def _nivel(valor, nombre):
 @transaction.atomic
 def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=None, nota='', plan=''):
     """Anota una toma o una observación. En el protocolo, la sustancia y la cantidad vienen de los ajustes si no
-    se dicen; la toma del protocolo es una por día."""
-    _validar_fecha(fecha)
+    se dicen (si no hay cantidad, la toma se anota igual); la toma del protocolo es una por día."""
+    _validar_fecha(fecha, clase)
     if clase not in ('dosis', 'observacion'):
         raise ReglaNegocioError('Di si es una toma o una observación.')
     protocolo = proyecto.tipo == 'fadiman'
@@ -154,10 +161,10 @@ def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=N
         animo = energia = None
         if protocolo:
             ajustes = proyecto.datos
-            nombre = _texto(nombre, 60) or ajustes.get('sustancia', '')
+            nombre = _texto(nombre, 60) or ajustes.get('sustancia', '') or 'Toma del protocolo'
             cantidad = _texto(cantidad, 40) or ajustes.get('dosis', '')
             if not (_ajustes(ajustes)['inicio'] and dia_del_protocolo(ajustes, fecha)['dia'] == 1):
-                raise ReglaNegocioError('Hoy no toca: la toma es solo el día 1 de cada ciclo de 3 días.')
+                raise ReglaNegocioError('Ese día no toca: la toma es solo el día 1 de cada ciclo de 3 días.')
             if _de_ese_dia(proyecto, fecha, 'dosis').exists():
                 raise ReglaNegocioError('Ese día ya anotaste tu toma.')
             fuera = False
@@ -171,7 +178,7 @@ def anotar(proyecto, fecha, clase, nombre='', cantidad='', animo=None, energia=N
         nombre, cantidad = _texto(nombre, 60), _texto(cantidad, 40)
         if not nombre:
             raise ReglaNegocioError('Escribe qué tomaste.')
-        if not cantidad:
+        if not cantidad and not protocolo:
             raise ReglaNegocioError('Escribe cuánto tomaste.')
     return TomaSalud.objects.create(proyecto=proyecto, fecha=fecha, clase=clase, nombre=nombre, cantidad=cantidad,
                                     animo=animo, energia=energia, nota=_texto(nota, 300),
@@ -189,7 +196,9 @@ def borrar(toma):
 def _toma(t, hoy):
     return {'id': t.id, 'fecha': t.fecha, 'clase': t.clase, 'nombre': t.nombre, 'cantidad': t.cantidad,
             'animo': t.animo, 'energia': t.energia, 'nota': t.nota, 'fuera_de_protocolo': t.fuera_de_protocolo,
-            'plan': t.plan, 'hora': _hora_de(t), 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy}
+            'plan': t.plan, 'se_puede_borrar': timezone.localtime(t.anotado).date() == hoy,
+            # La hora solo dice algo si se anotó ese mismo día; si se anotó después, no se sabe.
+            'hora': _hora_de(t) if timezone.localtime(t.anotado).date() == t.fecha else ''}
 
 
 def _hora_de(toma):
@@ -254,10 +263,14 @@ def estado(proyecto, dias=60):
     hechas = {t.fecha for t in proyecto.tomas_salud.filter(clase='dosis')}
     siguiente = None
     if _ajustes(ajustes)['inicio']:
-        siguiente = next((hoy + timedelta(days=d) for d in range(0, 400)
+        # Si la de hoy ya se tomó, la próxima es la del siguiente día 1.
+        siguiente = next((hoy + timedelta(days=d) for d in range(1 if hoy in hechas else 0, 400)
                           if dia_del_protocolo(ajustes, hoy + timedelta(days=d))['dia'] == 1), None)
+    # Los días 1 de la última semana que quedaron sin anotar: aún se pueden anotar.
+    sin_anotar = [f for f in (hoy - timedelta(days=d) for d in range(DIAS_ATRAS, 0, -1))
+                  if dia_del_protocolo(ajustes, f)['dia'] == 1 and f not in hechas]
     datos.update({
-        'dia': dia, 'etapa': ETAPAS.get(dia['dia']), 'toma_hoy': hoy in hechas,
+        'dia': dia, 'etapa': ETAPAS.get(dia['dia']), 'toma_hoy': hoy in hechas, 'sin_anotar': sin_anotar,
         'observacion_hoy': _de_ese_dia(proyecto, hoy, 'observacion').exists(),
         'siguiente_toma': siguiente, 'empezo': _ajustes(ajustes)['inicio'],
         'registrado': proyecto.creado, 'calendario': calendario(proyecto, hoy),
@@ -318,7 +331,7 @@ def _avisos_fadiman(proyecto, fecha):
         if _de_ese_dia(proyecto, fecha, 'dosis').exists():
             return []
         return [{'clave': 'toma', 'hora': hora, 'titulo': 'Hoy es tu día 1 del protocolo',
-                 'cuerpo': 'Toca tu toma de la mañana. Anótala en Salud cuando la hagas.', 'accion': ''}]
+                 'cuerpo': 'Toca tu toma. Cuando la hagas, dale «Ya la tomé».', 'accion': 'Ya la tomé'}]
     if dia['fase'] == 'ciclo' and dia['dia'] == 2:
         if _de_ese_dia(proyecto, fecha, 'observacion').exists():
             return []
@@ -332,12 +345,20 @@ def _avisos_fadiman(proyecto, fecha):
     return []
 
 
+def _confirmar_fadiman(proyecto, clave, fecha):
+    """«Ya la tomé» desde el aviso del día 1 anota la toma (los demás avisos no tienen botón)."""
+    if clave != 'toma':
+        raise ReglaNegocioError('Este aviso no se confirma.')
+    anotar(proyecto, fecha, 'dosis')
+
+
 def _resuelto_fadiman(proyecto, clave, fecha):
     return fecha < timezone.localdate() or not _avisos_fadiman(proyecto, fecha)
 
 
 FADIMAN = Tipo(nombre='Protocolo Fadiman', valida=_valida_fadiman, avance=_avance_fadiman,
-               resumen=_resumen_fadiman, avisos=_avisos_fadiman, resuelto=_resuelto_fadiman)
+               resumen=_resumen_fadiman, avisos=_avisos_fadiman, confirmar=_confirmar_fadiman,
+               resuelto=_resuelto_fadiman)
 
 
 # ── El tipo «otros suplementos»: planes con días, horas y duración ──────────────
@@ -428,7 +449,20 @@ def estado_planes(proyecto, hoy):
             de_hoy += [{'clave': f'{p["id"]}@{h}', 'hora': h, 'nombre': p['nombre'], 'cantidad': p['cantidad'],
                         'tomada': f'{p["id"]}@{h}' in tomadas, 'tomada_a': tomadas.get(f'{p["id"]}@{h}')}
                        for h in p['horas']]
-    return {'planes': planes, 'de_hoy': sorted(de_hoy, key=lambda x: x['hora'])}
+    # Lo que tocaba en la última semana y quedó sin anotar (desde que existe el proyecto): aún se puede anotar.
+    hechas = set(proyecto.tomas_salud.filter(fecha__gte=hoy - timedelta(days=DIAS_ATRAS)).exclude(plan='')
+                 .values_list('fecha', 'plan'))
+    atrasadas = []
+    for d in range(DIAS_ATRAS, 0, -1):
+        fecha = hoy - timedelta(days=d)
+        if fecha < proyecto.creado:
+            continue
+        tomas = [{'clave': f'{p["id"]}@{h}', 'hora': h, 'nombre': p['nombre'], 'cantidad': p['cantidad']}
+                 for p in _planes(proyecto) if toca(p, fecha) for h in p['horas']
+                 if (fecha, f'{p["id"]}@{h}') not in hechas]
+        if tomas:
+            atrasadas.append({'fecha': fecha, 'tomas': sorted(tomas, key=lambda x: x['hora'])})
+    return {'planes': planes, 'de_hoy': sorted(de_hoy, key=lambda x: x['hora']), 'atrasadas': atrasadas[::-1]}
 
 
 def _avisos_suplementos(proyecto, fecha):
