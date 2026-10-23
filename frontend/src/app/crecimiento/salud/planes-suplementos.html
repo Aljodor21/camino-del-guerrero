@@ -230,9 +230,18 @@
           placeholder="Una nota (opcional): con comida, en ayunas…"
           aria-label="Nota"
         />
-        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-          <input type="checkbox" formControlName="avisar" /> Avisarme a cada hora
-        </label>
+        <div
+          class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-white/10 px-3 py-2"
+        >
+          <p-toggleswitch formControlName="avisar" inputId="avisar-plan" />
+          <label for="avisar-plan" class="text-sm text-gray-700 dark:text-gray-200">
+            @if (form.controls.avisar.value) {
+              Te aviso a cada hora
+            } @else {
+              Sin aviso: a esa hora no te llega nada
+            }
+          </label>
+        </div>
 
         <div class="flex justify-end gap-2">
           <p-button label="Cancelar" variant="outlined" severity="secondary" (onClick)="cerrar()" />
@@ -258,10 +267,22 @@
               </p>
               <p class="text-xs text-gray-600 dark:text-gray-300">
                 {{ diasTexto(p) }} · {{ p.horas.join(', ') }}
-                @if (!p.avisar) {
-                  · sin aviso
-                }
               </p>
+              @if (!p.avisar && !p.termino) {
+                <p
+                  class="flex flex-wrap items-center gap-x-2 text-xs text-amber-800 dark:text-amber-300"
+                >
+                  <i class="pi pi-bell-slash" aria-hidden="true"></i> Este no te avisa
+                  <p-button
+                    label="Avisarme"
+                    icon="pi pi-bell"
+                    [text]="true"
+                    size="small"
+                    [loading]="guardando()"
+                    (onClick)="activarAviso(p)"
+                  />
+                </p>
+              }
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 @if (p.termino) {
                   Terminó el {{ fecha(p.fin!) }}
