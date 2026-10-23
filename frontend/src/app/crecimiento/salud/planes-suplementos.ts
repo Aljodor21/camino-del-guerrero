@@ -10,6 +10,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { ProyectoCrecimiento } from '../../core/models/crecimiento.model';
 import { EstadoSalud, PlanSuplemento, PlanSuplementoEstado } from '../../core/models/salud.model';
@@ -39,7 +40,7 @@ const TODOS = DIAS.map((d) => d.n);
   selector: 'app-planes-suplementos',
   templateUrl: './planes-suplementos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, ToggleSwitchModule],
 })
 export class PlanesSuplementos {
   readonly proyecto = input.required<ProyectoCrecimiento>();
@@ -142,6 +143,14 @@ export class PlanesSuplementos {
     if (i >= 0) lista[i] = plan;
     else lista.push(plan);
     this.guardarPlanes(lista, () => this.editando.set(null));
+  }
+
+  /** Un suplemento que quedó sin aviso se enciende desde la lista, sin abrirlo. */
+  protected activarAviso(p: PlanSuplementoEstado): void {
+    this.guardarPlanes(
+      this.planes().map((x) => ({ ...this.soloPlan(x), avisar: x.id === p.id || x.avisar })),
+      () => undefined,
+    );
   }
 
   protected borrar(p: PlanSuplementoEstado): void {
