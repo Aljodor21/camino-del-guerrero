@@ -107,9 +107,19 @@ export class AnalisisGastos {
         : 0;
   });
 
-  private mes = computed(() => {
-    const [anio, mes, dia] = this.hoy.split('-').map(Number);
-    return { anio, mes, hoy: dia, dias: new Date(anio, mes, 0).getDate() };
+  /** El mes que se mira; si ya cerró, todos sus días pasaron. */
+  protected mes = computed(() => {
+    const [anio, mes] = this.estado().mes_iso.split('-').map(Number);
+    const dias = new Date(anio, mes, 0).getDate();
+    const cerrado = !this.hoy.startsWith(this.estado().mes_iso);
+    return {
+      anio,
+      mes,
+      dias,
+      cerrado,
+      hoy: cerrado ? dias : Number(this.hoy.slice(8)),
+      nombre: this.estado().mes,
+    };
   });
 
   protected cifras = computed(() => {

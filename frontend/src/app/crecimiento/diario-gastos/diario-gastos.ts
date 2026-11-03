@@ -113,6 +113,9 @@ export class DiarioGastos implements OnInit {
 
   protected seccion = signal<Seccion>('gastos');
   protected estado = signal<EstadoDiario | null>(null);
+  /** El resumen de un mes anterior (o null: el de este mes). */
+  protected estadoMes = signal<EstadoDiario | null>(null);
+  protected cargandoMes = signal(false);
   protected cargando = signal(true);
   protected guardando = signal(false);
   protected error = signal('');
@@ -400,12 +403,35 @@ export class DiarioGastos implements OnInit {
     if (!e.tarjetas.some((t) => t.id === this.gTarjeta())) this.gTarjeta.set(null);
   }
 
-  /** Pasa el gasto a otra categoría; el diario vuelve recalculado. */
+  /** Pasa el gasto a otra categoría; el diario vuelve recalculado (y el mes anterior que se esté mirando). */
   protected cambiarCategoria(g: GastoAnotado, categoria: string): void {
     if (!categoria || categoria === g.categoria) return;
     this.servicio.cambiarCategoria(this.proyecto().id, g.id, categoria).subscribe({
-      next: this.listo(`«${g.descripcion}» pasó a ${this.nombreCategoria().get(categoria)}.`),
+      next: (e) => {
+        this.listo(`«${g.descripcion}» pasó a ${this.nombreCategoria().get(categoria)}.`)(e);
+        const mes = this.estadoMes()?.mes_iso;
+        if (mes) this.verMes(mes);
+      },
       error: this.fallo('No pudimos cambiar la categoría.'),
+    });
+  }
+
+  /** El resumen de otro mes; el de este mes ya está cargado. */
+  protected verMes(iso: string): void {
+    if (iso === this.estado()?.mes_iso) {
+      this.estadoMes.set(null);
+      return;
+    }
+    this.cargandoMes.set(true);
+    this.servicio.cargar(this.proyecto().id, iso).subscribe({
+      next: (e) => {
+        this.cargandoMes.set(false);
+        this.estadoMes.set(e);
+      },
+      error: (err) => {
+        this.cargandoMes.set(false);
+        this.fallo('No pudimos cargar ese mes.')(err);
+      },
     });
   }
 

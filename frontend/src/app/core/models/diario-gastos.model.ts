@@ -80,6 +80,10 @@ export interface PorClase {
 export interface EstadoDiario {
   /** «octubre 2026». */
   mes: string;
+  /** «2026-10»: el mes del registro y del resumen. */
+  mes_iso: string;
+  /** Los meses que tiene el diario, del actual hacia atrás. */
+  meses: { iso: string; nombre: string }[];
   categorias: { id: string; nombre: string }[];
   rubros: Rubro[];
   /** Falso mientras la lista es la del libro en blanco. */

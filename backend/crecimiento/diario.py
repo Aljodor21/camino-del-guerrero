@@ -64,8 +64,39 @@ def pesos(valor):
 
 
 def _mes_actual():
-    hoy = timezone.localdate()
-    return hoy.replace(day=1), hoy.replace(day=calendar.monthrange(hoy.year, hoy.month)[1])
+    return _limites(timezone.localdate())
+
+
+def _limites(fecha):
+    """Primer y último día del mes de esa fecha."""
+    return fecha.replace(day=1), fecha.replace(day=calendar.monthrange(fecha.year, fecha.month)[1])
+
+
+def meses_de(proyecto):
+    """Los meses que tiene el diario, del actual hacia atrás: desde que empezó (o desde el primer gasto, que
+    pudo anotarse unos días antes)."""
+    primero = proyecto.gastos.order_by('fecha').values_list('fecha', flat=True).first()
+    desde = min(proyecto.creado, primero or proyecto.creado).replace(day=1)
+    mes = timezone.localdate().replace(day=1)
+    meses = []
+    while mes >= desde:
+        meses.append(mes)
+        mes = (mes - timedelta(days=1)).replace(day=1)
+    return meses
+
+
+def mes_pedido(proyecto, texto):
+    """El mes de `?mes=AAAA-MM` (el actual si no viene). Solo los que tiene el diario."""
+    if not texto:
+        return None
+    try:
+        anio, numero = (int(x) for x in texto.split('-'))
+        mes = timezone.localdate().replace(year=anio, month=numero, day=1)
+    except (ValueError, TypeError):
+        raise ReglaNegocioError('Ese mes no se entiende (AAAA-MM).')
+    if mes not in meses_de(proyecto):
+        raise ReglaNegocioError('El diario no tiene ese mes.')
+    return mes
 
 
 # ── La lista de gastos ─────────────────────────────────────────────────────────
@@ -217,10 +248,12 @@ def marcar_sin_gasto(proyecto, fecha):
     DiaSinGasto.objects.get_or_create(proyecto=proyecto, fecha=fecha)
 
 
-def estado(proyecto):
-    """Todo el diario: la lista de gastos con lo que cae en el mes, el registro de este mes y el resumen."""
+def estado(proyecto, mes=None):
+    """Todo el diario: la lista de gastos con lo que cae en el mes, el registro de este mes y el resumen. Con
+    `mes` (el primer día de un mes anterior) el registro y el resumen son los de ese mes; el plan es el de hoy
+    (la lista de gastos no guarda cómo era antes)."""
     hoy = timezone.localdate()
-    inicio, fin = _mes_actual()
+    inicio, fin = _limites(mes) if mes else _mes_actual()
     lista, guardados = rubros_de(proyecto)
     rubros = [rubro(r) for r in lista]
     gastos = list(proyecto.gastos.filter(fecha__range=(inicio, fin)).select_related('tarjeta'))
@@ -228,7 +261,7 @@ def estado(proyecto):
                  'categoria': g.categoria, 'clase': g.clase,
                  'tarjeta': str(g.tarjeta) if g.tarjeta else '', 'cuotas': g.cuotas,
                  'se_puede_borrar': timezone.localtime(g.anotado).date() == hoy} for g in gastos]
-    al_dia, transcurridos = dias_al_dia(proyecto, hoy)
+    al_dia, transcurridos = dias_al_dia(proyecto, min(hoy, fin))
 
     def suma(items, campo):
         return sum(i[campo] for i in items)
@@ -247,7 +280,9 @@ def estado(proyecto):
             por_categoria.append({'categoria': c, 'nombre': nombre, 'plan': suma(del_mes, 'mensual'),
                                   'anotado': suma(reg, 'valor')})
     return {
-        'mes': f'{MESES[hoy.month - 1]} {hoy.year}',
+        'mes': f'{MESES[inicio.month - 1]} {inicio.year}',
+        'mes_iso': inicio.strftime('%Y-%m'),
+        'meses': [{'iso': m.strftime('%Y-%m'), 'nombre': f'{MESES[m.month - 1]} {m.year}'} for m in meses_de(proyecto)],
         'categorias': [{'id': c, 'nombre': n} for c, n, _ in CATEGORIAS],
         'rubros': rubros, 'guardados': guardados, 'registro': registro,
         'tarjetas': tarjetas.estado(proyecto, hoy),

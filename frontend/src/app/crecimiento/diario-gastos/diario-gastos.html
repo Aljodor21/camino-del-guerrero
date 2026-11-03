@@ -463,8 +463,33 @@
           ></ng-container>
         </section>
 
+        @if (e.meses.length > 1) {
+          @let visto = estadoMes()?.mes_iso ?? e.mes_iso;
+          <div
+            class="flex flex-wrap items-center gap-2"
+            role="radiogroup"
+            aria-label="Qué mes ver"
+            [attr.aria-busy]="cargandoMes()"
+          >
+            <span class="text-sm text-gray-600 dark:text-gray-300">Ver el mes:</span>
+            @for (m of e.meses; track m.iso) {
+              <button
+                type="button"
+                role="radio"
+                class="first-letter:uppercase"
+                [attr.aria-checked]="visto === m.iso"
+                [class]="clasesChip(visto === m.iso)"
+                [disabled]="cargandoMes()"
+                (click)="verMes(m.iso)"
+              >
+                {{ m.nombre }}
+              </button>
+            }
+          </div>
+        }
+
         <app-analisis-gastos
-          [estado]="e"
+          [estado]="estadoMes() ?? e"
           (cambiarCategoria)="cambiarCategoria($event.gasto, $event.categoria)"
         />
 

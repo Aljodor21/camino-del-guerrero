@@ -1,6 +1,11 @@
 @let c = cifras();
 <section class="rounded-xl bg-white dark:bg-dark-800 shadow-sm p-4 space-y-4">
-  <h3 class="font-semibold text-gray-900 dark:text-white">Lo que anotaste de verdad</h3>
+  <h3 class="font-semibold text-gray-900 dark:text-white">
+    Lo que anotaste de verdad
+    @if (mes().cerrado) {
+      <span class="font-normal text-gray-500 dark:text-gray-400">en {{ mes().nombre }}</span>
+    }
+  </h3>
 
   <!-- Los filtros mandan sobre todo lo de abajo. -->
   <div class="space-y-2">
@@ -39,7 +44,7 @@
 
   @if (!c.n) {
     <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-      Nada anotado con este filtro este mes.
+      Nada anotado con este filtro {{ mes().cerrado ? 'ese' : 'este' }} mes.
     </p>
   } @else {
     <!-- Cifras -->
@@ -62,7 +67,9 @@
         </dd>
       </div>
       <div class="rounded-lg bg-gray-50 dark:bg-dark-700 p-3">
-        <dt class="text-xs text-gray-500 dark:text-gray-400">A este ritmo, al final del mes</dt>
+        <dt class="text-xs text-gray-500 dark:text-gray-400">
+          {{ mes().cerrado ? 'Así cerró el mes' : 'A este ritmo, al final del mes' }}
+        </dt>
         <dd
           class="text-xl font-bold"
           [class]="
@@ -79,6 +86,8 @@
             } @else {
               {{ porcentaje(c.proyeccion, c.plan) }} % de lo planeado
             }
+          } @else if (mes().cerrado) {
+            Todo lo anotado ese mes
           } @else {
             Lo anotado, más un día típico por cada día que falta
           }
@@ -311,7 +320,7 @@
                       >{{ pesos(k.anotado - k.plan) }} sobre el plan</span
                     >
                   } @else {
-                    · quedan {{ pesos(k.plan - k.anotado) }} de {{ pesos(k.plan) }}
+                    · {{ mes().cerrado ? 'sobraron' : 'quedan' }} {{ pesos(k.plan - k.anotado) }} de {{ pesos(k.plan) }}
                   }
                 } @else if (medio() === 'todo') {
                   · sin plan
@@ -416,9 +425,14 @@
     }
 
     <p class="text-xs text-gray-500 dark:text-gray-400">
-      «Al final del mes» suma a lo anotado un día típico (la mediana de tus días, contando los que
-      no gastaste) por cada día que falta: así un pago grande como el arriendo no se repite. Lo de
-      tarjeta cuenta por lo que compraste, no por la cuota.
+      @if (mes().cerrado) {
+        Lo planeado es tu lista de gastos de hoy: si la cambiaste después, ese mes se compara con la
+        nueva.
+      } @else {
+        «Al final del mes» suma a lo anotado un día típico (la mediana de tus días, contando los que
+        no gastaste) por cada día que falta: así un pago grande como el arriendo no se repite.
+      }
+      Lo de tarjeta cuenta por lo que compraste, no por la cuota.
     </p>
   }
 </section>
