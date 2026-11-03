@@ -24,10 +24,14 @@ def _responder(proyecto, codigo=status.HTTP_200_OK):
 
 
 class DiarioView(APIView):
-    """GET: todo el diario. PUT: guarda la lista de gastos (`{rubros: [...]}`)."""
+    """GET: todo el diario (`?mes=AAAA-MM`: el registro y el resumen de un mes anterior). PUT: guarda la lista
+    de gastos (`{rubros: [...]}`)."""
 
     def get(self, request, pk):
-        return _responder(_diario(request, pk))
+        proyecto = _diario(request, pk)
+        mes = diario.mes_pedido(proyecto, request.query_params.get('mes'))
+        _calcular_avance(proyecto)
+        return Response(diario.estado(proyecto, mes))
 
     def put(self, request, pk):
         proyecto = _diario(request, pk)

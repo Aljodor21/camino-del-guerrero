@@ -17,8 +17,9 @@ const API = `${environment.apiUrl}/crecimiento/diario`;
 export class DiarioGastosService {
   private http = inject(HttpClient);
 
-  cargar(proyecto: number): Observable<EstadoDiario> {
-    return this.http.get<EstadoDiario>(`${API}/${proyecto}/`);
+  /** Con `mes` («2026-10»), el registro y el resumen de ese mes. */
+  cargar(proyecto: number, mes?: string): Observable<EstadoDiario> {
+    return this.http.get<EstadoDiario>(`${API}/${proyecto}/`, mes ? { params: { mes } } : {});
   }
 
   guardarRubros(proyecto: number, rubros: RubroPayload[]): Observable<EstadoDiario> {

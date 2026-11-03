@@ -1,3 +1,4 @@
+import calendar
 from contextlib import contextmanager
 from datetime import datetime, time, timedelta
 from unittest import mock
@@ -13,7 +14,7 @@ from core.exceptions import DatoInmutableError
 from users.models import Usuario
 
 from . import diario
-from .models import Gasto, Proyecto
+from .models import DiaSinGasto, Gasto, Proyecto
 
 HOY = timezone.localdate
 
@@ -126,6 +127,31 @@ class DiarioTest(APITestCase):
         self.assertEqual(self.anotar(clase='').status_code, 400)
         self.assertIn('anotados', self.client.get(reverse('crecimiento-proyecto', args=[self.proyecto.id]))
                       .data['resumen'])
+
+    def test_el_resumen_de_un_mes_anterior(self):
+        hoy = HOY()
+        anterior = (hoy.replace(day=1) - timedelta(days=1)).replace(day=1)
+        Proyecto.objects.filter(pk=self.proyecto.pk).update(creado=anterior.replace(day=10))
+        Gasto.objects.create(proyecto=self.proyecto, fecha=anterior.replace(day=12), valor=50000,
+                             descripcion='Mercado', categoria='hogar', clase='cerebral')
+        DiaSinGasto.objects.create(proyecto=self.proyecto, fecha=anterior.replace(day=13))
+        self.assertEqual(self.anotar().status_code, status.HTTP_201_CREATED)
+        actual = self.client.get(self.url).data
+        self.assertEqual(actual['mes_iso'], hoy.strftime('%Y-%m'))
+        self.assertEqual([m['iso'] for m in actual['meses']], [hoy.strftime('%Y-%m'), anterior.strftime('%Y-%m')])
+        self.assertEqual(actual['resumen']['anotado']['total'], 9000)
+
+        d = self.client.get(self.url, {'mes': anterior.strftime('%Y-%m')}).data
+        self.assertEqual((d['mes_iso'], d['resumen']['anotado']['total']), (anterior.strftime('%Y-%m'), 50000))
+        self.assertEqual([g['descripcion'] for g in d['registro']], ['Mercado'])
+        # Los días al día cuentan desde que empezó hasta el final de ese mes.
+        fin = calendar.monthrange(anterior.year, anterior.month)[1]
+        self.assertEqual((d['resumen']['dias_al_dia'], d['resumen']['dias_transcurridos']), (2, fin - 9))
+        # Ni el futuro ni antes de que empezara el diario, ni algo que no es un mes.
+        siguiente = (hoy.replace(day=28) + timedelta(days=4)).strftime('%Y-%m')
+        antes = (anterior - timedelta(days=1)).strftime('%Y-%m')
+        for malo in (siguiente, antes, 'octubre', '2026-13'):
+            self.assertEqual(self.client.get(self.url, {'mes': malo}).status_code, 400, malo)
 
     def test_hoy_no_gaste_y_luego_un_gasto_manda_el_gasto(self):
         sin = reverse('diario-sin-gasto', args=[self.proyecto.id])
